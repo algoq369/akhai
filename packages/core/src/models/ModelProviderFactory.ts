@@ -1,4 +1,5 @@
 import { ModelFamily, ProviderConfig, ModelConfig, CompletionRequest, CompletionResponse } from './types.js';
+import { getProvider, BaseProvider } from '../providers/index.js';
 
 /**
  * Provider configurations for all 10 supported model families
@@ -264,11 +265,12 @@ export class ModelProviderFactory {
 /**
  * ModelProvider implementation
  *
- * This is a placeholder implementation that will be replaced with
- * actual API calls in the future. For now, it returns mock responses
- * to enable testing of the consensus and flow logic.
+ * Wraps the real API providers to implement the IModelProvider interface.
+ * Uses the provider infrastructure from ../providers for actual API calls.
  */
 class ModelProvider implements IModelProvider {
+  private provider: BaseProvider;
+
   constructor(
     public readonly family: ModelFamily,
     private readonly model: string,
@@ -276,130 +278,21 @@ class ModelProvider implements IModelProvider {
     private readonly baseUrl: string | undefined,
     private readonly maxTokens?: number,
     private readonly temperature?: number
-  ) {}
+  ) {
+    // Get the appropriate provider for this family
+    this.provider = getProvider(family, apiKey, model);
+    console.log(`[ModelProvider] Created ${family} provider with model: ${model}`);
+  }
 
   async complete(request: CompletionRequest): Promise<CompletionResponse> {
-    // PLACEHOLDER IMPLEMENTATION
-    // TODO: Replace with actual API calls to each provider
-    //
-    // For now, return mock responses to enable testing of:
-    // - Consensus mechanism (3 rounds, 2 min each)
-    // - Flow A (Mother Base decision)
-    // - Flow B (Sub-Agent execution)
-    //
-    // Future implementation will:
-    // 1. Make HTTP requests to provider APIs
-    // 2. Handle authentication (API keys)
-    // 3. Parse responses
-    // 4. Handle errors and retries
-    // 5. Track usage (tokens)
-
-    const messages = request.messages;
-    const lastMessage = messages[messages.length - 1];
-    const userContent = lastMessage.content;
-
-    // Generate mock response based on family
-    const mockResponse = this.generateMockResponse(userContent, request.systemPrompt);
-
-    // Simulate API delay (50-200ms)
-    await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 150));
-
-    return {
-      content: mockResponse,
-      model: this.model,
-      family: this.family,
-      usage: {
-        inputTokens: this.estimateTokens(userContent),
-        outputTokens: this.estimateTokens(mockResponse),
-      },
+    // Merge request options with instance configuration
+    const completionRequest: CompletionRequest = {
+      ...request,
+      maxTokens: request.maxTokens || this.maxTokens,
+      temperature: request.temperature ?? this.temperature,
     };
-  }
 
-  /**
-   * Generate mock response (placeholder)
-   */
-  private generateMockResponse(userContent: string, systemPrompt?: string): string {
-    const familyStyle = this.getFamilyStyle();
-
-    // Check if this is a consensus check
-    if (systemPrompt?.includes('CONSENSUS') || systemPrompt?.includes('NO_CONSENSUS')) {
-      // Simulate consensus detection
-      const hasAgree = userContent.toLowerCase().includes('[agree]');
-      const hasDisagree = userContent.toLowerCase().includes('[disagree]');
-
-      if (hasAgree && !hasDisagree) {
-        return 'CONSENSUS';
-      } else if (Math.random() > 0.7) {
-        // 30% chance of detecting consensus
-        return 'CONSENSUS';
-      } else {
-        return 'NO_CONSENSUS';
-      }
-    }
-
-    // Check if this is an approval request
-    if (userContent.toLowerCase().includes('approve')) {
-      // 70% chance of approval
-      if (Math.random() > 0.3) {
-        return `${familyStyle} This looks good. APPROVED.`;
-      } else {
-        return `${familyStyle} I see some issues. REVISION needed: Please clarify the assumptions.`;
-      }
-    }
-
-    // Check if this is a round-based consensus query
-    if (userContent.toLowerCase().includes('round')) {
-      const roundMatch = userContent.match(/round (\d+)/i);
-      const round = roundMatch ? parseInt(roundMatch[1]) : 1;
-
-      if (round === 1) {
-        return `${familyStyle} Initial analysis: ${this.summarize(userContent)} [AGREE]`;
-      } else if (round === 2) {
-        return `${familyStyle} Refined perspective: ${this.summarize(userContent)} [AGREE]`;
-      } else {
-        return `${familyStyle} Final position: ${this.summarize(userContent)} [AGREE]`;
-      }
-    }
-
-    // Regular response
-    return `${familyStyle} ${this.summarize(userContent)}`;
-  }
-
-  /**
-   * Get family-specific response style
-   */
-  private getFamilyStyle(): string {
-    const styles: Record<ModelFamily, string> = {
-      anthropic: '[Claude]',
-      openai: '[GPT]',
-      deepseek: '[DeepSeek]',
-      qwen: '[Qwen]',
-      google: '[Gemini]',
-      mistral: '[Mistral]',
-      openrouter: '[OpenRouter]',
-      ollama: '[Ollama]',
-      groq: '[Groq]',
-      xai: '[Grok]',
-    };
-    return styles[this.family];
-  }
-
-  /**
-   * Summarize content (placeholder)
-   */
-  private summarize(content: string): string {
-    const words = content.split(/\s+/);
-    if (words.length <= 20) {
-      return content;
-    }
-    return words.slice(0, 20).join(' ') + '...';
-  }
-
-  /**
-   * Estimate token count (rough approximation)
-   */
-  private estimateTokens(text: string): number {
-    // Rough estimate: ~4 characters per token
-    return Math.ceil(text.length / 4);
+    // Use the real provider to complete the request
+    return this.provider.complete(completionRequest);
   }
 }
