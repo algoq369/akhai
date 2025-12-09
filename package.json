@@ -1,0 +1,13 @@
+{
+  "name": "akhai-monorepo",
+  "version": "1.0.0",
+  "description": "Super Research Engine with Multi-AI Consensus - Create and trade AI agents",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.18.1"
+}
