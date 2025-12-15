@@ -1,18 +1,31 @@
 # 🧠 AkhAI
 
-**The Unicorn AI Research Engine** - Building the Future of Multi-AI Consensus
+**From AI Engine to Smart Cities: Building a $100 Billion Ecosystem**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.3.0-orange.svg)](package.json)
 [![Phase](https://img.shields.io/badge/Phase-3%20Complete-brightgreen.svg)](README.md#roadmap)
-[![Status](https://img.shields.io/badge/Status-Unicorn%20Track-gold.svg)](README.md#vision--team)
+[![Valuation](https://img.shields.io/badge/Target-$100B_by_Year_10-gold.svg)](docs/MASTER_PLAN.md)
+
+---
+
+## The $100B Vision
+
+**AKHAI is not just an AI research engine—it's the foundation of a $100 billion ecosystem spanning four integrated pillars:**
+
+1. **AKHAI Engine** (NOW) - Multi-AI consensus research platform → **$500M ARR by Year 2**
+2. **AKHAI Robot** (2 years) - Portable & full-size AI embodiment → **$2B revenue by Year 4**
+3. **Server Infrastructure** (3-5 years) - Mining & data centers → **$5B/year by Year 7**
+4. **BroolyKid Cities** (5-10 years) - Sovereign smart cities → **$100B valuation by Year 10**
+
+**Read the full 10-year roadmap:** [MASTER_PLAN.md](docs/MASTER_PLAN.md)
 
 ---
 
 ## Vision & Team
 
-AkhAI is not just a research engine—it's a **unicorn-track venture** backed by world-class expertise across technology, finance, strategy, and discipline. Our mission is to revolutionize how AI systems collaborate to deliver unprecedented research quality and business intelligence.
+AKHAI combines world-class expertise across technology, finance, strategy, and championship discipline. Our mission: revolutionize AI collaboration while building the infrastructure for sovereign, consciousness-focused communities.
 
 ### 🏆 The Dream Team
 
@@ -34,21 +47,49 @@ AkhAI is not just a research engine—it's a **unicorn-track venture** backed by
 - Built GTP Flash architecture, smart methodology selector, and minimalist UI
 - Production-grade TypeScript/Next.js expertise
 
-**Haidar** - Performance & Discipline Advisor
-- **BJJ World Games Champion**
-- **UFC Gym France Representative**
-- Brings elite athlete discipline, focus, and high-performance mindset
-- Vision architect: translating competition excellence into product strategy
+**Haidar** - CEO & Founder
+- **BJJ World Champion** (10+ years at elite level)
+- **"Vibe Coder"** - Intuition meets championship discipline
+- Vision architect: Engine → Robot → Cities
+- UFC Gym France performance advisor
 
-### 🦄 Unicorn Trajectory
+**Alex Roubaud** - Bitcoin Mining Advisor
+- CEO of **Bitstack** (Leading European Bitcoin savings platform)
+- Mining operations & custody expertise
+- BroolyKid infrastructure advisor
 
-With this powerhouse team combining **elite French education (ENA)**, **Big 4 consulting experience**, **crypto fund backing (+20% valuation)**, **world-class technical execution**, and **championship-level discipline**, AkhAI is positioned as a **veritable unicorn project**.
+**Cyril Gane** - Brand Ambassador
+- **UFC Heavyweight Champion** (Former Interim)
+- Global icon with millions of followers
+- Embodies transformation: homelessness → UFC championship
+- BroolyKid community programs & wellness
+
+**[Full Team Bios → docs/TEAM.md](docs/TEAM.md)**
+
+### 🦄 The $100B Trajectory
+
+With this powerhouse team combining **elite French education (ENA)**, **Big 4 consulting experience**, **crypto fund backing (+20% valuation)**, **world-class AI engineering**, **championship discipline**, **Bitcoin mining mastery**, and **UFC brand power**, AKHAI is positioned to build a $100 billion ecosystem.
 
 **Our Competitive Edge:**
 - 🎓 **Institutional Credibility**: ENA + Deloitte pedigree
 - 💰 **Strategic Capital**: G&V Compagnie partnership + 20% valuation boost
 - 🔧 **Technical Excellence**: Production-ready AI consensus engine
 - 🥋 **Execution Discipline**: Champion mindset driving product velocity
+- 🤖 **Vertical Integration**: Engine → Robot → Infrastructure → Cities
+
+---
+
+## Ecosystem Repositories
+
+AKHAI is the AI intelligence layer for a connected ecosystem of projects:
+
+1. **[akhai](https://github.com/algoq369/akhai)** - Multi-AI consensus engine (THIS REPO)
+2. **[sempai-monorepo](https://github.com/algoq369/sempai-monorepo)** - Trading/chat/blockchain infrastructure
+3. **[broolykid-network](https://github.com/algoq369/broolykid-network)** - Sovereign smart cities powered by BTC mining
+4. **[akhai-robot](https://github.com/algoq369/akhai-robot)** - Robotics development (coming Year 2)
+5. **[monadkid-blockchain](https://github.com/algoq369/monadkid-blockchain)** - Custom blockchain for cities (coming Year 6)
+
+**See:** [MASTER_PLAN.md](docs/MASTER_PLAN.md) for how these connect into a $100B ecosystem
 
 ---
 
@@ -434,10 +475,15 @@ akhai/
 
 ## Documentation
 
-- **[Team & Vision](TEAM.md)** - Dream team bios and unicorn trajectory
-- [Master Plan](docs/MASTER_PLAN.md) - Vision and roadmap
-- [Architecture](docs/ARCHITECTURE.md) - Technical architecture
-- [Website UI](docs/WEBSITE_UI.md) - Future web interface plans
+### Ecosystem Vision
+- **[Master Plan](docs/MASTER_PLAN.md)** - 10-year roadmap to $100B (Engine → Robot → Servers → Cities)
+- **[AKHAI Robot](docs/ROBOT.md)** - Portable & full-size robot specifications
+- **[Dream Team](docs/TEAM.md)** - Complete team bios (Haidar, Andy, Philippe, Gregory, Alex, Cyril)
+
+### Technical Documentation
+- [Team & Vision (legacy)](TEAM.md) - Original team document
+- [Architecture](docs/ARCHITECTURE.md) - Multi-AI consensus architecture
+- [Website UI](docs/WEBSITE_UI.md) - Web interface design
 - [MCP Setup](.cursor/README.md) - Claude Code integration
 
 ---
