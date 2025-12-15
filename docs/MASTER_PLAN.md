@@ -1,19 +1,32 @@
 # 🎯 AkhAI Master Plan
 
-**Vision:** Build a Super Research Engine with Multi-AI Consensus that creates and trades AI agents
+**Vision:** The Unicorn AI Research Engine - Building the Future of Multi-AI Consensus
 
-**Status:** Phase 0 Complete ✅ | Phase 1 Starting
+**Status:** Phase 3 Complete ✅ (v0.3.0) | Unicorn Track 🦄
+
+**Backed by:** G&V Compagnie (+20% valuation) | Dream Team Assembled
 
 ---
 
-## 🌟 Vision
+## 🦄 Unicorn Vision
 
-AkhAI is not just another AI wrapper. It's a **Super Research Engine** that:
+AkhAI is not just another AI wrapper. It's a **unicorn-track venture** that:
 
 1. **Orchestrates multiple AI models** to reach consensus through automated verification
-2. **Provides multi-perspective answers** by debating between different AI viewpoints
-3. **Enables AI agent creation** from existing projects
-4. **Creates a marketplace** where agents can be traded and monetized
+2. **Provides multi-perspective answers** via parallel GTP Flash architecture (~25s)
+3. **Smart methodology selection** - auto-routes queries for optimal speed/quality
+4. **Enables AI agent creation** from existing projects
+5. **Creates a marketplace** where agents can be traded and monetized
+6. **Backed by world-class team** combining ENA excellence, Deloitte strategy, crypto capital, and championship discipline
+
+## 🏆 The Dream Team
+
+- 🎓 **Philippe Haydarian** - Strategic Advisor (Former Deloitte | ENA Graduate)
+- 💰 **Gregory Sankara** - Board Advisor & Investment Partner (G&V Compagnie | +20% Valuation)
+- 💻 **Andy** - Lead Technical Architect (AI Engineering Expert)
+- 🥋 **Haidar** - Performance & Discipline Advisor (BJJ World Champion | UFC Gym France)
+
+**[Full Team Bios → TEAM.md](../TEAM.md)**
 
 ---
 
@@ -37,10 +50,10 @@ AkhAI is not just another AI wrapper. It's a **Super Research Engine** that:
 │  ┌─────────────────────────────────────────────┐           │
 │  │         Advisor Layer (4 AIs)               │           │
 │  ├─────────────────────────────────────────────┤           │
-│  │  Slot 1: Technical    (Configurable)        │           │
-│  │  Slot 2: Strategic    (Configurable)        │           │
-│  │  Slot 3: OpenRouter   (Fixed)              │           │
-│  │  Slot 4: Redactor     (= Mother Base)      │           │
+│  │  Slot 1: DeepSeek     (Technical)           │           │
+│  │  Slot 2: xAI Grok     (Strategic)           │           │
+│  │  Slot 3: Mistral AI   (Diversity)           │           │
+│  │  Slot 4: Redactor     (= Mother Base)       │           │
 │  └─────────────────────────────────────────────┘           │
 │           │                                                  │
 │           ▼                                                  │
@@ -54,7 +67,7 @@ AkhAI is not just another AI wrapper. It's a **Super Research Engine** that:
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                AI PROVIDER LAYER                             │
-│  Anthropic, DeepSeek, xAI (Grok), OpenRouter               │
+│  Anthropic Claude • DeepSeek • xAI Grok • Mistral AI        │
 └─────────────────────────────────────────────────────────────┘
 ```
 

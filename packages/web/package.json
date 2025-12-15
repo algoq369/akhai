@@ -1,6 +1,7 @@
 {
   "name": "@akhai/web",
-  "version": "0.1.0",
+  "version": "0.3.0",
+  "description": "AkhAI Web Interface - Next.js 15 app with minimalist UI and GTP Flash visualization",
   "private": true,
   "scripts": {
     "dev": "next dev",
