@@ -4,22 +4,29 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-orange.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-0.3.0-orange.svg)](package.json)
+[![Phase](https://img.shields.io/badge/Phase-3%20Complete-brightgreen.svg)](README.md#roadmap)
 
 ---
 
 ## What is AkhAI?
 
-AkhAI is a powerful research engine that uses **multiple AI models** to reach consensus through **automated verification loops**. It orchestrates 4 AI providers (Anthropic, DeepSeek, xAI Grok, OpenRouter) to provide well-reasoned, multi-perspective answers.
+AkhAI is a powerful research engine that uses **multiple AI models** to reach consensus through **automated verification loops**. It orchestrates 4 AI providers (Anthropic, DeepSeek, xAI Grok, Mistral) to provide well-reasoned, multi-perspective answers.
 
 ### Key Features
 
 - 🔬 **Multi-AI Consensus**: 4 advisors + Mother Base with automated verification
-- 🔄 **Verification Loops**: Max 3 rounds (2 min each) at all levels
-- 🤖 **4 AI Providers**: Anthropic (Claude), DeepSeek, xAI (Grok), OpenRouter
-- 🎯 **Two Execution Flows**:
-  - **Flow A**: Mother Base Decision (strategic decisions)
-  - **Flow B**: Sub-Agent Execution (task execution)
+- ⚡ **Smart Methodology Selector**: Auto-routes simple queries to instant direct mode
+- 🧬 **GTP Flash Architecture**: Parallel multi-AI consensus in ~25s
+- 🎨 **Minimalist Web UI**: Clean grey-only design with liquid ether background
+- 🔄 **Interactive Round Pause**: Continue/Accept/Cancel consensus rounds
+- 🤖 **4 AI Providers**: Anthropic (Claude), DeepSeek, xAI (Grok), Mistral
+- 🎯 **Five Methodologies**:
+  - **Direct**: Simple factual queries (~5s)
+  - **Chain of Thought**: Sequential reasoning (~30s)
+  - **Atom of Thoughts**: Complex decomposition (~60s)
+  - **Flash (GTP)**: Parallel multi-AI consensus (~25s)
+  - **Auto**: Smart methodology selection
 - 🔌 **MCP Integration**: Works with Claude Code CLI
 - 💻 **TypeScript**: Fully typed, modern codebase
 - 💰 **Cost Tracking**: Automatic token usage and cost calculation
@@ -42,14 +49,14 @@ Create a `.env` file:
 # Mother Base: Anthropic Claude Sonnet 4
 ANTHROPIC_API_KEY=sk-ant-...
 
-# Advisor Layer: DeepSeek (Slots 1 & 2)
+# Advisor Layer: DeepSeek (Slot 1 - Technical)
 DEEPSEEK_API_KEY=sk-...
 
-# Advisor Layer: xAI Grok (Available for Slots 1 & 2)
+# Advisor Layer: xAI Grok (Slot 2 - Strategic)
 XAI_API_KEY=xai-...
 
-# Advisor Layer: OpenRouter (Slot 3 - FIXED)
-OPENROUTER_API_KEY=sk-or-...
+# Advisor Layer: Mistral AI (Slot 3 - Diversity)
+MISTRAL_API_KEY=...
 ```
 
 ### 3. Build
@@ -75,13 +82,13 @@ Use akhai.query to analyze: "What's the best database for real-time chat?"
 ## Architecture
 
 ```
-Mother Base (Your choice)
+Mother Base: Anthropic Claude Sonnet 4
      │
      ▼
 Advisor Layer (4 AIs)
-├── Slot 1: Configurable (Technical)
-├── Slot 2: Configurable (Strategic)
-├── Slot 3: OpenRouter (Fixed)
+├── Slot 1: DeepSeek (Technical brainstorming)
+├── Slot 2: xAI Grok (Strategic brainstorming)
+├── Slot 3: Mistral AI (Diversity provider)
 └── Slot 4: Redactor (= Mother Base)
      │
      ▼
@@ -175,7 +182,7 @@ akhai.setApiKeys({
   anthropic: process.env.ANTHROPIC_API_KEY,
   deepseek: process.env.DEEPSEEK_API_KEY,
   xai: process.env.XAI_API_KEY,
-  openrouter: process.env.OPENROUTER_API_KEY,
+  mistral: process.env.MISTRAL_API_KEY,
 });
 
 akhai.setupMotherBase('claude-sonnet-4-20250514');
@@ -245,9 +252,9 @@ Use akhai.query with these parameters:
 | Family | Default Model | API Key Required | Pricing (per 1M tokens) | Notes |
 |--------|---------------|------------------|------------------------|-------|
 | **anthropic** | claude-sonnet-4-20250514 | ✅ Yes | $3 / $15 | Mother Base, Slot 4 (Redactor), Sub-Agents |
-| **deepseek** | deepseek-chat | ✅ Yes | $0.14 / $0.28 | Cost-effective, Slots 1-2 |
-| **xai** | grok-beta | ✅ Yes | $5 / $15 | Grok from xAI, Slots 1-2 |
-| **openrouter** | anthropic/claude-3.5-sonnet | ✅ Yes | Variable | **Slot 3 (FIXED)** |
+| **deepseek** | deepseek-chat | ✅ Yes | $0.14 / $0.28 | Slot 1 - Technical brainstorming |
+| **xai** | grok-beta | ✅ Yes | $5 / $15 | Slot 2 - Strategic brainstorming |
+| **mistral** | mistral-small-latest | ✅ Yes | $0.20 / $0.60 | Slot 3 - Diversity provider |
 
 ---
 
@@ -309,10 +316,10 @@ akhai.printSummary(): void;
 ### Default Configuration
 
 - **Mother Base:** anthropic (claude-sonnet-4-20250514)
-- **Advisor Slot 1:** deepseek
-- **Advisor Slot 2:** xai
-- **Advisor Slot 3:** openrouter (FIXED - cannot be changed)
-- **Advisor Slot 4:** anthropic (redactor, same as Mother Base)
+- **Advisor Slot 1:** deepseek (Technical brainstorming)
+- **Advisor Slot 2:** xai (Strategic brainstorming)
+- **Advisor Slot 3:** mistral (Diversity provider)
+- **Advisor Slot 4:** anthropic (Redactor, same as Mother Base)
 - **Max Consensus Rounds:** 3 (2 min each)
 - **Max Flow Exchanges:** 3
 
@@ -400,24 +407,33 @@ akhai/
 - Flow A & B implementation
 
 ### Phase 1: Core Engine ✅ **COMPLETE**
-- Real API implementations (4 providers: Anthropic, DeepSeek, xAI, OpenRouter)
+- Real API implementations (4 providers: Anthropic, DeepSeek, xAI, Mistral)
 - Token usage tracking & cost calculation
 - Retry logic with exponential backoff
 - Integration tests with Jest
 - Provider-specific error handling
 
-### Phase 2: Web Interface
-- Search engine UI
-- Live verification window
-- Chat interface
+### Phase 2: Web Interface ✅ **COMPLETE**
+- Next.js 15 web application
+- Search engine UI with methodology selector
+- Live verification window with SSE streaming
 - Real-time consensus visualization
+- Responsive dashboard and settings
 
-### Phase 3: Desktop App
+### Phase 3: GTP & Smart Features ✅ **COMPLETE** (v0.3.0)
+- **GTP Flash Architecture**: Parallel multi-AI consensus (~25s)
+- **Smart Methodology Selector**: Auto-routing for simple queries
+- **Interactive Round Pause**: Continue/Accept/Cancel consensus rounds
+- **Minimalist UI**: Grey-only design with liquid ether background
+- **Mistral Integration**: Replaced OpenRouter with Mistral AI
+- **Five Methodologies**: Direct, CoT, AoT, Flash (GTP), Auto
+
+### Phase 4: Desktop App
 - Project-to-Agent conversion
 - Local agent creation
 - Agent testing and debugging
 
-### Phase 4: Agent Marketplace
+### Phase 5: Agent Marketplace
 - Agent publishing
 - Agent trading
 - Revenue sharing
@@ -456,9 +472,9 @@ Built with ❤️ by [algoq369](https://github.com/algoq369)
 
 **Powered by:**
 - [Anthropic Claude](https://www.anthropic.com/) - Mother Base, Redactor, Sub-Agents
-- [DeepSeek](https://www.deepseek.com/) - Cost-effective reasoning
-- [xAI Grok](https://x.ai/) - Strategic analysis
-- [OpenRouter](https://openrouter.ai/) - Diversity provider (Slot 3)
+- [DeepSeek](https://www.deepseek.com/) - Technical brainstorming (Slot 1)
+- [xAI Grok](https://x.ai/) - Strategic brainstorming (Slot 2)
+- [Mistral AI](https://mistral.ai/) - Diversity provider (Slot 3)
 
 ---
 
