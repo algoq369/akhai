@@ -1,11 +1,54 @@
 # 🧠 AkhAI
 
-**Super Research Engine** with Multi-AI Consensus System
+**The Unicorn AI Research Engine** - Building the Future of Multi-AI Consensus
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.3.0-orange.svg)](package.json)
 [![Phase](https://img.shields.io/badge/Phase-3%20Complete-brightgreen.svg)](README.md#roadmap)
+[![Status](https://img.shields.io/badge/Status-Unicorn%20Track-gold.svg)](README.md#vision--team)
+
+---
+
+## Vision & Team
+
+AkhAI is not just a research engine—it's a **unicorn-track venture** backed by world-class expertise across technology, finance, strategy, and discipline. Our mission is to revolutionize how AI systems collaborate to deliver unprecedented research quality and business intelligence.
+
+### 🏆 The Dream Team
+
+**Philippe Haydarian** - Strategic Advisor
+- Former Deloitte Senior Consultant
+- **ENA Graduate** (École Nationale d'Administration - France's most prestigious administrative school)
+- Elite strategic vision and institutional expertise
+- Brings Fortune 500 operational excellence to AkhAI's architecture
+
+**Gregory Sankara** - Board Advisor & Investment Partner
+- Partner at **G&V Compagnie** (Leading Crypto Fund)
+- **+20% valuation enhancement** through strategic partnerships
+- Deep expertise in crypto markets and Web3 ecosystems
+- Connecting AkhAI to institutional capital and DeFi infrastructure
+
+**Andy** - Lead Technical Architect
+- Expert software engineer and full-stack developer
+- Architect of AkhAI's core multi-AI consensus engine
+- Built GTP Flash architecture, smart methodology selector, and minimalist UI
+- Production-grade TypeScript/Next.js expertise
+
+**Haidar** - Performance & Discipline Advisor
+- **BJJ World Games Champion**
+- **UFC Gym France Representative**
+- Brings elite athlete discipline, focus, and high-performance mindset
+- Vision architect: translating competition excellence into product strategy
+
+### 🦄 Unicorn Trajectory
+
+With this powerhouse team combining **elite French education (ENA)**, **Big 4 consulting experience**, **crypto fund backing (+20% valuation)**, **world-class technical execution**, and **championship-level discipline**, AkhAI is positioned as a **veritable unicorn project**.
+
+**Our Competitive Edge:**
+- 🎓 **Institutional Credibility**: ENA + Deloitte pedigree
+- 💰 **Strategic Capital**: G&V Compagnie partnership + 20% valuation boost
+- 🔧 **Technical Excellence**: Production-ready AI consensus engine
+- 🥋 **Execution Discipline**: Champion mindset driving product velocity
 
 ---
 
@@ -391,6 +434,7 @@ akhai/
 
 ## Documentation
 
+- **[Team & Vision](TEAM.md)** - Dream team bios and unicorn trajectory
 - [Master Plan](docs/MASTER_PLAN.md) - Vision and roadmap
 - [Architecture](docs/ARCHITECTURE.md) - Technical architecture
 - [Website UI](docs/WEBSITE_UI.md) - Future web interface plans
@@ -420,24 +464,37 @@ akhai/
 - Real-time consensus visualization
 - Responsive dashboard and settings
 
-### Phase 3: GTP & Smart Features ✅ **COMPLETE** (v0.3.0)
+### Phase 3: GTP & Smart Features ✅ **COMPLETE** (v0.3.0 - Dec 2024)
 - **GTP Flash Architecture**: Parallel multi-AI consensus (~25s)
 - **Smart Methodology Selector**: Auto-routing for simple queries
 - **Interactive Round Pause**: Continue/Accept/Cancel consensus rounds
 - **Minimalist UI**: Grey-only design with liquid ether background
 - **Mistral Integration**: Replaced OpenRouter with Mistral AI
 - **Five Methodologies**: Direct, CoT, AoT, Flash (GTP), Auto
+- **Dream Team Assembled**: Philippe (ENA), Gregory (G&V), Andy, Haidar
 
-### Phase 4: Desktop App
-- Project-to-Agent conversion
-- Local agent creation
-- Agent testing and debugging
+### Phase 4: Series A Preparation 🎯 **Q1 2025**
+- **$5M Seed Round** led by G&V Compagnie
+- 10,000+ active users milestone
+- Enterprise pilots with Fortune 500 companies
+- Tokenomics whitepaper for $AKHAI governance token
+- Team expansion: 5 engineers, 2 sales/BD
+- Strategic partnerships with AI providers
 
-### Phase 5: Agent Marketplace
-- Agent publishing
-- Agent trading
-- Revenue sharing
-- Quality ratings
+### Phase 5: Series A & Scale 🚀 **Q2-Q3 2025**
+- **$20M Series A** at $100M valuation
+- 100,000+ users
+- $1M ARR from enterprise contracts
+- Agent marketplace launch (buy/sell/trade AI agents)
+- Revenue sharing for agent creators
+- DeFi integration via Gregory's crypto network
+
+### Phase 6: Unicorn Status 🦄 **2026**
+- **$100M ARR** from enterprise + marketplace
+- 1M+ active users
+- **$1B+ valuation** (unicorn achieved)
+- IPO preparation or strategic acquisition
+- Global expansion: US, Europe, Asia markets
 
 ---
 
@@ -466,11 +523,19 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ---
 
-## Credits
+## The Team
 
-Built with ❤️ by [algoq369](https://github.com/algoq369)
+**AkhAI is a unicorn-track venture backed by world-class expertise:**
 
-**Powered by:**
+### Leadership
+- 🎓 **Philippe Haydarian** - Strategic Advisor (Former Deloitte | ENA Graduate)
+- 💰 **Gregory Sankara** - Board Advisor & Investment Partner (G&V Compagnie | +20% Valuation)
+- 💻 **Andy** - Lead Technical Architect (AI Engineering Expert)
+- 🥋 **Haidar** - Performance & Discipline Advisor (BJJ World Champion | UFC Gym France)
+
+**[Read Full Team Bios →](TEAM.md)**
+
+### AI Partners
 - [Anthropic Claude](https://www.anthropic.com/) - Mother Base, Redactor, Sub-Agents
 - [DeepSeek](https://www.deepseek.com/) - Technical brainstorming (Slot 1)
 - [xAI Grok](https://x.ai/) - Strategic brainstorming (Slot 2)
@@ -486,4 +551,18 @@ Built with ❤️ by [algoq369](https://github.com/algoq369)
 
 ---
 
-**AkhAI - The Super Research Engine that creates and trades AI agents** 🚀
+## Funding & Investment
+
+**Backed by G&V Compagnie** - Leading cryptocurrency investment fund
+**Valuation Boost:** +20% through strategic partnerships
+**Trajectory:** Seed → Series A ($20M) → Unicorn ($1B+)
+
+**For Investment Inquiries:** Contact Gregory Sankara via [TEAM.md](TEAM.md)
+
+---
+
+**AkhAI - The Unicorn AI Research Engine** 🦄
+
+*Building the future of multi-AI consensus with championship discipline, elite strategy, crypto capital, and world-class engineering.*
+
+**Powered by:** ENA Excellence • Deloitte Strategy • G&V Capital • BJJ Champion Discipline • AI Engineering Mastery
