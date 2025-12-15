@@ -67,9 +67,34 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
   const [reasoningSteps, setReasoningSteps] = useState<ReasoningStep[]>([]);
   const [currentPhase, setCurrentPhase] = useState<string>('');
 
+  // Round pause state
+  const [roundPaused, setRoundPaused] = useState(false);
+  const [pausedRound, setPausedRound] = useState<number | null>(null);
+
   const addReasoningStep = (phase: string, message: string, data?: any) => {
     setReasoningSteps(prev => [...prev, { timestamp: Date.now(), phase, message, data }]);
     setCurrentPhase(phase);
+  };
+
+  // Round pause handlers
+  const handleContinue = () => {
+    setRoundPaused(false);
+    setPausedRound(null);
+    addReasoningStep('Round Continue', `Continuing to next round after round ${pausedRound}`);
+  };
+
+  const handleAccept = () => {
+    setRoundPaused(false);
+    setPausedRound(null);
+    setIsComplete(true);
+    addReasoningStep('Round Accept', `Accepted consensus from round ${pausedRound}, skipping further rounds`);
+  };
+
+  const handleCancel = () => {
+    setRoundPaused(false);
+    setPausedRound(null);
+    setError('Query cancelled by user');
+    addReasoningStep('Round Cancel', `Query cancelled during round ${pausedRound} pause`);
   };
 
   // Timer for elapsed time
@@ -294,7 +319,10 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             break;
 
           case 'round-complete':
-            // Round complete event
+            // Round complete event - trigger pause for user review
+            setRoundPaused(true);
+            setPausedRound(data.data.round);
+            addReasoningStep('Round Complete', `Round ${data.data.round} complete. Review consensus before continuing.`);
             break;
 
           case 'redactor-start':
@@ -403,6 +431,38 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
           steps={reasoningSteps}
           currentPhase={currentPhase}
         />
+      )}
+
+      {/* Round Pause UI */}
+      {roundPaused && pausedRound !== null && (
+        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-700 rounded-lg p-4">
+          <h3 className="text-white font-medium text-sm mb-2">
+            Round {pausedRound} Complete - Review Consensus
+          </h3>
+          <p className="text-gray-400 text-sm mb-4">
+            Consensus round {pausedRound} has completed. You can review the advisor responses above and decide whether to continue to the next round, accept the current consensus, or cancel the query.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleContinue}
+              className="px-4 py-2 bg-white text-black text-sm rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              Continue to Next Round
+            </button>
+            <button
+              onClick={handleAccept}
+              className="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700 border border-gray-700 transition-colors font-medium"
+            >
+              Accept Consensus
+            </button>
+            <button
+              onClick={handleCancel}
+              className="px-4 py-2 bg-gray-900 text-gray-400 text-sm rounded-lg hover:bg-gray-800 border border-gray-800 transition-colors font-medium"
+            >
+              Cancel Query
+            </button>
+          </div>
+        </div>
       )}
 
       {/* GTP Flash Progress */}

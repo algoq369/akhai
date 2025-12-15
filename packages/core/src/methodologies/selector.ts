@@ -164,6 +164,15 @@ export class MethodologySelector {
    * @returns Methodology selection with reasoning
    */
   selectMethodology(analysis: QueryAnalysis): MethodologySelection {
+    // Simple pattern detection for instant direct routing
+    const SIMPLE_PATTERNS = [/^what is/i, /^who is/i, /^when/i, /^where/i, /^how much/i, /^define/i];
+    const wordCount = analysis.query.split(/\s+/).length;
+    const hasComparison = /\b(vs|compare|difference|between)\b/i.test(analysis.query);
+
+    if (SIMPLE_PATTERNS.some(p => p.test(analysis.query)) && wordCount <= 15 && !hasComparison) {
+      return { methodology: 'direct', confidence: 0.95, reasoning: 'Simple factual query', alternatives: [] };
+    }
+
     const scores: Record<Exclude<MethodologyType, 'auto'>, number> = {
       direct: 0,
       cot: 0,
