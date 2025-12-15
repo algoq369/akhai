@@ -2,7 +2,7 @@ import { ModelFamily, ProviderConfig, ModelConfig, CompletionRequest, Completion
 import { getProvider, BaseProvider } from '../providers/index.js';
 
 /**
- * Provider configurations for all 10 supported model families
+ * Provider configurations for the 4 implemented model families
  *
  * Each provider has:
  * - family: Model family identifier
@@ -18,72 +18,30 @@ const PROVIDER_CONFIGS: Record<ModelFamily, ProviderConfig> = {
     defaultModel: 'claude-sonnet-4-20250514',
     requiresApiKey: true,
   },
-  openai: {
-    family: 'openai',
-    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    defaultModel: 'gpt-4o',
-    requiresApiKey: true,
-  },
   deepseek: {
     family: 'deepseek',
-    models: ['deepseek-chat', 'deepseek-reasoner'],
-    defaultModel: 'deepseek-chat',
+    models: ['deepseek-reasoner', 'deepseek-chat'],
+    defaultModel: 'deepseek-reasoner',
     requiresApiKey: true,
     baseUrl: 'https://api.deepseek.com',
   },
-  qwen: {
-    family: 'qwen',
-    models: ['qwen-plus', 'qwen-turbo', 'qwen-max'],
-    defaultModel: 'qwen-plus',
-    requiresApiKey: true,
-  },
-  google: {
-    family: 'google',
-    models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash-exp'],
-    defaultModel: 'gemini-1.5-pro',
-    requiresApiKey: true,
-  },
   mistral: {
     family: 'mistral',
-    models: ['mistral-large-latest', 'mistral-medium-latest', 'mistral-small-latest'],
-    defaultModel: 'mistral-large-latest',
-    requiresApiKey: true,
-  },
-  openrouter: {
-    family: 'openrouter',
     models: [
-      'anthropic/claude-3.5-sonnet',
-      'openai/gpt-4o',
-      'google/gemini-pro-1.5',
-      'meta-llama/llama-3.1-70b-instruct',
+      'mistral-small-latest',
+      'mistral-medium-latest',
+      'mistral-large-latest',
     ],
-    defaultModel: 'anthropic/claude-3.5-sonnet',
+    defaultModel: 'mistral-small-latest',
     requiresApiKey: true,
-    baseUrl: 'https://openrouter.ai/api/v1',
-  },
-  ollama: {
-    family: 'ollama',
-    models: ['llama3.1', 'mistral', 'phi3', 'qwen2.5'],
-    defaultModel: 'llama3.1',
-    requiresApiKey: false,
-    baseUrl: 'http://localhost:11434',
-  },
-  groq: {
-    family: 'groq',
-    models: [
-      'llama-3.1-70b-versatile',
-      'llama-3.1-8b-instant',
-      'mixtral-8x7b-32768',
-      'gemma2-9b-it',
-    ],
-    defaultModel: 'llama-3.1-70b-versatile',
-    requiresApiKey: true,
+    baseUrl: 'https://api.mistral.ai',
   },
   xai: {
     family: 'xai',
-    models: ['grok-beta', 'grok-vision-beta'],
-    defaultModel: 'grok-beta',
+    models: ['grok-3', 'grok-vision-beta'],
+    defaultModel: 'grok-3',
     requiresApiKey: true,
+    baseUrl: 'https://api.x.ai',
   },
 };
 
@@ -295,4 +253,26 @@ class ModelProvider implements IModelProvider {
     // Use the real provider to complete the request
     return this.provider.complete(completionRequest);
   }
+}
+
+/**
+ * Convenience function to create a provider from family and API keys
+ *
+ * @param family - Model family
+ * @param apiKeys - Map of API keys by family
+ * @returns Model provider instance
+ */
+export function createProviderFromFamily(
+  family: ModelFamily,
+  apiKeys: Record<ModelFamily, string>
+): IModelProvider {
+  const factory = new ModelProviderFactory();
+
+  // Set all API keys
+  Object.entries(apiKeys).forEach(([fam, key]) => {
+    factory.setApiKey(fam as ModelFamily, key);
+  });
+
+  // Create provider for the specified family
+  return factory.createProvider({ family });
 }

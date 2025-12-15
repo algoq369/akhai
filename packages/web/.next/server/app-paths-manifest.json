@@ -1,0 +1,14 @@
+{
+  "/api/stream/[id]/route": "app/api/stream/[id]/route.js",
+  "/api/stats/route": "app/api/stats/route.js",
+  "/api/history/route": "app/api/history/route.js",
+  "/api/stats/recent/route": "app/api/stats/recent/route.js",
+  "/api/settings/route": "app/api/settings/route.js",
+  "/api/query/route": "app/api/query/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/explore/page": "app/explore/page.js",
+  "/query/[id]/page": "app/query/[id]/page.js",
+  "/page": "app/page.js",
+  "/history/page": "app/history/page.js",
+  "/settings/page": "app/settings/page.js"
+}

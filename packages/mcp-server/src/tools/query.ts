@@ -5,7 +5,8 @@
  * Supports Flow A (Mother Base decision) and Flow B (Sub-Agent execution).
  */
 
-import { createAkhAI, type ModelFamily, type FlowAResult, type FlowBResult } from '@akhai/core';
+import { type ModelFamily, type FlowAResult, type FlowBResult } from '@akhai/core';
+import { getAkhaiInstance } from '../shared/instance.js';
 
 /**
  * Arguments for akhai.query tool
@@ -17,53 +18,6 @@ export interface QueryArgs {
   motherBase?: string;
   advisorSlot1?: string;
   advisorSlot2?: string;
-}
-
-/**
- * Global AkhAI instance (singleton)
- * Persists across tool calls for efficiency
- */
-let globalAkhaiInstance: ReturnType<typeof createAkhAI> | null = null;
-let globalMotherBaseFamily: ModelFamily | null = null;
-
-/**
- * Initialize or get AkhAI instance
- *
- * @param motherBaseFamily - Model family for Mother Base
- * @returns AkhAI instance
- */
-function getAkhaiInstance(motherBaseFamily: ModelFamily): ReturnType<typeof createAkhAI> {
-  // Reuse instance if same family
-  if (globalAkhaiInstance && globalMotherBaseFamily === motherBaseFamily) {
-    return globalAkhaiInstance;
-  }
-
-  // Create new instance
-  console.error(`[akhai.query] Creating new AkhAI instance with Mother Base: ${motherBaseFamily}`);
-
-  const akhai = createAkhAI(motherBaseFamily);
-
-  // Set API keys from environment
-  akhai.setApiKeys({
-    anthropic: process.env.ANTHROPIC_API_KEY,
-    openai: process.env.OPENAI_API_KEY,
-    deepseek: process.env.DEEPSEEK_API_KEY,
-    qwen: process.env.QWEN_API_KEY,
-    google: process.env.GOOGLE_API_KEY,
-    mistral: process.env.MISTRAL_API_KEY,
-    openrouter: process.env.OPENROUTER_API_KEY,
-    groq: process.env.GROQ_API_KEY,
-    xai: process.env.XAI_API_KEY,
-  });
-
-  // Setup Mother Base
-  akhai.setupMotherBase();
-
-  // Cache instance
-  globalAkhaiInstance = akhai;
-  globalMotherBaseFamily = motherBaseFamily;
-
-  return akhai;
 }
 
 /**

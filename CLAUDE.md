@@ -1,0 +1,144 @@
+# AkhAI - Claude Code Context
+
+## Project Overview
+AkhAI is a **Super Research Engine with Multi-AI Consensus** - the core intelligence layer (Mother Base) for the OneAI ecosystem.
+
+## Owner
+- GitHub: algoq369
+- Related Projects: AlgoQbot (trading bot), BroolyKid (smart city), Sempai (wellness)
+
+## Architecture (4 Providers)
+
+```
+Mother Base: Anthropic Claude (user's choice)
+     │
+     ▼
+ADVISOR LAYER:
+├── Slot 1: DeepSeek       (Technical brainstormer)    [Configurable]
+├── Slot 2: Grok/xAI       (Strategic brainstormer)    [Configurable]
+├── Slot 3: OpenRouter     (Diversity brainstormer)    [FIXED - never changes]
+└── Slot 4: Claude         (Redactor = Mother Base)    [Auto-aligned]
+     │
+     ▼
+Sub-Agents: Same as Mother Base
+```
+
+## THE 4 PROVIDERS ARE:
+1. **anthropic** - Mother Base, Redactor (Slot 4), Sub-Agents
+2. **deepseek** - Advisor Slot 1 (Technical)
+3. **xai** - Advisor Slot 2 (Strategic) ← NEW, replaces Qwen
+4. **openrouter** - Advisor Slot 3 (FIXED, never changes)
+
+## Current Status: Phase 2 (Web Interface) - Integration Complete! ✅
+
+### Phase 1 ✅ COMPLETE!
+### Phase 2 ✅ COMPLETE! (@akhai/core integration done)
+
+### ✅ DONE (Phase 1 - Core Engine)
+- AnthropicProvider (packages/core/src/providers/anthropic.ts)
+- DeepSeekProvider (packages/core/src/providers/deepseek.ts)
+- OpenRouterProvider (packages/core/src/providers/openrouter.ts)
+- XAIProvider (packages/core/src/providers/xai.ts) ← NEW!
+- BaseProvider with retry logic (3 attempts, exponential backoff, 30s timeout)
+- CostTracker (packages/core/src/utils/CostTracker.ts)
+- MCP Server (packages/mcp-server/)
+- Flow A & Flow B implementation
+- Integration tests (packages/core/tests/integration.test.ts)
+- ModelFamily type: 'anthropic' | 'deepseek' | 'openrouter' | 'xai'
+- All configs updated for 4 providers
+- Core package builds successfully ✅
+
+### ✅ DONE (Phase 2 - Web Interface)
+- Next.js 15.5.9 project with TypeScript (packages/web/)
+- Homepage with search bar and Flow A/B toggle
+- Query results page with real-time updates
+- API routes (POST /api/query, GET /api/stream/[id])
+- SSE (Server-Sent Events) streaming for live updates
+- Components (SearchBar, FlowToggle, VerificationWindow)
+- Event streaming wrapper (lib/akhai-executor.ts)
+- Query store with event emitter (lib/query-store.ts)
+- Full @akhai/core integration
+- Real AI consensus execution (Flow A & B)
+- Environment configuration (.env.example)
+- Responsive design with Tailwind CSS
+- Web package builds successfully ✅
+
+## API Keys Required (4)
+```
+ANTHROPIC_API_KEY=sk-ant-...
+DEEPSEEK_API_KEY=sk-...
+XAI_API_KEY=xai-...
+OPENROUTER_API_KEY=sk-or-...
+```
+
+## XAI/Grok API Details
+- Endpoint: https://api.x.ai/v1/chat/completions
+- Model: grok-beta or grok-2-latest
+- Uses OpenAI-compatible API format
+- Auth: Bearer token in Authorization header
+
+## Key Rules
+- OpenRouter is ALWAYS Slot 3 (FIXED, cannot be changed)
+- Redactor (Slot 4) ALWAYS matches Mother Base
+- Sub-Agents ALWAYS match Mother Base
+- Slots 1-2 are configurable but must differ from Mother Base
+
+## Commands
+```bash
+# Build packages
+cd packages/core && pnpm build
+cd packages/mcp-server && pnpm build
+
+# Run web interface
+cd packages/web && pnpm dev
+# Open http://localhost:3000
+```
+
+
+## Phase 3: GTP (Generative Thoughts Process) - IN PROGRESS 🚧
+
+### What is GTP?
+Bio-inspired parallel Flash architecture based on DARPA's Generative Optogenetics.
+Instead of sequential advisor calls (90s), we "flash" to all advisors simultaneously (25-30s).
+
+### Implementation Plan
+**FULL DETAILS:** See `GTP_IMPLEMENTATION_PLAN.md` in project root
+
+### 10 Implementation Phases:
+1. **Types** - Core interfaces in `/packages/core/src/methodologies/types.ts`
+2. **FlashContextBuilder** - Creates context frames for parallel broadcast
+3. **FlashBroadcaster** - Uses `Promise.allSettled()` for TRUE parallelism
+4. **LivingDatabase** - Real-time merge of advisor responses
+5. **QuorumManager** - Consensus detection (don't wait for all, proceed when enough agree)
+6. **GTPExecutor** - Main orchestrator in `/packages/core/src/methodologies/gtp/`
+7. **Selector** - Auto-selects methodology based on query analysis
+8. **Integration** - API routes, SSE events
+9. **UI** - Methodology selector, parallel progress bars
+10. **Testing** - E2E validation
+
+### New Methodologies:
+- `direct` - Simple factual queries (~5s)
+- `cot` - Chain of Thought, sequential (~30s)
+- `aot` - Atom of Thoughts, decompose→solve→contract (~60s)
+- `gtp` - Flash/parallel multi-AI consensus (~25s) ← NEW!
+- `auto` - Smart selection based on query
+
+### Key Files to Create:
+```
+packages/core/src/methodologies/
+├── types.ts
+├── selector.ts
+└── gtp/
+    ├── index.ts
+    ├── FlashContextBuilder.ts
+    ├── FlashBroadcaster.ts
+    ├── LivingDatabase.ts
+    └── QuorumManager.ts
+```
+
+### Critical Implementation Rules:
+1. Use `Promise.allSettled()` for TRUE parallelism (not sequential awaits!)
+2. Each advisor gets unique role (technical/strategic/creative/critical)
+3. Living Database merges responses in real-time
+4. Quorum-based: proceed when 2+ advisors agree, don't wait for all
+5. Backward compatible: existing Flow A/B still works

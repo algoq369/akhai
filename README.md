@@ -10,18 +10,19 @@
 
 ## What is AkhAI?
 
-AkhAI is a powerful research engine that uses **multiple AI models** to reach consensus through **automated verification loops**. It orchestrates different AI providers (Anthropic, OpenAI, DeepSeek, and more) to provide well-reasoned, multi-perspective answers.
+AkhAI is a powerful research engine that uses **multiple AI models** to reach consensus through **automated verification loops**. It orchestrates 4 AI providers (Anthropic, DeepSeek, xAI Grok, OpenRouter) to provide well-reasoned, multi-perspective answers.
 
 ### Key Features
 
 - 🔬 **Multi-AI Consensus**: 4 advisors + Mother Base with automated verification
 - 🔄 **Verification Loops**: Max 3 rounds (2 min each) at all levels
-- 🤖 **10 AI Providers**: Anthropic, OpenAI, DeepSeek, Qwen, Google, Mistral, OpenRouter, Ollama, Groq, xAI
+- 🤖 **4 AI Providers**: Anthropic (Claude), DeepSeek, xAI (Grok), OpenRouter
 - 🎯 **Two Execution Flows**:
   - **Flow A**: Mother Base Decision (strategic decisions)
   - **Flow B**: Sub-Agent Execution (task execution)
 - 🔌 **MCP Integration**: Works with Claude Code CLI
 - 💻 **TypeScript**: Fully typed, modern codebase
+- 💰 **Cost Tracking**: Automatic token usage and cost calculation
 
 ---
 
@@ -38,22 +39,17 @@ pnpm install
 Create a `.env` file:
 
 ```bash
-# Required for Mother Base (default: anthropic)
+# Mother Base: Anthropic Claude Sonnet 4
 ANTHROPIC_API_KEY=sk-ant-...
 
-# Required for Advisor Layer (default: deepseek, qwen)
+# Advisor Layer: DeepSeek (Slots 1 & 2)
 DEEPSEEK_API_KEY=sk-...
-QWEN_API_KEY=...
 
-# Required for Slot 3 (fixed: openrouter)
-OPENROUTER_API_KEY=sk-or-...
-
-# Optional: Additional providers
-OPENAI_API_KEY=sk-...
-GOOGLE_API_KEY=...
-MISTRAL_API_KEY=...
-GROQ_API_KEY=gsk_...
+# Advisor Layer: xAI Grok (Available for Slots 1 & 2)
 XAI_API_KEY=xai-...
+
+# Advisor Layer: OpenRouter (Slot 3 - FIXED)
+OPENROUTER_API_KEY=sk-or-...
 ```
 
 ### 3. Build
@@ -104,7 +100,7 @@ import { createAkhAI } from '@akhai/core';
 const akhai = createAkhAI('anthropic');
 akhai.setApiKeys({ /* ... */ });
 akhai.setupMotherBase();
-akhai.setupAdvisorLayer('deepseek', 'qwen');
+akhai.setupAdvisorLayer('deepseek', 'xai');
 
 const result = await akhai.executeMotherBaseFlow(
   'Should we use microservices or monolith architecture?'
@@ -178,12 +174,12 @@ const akhai = createAkhAI('anthropic');
 akhai.setApiKeys({
   anthropic: process.env.ANTHROPIC_API_KEY,
   deepseek: process.env.DEEPSEEK_API_KEY,
-  qwen: process.env.QWEN_API_KEY,
+  xai: process.env.XAI_API_KEY,
   openrouter: process.env.OPENROUTER_API_KEY,
 });
 
 akhai.setupMotherBase('claude-sonnet-4-20250514');
-akhai.setupAdvisorLayer('deepseek', 'qwen');
+akhai.setupAdvisorLayer('deepseek', 'xai');
 
 // Execute Flow A
 const result = await akhai.executeMotherBaseFlow(
@@ -246,18 +242,12 @@ Use akhai.query with these parameters:
 
 ## Supported Model Families
 
-| Family | Default Model | API Key Required | Notes |
-|--------|---------------|------------------|-------|
-| **anthropic** | claude-sonnet-4-20250514 | ✅ Yes | Recommended for Mother Base |
-| **openai** | gpt-4o | ✅ Yes | GPT-4o, GPT-4o-mini |
-| **deepseek** | deepseek-chat | ✅ Yes | Cost-effective, reasoning |
-| **qwen** | qwen-plus | ✅ Yes | Alibaba's model |
-| **google** | gemini-1.5-pro | ✅ Yes | Gemini Pro, Flash |
-| **mistral** | mistral-large-latest | ✅ Yes | European alternative |
-| **openrouter** | anthropic/claude-3.5-sonnet | ✅ Yes | **Slot 3 (fixed)** |
-| **ollama** | llama3.1 | ❌ No | Local models |
-| **groq** | llama-3.1-70b-versatile | ✅ Yes | Fast inference |
-| **xai** | grok-beta | ✅ Yes | Grok from xAI |
+| Family | Default Model | API Key Required | Pricing (per 1M tokens) | Notes |
+|--------|---------------|------------------|------------------------|-------|
+| **anthropic** | claude-sonnet-4-20250514 | ✅ Yes | $3 / $15 | Mother Base, Slot 4 (Redactor), Sub-Agents |
+| **deepseek** | deepseek-chat | ✅ Yes | $0.14 / $0.28 | Cost-effective, Slots 1-2 |
+| **xai** | grok-beta | ✅ Yes | $5 / $15 | Grok from xAI, Slots 1-2 |
+| **openrouter** | anthropic/claude-3.5-sonnet | ✅ Yes | Variable | **Slot 3 (FIXED)** |
 
 ---
 
@@ -295,7 +285,7 @@ akhai.printSummary(): void;
   agentName?: string;      // Required for Flow B
   motherBase?: string;     // Default: 'anthropic'
   advisorSlot1?: string;   // Default: 'deepseek'
-  advisorSlot2?: string;   // Default: 'qwen'
+  advisorSlot2?: string;   // Default: 'xai'
 }
 ```
 
@@ -320,28 +310,28 @@ akhai.printSummary(): void;
 
 - **Mother Base:** anthropic (claude-sonnet-4-20250514)
 - **Advisor Slot 1:** deepseek
-- **Advisor Slot 2:** qwen
-- **Advisor Slot 3:** openrouter (fixed)
+- **Advisor Slot 2:** xai
+- **Advisor Slot 3:** openrouter (FIXED - cannot be changed)
 - **Advisor Slot 4:** anthropic (redactor, same as Mother Base)
 - **Max Consensus Rounds:** 3 (2 min each)
 - **Max Flow Exchanges:** 3
 
 ### Customization
 
-You can customize the configuration per query:
+You can customize Slots 1-2 per query:
 
 ```typescript
-akhai.setupMotherBase('gpt-4o');  // Use OpenAI as Mother Base
-akhai.setupAdvisorLayer('mistral', 'google');  // Use Mistral and Google
+akhai.setupMotherBase('claude-sonnet-4-20250514');
+akhai.setupAdvisorLayer('deepseek', 'deepseek');  // Both slots use DeepSeek
 ```
 
 Or via MCP tools:
 
 ```
 Use akhai.query with:
-- motherBase: "openai"
-- advisorSlot1: "mistral"
-- advisorSlot2: "google"
+- motherBase: "anthropic"
+- advisorSlot1: "deepseek"
+- advisorSlot2: "xai"
 ```
 
 ---
@@ -409,11 +399,12 @@ akhai/
 - Multi-AI consensus
 - Flow A & B implementation
 
-### Phase 1: Core Engine (In Progress)
-- Real API implementations (replacing mocks)
-- Token usage tracking
-- Cost optimization
-- Performance monitoring
+### Phase 1: Core Engine ✅ **COMPLETE**
+- Real API implementations (4 providers: Anthropic, DeepSeek, xAI, OpenRouter)
+- Token usage tracking & cost calculation
+- Retry logic with exponential backoff
+- Integration tests with Jest
+- Provider-specific error handling
 
 ### Phase 2: Web Interface
 - Search engine UI
@@ -464,11 +455,10 @@ MIT License - see [LICENSE](LICENSE) file for details
 Built with ❤️ by [algoq369](https://github.com/algoq369)
 
 **Powered by:**
-- [Anthropic Claude](https://www.anthropic.com/)
-- [OpenAI GPT](https://openai.com/)
-- [DeepSeek](https://www.deepseek.com/)
-- [OpenRouter](https://openrouter.ai/)
-- And 6 more AI providers
+- [Anthropic Claude](https://www.anthropic.com/) - Mother Base, Redactor, Sub-Agents
+- [DeepSeek](https://www.deepseek.com/) - Cost-effective reasoning
+- [xAI Grok](https://x.ai/) - Strategic analysis
+- [OpenRouter](https://openrouter.ai/) - Diversity provider (Slot 3)
 
 ---
 

@@ -5,7 +5,7 @@ export abstract class BaseProvider {
   protected model: string;
   protected family: ModelFamily;
   protected maxRetries: number = 3;
-  protected timeout: number = 30000; // 30 seconds
+  protected timeout: number = 90000; // 90 seconds - increased for complex queries with long system prompts
 
   constructor(family: ModelFamily, apiKey: string, model?: string) {
     this.family = family;

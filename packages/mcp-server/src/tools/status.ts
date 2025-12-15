@@ -5,6 +5,7 @@
  */
 
 import { ALL_MODEL_FAMILIES, FIXED_BRAINSTORMER_SLOT_3 } from '@akhai/core';
+import { getCurrentInstance } from '../shared/instance.js';
 
 /**
  * Arguments for akhai.status tool (none required)
@@ -21,17 +22,11 @@ export interface StatusArgs {
  */
 export async function handleStatus(args: StatusArgs): Promise<{ content: Array<{ type: string; text: string }> }> {
   try {
-    // Check which API keys are configured
+    // Check which API keys are configured (4 providers)
     const apiKeyStatus = {
       anthropic: !!process.env.ANTHROPIC_API_KEY,
-      openai: !!process.env.OPENAI_API_KEY,
       deepseek: !!process.env.DEEPSEEK_API_KEY,
-      qwen: !!process.env.QWEN_API_KEY,
-      google: !!process.env.GOOGLE_API_KEY,
-      mistral: !!process.env.MISTRAL_API_KEY,
       openrouter: !!process.env.OPENROUTER_API_KEY,
-      ollama: true, // Ollama doesn't require API key
-      groq: !!process.env.GROQ_API_KEY,
       xai: !!process.env.XAI_API_KEY,
     };
 
@@ -72,19 +67,52 @@ export async function handleStatus(args: StatusArgs): Promise<{ content: Array<{
     lines.push('| Family | API Key | Status |');
     lines.push('|--------|---------|--------|');
     ALL_MODEL_FAMILIES.forEach((family) => {
-      const hasKey = apiKeyStatus[family];
+      const hasKey = apiKeyStatus[family as keyof typeof apiKeyStatus];
       const status = hasKey ? '✅ Ready' : '❌ Not configured';
-      const keyRequired = family === 'ollama' ? 'No (local)' : 'Yes';
+      const keyRequired = 'Yes';
       lines.push(`| ${family} | ${keyRequired} | ${status} |`);
     });
     lines.push('');
+
+    // Add cost tracking if instance exists
+    const currentInstance = getCurrentInstance();
+    if (currentInstance) {
+      const costReport = currentInstance.getCostReport();
+
+      lines.push('## 💰 Cost Tracking');
+      lines.push('');
+
+      if (costReport.totalTokens.total > 0) {
+        lines.push('### Session Summary');
+        lines.push(`- **Total Cost:** $${costReport.totalCost.toFixed(4)}`);
+        lines.push(`- **Total Tokens:** ${costReport.totalTokens.total.toLocaleString()} (${costReport.totalTokens.input.toLocaleString()} in + ${costReport.totalTokens.output.toLocaleString()} out)`);
+        lines.push('');
+
+        if (costReport.providerUsage.length > 0) {
+          lines.push('### By Provider');
+          lines.push('');
+          lines.push('| Provider | Requests | Tokens | Cost |');
+          lines.push('|----------|----------|--------|------|');
+          costReport.providerUsage.forEach((usage) => {
+            const totalTokens = usage.totalInputTokens + usage.totalOutputTokens;
+            lines.push(
+              `| ${usage.family} | ${usage.requestCount} | ${totalTokens.toLocaleString()} | $${usage.totalCost.toFixed(4)} |`
+            );
+          });
+          lines.push('');
+        }
+      } else {
+        lines.push('_No API calls made yet in this session._');
+        lines.push('');
+      }
+    }
 
     lines.push('## ⚙️ Configuration');
     lines.push('');
     lines.push('### Default Settings');
     lines.push('- **Mother Base:** anthropic');
     lines.push('- **Advisor Slot 1:** deepseek');
-    lines.push('- **Advisor Slot 2:** qwen');
+    lines.push('- **Advisor Slot 2:** deepseek');
     lines.push(`- **Advisor Slot 3:** ${FIXED_BRAINSTORMER_SLOT_3} (fixed)`);
     lines.push('- **Max Consensus Rounds:** 3 (2 min each)');
     lines.push('- **Max Flow Exchanges:** 3');
@@ -112,13 +140,8 @@ export async function handleStatus(args: StatusArgs): Promise<{ content: Array<{
       lines.push('');
       lines.push('```bash');
       if (!apiKeyStatus.anthropic) lines.push('ANTHROPIC_API_KEY=sk-ant-...');
-      if (!apiKeyStatus.openai) lines.push('OPENAI_API_KEY=sk-...');
       if (!apiKeyStatus.deepseek) lines.push('DEEPSEEK_API_KEY=sk-...');
-      if (!apiKeyStatus.qwen) lines.push('QWEN_API_KEY=...');
-      if (!apiKeyStatus.google) lines.push('GOOGLE_API_KEY=...');
-      if (!apiKeyStatus.mistral) lines.push('MISTRAL_API_KEY=...');
       if (!apiKeyStatus.openrouter) lines.push('OPENROUTER_API_KEY=sk-or-...');
-      if (!apiKeyStatus.groq) lines.push('GROQ_API_KEY=gsk_...');
       if (!apiKeyStatus.xai) lines.push('XAI_API_KEY=xai-...');
       lines.push('```');
       lines.push('');

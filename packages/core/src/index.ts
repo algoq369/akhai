@@ -77,8 +77,44 @@ export {
 
 export {
   ModelProviderFactory,
+  createProviderFromFamily,
   type IModelProvider,
 } from './models/ModelProviderFactory.js';
+
+// ============================================================================
+// GTP (GENERATIVE THOUGHTS PROCESS)
+// ============================================================================
+
+export {
+  GTPExecutor,
+  FlashContextBuilder,
+  FlashBroadcaster,
+  LivingDatabase,
+  QuorumManager,
+} from './methodologies/gtp/index.js';
+
+export {
+  MethodologySelector,
+  selectMethodology,
+  analyzeQuery,
+} from './methodologies/selector.js';
+
+export type {
+  MethodologyType,
+  QueryType,
+  QueryAnalysis,
+  MethodologySelection,
+  GTPResult,
+  GTPCallbacks,
+  FlashContextFrame,
+  AdvisorResponse,
+  GTPMetrics,
+  LivingDatabaseState,
+  QuorumResult,
+  QuorumConfig,
+  MergedInsight,
+  ConsensusState,
+} from './methodologies/types.js';
 
 // ============================================================================
 // MAIN SYSTEM

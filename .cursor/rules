@@ -1,0 +1,78 @@
+# ReactBits Component Registry for AkhAI
+
+## Registry Configuration
+When asked to add ReactBits components, fetch from: https://reactbits.dev/r/{component-name}.json
+
+## Currently Installed Components (Custom Implementations)
+Located in: `/packages/web/components/ui/`
+
+### ✅ Installed Components:
+1. **MagicBento.tsx** (247 lines)
+   - Bento grid layout with framer-motion animations
+   - Grey-only gradients for minimal design
+   - Staggered fade-in effects
+   - Size variants: small, medium, large
+
+2. **FlowingMenu.tsx** (104 lines)
+   - Animated navigation menu with moving background pill
+   - Spring animations (stiffness: 500, damping: 30)
+   - Active state: white background, black text
+   - Hover state: grey-800 background
+
+3. **GalaxyBackground.tsx** (96 lines)
+   - Canvas-based star field with 150 twinkling stars
+   - **GREYSCALE ONLY** - white to grey radial gradients
+   - Sin wave animation for twinkle effect
+   - Black background (#000000)
+
+4. **DecryptedText.tsx** (88 lines)
+   - Character-by-character reveal animation
+   - Random character cycling before final text
+   - Configurable speed (default 50ms)
+   - Includes DecryptedTitle wrapper component
+
+## Available ReactBits Components (Not Yet Installed)
+- @react-bits/scramble-text - Text scramble effect
+- @react-bits/blob-cursor - Blob cursor effect
+- @react-bits/particles - Particle background
+- @react-bits/spotlight - Spotlight effect
+- @react-bits/aurora - Aurora background
+- @react-bits/meteors - Meteor animation
+- @react-bits/ripple - Ripple effect
+- @react-bits/grid-pattern - Grid background pattern
+
+## How to Fetch New Components
+```bash
+curl https://reactbits.dev/r/{component-name}.json
+```
+
+## Installation Path
+All UI components should be installed to:
+```
+/Users/sheirraza/akhai/packages/web/components/ui/
+```
+
+## Design System (Grey-Only)
+All components MUST follow the grey-only minimal design system:
+
+**Color Palette:**
+- Background: #000000 (black)
+- Surface: #111111, #1a1a1a
+- Borders: #222222, #333333
+- Text Primary: #ffffff (white)
+- Text Secondary: #a3a3a3 (gray-400)
+- Text Tertiary: #737373 (gray-500)
+- Text Muted: #525252 (gray-600)
+
+**Design Patterns:**
+- Primary buttons: white bg, black text (inverted)
+- Secondary buttons: dark grey bg, light grey text
+- NO COLORS - strictly monochrome (no blue, purple, cyan, green, red, yellow)
+- Glassmorphism: backdrop-blur with transparency
+- Typography hierarchy with size, weight, tracking variations
+
+## Notes
+- These are custom implementations inspired by ReactBits concepts
+- ReactBits website doesn't provide direct source code download
+- All components have been adapted to grey-only minimal design
+- Components use framer-motion for animations

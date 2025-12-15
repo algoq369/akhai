@@ -1,24 +1,18 @@
 import { ModelFamily, AdvisorSlotInfo, ResolvedAdvisorLayer } from './types.js';
 
 /**
- * Fixed brainstormer slot 3 always uses OpenRouter
+ * Fixed brainstormer slot 3 always uses Mistral
  * This ensures diversity in the advisor layer
  */
-export const FIXED_BRAINSTORMER_SLOT_3: ModelFamily = 'openrouter';
+export const FIXED_BRAINSTORMER_SLOT_3: ModelFamily = 'mistral';
 
 /**
- * All 10 supported model families
+ * All 4 supported model families
  */
 export const ALL_MODEL_FAMILIES: ModelFamily[] = [
   'anthropic',
-  'openai',
   'deepseek',
-  'qwen',
-  'google',
   'mistral',
-  'openrouter',
-  'ollama',
-  'groq',
   'xai'
 ];
 
@@ -28,8 +22,8 @@ export const ALL_MODEL_FAMILIES: ModelFamily[] = [
  * Manages the alignment between Mother Base and Advisor Layer.
  *
  * Rules:
- * 1. Mother Base can be any of the 10 families
- * 2. Advisor Layer Slot 3 is ALWAYS OpenRouter (fixed)
+ * 1. Mother Base can be any of the 4 families (anthropic, deepseek, mistral, xai)
+ * 2. Advisor Layer Slot 3 is ALWAYS Mistral (fixed)
  * 3. Advisor Layer Slots 1-2 must be DIFFERENT from Mother Base
  * 4. Advisor Layer Slot 4 (Redactor) uses SAME family as Mother Base
  * 5. Sub-Agents use SAME family as Mother Base
@@ -38,8 +32,8 @@ export const ALL_MODEL_FAMILIES: ModelFamily[] = [
  * - Mother Base: Anthropic
  * - Advisor Layer:
  *   - Slot 1: DeepSeek (brainstormer, different from Mother Base)
- *   - Slot 2: Qwen (brainstormer, different from Mother Base)
- *   - Slot 3: OpenRouter (brainstormer, FIXED)
+ *   - Slot 2: xAI Grok (brainstormer, different from Mother Base)
+ *   - Slot 3: Mistral (brainstormer, FIXED)
  *   - Slot 4: Anthropic (redactor, SAME as Mother Base)
  * - Sub-Agents: Anthropic (SAME as Mother Base)
  */
@@ -62,7 +56,7 @@ export class ModelAlignmentManager {
 
   /**
    * Get available model families for brainstormer slots 1-2
-   * Excludes Mother Base family and OpenRouter (reserved for slot 3)
+   * Excludes Mother Base family and Mistral (reserved for slot 3)
    */
   getAvailableBrainstormerFamilies(): ModelFamily[] {
     return ALL_MODEL_FAMILIES.filter(
@@ -85,7 +79,7 @@ export class ModelAlignmentManager {
         return family !== this.primaryFamily;
 
       case 3:
-        // Slot 3: Must be OpenRouter (fixed)
+        // Slot 3: Must be Mistral (fixed)
         return family === FIXED_BRAINSTORMER_SLOT_3;
 
       case 4:
@@ -125,7 +119,7 @@ export class ModelAlignmentManager {
       );
     }
 
-    // Validate that slots 1 and 2 are not OpenRouter (reserved for slot 3)
+    // Validate that slots 1 and 2 are not Mistral (reserved for slot 3)
     if (slot1Family === FIXED_BRAINSTORMER_SLOT_3) {
       throw new Error(`Slot 1 cannot use ${FIXED_BRAINSTORMER_SLOT_3} (reserved for slot 3)`);
     }

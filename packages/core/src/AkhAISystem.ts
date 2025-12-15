@@ -6,9 +6,13 @@ import {
   FlowAResult,
   FlowBResult,
   ResolvedAdvisorLayer,
+  ExecutionCallbacks,
 } from './models/types.js';
 import { ModelAlignmentManager, FIXED_BRAINSTORMER_SLOT_3 } from './models/ModelAlignment.js';
 import { ModelProviderFactory, IModelProvider } from './models/ModelProviderFactory.js';
+import { CostTracker } from './utils/CostTracker.js';
+import { WebSearch } from './tools/WebSearch.js';
+import { getSystemPrompt } from './prompts/system-prompts.js';
 
 /**
  * AkhAISystem
@@ -67,6 +71,8 @@ import { ModelProviderFactory, IModelProvider } from './models/ModelProviderFact
 export class AkhAISystem {
   private alignmentManager: ModelAlignmentManager;
   private providerFactory: ModelProviderFactory;
+  private costTracker: CostTracker;
+  private webSearch: WebSearch | null = null;
 
   // Mother Base
   private motherBaseProvider: IModelProvider | null = null;
@@ -88,6 +94,7 @@ export class AkhAISystem {
   constructor(motherBaseFamily: ModelFamily) {
     this.alignmentManager = new ModelAlignmentManager(motherBaseFamily);
     this.providerFactory = new ModelProviderFactory();
+    this.costTracker = new CostTracker();
 
     console.log(`\n🧠 AkhAI System Initialized`);
     console.log(`   Mother Base Family: ${motherBaseFamily}`);
@@ -119,6 +126,42 @@ export class AkhAISystem {
 
     const keysSet = Object.keys(keys).length;
     console.log(`\n🔑 API Keys Configured: ${keysSet} provider(s)`);
+  }
+
+  /**
+   * Set Brave Search API key for web search capabilities
+   *
+   * @param key - Brave Search API key
+   *
+   * @example
+   * ```typescript
+   * akhai.setWebSearchKey('BSA...');
+   * ```
+   */
+  setWebSearchKey(key: string): void {
+    this.webSearch = new WebSearch(key);
+    console.log(`\n🔍 Web Search Configured (Brave API)`);
+  }
+
+  /**
+   * Search the web for live information
+   *
+   * @param query - Search query
+   * @param count - Number of results (default: 5)
+   * @returns Formatted search results string for AI context
+   */
+  async searchWeb(query: string, count: number = 5): Promise<string> {
+    if (!this.webSearch) {
+      return '[Web search not configured. Set API key with setWebSearchKey()]';
+    }
+
+    try {
+      const results = await this.webSearch.search(query, count);
+      return this.webSearch.formatForContext(results);
+    } catch (error) {
+      console.error('Web search error:', error);
+      return `[Web search failed: ${error instanceof Error ? error.message : 'Unknown error'}]`;
+    }
   }
 
   /**
@@ -275,7 +318,48 @@ export class AkhAISystem {
       throw new Error('Mother Base not initialized. Call setupMotherBase() first.');
     }
 
-    return this.motherBaseProvider.complete(request);
+    const response = await this.motherBaseProvider.complete(request);
+
+    // Track usage
+    if (response.usage) {
+      this.costTracker.addUsage(
+        response.family,
+        response.model,
+        response.usage.inputTokens,
+        response.usage.outputTokens
+      );
+    }
+
+    return response;
+  }
+
+  /**
+   * Get cost tracking report
+   *
+   * Returns detailed information about API usage and costs.
+   *
+   * @returns Cost tracking data including total cost, token usage, and per-provider breakdown
+   */
+  getCostReport() {
+    const providerUsage = this.costTracker.getUsageByProvider();
+    const totalTokens = this.costTracker.getTotalTokens();
+    const totalCost = this.costTracker.getTotalCost();
+
+    return {
+      totalCost,
+      totalTokens,
+      providerUsage: Array.from(providerUsage.values()),
+      formattedReport: this.costTracker.getReport(),
+    };
+  }
+
+  /**
+   * Reset cost tracking
+   *
+   * Clears all usage history and resets cost counters to zero.
+   */
+  resetCostTracking(): void {
+    this.costTracker.reset();
   }
 
   /**
@@ -338,10 +422,24 @@ export class AkhAISystem {
    */
   async executeInternalConsensus(
     query: string,
-    context?: { fromMotherBase?: string; fromSubAgent?: { agent: string; feedback: string } }
+    context?: { fromMotherBase?: string; fromSubAgent?: { agent: string; feedback: string } },
+    callbacks?: ExecutionCallbacks
   ): Promise<ConsensusResult> {
     if (this.advisorProviders.size === 0 || !this.redactorProvider) {
       throw new Error('Advisor Layer not initialized. Call setupAdvisorLayer() first.');
+    }
+
+    // Search the web for latest information (only on first round)
+    let webContext = '';
+    if (this.webSearch) {
+      console.log('\n   🔍 Searching web for latest information...');
+      try {
+        const searchResults = await this.searchWeb(query, 5);
+        webContext = `\n\n=== Latest Web Research (${new Date().toISOString().split('T')[0]}) ===\n${searchResults}\n`;
+        console.log(`   ✅ Web search complete`);
+      } catch (error) {
+        console.log(`   ⚠️  Web search failed: ${error}`);
+      }
     }
 
     const maxRounds = 3;
@@ -356,9 +454,12 @@ export class AkhAISystem {
 
       // Get responses from all 3 brainstormer slots
       for (const [slot, provider] of this.advisorProviders) {
+        // Notify advisor start
+        callbacks?.onAdvisorStart?.(slot, provider.family, round);
+
         const prompt = this.buildRoundPrompt(
           round,
-          query,
+          query + webContext,
           rounds.length > 0 ? rounds[rounds.length - 1].responses.map(r => `[Slot ${r.slot}]: ${r.response}`).join('\n') : '',
           context?.fromMotherBase
             ? `Mother Base feedback: ${context.fromMotherBase}`
@@ -367,15 +468,60 @@ export class AkhAISystem {
             : ''
         );
 
-        const response = await provider.complete({ messages: [{ role: 'user', content: prompt }] });
-        responses.push({ slot, family: response.family, response: response.content });
+        // Get appropriate system prompt based on slot
+        const systemPrompt = slot === 1 ? getSystemPrompt('slot1') : slot === 2 ? getSystemPrompt('slot2') : getSystemPrompt('slot3');
 
-        console.log(`      Slot ${slot} (${response.family}): ${response.content.substring(0, 60)}...`);
+        // Graceful fallback: If advisor fails, use fallback response instead of failing entire query
+        let response;
+        try {
+          response = await provider.complete({
+            messages: [{ role: 'user', content: prompt }],
+            systemPrompt
+          });
+
+          // Track usage
+          if (response.usage) {
+            this.costTracker.addUsage(
+              response.family,
+              response.model,
+              response.usage.inputTokens,
+              response.usage.outputTokens
+            );
+          }
+
+          responses.push({ slot, family: response.family, response: response.content });
+
+          // Notify advisor complete
+          callbacks?.onAdvisorComplete?.(slot, response.family, round, response.content);
+
+          console.log(`      Slot ${slot} (${response.family}): ${response.content.substring(0, 60)}...`);
+        } catch (error: any) {
+          console.error(`      ⚠️  Slot ${slot} (${provider.family}) failed:`, error.message);
+          console.log(`      Using fallback response for slot ${slot}`);
+
+          // Use fallback response - still include in consensus
+          const fallbackContent = `[${provider.family} temporarily unavailable - skipped this round due to: ${error.message}]`;
+          responses.push({
+            slot,
+            family: provider.family,
+            response: fallbackContent
+          });
+
+          // Notify with fallback
+          callbacks?.onAdvisorComplete?.(slot, provider.family, round, fallbackContent);
+        }
       }
 
       // Check if consensus reached
       const consensusReached = await this.checkConsensus(responses);
+
+      // Notify consensus check
+      callbacks?.onConsensusCheck?.(round, consensusReached);
+
       rounds.push({ round, responses, consensusReached });
+
+      // Notify round complete
+      callbacks?.onRoundComplete?.(round, maxRounds);
 
       if (consensusReached) {
         consensusReachedAt = round;
@@ -420,8 +566,18 @@ export class AkhAISystem {
 
     const check = await this.redactorProvider.complete({
       messages: [{ role: 'user', content: input }],
-      systemPrompt: 'Analyze the responses. Reply ONLY "CONSENSUS" if they agree, or "NO_CONSENSUS" if they disagree.',
+      systemPrompt: 'Analyze the responses. Reply ONLY "CONSENSUS" if they agree on the core recommendation, or "NO_CONSENSUS" if they fundamentally disagree.',
     });
+
+    // Track usage
+    if (check.usage) {
+      this.costTracker.addUsage(
+        check.family,
+        check.model,
+        check.usage.inputTokens,
+        check.usage.outputTokens
+      );
+    }
 
     return check.content.trim().toUpperCase() === 'CONSENSUS';
   }
@@ -477,22 +633,37 @@ export class AkhAISystem {
    * ```
    */
   async redact(
-    inputs: Array<{ slot: number; family: string; response: string }>
+    inputs: Array<{ slot: number; family: string; response: string }>,
+    callbacks?: ExecutionCallbacks
   ): Promise<{ family: string; synthesizedOutput: string }> {
     if (!this.redactorProvider) {
       throw new Error('Redactor not initialized. Call setupAdvisorLayer() first.');
     }
 
+    // Notify redactor start
+    callbacks?.onRedactorStart?.();
+
     const content = inputs.map(i => `[Slot ${i.slot} - ${i.family}]:\n${i.response}`).join('\n\n---\n\n');
 
     const result = await this.redactorProvider.complete({
       messages: [{ role: 'user', content }],
-      systemPrompt:
-        'You are a redactor. Synthesize the advisor outputs into one coherent, balanced recommendation. ' +
-        'Highlight areas of agreement and note any dissenting views. Be concise and actionable.',
+      systemPrompt: getSystemPrompt('redactor'),
     });
 
+    // Track usage
+    if (result.usage) {
+      this.costTracker.addUsage(
+        result.family,
+        result.model,
+        result.usage.inputTokens,
+        result.usage.outputTokens
+      );
+    }
+
     console.log(`\n   📋 Redactor (${result.family}): ${result.content.substring(0, 80)}...`);
+
+    // Notify redactor complete
+    callbacks?.onRedactorComplete?.(result.content, result.family);
 
     return { family: result.family, synthesizedOutput: result.content };
   }
@@ -525,7 +696,7 @@ export class AkhAISystem {
    * console.log(`Approved at exchange: ${result.approvedAt}`);
    * ```
    */
-  async executeMotherBaseFlow(query: string): Promise<FlowAResult> {
+  async executeMotherBaseFlow(query: string, callbacks?: ExecutionCallbacks): Promise<FlowAResult> {
     if (!this.motherBaseProvider) {
       throw new Error('Mother Base not initialized. Call setupMotherBase() first.');
     }
@@ -550,7 +721,7 @@ export class AkhAISystem {
       console.log(`   ${'═'.repeat(60)}`);
 
       // Step 1: Advisor Layer consensus
-      const consensus = await this.executeInternalConsensus(query, { fromMotherBase: feedback });
+      const consensus = await this.executeInternalConsensus(query, { fromMotherBase: feedback }, callbacks);
       lastConsensus = consensus;
 
       // Step 2: Redactor synthesizes
@@ -559,7 +730,8 @@ export class AkhAISystem {
           slot: p.slot,
           family: p.family,
           response: p.finalPosition,
-        }))
+        })),
+        callbacks
       );
       lastRedactorOutput = redacted.synthesizedOutput;
 
@@ -575,6 +747,7 @@ export class AkhAISystem {
               `Review this recommendation. Reply "APPROVE" if acceptable, or "REVISION: [feedback]" if changes needed.`,
           },
         ],
+        systemPrompt: getSystemPrompt('mother-base'),
       });
 
       console.log(`   🏢 Mother Base: ${mbResponse.content.substring(0, 80)}...`);
@@ -585,6 +758,9 @@ export class AkhAISystem {
         motherBaseResponse: mbResponse.content,
         approved,
       });
+
+      // Notify Mother Base review
+      callbacks?.onMotherBaseReview?.(exchange, approved, mbResponse.content);
 
       if (approved) {
         approvedAt = exchange;
@@ -646,7 +822,7 @@ export class AkhAISystem {
    * console.log(`Mother Base approved: ${result.motherBaseApproval.approvedAt !== null}`);
    * ```
    */
-  async executeSubAgentFlow(query: string, agentName: string): Promise<FlowBResult> {
+  async executeSubAgentFlow(query: string, agentName: string, callbacks?: ExecutionCallbacks): Promise<FlowBResult> {
     if (!this.motherBaseProvider) {
       throw new Error('Mother Base not initialized. Call setupMotherBase() first.');
     }
@@ -684,7 +860,7 @@ export class AkhAISystem {
       console.log(`\n   ─── Exchange ${exchange}/${maxExchanges} ───`);
 
       // Step 1: Advisor Layer consensus
-      const consensus = await this.executeInternalConsensus(query, { fromSubAgent: subAgentFeedback });
+      const consensus = await this.executeInternalConsensus(query, { fromSubAgent: subAgentFeedback }, callbacks);
       lastConsensus = consensus;
 
       // Step 2: Redactor synthesizes
@@ -693,12 +869,17 @@ export class AkhAISystem {
           slot: p.slot,
           family: p.family,
           response: p.finalPosition,
-        }))
+        })),
+        callbacks
       );
       lastRedactorOutput = redacted.synthesizedOutput;
 
       // Step 3: Sub-Agent executes
       console.log(`\n   📤 Redactor → ${agentName}`);
+
+      // Notify sub-agent start
+      callbacks?.onSubAgentStart?.(agentName, exchange);
+
       const agentResponse = await agentProvider.complete({
         messages: [
           {
@@ -706,7 +887,18 @@ export class AkhAISystem {
             content: `Guidance:\n${redacted.synthesizedOutput}\n\nExecute task: ${query}\n\nReply with your work or "NEED: [clarification]" if you need more guidance.`,
           },
         ],
+        systemPrompt: getSystemPrompt('mother-base'), // Sub-agents use Mother Base prompt
       });
+
+      // Track usage
+      if (agentResponse.usage) {
+        this.costTracker.addUsage(
+          agentResponse.family,
+          agentResponse.model,
+          agentResponse.usage.inputTokens,
+          agentResponse.usage.outputTokens
+        );
+      }
 
       console.log(`   🤖 ${agentName}: ${agentResponse.content.substring(0, 80)}...`);
 
@@ -715,6 +907,10 @@ export class AkhAISystem {
       const complete =
         !agentResponse.content.toUpperCase().includes('NEED') &&
         !agentResponse.content.toUpperCase().includes('CLARIF');
+
+      // Notify sub-agent complete
+      callbacks?.onSubAgentComplete?.(agentName, exchange, agentResponse.content, complete);
+
       subAgentExchanges.push({
         guidance: redacted.synthesizedOutput,
         agentResponse: agentResponse.content,
@@ -759,11 +955,16 @@ export class AkhAISystem {
               `Review this work. Reply "APPROVE" if acceptable, or "REVISION: [feedback]" if changes needed.`,
           },
         ],
+        systemPrompt: getSystemPrompt('mother-base'),
       });
 
       console.log(`   🏢 Mother Base: ${mbResponse.content.substring(0, 80)}...`);
 
       const approved = !mbResponse.content.toUpperCase().includes('REVISION');
+
+      // Notify Mother Base review
+      callbacks?.onMotherBaseReview?.(exchange, approved, mbResponse.content);
+
       approvalExchanges.push({
         subAgentWork: currentWork,
         motherBaseResponse: mbResponse.content,
@@ -787,7 +988,19 @@ export class AkhAISystem {
               content: `Revise based on: ${mbResponse.content}\n\nOriginal: ${currentWork}`,
             },
           ],
+          systemPrompt: getSystemPrompt('mother-base'), // Sub-agents use Mother Base prompt
         });
+
+        // Track usage
+        if (revision.usage) {
+          this.costTracker.addUsage(
+            revision.family,
+            revision.model,
+            revision.usage.inputTokens,
+            revision.usage.outputTokens
+          );
+        }
+
         currentWork = revision.content;
         console.log(`   🤖 ${agentName} (revised): ${currentWork.substring(0, 80)}...`);
       }

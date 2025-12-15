@@ -1,5 +1,5 @@
 // Model Provider Types
-export type ModelFamily = 'anthropic' | 'openai' | 'deepseek' | 'qwen' | 'google' | 'mistral' | 'openrouter' | 'ollama' | 'groq' | 'xai';
+export type ModelFamily = 'anthropic' | 'deepseek' | 'mistral' | 'xai';
 
 export interface ModelConfig {
   family: ModelFamily;
@@ -105,4 +105,17 @@ export interface FlowBResult {
     approvedAt: number | null;
   };
   finalOutput: string;
+}
+
+// Execution Callback Types
+export interface ExecutionCallbacks {
+  onAdvisorStart?: (slot: number, family: string, round: number) => void;
+  onAdvisorComplete?: (slot: number, family: string, round: number, output: string) => void;
+  onConsensusCheck?: (round: number, reached: boolean) => void;
+  onRoundComplete?: (round: number, totalRounds: number) => void;
+  onRedactorStart?: () => void;
+  onRedactorComplete?: (synthesis: string, family: string) => void;
+  onMotherBaseReview?: (exchange: number, approved: boolean, response: string) => void;
+  onSubAgentStart?: (agentName: string, exchange: number) => void;
+  onSubAgentComplete?: (agentName: string, exchange: number, output: string, complete: boolean) => void;
 }

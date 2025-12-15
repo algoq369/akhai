@@ -428,3 +428,65 @@ git push origin v0.2.0
 **Duration:** 6 weeks
 **Status:** Ready to Start
 
+
+
+---
+
+## 🎯 Project Integration (OneAI Vision)
+
+### Recommended Project-Specific Sub-Agents
+
+| Agent Name | Project | Purpose | MCP Integration |
+|------------|---------|---------|-----------------|
+| `TradingAgent` | AlgoQbot | Trade analysis, strategy selection, P&L review | SQLite access to trading_bot.db |
+| `BusinessAgent` | BroolyKid | Investor research, business plan updates, financial modeling | File access to broolykid-unified |
+| `WellnessAgent` | Sempai | PoW validation logic, wellness metrics, blockchain writes | Sempai API integration |
+| `CodingAgent` | General | Code generation, debugging, refactoring | All project filesystems |
+| `ResearchAgent` | General | Web research, competitor analysis, market trends | Brave Search + Web Fetch |
+
+### Qwen Access via OpenRouter
+
+Instead of removing Qwen entirely, access it through OpenRouter:
+
+```typescript
+// In OpenRouterProvider, allow model specification
+const qwenViaOpenRouter = await openrouter.complete({
+  model: 'qwen/qwen-2.5-72b-instruct',  // Qwen via OpenRouter
+  prompt: 'Analyze trading patterns...'
+});
+```
+
+This maintains compatibility with AlgoQbot's AI Council while keeping only 3 API keys.
+
+### OneAI Integration Points
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                     AkhAI (Mother Base)                     │
+│                    Claude Sonnet 4                          │
+└────────────────────────────────────────────────────────────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        ▼                  ▼                  ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│  TradingAgent │  │ BusinessAgent│  │ WellnessAgent│
+│   (AlgoQbot)  │  │  (BroolyKid) │  │   (Sempai)   │
+├──────────────┤  ├──────────────┤  ├──────────────┤
+│ - SQLite DB  │  │ - File access│  │ - API calls  │
+│ - Price feeds│  │ - Research   │  │ - Blockchain │
+│ - Strategies │  │ - Investors  │  │ - Validators │
+└──────────────┘  └──────────────┘  └──────────────┘
+```
+
+### Future: OneChat Universal Interface
+
+Phase 2 web interface can serve as the unified "OneChat" entry point:
+- Single search bar for all projects
+- Auto-routing to appropriate sub-agent
+- Cross-project context via Memory MCP
+- Dashboard showing all project statuses
+
+---
+
+**Integration Status:** Planned for Phase 2
+**Dependency:** Phase 1 completion required
