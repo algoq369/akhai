@@ -378,7 +378,7 @@ AKHAI Robot brings the power of multi-AI consensus into the physical world throu
 - Appeals to consciousness-seeking early adopters (high-value market)
 
 ### 4. Championship Execution
-- Haidar's discipline + Andy's engineering + Philippe's strategy + Gregory's capital
+- algoq's discipline + Andy's engineering + Phil's strategy + Greg's capital
 - This team has never existed in robotics before
 - Vibe coding meets systematic execution
 

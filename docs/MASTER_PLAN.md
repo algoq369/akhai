@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-AKHAI is not just an AI research engine—it's the foundation of a $100 billion ecosystem connecting artificial intelligence, robotics, infrastructure, and sovereign communities. Led by Haidar (BJJ World Champion, "vibe coder") and backed by world-class advisors, we're building the future across four integrated layers.
+AKHAI is not just an AI research engine—it's the foundation of a $100 billion ecosystem connecting artificial intelligence, robotics, infrastructure, and sovereign communities. Led by algoq ("vibe coder") and backed by world-class advisors, we're building the future across four integrated layers.
 
 **The Vision:**
 1. **AKHAI Engine** (NOW) - Multi-AI consensus research platform
@@ -50,10 +50,10 @@ Multi-AI consensus research platform combining Anthropic Claude (Mother Base), D
 - White-label deployments
 
 **Team:**
-- Haidar - CEO & Product Visionary (BJJ World Champion)
-- Andy - CTO & Lead Architect (AI Engineering Expert)
-- Philippe Haydarian - Strategic Advisor (Former Deloitte, ENA Graduate)
-- Gregory Sankara - Board Advisor (G&V Compagnie, +20% Valuation Enhancement)
+- algoq - CEO & Product Visionary
+- Andy - CTO & Lead Architect
+- Phil - Strategic Advisor
+- Greg - Board Advisor (+20% Valuation Enhancement)
 
 ---
 
@@ -274,11 +274,11 @@ No competitor combines 4+ frontier AI models in real-time consensus. Proprietary
   - Cities generate data to improve Engine
 
 ### 3. Team & Network (Human Moat)
-- Haidar: World Champion discipline + entrepreneurial vision
+- algoq: Championship discipline + entrepreneurial vision
 - Andy: Elite AI engineering
-- Philippe: ENA graduate (France's top school) + Deloitte pedigree
-- Gregory: G&V Compagnie capital + +20% valuation enhancement
-- Cyril Gane: UFC Champion ambassador (brand credibility)
+- Phil: Elite strategic thinking + consulting pedigree
+- Greg: Capital strategy + +20% valuation enhancement
+- Cyril: Championship brand ambassador
 
 ### 4. First-Mover (Timing Moat)
 - First to combine multi-AI consensus + robotics + sovereign cities
@@ -302,19 +302,19 @@ No competitor combines 4+ frontier AI models in real-time consensus. Proprietary
 
 ### Execution Risks
 - **Scaling:** Rapid growth requires flawless execution
-  - *Mitigation:* Championship discipline from Haidar, systematic project management
+  - *Mitigation:* Championship discipline from algoq, systematic project management
 - **Talent:** Need world-class AI, robotics, and city planning talent
-  - *Mitigation:* G&V capital unlocks elite networks, ENA connections, UFC/BJJ community
+  - *Mitigation:* Capital partners unlock elite networks, strategic connections, community outreach
 
 ---
 
 ## Why This Will Work
 
 ### 1. The Team
-- **Haidar:** World Champion mindset applied to business ("vibe coding" intuition + relentless discipline)
+- **algoq:** Championship mindset applied to business ("vibe coding" intuition + relentless discipline)
 - **Andy:** Technical legitimacy and execution excellence
-- **Philippe:** Elite strategic thinking (ENA = France's MIT/Harvard)
-- **Gregory:** Capital and +20% valuation enhancement expertise
+- **Phil:** Elite strategic thinking and consulting expertise
+- **Greg:** Capital and +20% valuation enhancement expertise
 - This combination has never existed in AI/robotics/cities before
 
 ### 2. The Timing

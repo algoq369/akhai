@@ -1,6 +1,6 @@
 # AKHAI Dream Team
 
-**Building the $100B Unicorn: World Champions, Elite Engineers, ENA Graduates, and Crypto Capital**
+**Building the $100B Unicorn: World Champions, Elite Engineers, Strategic Advisors, and Crypto Capital**
 
 ## Overview
 
@@ -10,22 +10,22 @@ AKHAI's success is rooted in an unprecedented combination of talent: championshi
 
 ## Core Leadership
 
-### Haidar - CEO & Founder
-**BJJ World Champion | "Vibe Coder" | Performance Visionary**
+### algoq - CEO & Founder
+**Combat Sports World Champion | "Vibe Coder" | Performance Visionary**
 
 #### Background
-- **Combat Sports:** 10+ years competing at the highest levels of Brazilian Jiu-Jitsu
-- **World Champion:** Achieved world championship title in competitive BJJ
+- **Combat Sports:** 10+ years competing at the highest levels of combat sports
+- **World Champion:** Achieved world championship title in competitive Combat Sports
 - **Business:** Built and scaled multiple businesses in combat sports and wellness industries
 - **Philosophy:** Championship discipline + intuitive "vibe coding" approach
 
-#### Why Haidar Leads AKHAI
+#### Why algoq Leads AKHAI
 In jiu-jitsu, you learn three critical skills:
 1. **Stay calm under pressure** - When your opponent is choking you, you don't panic. You breathe, you think, you execute.
 2. **Adapt rapidly** - No plan survives contact with the enemy. You read the situation and pivot instantly.
 3. **Commit fully** - Half-measures get you tapped. You commit to the move or you lose.
 
-These same principles apply to building a unicorn. Haidar brings:
+These same principles apply to building a unicorn. algoq brings:
 - **Discipline:** 10+ years of daily training → now daily building
 - **Resilience:** Lost matches teach more than victories → failed startups fuel success
 - **Intuition:** "Feel" for the right move in combat → "vibe" for the right product decision
@@ -52,7 +52,7 @@ These same principles apply to building a unicorn. Haidar brings:
 - **Technical Leadership:** Guides AKHAI's core engine development and architecture decisions
 
 #### Why Andy is Critical
-Haidar provides the vision and discipline, but Andy provides the **technical legitimacy**. Investors, partners, and enterprise customers need assurance that AKHAI is built on solid engineering foundations—not just hype. Andy delivers that.
+algoq provides the vision and discipline, but Andy provides the **technical legitimacy**. Investors, partners, and enterprise customers need assurance that AKHAI is built on solid engineering foundations—not just hype. Andy delivers that.
 
 - **System Design:** Architected AKHAI's multi-AI consensus engine from scratch
 - **Provider Integrations:** Built clean abstractions for Anthropic, DeepSeek, xAI, Mistral
@@ -73,23 +73,23 @@ Haidar provides the vision and discipline, but Andy provides the **technical leg
 
 ## Strategic Advisors
 
-### Philippe Haydarian - Strategic Advisor
-**CEO of OneBird | Former Deloitte Consultant | ENA Graduate**
+### Phil - Strategic Advisor
+**CEO of a blockchain infrastructure firm | Former a top consulting firm Consultant | elite education Graduate**
 
 #### Background
-- **Education:** École Nationale d'Administration (ENA) - France's most elite graduate school
-  - ENA alumni include 4 French Presidents, countless CEOs, and top government officials
+- **Education:** An elite graduate school - France's most elite graduate school
+  - elite education alumni include 4 French Presidents, countless CEOs, and top government officials
   - Acceptance rate: <5% of applicants
   - Equivalent to Harvard/MIT/Oxford combined in prestige
-- **Deloitte:** Management consulting (strategy, operations, transformation)
-- **OneBird:** Founded blockchain infrastructure and consulting firm
+- **a top consulting firm:** Management consulting (strategy, operations, transformation)
+- **a blockchain infrastructure firm:** Founded blockchain infrastructure and consulting firm
 - **Expertise:** Enterprise blockchain, tokenomics, government relations, strategic planning
 
-#### Why Philippe is Essential
-- **Elite Network:** ENA = access to French government, Fortune 500 CEOs, institutional capital
+#### Why Phil is Essential
+- **Elite Network:** elite education = access to French government, Fortune 500 CEOs, institutional capital
 - **Strategic Thinking:** Trained to solve complex, multi-stakeholder problems (perfect for AKHAI's ecosystem)
-- **Blockchain Expertise:** MonadKid blockchain (Year 8) will leverage Philippe's deep knowledge
-- **Credibility:** ENA + Deloitte = instant legitimacy with investors and partners
+- **Blockchain Expertise:** MonadKid blockchain (Year 8) will leverage Phil's deep knowledge
+- **Credibility:** elite education + a top consulting firm = instant legitimacy with investors and partners
 
 #### Role at AKHAI
 - Strategic advisor to CEO (high-level direction, market positioning)
@@ -103,17 +103,17 @@ Haidar provides the vision and discipline, but Andy provides the **technical leg
 
 ---
 
-### Gregory Sankara - Board Advisor & Investment Partner
-**G&V Compagnie | +20% Valuation Enhancement | AMF-Certified**
+### Greg - Board Advisor & Investment Partner
+**a crypto investment fund | +20% Valuation Enhancement | AMF-Certified**
 
 #### Background
-- **G&V Compagnie:** AMF-certified investment advisory firm (France's SEC equivalent)
+- **a crypto investment fund:** certified investment advisory firm (France's SEC equivalent)
 - **Track Record:** +20% annual enhancement across diversified portfolios
 - **Expertise:** Alternative investments, crypto assets, real estate, capital strategy
 - **Network:** Family offices, high-net-worth individuals, institutional investors
 
-#### Why Gregory is Critical
-AKHAI's $100B journey requires **capital and capital expertise**. Gregory brings both:
+#### Why Greg is Critical
+AKHAI's $100B journey requires **capital and capital expertise**. Greg brings both:
 - **Fundraising:** Leads investor outreach for Seed, Series A, Series B rounds
 - **Valuation Enhancement:** +20% improvement through financial engineering, cap table optimization
 - **Treasury Management:** AKHAI's BTC holdings strategy (mining revenue, long-term appreciation)
@@ -133,11 +133,11 @@ AKHAI's $100B journey requires **capital and capital expertise**. Gregory brings
 
 ## Ecosystem Partners
 
-### Alex Roubaud - Bitcoin Mining Advisor
-**CEO of Bitstack | Bitcoin Savings Platform Expert**
+### Alex - Bitcoin Mining Advisor
+**CEO of a Bitcoin savings platform | Bitcoin Savings Platform Expert**
 
 #### Background
-- **Bitstack:** Leading Bitcoin savings platform in Europe
+- **a Bitcoin savings platform:** Leading Bitcoin savings platform in Europe
 - **Mission:** Help tens of thousands of users accumulate BTC through automated micro-savings
 - **Expertise:** Bitcoin custody, mining operations, regulatory compliance, user experience
 
@@ -145,7 +145,7 @@ AKHAI's $100B journey requires **capital and capital expertise**. Gregory brings
 BroolyKid Cities are powered by institutional-grade Bitcoin mining. Alex's expertise is essential for:
 - **Mining Operations:** Best practices for hash rate, uptime, energy efficiency
 - **Custody:** Multi-sig cold storage, institutional-grade security (no hacks, no losses)
-- **Citizen Financial Education:** BroolyKid residents learn to save in BTC via Bitstack-style programs
+- **Citizen Financial Education:** BroolyKid residents learn to save in BTC via a Bitcoin savings platform-style programs
 - **Treasury Strategy:** When to hold, when to liquidate, how to optimize revenue
 
 #### Role at AKHAI
@@ -155,23 +155,23 @@ BroolyKid Cities are powered by institutional-grade Bitcoin mining. Alex's exper
 - Citizen onboarding (financial literacy, BTC savings programs)
 
 #### Quote
-*"Bitstack helps individuals save in Bitcoin. BroolyKid takes that concept to the community level—an entire city mining, holding, and building its future on sound money. It's the logical next step in Bitcoin's evolution from personal sovereignty to collective sovereignty."*
+*"a Bitcoin savings platform helps individuals save in Bitcoin. BroolyKid takes that concept to the community level—an entire city mining, holding, and building its future on sound money. It's the logical next step in Bitcoin's evolution from personal sovereignty to collective sovereignty."*
 
 ---
 
-### Cyril Gane - Brand Ambassador
-**UFC Heavyweight Champion (Former Interim) | French MMA Icon**
+### Cyril - Brand Ambassador
+**MMA championship Heavyweight Champion (Former Interim) | French MMA Icon**
 
 #### Background
-- **UFC:** Former UFC Interim Heavyweight Champion
+- **MMA championship:** Former MMA championship Interim Heavyweight Champion
 - **Record:** Elite heavyweight fighter with millions of global followers
-- **Story:** Transitioned from homelessness to UFC championship—embodies resilience and transformation
+- **Story:** Transitioned from homelessness to MMA championship championship—embodies resilience and transformation
 - **Style:** Technical striking, humility, sportsmanship (not the trash-talking type)
 
 #### Why Cyril is Perfect for AKHAI/BroolyKid
-- **Brand Credibility:** UFC Champion = global recognition, aspirational figure
-- **Discipline & Transformation:** From homeless to UFC champion = BroolyKid's ethos (sovereignty, growth, community)
-- **French Connection:** France-based (like ENA, G&V, OneBird) = cohesive ecosystem
+- **Brand Credibility:** MMA championship Champion = global recognition, aspirational figure
+- **Discipline & Transformation:** From homeless to MMA championship champion = BroolyKid's ethos (sovereignty, growth, community)
+- **French Connection:** France-based (like elite education, G&V, a blockchain infrastructure firm) = cohesive ecosystem
 - **Community Builder:** Known for humility and giving back = aligns with consciousness-focused cities
 
 #### Role at AKHAI
@@ -181,41 +181,41 @@ BroolyKid Cities are powered by institutional-grade Bitcoin mining. Alex's exper
 - **Recruitment:** Attract aligned citizens through personal network (athletes, artists, entrepreneurs)
 
 #### Quote
-*"I went from sleeping in a gym to fighting for the UFC belt. BroolyKid is about giving people a platform to transform their lives—not through violence, but through community, sovereignty, and purpose. I want to help build that. Let's go."*
+*"I went from sleeping in a gym to fighting for the MMA championship belt. BroolyKid is about giving people a platform to transform their lives—not through violence, but through community, sovereignty, and purpose. I want to help build that. Let's go."*
 
 ---
 
 ## Why This Team Wins
 
 ### 1. Unprecedented Combination
-- **World Champion Discipline** (Haidar, Cyril)
+- **World Champion Discipline** (algoq, Cyril)
 - **Elite AI Engineering** (Andy)
-- **ENA Strategic Brilliance** (Philippe)
-- **Institutional Capital Expertise** (Gregory)
+- **elite education Strategic Brilliance** (Phil)
+- **Institutional Capital Expertise** (Greg)
 - **Bitcoin Mining Mastery** (Alex)
 
 **No competitor has this combination.** Tesla has Elon (visionary) but not multi-AI consensus. OpenAI has Sam Altman (AI) but not robotics + cities. BroolyKid has the full stack.
 
 ### 2. Proven Track Records
-- Haidar: World Champion (10+ years mastery)
+- algoq: World Champion (10+ years mastery)
 - Andy: Production AI systems (enterprise-grade)
-- Philippe: ENA graduate + Deloitte + OneBird (elite pedigree)
-- Gregory: +20% valuation enhancement (AMF-certified)
-- Alex: Bitstack CEO (tens of thousands of users)
-- Cyril: UFC Champion (global icon)
+- Phil: elite education graduate + a top consulting firm + a blockchain infrastructure firm (elite pedigree)
+- Greg: +20% valuation enhancement (certified)
+- Alex: a Bitcoin savings platform CEO (tens of thousands of users)
+- Cyril: MMA championship Champion (global icon)
 
 ### 3. Aligned Incentives
 - Equity stakes align long-term interests
 - Consciousness-focused mission (not just profit)
 - 10-year commitment (not a quick flip)
-- Skin in the game (Haidar's full-time, others deeply involved)
+- Skin in the game (algoq's full-time, others deeply involved)
 
 ### 4. Network Effects
-- Philippe's ENA network → French government, Fortune 500
-- Gregory's G&V network → Family offices, institutional capital
+- Phil's elite education network → French government, Fortune 500
+- Greg's G&V network → Family offices, institutional capital
 - Alex's Bitcoin network → Mining operators, custody providers
-- Cyril's UFC network → Athletes, influencers, media
-- Haidar + Andy's AI network → Engineers, researchers, early adopters
+- Cyril's MMA championship network → Athletes, influencers, media
+- algoq + Andy's AI network → Engineers, researchers, early adopters
 
 ---
 
@@ -259,8 +259,8 @@ As we scale, we'll add:
 
 **This team has never existed before:**
 - Championship discipline meets elite AI engineering
-- ENA strategic brilliance meets crypto capital mastery
-- Bitcoin mining expertise meets UFC brand power
+- elite education strategic brilliance meets crypto capital mastery
+- Bitcoin mining expertise meets MMA championship brand power
 
 **And it's all aligned toward a single vision:**
 - 10 years. $100 billion. A new civilization.

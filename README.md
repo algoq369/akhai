@@ -29,14 +29,14 @@ AKHAI combines world-class expertise across technology, finance, strategy, and c
 
 ### 🏆 The Dream Team
 
-**Philippe Haydarian** - Strategic Advisor
-- Former Deloitte Senior Consultant
-- **ENA Graduate** (École Nationale d'Administration - France's most prestigious administrative school)
+**Phil** - Strategic Advisor
+- Former consulting Senior Consultant
+- **Elite Graduate** (École Nationale d'Administration - France's most prestigious administrative school)
 - Elite strategic vision and institutional expertise
 - Brings Fortune 500 operational excellence to AkhAI's architecture
 
-**Gregory Sankara** - Board Advisor & Investment Partner
-- Partner at **G&V Compagnie** (Leading Crypto Fund)
+**Greg** - Board Advisor & Investment Partner
+- Partner at **Crypto Investment Fund** (Leading Crypto Fund)
 - **+20% valuation enhancement** through strategic partnerships
 - Deep expertise in crypto markets and Web3 ecosystems
 - Connecting AkhAI to institutional capital and DeFi infrastructure
@@ -47,32 +47,32 @@ AKHAI combines world-class expertise across technology, finance, strategy, and c
 - Built GTP Flash architecture, smart methodology selector, and minimalist UI
 - Production-grade TypeScript/Next.js expertise
 
-**Haidar** - CEO & Founder
-- **BJJ World Champion** (10+ years at elite level)
+**algoq** - CEO & Founder
+- **Combat Sports World Champion** (10+ years at elite level)
 - **"Vibe Coder"** - Intuition meets championship discipline
 - Vision architect: Engine → Robot → Cities
-- UFC Gym France performance advisor
+- MMA training facility France performance advisor
 
-**Alex Roubaud** - Bitcoin Mining Advisor
-- CEO of **Bitstack** (Leading European Bitcoin savings platform)
+**Alex** - Bitcoin Mining Advisor
+- CEO of **a Bitcoin platform** (Leading European Bitcoin savings platform)
 - Mining operations & custody expertise
 - BroolyKid infrastructure advisor
 
-**Cyril Gane** - Brand Ambassador
-- **UFC Heavyweight Champion** (Former Interim)
+**Cyril** - Brand Ambassador
+- **MMA Heavyweight Champion** (Former Interim)
 - Global icon with millions of followers
-- Embodies transformation: homelessness → UFC championship
+- Embodies transformation: homelessness → MMA championship
 - BroolyKid community programs & wellness
 
 **[Full Team Bios → docs/TEAM.md](docs/TEAM.md)**
 
 ### 🦄 The $100B Trajectory
 
-With this powerhouse team combining **elite French education (ENA)**, **Big 4 consulting experience**, **crypto fund backing (+20% valuation)**, **world-class AI engineering**, **championship discipline**, **Bitcoin mining mastery**, and **UFC brand power**, AKHAI is positioned to build a $100 billion ecosystem.
+With this powerhouse team combining **elite French education (elite education)**, **Big 4 consulting experience**, **crypto fund backing (+20% valuation)**, **world-class AI engineering**, **championship discipline**, **Bitcoin mining mastery**, and **MMA brand power**, AKHAI is positioned to build a $100 billion ecosystem.
 
 **Our Competitive Edge:**
-- 🎓 **Institutional Credibility**: ENA + Deloitte pedigree
-- 💰 **Strategic Capital**: G&V Compagnie partnership + 20% valuation boost
+- 🎓 **Institutional Credibility**: elite education + consulting pedigree
+- 💰 **Strategic Capital**: Crypto Investment Fund partnership + 20% valuation boost
 - 🔧 **Technical Excellence**: Production-ready AI consensus engine
 - 🥋 **Execution Discipline**: Champion mindset driving product velocity
 - 🤖 **Vertical Integration**: Engine → Robot → Infrastructure → Cities
@@ -478,7 +478,7 @@ akhai/
 ### Ecosystem Vision
 - **[Master Plan](docs/MASTER_PLAN.md)** - 10-year roadmap to $100B (Engine → Robot → Servers → Cities)
 - **[AKHAI Robot](docs/ROBOT.md)** - Portable & full-size robot specifications
-- **[Dream Team](docs/TEAM.md)** - Complete team bios (Haidar, Andy, Philippe, Gregory, Alex, Cyril)
+- **[Dream Team](docs/TEAM.md)** - Complete team bios (algoq, Andy, Philippe, Gregory, Alex, Cyril)
 
 ### Technical Documentation
 - [Team & Vision (legacy)](TEAM.md) - Original team document
@@ -517,10 +517,10 @@ akhai/
 - **Minimalist UI**: Grey-only design with liquid ether background
 - **Mistral Integration**: Replaced OpenRouter with Mistral AI
 - **Five Methodologies**: Direct, CoT, AoT, Flash (GTP), Auto
-- **Dream Team Assembled**: Philippe (ENA), Gregory (G&V), Andy, Haidar
+- **Dream Team Assembled**: Philippe (elite education), Gregory (G&V), Andy, algoq
 
 ### Phase 4: Series A Preparation 🎯 **Q1 2025**
-- **$5M Seed Round** led by G&V Compagnie
+- **$5M Seed Round** led by Crypto Investment Fund
 - 10,000+ active users milestone
 - Enterprise pilots with Fortune 500 companies
 - Tokenomics whitepaper for $AKHAI governance token
@@ -574,10 +574,10 @@ MIT License - see [LICENSE](LICENSE) file for details
 **AkhAI is a unicorn-track venture backed by world-class expertise:**
 
 ### Leadership
-- 🎓 **Philippe Haydarian** - Strategic Advisor (Former Deloitte | ENA Graduate)
-- 💰 **Gregory Sankara** - Board Advisor & Investment Partner (G&V Compagnie | +20% Valuation)
+- 🎓 **Phil** - Strategic Advisor (Former consulting | Elite Graduate)
+- 💰 **Greg** - Board Advisor & Investment Partner (Crypto Investment Fund | +20% Valuation)
 - 💻 **Andy** - Lead Technical Architect (AI Engineering Expert)
-- 🥋 **Haidar** - Performance & Discipline Advisor (BJJ World Champion | UFC Gym France)
+- 🥋 **algoq** - Performance & Discipline Advisor (Combat Sports World Champion | MMA training facility France)
 
 **[Read Full Team Bios →](TEAM.md)**
 
@@ -599,11 +599,11 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## Funding & Investment
 
-**Backed by G&V Compagnie** - Leading cryptocurrency investment fund
+**Backed by Crypto Investment Fund** - Leading cryptocurrency investment fund
 **Valuation Boost:** +20% through strategic partnerships
 **Trajectory:** Seed → Series A ($20M) → Unicorn ($1B+)
 
-**For Investment Inquiries:** Contact Gregory Sankara via [TEAM.md](TEAM.md)
+**For Investment Inquiries:** Contact Greg via [TEAM.md](TEAM.md)
 
 ---
 
@@ -611,4 +611,4 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 *Building the future of multi-AI consensus with championship discipline, elite strategy, crypto capital, and world-class engineering.*
 
-**Powered by:** ENA Excellence • Deloitte Strategy • G&V Capital • BJJ Champion Discipline • AI Engineering Mastery
+**Powered by:** elite education Excellence • consulting Strategy • G&V Capital • BJJ Champion Discipline • AI Engineering Mastery
