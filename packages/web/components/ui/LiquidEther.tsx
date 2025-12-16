@@ -9,6 +9,7 @@ interface Blob {
   vx: number;
   vy: number;
   opacity: number;
+  gradient?: CanvasGradient; // Cache the gradient
 }
 
 interface LiquidEtherProps {
@@ -85,22 +86,29 @@ export function LiquidEther({
         blob.x = Math.max(-blob.radius, Math.min(canvas.width + blob.radius, blob.x));
         blob.y = Math.max(-blob.radius, Math.min(canvas.height + blob.radius, blob.y));
 
-        // Create gradient (grey-only)
-        const gradient = ctx.createRadialGradient(
-          blob.x, blob.y, 0,
-          blob.x, blob.y, blob.radius
-        );
+        // Create/cache gradient (grey-only) - only create once
+        if (!blob.gradient) {
+          const gradient = ctx.createRadialGradient(
+            0, 0, 0,
+            0, 0, blob.radius
+          );
 
-        // Grey gradient with blur effect
-        gradient.addColorStop(0, `rgba(120, 120, 120, ${blob.opacity})`);
-        gradient.addColorStop(0.5, `rgba(80, 80, 80, ${blob.opacity * 0.5})`);
-        gradient.addColorStop(1, 'rgba(40, 40, 40, 0)');
+          // Grey gradient with blur effect
+          gradient.addColorStop(0, `rgba(120, 120, 120, ${blob.opacity})`);
+          gradient.addColorStop(0.5, `rgba(80, 80, 80, ${blob.opacity * 0.5})`);
+          gradient.addColorStop(1, 'rgba(40, 40, 40, 0)');
 
-        // Draw blob
+          blob.gradient = gradient;
+        }
+
+        // Draw blob with cached gradient
+        ctx.save();
+        ctx.translate(blob.x, blob.y);
         ctx.beginPath();
-        ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
+        ctx.arc(0, 0, blob.radius, 0, Math.PI * 2);
+        ctx.fillStyle = blob.gradient;
         ctx.fill();
+        ctx.restore();
       });
 
       animationFrame = requestAnimationFrame(animate);
@@ -123,7 +131,7 @@ export function LiquidEther({
       style={{
         background: '#000000',
         pointerEvents: 'none',
-        filter: 'blur(40px)'
+        filter: 'blur(20px)' // Reduced from 40px for better performance
       }}
     />
   );

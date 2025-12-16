@@ -15,6 +15,7 @@ export async function GET() {
     const anthropicStatus: ProviderStatus = process.env.ANTHROPIC_API_KEY ? 'active' : 'inactive';
     const deepseekStatus: ProviderStatus = process.env.DEEPSEEK_API_KEY ? 'active' : 'inactive';
     const xaiStatus: ProviderStatus = process.env.XAI_API_KEY ? 'active' : 'inactive';
+    const mistralStatus: ProviderStatus = process.env.MISTRAL_API_KEY ? 'active' : 'inactive';
     const openrouterStatus: ProviderStatus = process.env.OPENROUTER_API_KEY ? 'active' : 'inactive';
 
     const providers = {
@@ -32,6 +33,11 @@ export async function GET() {
         status: xaiStatus,
         queries: providerStatsMap.get('xai')?.queries || 0,
         cost: providerStatsMap.get('xai')?.cost || 0,
+      },
+      mistral: {
+        status: mistralStatus,
+        queries: providerStatsMap.get('mistral')?.queries || 0,
+        cost: providerStatsMap.get('mistral')?.cost || 0,
       },
       openrouter: {
         status: openrouterStatus,

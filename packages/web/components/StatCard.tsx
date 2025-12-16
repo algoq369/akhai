@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface StatCardProps {
   title: string;
   value: string | number;
@@ -8,7 +10,7 @@ interface StatCardProps {
   };
 }
 
-export default function StatCard({ title, value, icon, trend }: StatCardProps) {
+function StatCard({ title, value, icon, trend }: StatCardProps) {
   return (
     <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg p-3 border border-gray-800">
       <div className="flex items-center justify-between mb-1">
@@ -30,3 +32,5 @@ export default function StatCard({ title, value, icon, trend }: StatCardProps) {
     </div>
   );
 }
+
+export default memo(StatCard);

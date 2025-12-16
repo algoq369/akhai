@@ -22,6 +22,11 @@ interface DashboardStats {
       queries: number;
       cost: number;
     };
+    mistral: {
+      status: 'active' | 'inactive' | 'error';
+      queries: number;
+      cost: number;
+    };
     openrouter: {
       status: 'active' | 'inactive' | 'error';
       queries: number;

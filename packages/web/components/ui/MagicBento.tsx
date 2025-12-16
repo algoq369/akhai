@@ -7,7 +7,7 @@ export interface BentoCard {
   id: string;
   title: string;
   description: string;
-  icon: ReactNode;
+  icon?: ReactNode;
   size: 'small' | 'medium' | 'large';
   gradient: string;
   onClick?: () => void;
@@ -52,7 +52,7 @@ const cardVariants = {
     scale: 1,
     transition: {
       duration: 0.5,
-      ease: [0.22, 1, 0.36, 1],
+      ease: [0.22, 1, 0.36, 1] as const,
     },
   },
 };

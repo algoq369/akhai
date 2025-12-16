@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface ProviderCardProps {
   name: string;
   status: 'active' | 'inactive' | 'error';
@@ -6,7 +8,7 @@ interface ProviderCardProps {
   totalCost?: number;
 }
 
-export default function ProviderCard({ name, status, model, queriesCount, totalCost }: ProviderCardProps) {
+function ProviderCard({ name, status, model, queriesCount, totalCost }: ProviderCardProps) {
   const statusConfig = {
     active: {
       color: 'text-white',
@@ -60,3 +62,5 @@ export default function ProviderCard({ name, status, model, queriesCount, totalC
     </div>
   );
 }
+
+export default memo(ProviderCard);

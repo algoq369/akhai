@@ -15,8 +15,8 @@ export default function DashboardPage() {
     // Initial fetch
     fetchStats();
 
-    // Auto-refresh every 5 seconds
-    const interval = setInterval(fetchStats, 5000);
+    // Auto-refresh every 10 seconds (reduced from 5 for better performance)
+    const interval = setInterval(fetchStats, 10000);
 
     // Cleanup on unmount
     return () => clearInterval(interval);
