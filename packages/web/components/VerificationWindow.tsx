@@ -340,9 +340,22 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             setFinalDecision(data.data.decision);
             break;
 
+          case 'result':
+            // Handle result event with finalAnswer
+            if (data.data?.finalAnswer) {
+              setFinalDecision(data.data.finalAnswer);
+              addReasoningStep('Final Answer', 'Mother Base has provided the final answer');
+              setProgress(95);
+            }
+            break;
+
           case 'complete':
             setProgress(100);
             setIsComplete(true);
+            // Also extract finalAnswer from complete event if available
+            if (data.data?.finalAnswer && !finalDecision) {
+              setFinalDecision(data.data.finalAnswer);
+            }
             eventSource.close();
             clearTimeout(timeoutId);
             break;

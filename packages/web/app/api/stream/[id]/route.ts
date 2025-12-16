@@ -67,9 +67,19 @@ export async function GET(
 
         // If query is already complete, send all historical events
         if (queryData.status === 'complete' || queryData.status === 'error') {
-          // Send all historical events
+          // Send all historical events EXCEPT final complete/error events
+          // (we'll send our own complete event with the full result at the end)
           for (const event of queryData.events) {
-            sendEvent(event);
+            if (event.type !== 'complete' && event.type !== 'error') {
+              sendEvent(event);
+            }
+          }
+          // Send the result with finalAnswer for complete queries
+          if (queryData.status === 'complete' && queryData.result) {
+            sendEvent({
+              type: 'result',
+              data: queryData.result
+            });
           }
           // Send final complete/error event
           sendEvent({

@@ -1,0 +1,28 @@
+{
+  "name": "@akhai/inference",
+  "version": "0.1.0",
+  "description": "AKHAI Mother Base - Self-hosted AI inference layer",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/server.js",
+    "test": "jest"
+  },
+  "keywords": ["akhai", "inference", "llama", "mistral", "self-hosted", "vllm"],
+  "author": "AKHAI Team",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.0.0",
+    "openai": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

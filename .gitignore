@@ -111,3 +111,4 @@ yarn.lock
 # Temporary folders
 tmp/
 temp/
+packages/web/.next
