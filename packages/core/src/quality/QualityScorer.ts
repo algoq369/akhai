@@ -1,11 +1,20 @@
 /**
  * Quality Scorer
- * 
+ *
  * Multi-factor quality scoring for AI responses.
  * Enables measurement and continuous improvement.
  */
 
-import type { ConsensusResult } from '../methodologies/types.js';
+// Temporary type for legacy consensus results (Flow A/B)
+// TODO: Update to use GTPResult for v0.5.0
+interface ConsensusResult {
+  consensusReachedAt: number | null;
+  totalRounds: number;
+  finalConsensus: Array<{
+    finalPosition: string;
+    supportedOptions?: Array<{ option: string; confidence: number }>;
+  }>;
+}
 
 export interface QualityScore {
   coherence: number;      // 0-1: Logical consistency
@@ -167,11 +176,11 @@ export class QualityScorer {
     }
 
     // If forced (no natural consensus), analyze final positions
-    const positions = result.finalConsensus.map(p => p.finalPosition.toLowerCase());
-    
+    const positions = result.finalConsensus.map((p: { finalPosition: string }) => p.finalPosition.toLowerCase());
+
     // Check for agreement keywords
     let agreementScore = 0.4;
-    const agreeCount = positions.filter(p => p.includes('[agree]')).length;
+    const agreeCount = positions.filter((p: string) => p.includes('[agree]')).length;
     agreementScore += (agreeCount / positions.length) * 0.4;
 
     return Math.max(0.3, Math.min(0.7, agreementScore));

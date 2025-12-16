@@ -1,6 +1,6 @@
 {
   "name": "akhai-monorepo",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The Unicorn AI Research Engine - Multi-AI consensus with GTP Flash architecture, backed by G&V Compagnie",
   "private": true,
   "scripts": {
