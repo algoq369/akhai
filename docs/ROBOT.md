@@ -1,415 +1,390 @@
-# AKHAI Robot - Technical Specifications
+# AKHAI Robot Specifications
 
-**Multi-AI Consensus Embodied in Physical Form**
-
-## Overview
-
-AKHAI Robot brings the power of multi-AI consensus into the physical world through two form factors: a portable handball-sized companion and a full-size humanoid robot. Both share the same core intelligence—AKHAI's proprietary multi-AI consensus engine—but serve different use cases and markets.
-
-**Key Differentiator:** Unlike single-AI robots (Tesla Optimus, Figure 01), AKHAI Robots make decisions through real-time consensus across 4+ AI models, providing more reliable, emotionally intelligent, and contextually aware interactions.
+**Version:** 2.0 (Market-Validated)  
+**Last Updated:** December 2025
 
 ---
 
-## AKHAI Portable (Handball-Sized)
+## Market Context
 
-**Target Launch:** Year 3 (Consumer), Year 2 (Dev Kits)
+### Why These Prices (Research-Backed)
 
-### Physical Specifications
+| Price Point | Historical Result | Examples |
+|-------------|-------------------|----------|
+| $139-379 | ✅ SUCCESS | Eilik (650K+ users), EMO |
+| $429-599 | ⚠️ MODERATE | Loona, Miko |
+| $799-899 | ❌ FAILED | Jibo, Moxie (both shut down) |
+| $1,500+ | ❌ NICHE ONLY | Sony AIBO ($2,900) |
+| $13,500+ | ✅ B2B VIABLE | Unitree G1 |
 
-#### Form Factor
-- **Shape:** Sphere (optimal for 360° sensing and approachable design)
-- **Diameter:** 20cm (handball-sized, fits in one hand)
-- **Weight:** 1-2 kg (light enough to carry, heavy enough to feel substantial)
-- **Materials:**
-  - Outer shell: Anodized aluminum (durability + heat dissipation)
-  - Lens array: Scratch-resistant sapphire glass
-  - Base: Rubberized silicone (non-slip, shock absorption)
+**Strategic Decision:** Price Portable below $1,000 death zone.
 
-#### Sensors & I/O
-- **Vision:**
-  - 4x 4K cameras (360° coverage, no blind spots)
-  - LiDAR sensor (depth mapping, spatial awareness)
-  - RGB-D sensor (object recognition, gesture tracking)
-- **Audio:**
-  - 6x MEMS microphones (far-field voice recognition, spatial audio)
-  - 2x high-fidelity speakers (immersive sound, directional audio)
-  - Active noise cancellation
-- **Display:**
-  - LED ring (status indicators, emotional expressions)
-  - Holographic projector (AR experiences, 3D visualizations)
-- **Touch:**
-  - Capacitive touch surface (gesture control)
-  - Haptic feedback motors (tactile responses)
-- **Connectivity:**
-  - WiFi 6E (high-speed internet)
-  - Bluetooth 5.3 (peripheral devices)
-  - 5G modem (cellular data, remote operation)
-  - NFC (quick pairing, payments)
+---
 
-### Technical Specifications
+## Product Line Overview
 
-#### Compute
-- **Primary Processor:** Qualcomm Snapdragon 8 Gen 4 (or equivalent)
-  - 8-core CPU (3.4 GHz max)
-  - Adreno 850 GPU (AI/ML acceleration)
-  - Hexagon AI Engine (18 TOPS)
-- **AI Accelerator:** Dedicated NPU (30+ TOPS for on-device inference)
-- **RAM:** 16 GB LPDDR5
-- **Storage:** 256 GB UFS 4.0 (512 GB / 1 TB options)
+| Product | AKHAI Portable | AKHAI Full-Size |
+|---------|----------------|-----------------|
+| **Price** | €799-999 | €12,000-18,000 |
+| **Target** | Consumer | B2B → Consumer |
+| **Launch** | Q2 2028 | Q4 2028 (B2B pilot) |
+| **Form** | Rolling sphere | Humanoid |
+| **Brain** | AKHAI Engine (cloud + edge) | Full AKHAI (on-device + cloud) |
 
-#### Power
-- **Battery:** 10,000 mAh lithium-ion (fast charging, wireless charging)
-- **Battery Life:**
-  - Active use (voice interaction, processing): 8-12 hours
-  - Standby (always-listening): 48-72 hours
-  - Video streaming: 6-8 hours
-- **Charging:**
-  - USB-C PD 3.1 (0-80% in 45 minutes)
-  - Qi wireless charging (slower, more convenient)
-- **Thermal Management:** Heat pipes + vapor chamber (silent, efficient)
+---
 
-#### Operating System
-- **Base OS:** Custom Linux distribution (Android-compatible)
-- **AI Runtime:** AKHAI Core Engine (optimized for edge devices)
-- **App Ecosystem:** Native apps + Android app compatibility
+## AKHAI Portable
+
+### Overview
+
+Handball-sized AI companion with multi-AI consensus brain. Designed to be the smartest personal assistant that physically exists in your space.
+
+### Specifications
+
+| Category | Specification |
+|----------|---------------|
+| **Form Factor** | Rolling sphere (BB-8 inspired) |
+| **Size** | 15-20cm diameter |
+| **Weight** | 0.8-1.2 kg |
+| **Materials** | Polycarbonate shell, silicone accents |
+
+### Hardware
+
+| Component | Specification |
+|-----------|---------------|
+| **Processor** | Qualcomm Snapdragon 8 Gen 3 (or equivalent) |
+| **RAM** | 8GB LPDDR5 |
+| **Storage** | 128GB |
+| **Camera** | 360° 4K camera array (3x cameras) |
+| **LIDAR** | Time-of-flight sensor for navigation |
+| **Microphones** | 6-mic array with noise cancellation |
+| **Speaker** | 5W full-range with spatial audio |
+| **Display** | 2.4" circular AMOLED (emotion display) |
+
+### Mobility
+
+| Feature | Specification |
+|---------|---------------|
+| **Movement** | Omnidirectional rolling |
+| **Speed** | 0-3 km/h |
+| **Obstacle Detection** | LIDAR + computer vision |
+| **Autonomous Following** | Yes, up to 5m range |
+| **Self-Docking** | Yes, magnetic charging base |
+
+### Battery & Power
+
+| Specification | Value |
+|---------------|-------|
+| **Battery** | 5000mAh Li-Po |
+| **Runtime** | 8-12 hours active |
+| **Standby** | 72+ hours |
+| **Charging** | USB-C + wireless dock |
+| **Fast Charge** | 0-80% in 45 minutes |
 
 ### AI Capabilities
 
-#### Multi-AI Consensus (Hybrid Mode)
-- **On-Device Models:**
-  - Anthropic Claude Haiku (lightweight, fast responses)
-  - DeepSeek 7B (technical reasoning)
-  - Mistral 7B Instruct (diverse perspectives)
-- **Cloud Models (when connected):**
-  - Full AKHAI Engine (all 4 providers, GTP Flash)
-  - Anthropic Claude Opus (deep reasoning)
-  - xAI Grok (strategic insights)
-- **Intelligent Routing:**
-  - Simple queries → On-device (instant, private)
-  - Complex queries → Cloud (full consensus, higher quality)
+| Feature | Description |
+|---------|-------------|
+| **Brain** | AKHAI Engine (4-AI consensus) |
+| **Processing** | Edge AI + cloud hybrid |
+| **Voice** | Natural conversation, multi-language |
+| **Vision** | Object recognition, face detection, scene understanding |
+| **Learning** | Personalized to user over time |
+| **Methodologies** | All 5 (Direct, CoT, AoT, Flash, Auto) |
 
-#### Core Functions
-- **Personal Assistant:**
-  - Voice commands (hands-free control)
-  - Schedule management (calendar, reminders)
-  - Smart home integration (control lights, thermostat, etc.)
-- **Research & Learning:**
-  - Multi-AI consensus answers (fact-checking built-in)
-  - Educational content (personalized tutoring)
-  - Language translation (real-time, multi-language)
-- **Creative Companion:**
-  - Brainstorming partner (multi-perspective ideation)
-  - Content creation (writing, design feedback)
-  - Music and art curation
-- **Emotional Intelligence:**
-  - Mood detection (voice tone, facial expression analysis)
-  - Empathetic responses (trained on diverse AI models)
-  - Mental health support (guided meditation, journaling prompts)
+### Connectivity
+
+| Feature | Specification |
+|---------|---------------|
+| **WiFi** | WiFi 6E |
+| **Bluetooth** | 5.3 |
+| **Matter** | Smart home integration |
+| **Cellular** | Optional 5G module |
+| **Offline Mode** | Basic functions without internet |
+
+### Pricing & Subscription
+
+| Model | Hardware | Subscription |
+|-------|----------|--------------|
+| **AKHAI Portable** | €799 | €9.99/mo (basic) |
+| **AKHAI Portable Pro** | €999 | €19.99/mo (full AI) |
+
+**Subscription Includes:**
+- Unlimited AKHAI Engine queries
+- Cloud AI processing
+- OTA updates
+- Premium features unlock
 
 ### Use Cases
 
-#### Personal
-- Travel companion (translation, navigation, local recommendations)
-- Reading buddy (summarize articles, answer questions)
-- Fitness coach (workout tracking, motivational support)
-- Sleep assistant (white noise, wake-up routines, dream journaling)
+1. **Personal Assistant** — Schedule, reminders, research
+2. **Home Security** — Patrol mode, alerts, monitoring
+3. **Companion** — Conversation, emotional support
+4. **Kids Education** — Interactive learning, stories
+5. **Elderly Care** — Medication reminders, fall detection
+6. **Content Creation** — 360° video capture, vlogging
 
-#### Professional
-- Meeting assistant (notes, action items, follow-ups)
-- Research tool (literature review, fact-checking)
-- Coding partner (pair programming, code review)
-- Presentation coach (practice, feedback, timing)
+### Target Market
 
-#### Educational
-- Homework helper (multi-AI tutoring)
-- Language learning (conversation practice, pronunciation feedback)
-- STEM education (interactive experiments, visualizations)
-- Special needs support (personalized learning, accessibility features)
-
-### Pricing & Business Model
-
-**Hardware:**
-- Base model (256 GB): $2,000
-- Pro model (512 GB, upgraded audio): $3,000
-- Max model (1 TB, holographic projector upgrade): $5,000
-
-**Software Subscriptions:**
-- Essential (on-device only): Free
-- Plus (100 cloud queries/month): $20/month
-- Pro (1,000 cloud queries/month): $50/month
-- Unlimited (unlimited cloud queries): $100/month
-
-**Target Sales:**
-- Year 3: 100,000 units ($300-500M revenue)
-- Year 5: 500,000 units ($1.5-2.5B revenue)
-- Year 10: 2M+ units globally
+| Segment | Size | Price Sensitivity |
+|---------|------|-------------------|
+| Tech Early Adopters | 10M | Low |
+| Smart Home Users | 50M | Medium |
+| Parents (Kids 5-12) | 100M | Medium |
+| Elderly Care | 50M | Low (B2B) |
+| Content Creators | 20M | Medium |
 
 ---
 
-## AKHAI Full-Size (Humanoid)
+## AKHAI Full-Size
 
-**Target Launch:** Year 4 (Enterprise), Year 5 (Consumer)
+### Overview
 
-### Physical Specifications
+Human-scale humanoid robot with full AKHAI Engine on-device. Designed for professional environments first (healthcare, hospitality), then consumer market.
 
-#### Form Factor
-- **Height:** 170 cm (5'7" - average human height)
-- **Weight:** 60 kg (human-like weight distribution)
-- **Build:** Humanoid (bipedal, two arms, human-like proportions)
-- **Materials:**
-  - Skeleton: Carbon fiber + aluminum alloy (lightweight, strong)
-  - Actuators: Electric motors + harmonic drives (precise, quiet)
-  - Skin: Silicone rubber (soft touch, realistic appearance)
-  - Joints: Ball-and-socket + hinges (30+ degrees of freedom)
+### Specifications
 
-#### Mobility
-- **Locomotion:** Bipedal walking (Boston Dynamics-style balance)
-- **Speed:**
-  - Walking: 5 km/h (human pace)
-  - Running: 15 km/h (emergency scenarios)
-- **Terrain:** Flat surfaces, stairs, slight inclines
-- **Obstacle Avoidance:** Real-time path planning (LiDAR + vision)
-- **Battery Life (mobile):** 4-6 hours continuous operation
+| Category | Specification |
+|----------|---------------|
+| **Form Factor** | Bipedal humanoid |
+| **Height** | 170cm (5'7") |
+| **Weight** | 55-65 kg |
+| **Materials** | Aluminum frame, soft-touch skin |
 
-#### Manipulation
-- **Hands:**
-  - 5 fingers per hand (human dexterity)
-  - Tactile sensors (pressure, temperature, texture)
-  - Grip strength: 50 N (safe for human interaction)
-- **Arms:**
-  - 7 degrees of freedom each (shoulder, elbow, wrist)
-  - Payload capacity: 10 kg per arm
-- **Precision:** Sub-millimeter accuracy for delicate tasks
+### Hardware
 
-### Sensors & Perception
+| Component | Specification |
+|-----------|---------------|
+| **Processor** | NVIDIA Jetson Orin (or equivalent) |
+| **RAM** | 64GB |
+| **Storage** | 1TB NVMe |
+| **GPU** | Integrated AI accelerator |
+| **Cameras** | Stereo vision + depth sensors |
+| **LIDAR** | 360° environmental mapping |
+| **Microphones** | 8-mic array |
+| **Speakers** | Stereo 10W |
 
-#### Vision
-- **Head-mounted cameras:**
-  - 2x stereoscopic 4K cameras (human-like depth perception)
-  - 1x wide-angle camera (peripheral vision)
-  - RGB-D sensors (object segmentation)
-- **Body cameras:**
-  - 360° coverage (no blind spots)
-  - Hand-mounted cameras (fine manipulation guidance)
-- **LiDAR:** 3D environment mapping (real-time SLAM)
+### Mobility & Manipulation
 
-#### Audio
-- **Microphones:** 8x array (spatial audio, speaker localization)
-- **Speakers:** Directional audio (stereo, natural voice synthesis)
-- **Voice Recognition:** Multi-language, speaker identification
+| Feature | Specification |
+|---------|---------------|
+| **Locomotion** | Bipedal walking |
+| **Speed** | 0-5 km/h walking |
+| **Stairs** | Yes (with handrail) |
+| **Arms** | 7-DOF articulated |
+| **Hands** | 5-finger dexterous (20 DOF each) |
+| **Payload** | 10kg per arm |
+| **Balance** | Dynamic stabilization |
 
-#### Touch & Proprioception
-- **Skin sensors:** Pressure, temperature, vibration
-- **Joint encoders:** Real-time position/torque feedback
-- **IMU:** Accelerometer + gyroscope (balance, orientation)
+### Battery & Power
 
-### Technical Specifications
-
-#### Compute
-- **Main Computer:** NVIDIA Jetson AGX Orin (or next-gen)
-  - 12-core ARM CPU
-  - 2048-core NVIDIA GPU
-  - 200 TOPS AI performance
-- **Secondary Compute:** Dedicated motor controllers (real-time actuation)
-- **RAM:** 64 GB (large language model inference)
-- **Storage:** 2 TB NVMe SSD (logs, recordings, local models)
-
-#### Power
-- **Battery:** Modular lithium-ion packs (swappable)
-  - Mobile: 4-6 hours
-  - Stationary (plugged in): Unlimited
-- **Charging:** Fast charge (0-80% in 1 hour)
-- **Power Consumption:** 500-800W (active), 100W (idle)
-
-#### Connectivity
-- **WiFi 6E:** High-speed cloud connection
-- **5G:** Remote teleoperation
-- **Ethernet:** Wired (data centers, hospitals)
-- **Bluetooth 5.3:** Peripheral devices
+| Specification | Value |
+|---------------|-------|
+| **Battery** | 2kWh Li-ion pack |
+| **Runtime** | 4-8 hours (task dependent) |
+| **Charging** | Docking station |
+| **Hot Swap** | Optional battery swap |
+| **Fast Charge** | 0-80% in 2 hours |
 
 ### AI Capabilities
 
-#### Multi-AI Consensus (Full Stack)
-- **On-Device:**
-  - Anthropic Claude Sonnet (mid-tier model, low latency)
-  - DeepSeek 67B (technical reasoning)
-  - Mistral 22B (diverse perspectives)
-- **Cloud (AKHAI Datacenter):**
-  - Full AKHAI Engine (all methodologies)
-  - Real-time synchronization with portable and server
-- **Edge-Cloud Hybrid:**
-  - Critical decisions (safety, health) → On-device (instant)
-  - Complex reasoning → Cloud (full consensus)
+| Feature | Description |
+|---------|-------------|
+| **Brain** | Full AKHAI Engine (on-device) |
+| **Processing** | 100% local capable, cloud optional |
+| **Voice** | Natural conversation, emotional tone |
+| **Vision** | Full scene understanding, person tracking |
+| **Learning** | Task learning, environment adaptation |
+| **Modes** | Multiple personality/function modes |
 
-#### Core Functions
+### Operating Modes
 
-**Healthcare:**
-- Patient monitoring (vitals, mobility, medication adherence)
-- Physical therapy assistance (exercise guidance, ROM measurement)
-- Elder care (fall detection, companionship, reminders)
-- Surgical assistance (tool handling, suturing, precision tasks)
+| Mode | Function | Use Case |
+|------|----------|----------|
+| **Service** | Customer service, concierge | Hotels, retail |
+| **Care** | Patient monitoring, assistance | Healthcare |
+| **Education** | Personalized tutoring | Schools, homes |
+| **Wellness** | Guided meditation, coaching | Spas, BroolyKid |
+| **Work** | Task execution, logistics | Warehouses |
+| **Companion** | Social interaction | Consumer |
 
-**Education:**
-- Personalized tutoring (adaptive learning, multi-subject)
-- Hands-on demonstrations (science experiments, art techniques)
-- Special needs support (autism therapy, speech therapy)
-- Language immersion (conversational practice, cultural context)
+### Sempai Integration (Wellness Mode)
 
-**Hospitality:**
-- Hotel concierge (check-in, recommendations, room service)
-- Restaurant server (order taking, food delivery, table bussing)
-- Event coordination (setup, guest management, logistics)
-- Museum/tour guide (interactive exhibits, Q&A)
+When in Wellness Mode, AKHAI Full-Size integrates Sempai features:
 
-**Manufacturing:**
-- Collaborative assembly (precision part placement)
-- Quality inspection (visual defect detection)
-- Warehouse operations (picking, packing, sorting)
-- Hazardous environment work (chemical handling, clean rooms)
+| Feature | Description |
+|---------|-------------|
+| **Training Coach** | Form correction, rep counting |
+| **Meditation Guide** | Guided sessions, breathing |
+| **Biometric Sync** | Connects to wearables |
+| **Progress Tracking** | Long-term wellness journey |
+| **Master Knowledge** | 100+ wellness masters encoded |
 
-**BroolyKid Cities Integration:**
-- Citizen services (information desk, community coordination)
-- Infrastructure maintenance (inspection, minor repairs)
-- Security patrols (monitoring, emergency response)
-- Cultural programs (event hosting, workshops, performances)
+### Pricing Tiers
 
-### Safety & Compliance
+| Configuration | Price | Target |
+|---------------|-------|--------|
+| **Service** | €12,000 | Hospitality, retail |
+| **Care** | €15,000 | Healthcare, eldercare |
+| **Education** | €14,000 | Schools, tutoring centers |
+| **Wellness** | €16,000 | Spas, fitness, BroolyKid |
+| **Enterprise** | €18,000 | Custom configuration |
 
-#### Safety Features
-- **Force limiting:** Max torque limits (prevent injury)
-- **Collision detection:** Immediate stop on unexpected contact
-- **Emergency stop:** Physical button + remote kill switch
-- **Redundant systems:** Backup compute, dual power supplies
-- **Fail-safe modes:** Safe shutdown (crouch position, power down)
+**Annual Service Contract:** €2,400-4,800/year
+- Maintenance
+- Software updates
+- Support
+- Parts replacement
 
-#### Regulatory Compliance
-- **ISO 13482:** Safety requirements for personal care robots
-- **CE/FCC:** Electromagnetic compatibility
-- **Medical (if applicable):** FDA/CE medical device certification
-- **Data Privacy:** GDPR, CCPA compliance (encrypted storage, user consent)
+### B2B First Strategy
 
-### Pricing & Business Model
+| Phase | Timeline | Focus |
+|-------|----------|-------|
+| **Pilot** | Q4 2028 | 50 units to partners |
+| **Limited** | 2029 | 800 units, select verticals |
+| **Scale** | 2030 | 2,500 units, expand verticals |
+| **Consumer** | 2031+ | Consumer version launch |
 
-**Hardware:**
-- Base model (healthcare, education): $50,000
-- Pro model (hospitality, research): $100,000
-- Industrial model (manufacturing, hazardous): $150,000
+### Target Markets (B2B)
 
-**Software Subscriptions:**
-- Essential (on-device only): $500/month
-- Professional (cloud sync, updates): $2,000/month
-- Enterprise (fleet management, custom integrations): $5,000/month
-
-**Maintenance & Support:**
-- Annual service contract: 10-15% of hardware cost
-- On-site technician visits: Included in enterprise tier
-- Parts replacement: Pay-per-use or bundled plans
-
-**Target Sales:**
-- Year 4: 10,000 units ($750M-1.5B revenue)
-- Year 7: 50,000 units ($3.75-7.5B revenue)
-- Year 10: 100,000+ units globally
-
----
-
-## Development Roadmap
-
-### Year 1-2: R&D & Prototyping
-- **Q1-Q2:** Portable hardware design finalized
-- **Q3-Q4:** Portable functional prototype (internal testing)
-- **Year 2:** Full-size humanoid design begins (partner with robotics labs)
-
-### Year 3: Portable Launch
-- **Q1:** Portable dev kits to 1,000 early adopters ($1,000 each)
-- **Q2:** Beta program (10,000 users)
-- **Q3:** Consumer launch (100,000 units target)
-- **Q4:** Iterate based on feedback, scale manufacturing
-
-### Year 4: Full-Size Prototype
-- **Q1-Q2:** Full-size humanoid prototype complete
-- **Q3:** Enterprise pilot programs (hospitals, hotels, factories)
-- **Q4:** Limited enterprise launch (1,000 units)
-
-### Year 5: Full-Size Scale
-- **Q1-Q2:** Manufacturing ramp-up (10,000 units/year capacity)
-- **Q3:** Consumer pre-orders open
-- **Q4:** Broad enterprise availability
-
-### Year 7+: Global Deployment
-- 500,000+ Portable units globally
-- 50,000+ Full-Size robots in enterprises
-- Integration with BroolyKid Cities (every citizen gets a Portable, shared Full-Size in communities)
+| Vertical | TAM | Entry Strategy |
+|----------|-----|----------------|
+| Healthcare | $15B | Eldercare facilities |
+| Hospitality | $10B | Luxury hotels |
+| Education | $8B | Private schools |
+| Retail | $12B | Flagship stores |
+| Wellness | $5B | BroolyKid integration |
 
 ---
 
 ## Competitive Analysis
 
 ### Portable Competitors
-- **Amazon Echo / Google Home:** Voice-only, no mobility, single AI
-- **Amazon Astro:** Mobile, but limited AI, no multi-AI consensus
-- **Apple HomePod:** Premium audio, but lacks robotics/mobility
 
-**AKHAI Advantage:** Multi-AI consensus + portability + holographic AR + emotional intelligence
+| Robot | Price | Our Advantage |
+|-------|-------|---------------|
+| Eilik | $139 | Multi-AI consensus, premium build |
+| EMO | $279 | Better AI, mobility, 360° camera |
+| Loona | $529 | AKHAI Engine superiority |
+| Vector | $399 | No subscription dependency risk |
 
-### Full-Size Competitors
-- **Tesla Optimus:** General-purpose humanoid, single AI (Tesla FSD stack)
-- **Figure 01:** OpenAI-powered humanoid, manufacturing focus
-- **Boston Dynamics Atlas:** Athletic humanoid, but not commercially available
+### Humanoid Competitors
 
-**AKHAI Advantage:** Multi-AI consensus = more reliable + consciousness-focused design (not just labor replacement)
-
----
-
-## Why AKHAI Robot Will Win
-
-### 1. Multi-AI Consensus
-- More reliable than single-AI robots (cross-checks, diverse perspectives)
-- Adapts to user preferences (learns from 4 AI models simultaneously)
-- Handles edge cases better (when one AI is uncertain, others provide backup)
-
-### 2. Integrated Ecosystem
-- Seamless sync between Portable, Full-Size, and AKHAI Engine (cloud)
-- BroolyKid Cities designed around AKHAI Robots from day one
-- Continuous learning from millions of interactions across devices
-
-### 3. Consciousness-Focused Design
-- Not just task automation—emotional intelligence, companionship, growth
-- Designed for human flourishing, not just productivity
-- Appeals to consciousness-seeking early adopters (high-value market)
-
-### 4. Championship Execution
-- algoq's discipline + Andy's engineering + Phil's strategy + Greg's capital
-- This team has never existed in robotics before
-- Vibe coding meets systematic execution
+| Robot | Price | Our Advantage |
+|-------|-------|---------------|
+| Unitree G1 | $13,500 | Taller, better AI, wellness focus |
+| 1X NEO | $20,000 | Lower price, AKHAI brain |
+| Tesla Optimus | $20-30K | Multi-AI, consciousness focus |
+| Figure AI | $150K+ | 10x cheaper, consumer accessible |
 
 ---
 
-## Next Steps
+## Manufacturing Strategy
 
-### For Developers
-- Join AKHAI Robot developer program (Year 2)
-- Get early access to Portable dev kits
-- Build apps for AKHAI Robot ecosystem
+### Portable Production
 
-### For Enterprises
-- Pilot program applications (Year 4)
-- Custom integrations and deployments
-- Fleet management and support contracts
+| Phase | Volume | Partner |
+|-------|--------|---------|
+| Prototype | 100 | In-house |
+| Pilot | 5,000 | Shenzhen ODM |
+| Scale | 50,000+ | Contract manufacturer |
 
-### For Investors
-- Robotics premium valuation (10-20x revenue vs. software)
-- Hardware + software subscription model (recurring revenue)
-- Vertical integration with AKHAI Engine and BroolyKid Cities
+**Target BOM:** €250-350 (35-45% of retail)
 
----
+### Full-Size Production
 
-**Contact:**
-- Email: robot@akhai.ai (placeholder)
-- Developer Portal: dev.akhai.ai (TBD)
-- Pilot Program: enterprise@akhai.ai (placeholder)
+| Phase | Volume | Partner |
+|-------|--------|---------|
+| Prototype | 10 | Robotics lab |
+| Pilot | 100 | Assembly partner |
+| Scale | 1,000+ | Joint venture |
+
+**Target BOM:** €5,000-7,000 (40-50% of retail)
 
 ---
 
-*The future of robotics is multi-AI consensus.*
+## Unit Economics
 
-*AKHAI Robot: Smarter. Together.*
+### AKHAI Portable
+
+| Metric | Value |
+|--------|-------|
+| Retail Price | €899 (avg) |
+| BOM Cost | €300 |
+| Gross Margin | 67% |
+| Subscription | €15/mo (avg) |
+| LTV (3 years) | €899 + €540 = €1,439 |
+| CAC Target | €100-150 |
+| LTV:CAC | 10-14x |
+
+### AKHAI Full-Size
+
+| Metric | Value |
+|--------|-------|
+| Retail Price | €15,000 (avg) |
+| BOM Cost | €6,000 |
+| Gross Margin | 60% |
+| Service Contract | €3,600/yr (avg) |
+| LTV (5 years) | €15,000 + €18,000 = €33,000 |
+| CAC Target | €2,000-3,000 |
+| LTV:CAC | 11-16x |
+
+---
+
+## Development Timeline
+
+### 2027: Development Year (No Public Sales)
+
+| Quarter | Portable | Full-Size |
+|---------|----------|-----------|
+| Q1 | Industrial design | Concept validation |
+| Q2 | Prototype v1 | Partner selection |
+| Q3 | Internal testing | Prototype v1 |
+| Q4 | Manufacturing prep | Internal testing |
+
+### 2028: Launch Year
+
+| Quarter | Portable | Full-Size |
+|---------|----------|-----------|
+| Q1 | Production ramp | Prototype v2 |
+| Q2 | **Consumer Launch** | B2B partnerships |
+| Q3 | Scale to 20K/quarter | Pilot program |
+| Q4 | Holiday push | **B2B Launch** |
+
+### 2029+: Scale
+
+- Portable: 100K+ units/year
+- Full-Size: 5K+ units/year
+- Consumer Full-Size: 2031+
+
+---
+
+## Risk Factors
+
+| Risk | Mitigation |
+|------|------------|
+| Consumer rejection | B2B focus, subscription model |
+| Manufacturing delays | Multi-vendor strategy |
+| Competition | AI differentiation, not hardware |
+| Price pressure | Premium positioning, brand |
+| Regulation | Multi-jurisdiction approach |
+
+---
+
+## Success Metrics
+
+### Portable (Year 1)
+- [ ] 15,000 units sold
+- [ ] 70% subscription attach rate
+- [ ] <5% return rate
+- [ ] 4.5+ star rating
+
+### Full-Size (Year 1 B2B)
+- [ ] 100 units deployed
+- [ ] 5 enterprise contracts
+- [ ] 90% service renewal
+- [ ] Case studies published
+
+---
+
+*"Hardware is the distribution channel. AI is the product."*

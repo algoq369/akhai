@@ -1,7 +1,10 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/history/page": "app/history/page.js",
-  "/explore/page": "app/explore/page.js",
+  "/api/stats/recent/route": "app/api/stats/recent/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/stats/route": "app/api/stats/route.js",
   "/query/[id]/page": "app/query/[id]/page.js",
-  "/page": "app/page.js"
+  "/history/page": "app/history/page.js",
+  "/page": "app/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/explore/page": "app/explore/page.js"
 }

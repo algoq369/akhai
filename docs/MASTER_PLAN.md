@@ -1,395 +1,415 @@
-# AKHAI Master Plan - The $100B Unicorn Journey
+# AKHAI Master Plan — Market-Validated 10-Year Vision
 
-**From AI Engine to Smart Cities: A 10-Year Vision**
+**From AI Engine to Smart Cities: A Disciplined Journey**
+
+**Last Updated:** December 2025  
+**Version:** 2.0 (Market-Validated)
+
+---
 
 ## Executive Summary
 
-AKHAI is not just an AI research engine—it's the foundation of a $100 billion ecosystem connecting artificial intelligence, robotics, infrastructure, and sovereign communities. Led by algoq ("vibe coder") and backed by world-class advisors, we're building the future across four integrated layers.
+AKHAI is a multi-AI consensus platform evolving into an integrated ecosystem spanning artificial intelligence, robotics, infrastructure, and sovereign communities. Our strategy prioritizes **AI moat first, hardware second** — validated by market research showing consumer robots >$800 have a 100% failure rate.
 
-**The Vision:**
-1. **AKHAI Engine** (NOW) - Multi-AI consensus research platform
-2. **AKHAI Robot** (2 years) - Portable & full-size AI embodiment
-3. **Server Infrastructure** (3-5 years) - Mining facilities & data centers
-4. **BroolyKid Cities** (5-10 years) - Sovereign smart cities powered by our tech
+**The Four Pillars:**
+1. **AKHAI Engine** (2025-2026) - Multi-AI consensus research platform
+2. **AKHAI Robot** (2027-2028) - Portable & full-size AI embodiment
+3. **Server Infrastructure** (2029-2030) - Mining facilities & data centers
+4. **BroolyKid Cities** (2030+) - Sovereign smart cities powered by our tech
 
-**Valuation Target:** $100 billion by Year 10
+**Realistic Outcomes:**
+- **Base Case:** $1.1B revenue, $6.7B valuation by 2035
+- **Optimistic:** $3.5B revenue, $28B valuation by 2035
+- **Target:** $10B+ ecosystem
+
 **Current Status:** Phase 3 Complete (v0.3.0) - GTP Flash Architecture Live
 
 ---
 
-## The Four Pillars
+## Market Validation (December 2025)
 
-### Pillar 1: AKHAI Engine (Current - Year 2)
+### Key Research Findings
 
-**What It Is:**
-Multi-AI consensus research platform combining Anthropic Claude (Mother Base), DeepSeek, Grok/xAI, and Mistral AI for unprecedented research accuracy.
+| Finding | Data Point | Source |
+|---------|------------|--------|
+| Consumer robots >$800 fail | Jibo ($899), Moxie ($799) - BOTH FAILED | IEEE, Market data |
+| Humanoid costs dropping | 40% annual decline | Goldman Sachs |
+| Humanoid market CAGR | 70% through 2035 | Goldman Sachs |
+| AI companion market | $94B by 2034 (24% CAGR) | Market.us |
+| Entry humanoid benchmark | Unitree G1 at $13,500 | Current market |
 
-**Key Innovation: GTP (Generative Thoughts Process)**
-- Bio-inspired parallel Flash architecture
-- 25-30 second consensus (vs. 90s sequential)
+### Strategic Implications
+
+1. **Wait for robot launch (2028 not 2027)** — Costs drop 40%, market matures
+2. **Price Portable <€1,000** — Avoid the death zone where every competitor failed
+3. **B2B before B2C for Full-Size** — Clear ROI calculations, higher margins
+4. **Subscription-first model** — Only path to profitability (Peloton model)
+
+---
+
+## Pillar 1: AKHAI Engine (NOW → Dec 2026)
+
+### What It Is
+
+Multi-AI consensus research platform combining:
+- **Anthropic Claude** (Mother Base)
+- **DeepSeek** (Technical brainstorming)
+- **xAI Grok** (Strategic brainstorming)  
+- **Mistral AI** (Diversity provider)
+
+### Key Innovation: GTP Flash Architecture
+
+- Bio-inspired parallel processing
+- ~25 second consensus (vs. 90s sequential)
 - Quorum-based decision making
 - Living database of real-time knowledge merge
 
-**Five Methodologies:**
-- **Direct:** Simple queries (~5s)
-- **CoT (Chain of Thought):** Sequential reasoning (~30s)
-- **AoT (Atom of Thoughts):** Decompose → Solve → Contract (~60s)
-- **Flash (GTP):** Parallel multi-AI consensus (~25s)
-- **Auto:** Smart methodology selection
+### Five Methodologies
 
-**Market Position:**
-- **Current:** Premium AI research tool ($50-200/month subscriptions)
-- **Year 1:** 10,000 paying users, $10M ARR
-- **Year 2:** Enterprise tier launched, $50M ARR
-- **Valuation Year 2:** $500M (10x revenue multiple)
+| Method | Use Case | Speed |
+|--------|----------|-------|
+| **Direct** | Simple factual queries | ~5s |
+| **Chain of Thought** | Sequential reasoning | ~30s |
+| **Atom of Thoughts** | Complex decomposition | ~60s |
+| **Flash (GTP)** | Parallel multi-AI consensus | ~25s |
+| **Auto** | Smart methodology selection | Variable |
 
-**Revenue Streams:**
-- Individual subscriptions ($50-200/month)
-- Enterprise licenses ($5,000-50,000/month)
-- API access (pay-per-query)
-- White-label deployments
+### Current Status: v0.3.0 ✅
 
-**Team:**
-- algoq - CEO & Product Visionary
-- Andy - CTO & Lead Architect
-- Phil - Strategic Advisor
-- Greg - Board Advisor (+20% Valuation Enhancement)
+- ✅ GTP Flash Architecture complete
+- ✅ Smart Methodology Selector working
+- ✅ 4 AI providers integrated
+- ✅ MCP Server for Claude Code
+- ✅ Web interface (Next.js 15)
+- ✅ TypeScript monorepo structure
 
----
+### 2026 Roadmap
 
-### Pillar 2: AKHAI Robot (Year 2-4)
+| Quarter | Milestone | Target |
+|---------|-----------|--------|
+| Q1 2026 | Public Beta | 1,000 users |
+| Q2 2026 | Paid Launch | $50K MRR |
+| Q3 2026 | Scale | 10,000 users |
+| Q4 2026 | **AKHAI Engine 1.0** | $200K MRR |
 
-**What It Is:**
-Physical embodiment of AKHAI's multi-AI intelligence in two form factors:
+### Revenue Model
 
-#### AKHAI Portable (Handball-Sized)
-- **Size:** 20cm diameter sphere
-- **Weight:** 1-2 kg
-- **Capabilities:**
-  - Voice interaction with multi-AI consensus
-  - Real-time visual processing (360° camera)
-  - Holographic projection for AR experiences
-  - 8-12 hour battery life
-  - Personal assistant, researcher, companion
+| Tier | Price | Features |
+|------|-------|----------|
+| Free | $0 | 10 queries/day, Direct only |
+| Pro | $29/mo | Unlimited, all methodologies |
+| Team | $99/mo | Collaboration, shared agents |
+| Enterprise | $500+/mo | Custom, API, dedicated support |
 
-#### AKHAI Full-Size (Humanoid)
-- **Height:** 170cm (human-scale)
-- **Applications:**
-  - Healthcare (patient monitoring, assistance)
-  - Education (personalized tutoring)
-  - Hospitality (concierge, customer service)
-  - Manufacturing (collaborative robotics)
-- **AI Core:** Full AKHAI Engine (multi-AI consensus on-device + cloud)
-- **Physical:** Bipedal locomotion, dexterous manipulation
+### Financial Projections (Engine Only)
 
-**Market Position:**
-- **Year 2:** Portable prototype, dev kits to early adopters
-- **Year 3:** Portable consumer launch ($2,000-5,000), 100,000 units
-- **Year 4:** Full-size enterprise launch ($50,000-150,000), 10,000 units
-- **Revenue Year 4:** $2B (hardware + software subscriptions)
-- **Valuation Year 4:** $20B (10x revenue, robotics premium)
-
-**Competitive Advantage:**
-- Multi-AI consensus = more reliable decision-making than single-AI robots
-- Emotional intelligence via diverse AI perspectives
-- Continuous learning from AKHAI Engine's research data
-- Designed for consciousness-focused communities (BroolyKid integration)
-
-**Development Partners:**
-- Robotics labs for hardware engineering
-- Boston Dynamics-style locomotion expertise
-- Consumer electronics manufacturers for Portable version
-
-**Full specs:** See [ROBOT.md](./ROBOT.md)
+| Year | Users | Revenue | Valuation |
+|------|-------|---------|-----------|
+| 2026 | 10K | $2-3M | $30-60M |
+| 2027 | 40K | $8-15M | $100-250M |
+| 2028 | 120K | $18-40M | $180-400M |
 
 ---
 
-### Pillar 3: Server Infrastructure (Year 3-7)
+## Pillar 2: AKHAI Robot (2027-2028)
 
-**What It Is:**
-Global network of data centers and Bitcoin mining facilities powering AKHAI's AI compute and funding BroolyKid cities.
+### Strategic Decision: Wait Until 2028
 
-#### Data Centers (AI Compute)
-- **Purpose:** Host AKHAI Engine, train custom models, serve robot AI
-- **Scale:** 50-200 MW per facility
-- **Locations:** Near renewable energy sources (hydro, solar, wind)
-- **Year 3:** First facility (10 MW, 1,000 GPUs)
-- **Year 7:** 10 facilities globally (500 MW, 50,000 GPUs)
+**Why not 2027:**
+- Humanoid costs drop 40% annually
+- Tesla Optimus creates consumer awareness
+- Our AI has 12+ months of training data
+- Competitors do market education
+- Unitree G1 ($13,500) proves price band
 
-#### Bitcoin Mining (Revenue Generator)
-- **Purpose:** Fund BroolyKid city development with mining revenue
-- **Integration:** Heat recovery from mining powers city infrastructure
-- **Scale:** 200-500 PH/s per facility
-- **Year 5:** First mining facility operational ($50M/year revenue)
-- **Year 7:** 3-5 facilities ($200-500M/year combined revenue)
+### Two Product Lines
 
-**Synergy with BroolyKid:**
-Mining waste heat → District heating + greenhouses → Free energy for cities
+#### AKHAI Portable
 
-**Market Position:**
-- **Revenue Year 7:** $5B/year (AI compute services + BTC mining)
-- **Valuation Year 7:** $50B (infrastructure + strategic BTC holdings)
+| Spec | Value |
+|------|-------|
+| **Price** | €799-999 (~$850-1,100) |
+| **Size** | 15-20cm diameter sphere |
+| **Form** | BB-8 inspired rolling companion |
+| **Brain** | AKHAI Engine (cloud + edge) |
+| **Battery** | 8+ hours |
+| **Features** | Voice, 360° camera, LIDAR, autonomous following |
 
-**Revenue Streams:**
-- AKHAI Engine compute (internal use + external API customers)
-- Bitcoin mining revenue (funding BroolyKid expansion)
-- Heat recovery sales (district heating, industrial processes)
-- Data center colocation for third-party AI workloads
+**Why €799-999:**
+- Eilik succeeds at $139-159 (650K+ users)
+- Jibo failed at $899
+- Moxie failed at $799-1,499
+- Sony AIBO survives at $2,900 (niche premium)
+- **Sweet spot: Premium but below death zone**
 
----
+#### AKHAI Full-Size
 
-### Pillar 4: BroolyKid Smart Cities (Year 5-10+)
+| Spec | Value |
+|------|-------|
+| **Price** | €12,000-18,000 (~$13,000-19,500) |
+| **Height** | 170cm (human-scale) |
+| **Target** | B2B first (healthcare, hospitality, wellness) |
+| **Brain** | Full AKHAI Engine on-device + cloud |
+| **Features** | Bipedal, dexterous manipulation, emotional AI |
 
-**What It Is:**
-Network of 10 sovereign smart cities (5,000-10,000 citizens each) powered by AKHAI technology and Bitcoin mining revenue.
+**Why €12,000-18,000:**
+- Unitree G1: $13,500 (130cm) — validates price band
+- Unitree H1: $90,000-100,000 (180cm) — too expensive
+- 1X NEO: $20,000 (162cm) — our competition
+- Tesla Optimus: $20,000-30,000 projected
 
-**Integration with AKHAI:**
-- **AKHAI Engine:** City governance, resource allocation, citizen services
-- **AKHAI Robots:** Healthcare, education, hospitality, security
-- **Server Infrastructure:** Powers city operations + generates revenue
+### Development Timeline
 
-**Economic Model:**
-- **Funding:** 100% self-financed via BTC mining after City 1
-- **Path to Free Services:** Mining revenue → Citizens pay $0 by Year 8
-- **City 1:** $450-474M initial funding, 5,000-10,000 citizens
-- **Cities 2-10:** Funded by City 1 mining profits
+| Phase | Timeline | Focus |
+|-------|----------|-------|
+| **Design** | Q1-Q2 2027 | Industrial design, BOM |
+| **Prototype** | Q3-Q4 2027 | Working units, internal testing |
+| **Manufacturing** | Q1 2028 | Shenzhen partnerships |
+| **B2B Launch** | Q2 2028 | 50 pilots, enterprise |
+| **Consumer Launch** | Q3 2028 | Portable mass market |
+| **Full-Size Beta** | Q4 2028 | B2B pilot program |
 
-**AKHAI's Role in Cities:**
-- Governance: Multi-AI consensus for community decisions
-- Resource Management: AI-optimized energy, water, food distribution
-- Personalized Services: AKHAI Robots as personal assistants, educators, healthcare aides
-- Continuous Learning: Cities generate data to improve AKHAI models
+### Robot Revenue Projections
 
-**Market Position:**
-- **Year 8:** City 1 mature (10,000 citizens), Cities 2-3 launched
-- **Year 10:** 5 cities operational (30,000-50,000 global citizens)
-- **Year 20:** 10 cities, 50,000-100,000 citizens
-- **Valuation Year 10:** $100B (tech ecosystem + real estate + mining operations)
+| Year | Portable Units | Full-Size Units | Robot Revenue |
+|------|----------------|-----------------|---------------|
+| 2028 | 15,000 | 100 | $15-30M |
+| 2029 | 45,000 | 800 | $45-100M |
+| 2030 | 90,000 | 2,500 | $90-200M |
+| 2035 | 440,000 | 23,000 | $440M-1.2B |
 
-**Revenue Streams (Per City at Maturity):**
-- Bitcoin mining: $50-150M/year
-- Real estate (housing fees before free tier): $10-50M/year
-- MonadKid blockchain fees (Year 8+): $10-50M/year
-- Tourism & education (consciousness retreats): $5-20M/year
+### Critical Success Factors
 
-**Full vision:** See [broolykid-network repo](https://github.com/algoq369/broolykid-network)
-
----
-
-## The 10-Year Roadmap
-
-### Year 0-1: AKHAI Engine Dominance
-**Milestone:** Prove multi-AI consensus superiority
-- Launch AKHAI v1.0 (5 methodologies)
-- 10,000 paying users
-- $10M ARR
-- **Valuation: $100M** (Seed round closed)
-
-### Year 2: Robot Development Begins
-**Milestone:** AKHAI Portable prototype
-- AKHAI Engine: 100,000 users, $50M ARR
-- AKHAI Portable: Dev kits to 1,000 early adopters
-- First data center planning (site selection, energy contracts)
-- **Valuation: $500M** (Series A)
-
-### Year 3: Hardware Launch
-**Milestone:** Consumer robotics market entry
-- AKHAI Portable: 100,000 units sold ($500M revenue)
-- AKHAI Engine: $100M ARR (enterprise tier)
-- First data center operational (10 MW, AI compute)
-- **Valuation: $5B** (Series B, robotics premium)
-
-### Year 4: Full-Size Robot + Mining Planning
-**Milestone:** Enterprise robotics + BroolyKid City 1 funding
-- AKHAI Full-Size: 10,000 units ($1.5B revenue)
-- Total revenue: $2.5B/year
-- BroolyKid City 1: $450M funding round closed
-- First Bitcoin mining facility planning
-- **Valuation: $20B** (Pre-IPO)
-
-### Year 5: IPO + City 1 Begins
-**Milestone:** Public markets + sovereign city proof-of-concept
-- AKHAI IPO at $20-30B valuation
-- BroolyKid City 1: Land acquired, mining begins (50 PH/s)
-- First 500 citizens move in
-- Data centers: 3 facilities (100 MW combined)
-- **Valuation: $30B** (post-IPO)
-
-### Year 6-7: Infrastructure Scaling
-**Milestone:** Multi-facility operations
-- BroolyKid City 1: 2,000 citizens, 200 PH/s mining
-- Mining revenue: $200M/year
-- Data centers: 10 facilities, 500 MW
-- AKHAI Robots: 500,000+ units deployed globally
-- **Valuation: $50B**
-
-### Year 8: MonadKid Blockchain + Free Services
-**Milestone:** BroolyKid maturity
-- City 1: 10,000 citizens, core services free
-- MonadKid blockchain launches (on-chain governance)
-- Cities 2-3: Development begins (funded by City 1 mining)
-- AKHAI total revenue: $5B/year
-- **Valuation: $75B**
-
-### Year 10: Global Network
-**Milestone:** $100B unicorn achieved
-- BroolyKid: 5 cities operational (30,000-50,000 citizens)
-- AKHAI Robots: 2M+ units globally
-- Mining network: 2,000-5,000 PH/s
-- MonadKid: Top-20 blockchain
-- Total ecosystem revenue: $10B/year
-- **Valuation: $100B+**
+1. **Subscription bundling** — €19.99/mo with every robot
+2. **Local AI processing** — Avoid cloud dependency failures
+3. **B2B healthcare focus** — 45% of elderly care facilities use robots
+4. **Sempai integration** — Wellness modes differentiate from competitors
 
 ---
 
-## Revenue Breakdown (Year 10)
+## Pillar 3: Server Infrastructure (2029-2030)
 
-| Source | Annual Revenue |
-|--------|----------------|
-| AKHAI Engine (subscriptions, API) | $500M |
-| AKHAI Robots (hardware + software) | $3B |
-| Data Center Services (AI compute) | $2B |
-| Bitcoin Mining (5 cities) | $300M |
-| BroolyKid Real Estate | $200M |
-| MonadKid Blockchain | $500M |
-| Heat Recovery & Energy Sales | $500M |
-| Tourism, Education, Services | $1B |
-| **TOTAL** | **$8B/year** |
+### Dual-Purpose Data Centers
 
-**Valuation at 12x revenue:** $96B → Rounded to **$100B**
+| Function | Purpose |
+|----------|---------|
+| **AI Compute** | Host AKHAI Engine, train models, serve robot AI |
+| **BTC Mining** | Generate revenue for BroolyKid cities |
+| **Heat Recovery** | District heating, greenhouses, aquaculture |
+
+### Infrastructure Roadmap
+
+| Year | Capacity | Location | Revenue |
+|------|----------|----------|---------|
+| 2029 | 10MW + 16K ASICs | Paraguay | $20M |
+| 2030 | 50MW + 48K ASICs | Paraguay + UAE | $80M |
+| 2032 | 200MW + 100K ASICs | Multiple | $200M |
+
+### Why Paraguay
+
+- Electricity: $0.03/kWh (world's cheapest)
+- 100% renewable (Itaipu Dam hydroelectric)
+- Crypto-friendly government
+- Low political risk
+
+---
+
+## Pillar 4: BroolyKid Smart Cities (2030+)
+
+### Integration with AKHAI
+
+| AKHAI Component | City Application |
+|-----------------|------------------|
+| AKHAI Engine | City brain, governance AI, resource optimization |
+| AKHAI Portable | Personal companions for every citizen |
+| AKHAI Full-Size | Healthcare, education, hospitality service |
+| Server Infrastructure | Powers city + funds circular economy |
+
+### City Development Timeline
+
+| Phase | Timeline | Citizens | Status |
+|-------|----------|----------|--------|
+| Bootstrap | 2030-2031 | 1,000 | Land + Infrastructure |
+| Proof of Concept | 2031-2032 | 5,000 | Core services operational |
+| Full City | 2032-2033 | 10,000 | Mining at scale |
+| Network | 2033-2040 | 10 cities | 100,000 citizens |
+
+### Funding Model
+
+- **City 1:** $450-474M external funding
+- **Cities 2-10:** 100% self-financed via BTC mining
+- **Circular Economy:** Free services by Year 5 of each city
+
+---
+
+## Financial Scenarios
+
+### Scenario 1: Base Case
+
+**Assumptions:** Organic growth, no major partnerships, standard execution
+
+| Year | Revenue | EBITDA | Margin | Valuation |
+|------|---------|--------|--------|-----------|
+| 2026 | $2M | -$2.5M | -125% | $30M |
+| 2027 | $8M | -$2M | -25% | $96M |
+| 2028 | $35M | $3M | 9% | $350M |
+| 2029 | $100M | $17M | 17% | $800M |
+| 2030 | $200M | $47M | 24% | $1.4B |
+| 2032 | $470M | $130M | 28% | $2.8B |
+| 2035 | $1.12B | $330M | 29% | $6.7B |
+
+### Scenario 2: Optimistic (AKHAI + Sempai Synergy)
+
+**Assumptions:** Strategic partnership, faster adoption, B2B healthcare wins
+
+| Year | Revenue | EBITDA | Margin | Valuation |
+|------|---------|--------|--------|-----------|
+| 2026 | $3M | -$2.8M | -93% | $60M |
+| 2027 | $17M | $0M | 0% | $255M |
+| 2028 | $85M | $15M | 18% | $1.0B |
+| 2029 | $250M | $65M | 26% | $2.5B |
+| 2030 | $540M | $165M | 31% | $4.9B |
+| 2032 | $1.4B | $500M | 36% | $11.2B |
+| 2035 | $3.5B | $1.36B | 39% | $28B |
+
+### 10-Year Cumulative
+
+| Metric | Base Case | Optimistic |
+|--------|-----------|------------|
+| Total Revenue | $3.8B | $11.4B |
+| Total EBITDA | $1.04B | $4.2B |
+| Peak Valuation | $6.7B | $28B |
+| Total Robots | 463K | 1.27M |
+
+---
+
+## The Dream Team
+
+### Core Leadership
+
+| Role | Person | Credential |
+|------|--------|------------|
+| **CEO & Founder** | Haidar (algoq) | BJJ World Games Champion 2017, "Vibe Coder" |
+| **Lead Architect** | Andy | Built AKHAI core engine, production-grade execution |
+| **Strategic Advisor** | Philippe Haydarian | ENA Graduate, Ex-Deloitte Senior Consultant |
+| **Investment Partner** | Gregory Sankara | G&V Compagnie, +20% valuation enhancement |
+
+### Extended Team
+
+| Role | Person | Credential |
+|------|--------|------------|
+| **Technical Advisor** | Alex Roubaud | CEO Bitstack (AMF-certified), mining expertise |
+| **Global Ambassador** | Cyril Gane | UFC Interim Heavyweight Champion |
 
 ---
 
 ## Competitive Moat
 
-### 1. Multi-AI Consensus (Technical Moat)
-No competitor combines 4+ frontier AI models in real-time consensus. Proprietary GTP Flash architecture is 3x faster than sequential approaches.
+### Why AKHAI Wins
 
-### 2. Vertical Integration (Strategic Moat)
-- AI Engine → Robot embodiment → Infrastructure → Cities
-- Each layer feeds the next:
-  - Engine provides intelligence for Robots
-  - Robots serve City citizens
-  - Mining revenue funds City expansion
-  - Cities generate data to improve Engine
+| Moat | Description |
+|------|-------------|
+| **Multi-AI Consensus** | Only platform combining 4+ frontier models in real-time |
+| **Vertical Integration** | Engine → Robot → Infrastructure → Cities |
+| **Consciousness Focus** | Sempai wellness + BroolyKid community differentiation |
+| **Team Legitimacy** | ENA + Deloitte + AMF + World Champions |
+| **First Mover** | No competitor building AI + Robots + Cities |
 
-### 3. Team & Network (Human Moat)
-- algoq: Championship discipline + entrepreneurial vision
-- Andy: Elite AI engineering
-- Phil: Elite strategic thinking + consulting pedigree
-- Greg: Capital strategy + +20% valuation enhancement
-- Cyril: Championship brand ambassador
+### vs. Competition
 
-### 4. First-Mover (Timing Moat)
-- First to combine multi-AI consensus + robotics + sovereign cities
-- 2-3 year lead on imitators
+| Competitor | What They Do | What We Do Better |
+|------------|--------------|-------------------|
+| OpenAI | Software only | + Robots + Cities |
+| Tesla | Cars + Robot | Multi-AI consensus, consciousness focus |
+| Unitree | Hardware only | AI brain, ecosystem integration |
+| Figure AI | Industrial robots | Consumer + B2B, city integration |
 
 ---
 
-## Risks & Mitigation
+## Risk Mitigation
 
-### Technical Risks
-- **AI Model Access:** Dependency on third-party APIs (Anthropic, DeepSeek, xAI, Mistral)
-  - *Mitigation:* Train proprietary models by Year 3, dual-source from open-source alternatives
-- **Robotics Complexity:** Hardware development is capital-intensive and slow
-  - *Mitigation:* Partner with established manufacturers, start with simpler Portable version
-
-### Market Risks
-- **Competition:** OpenAI, Google, Tesla building robots
-  - *Mitigation:* Multi-AI consensus is unique differentiator, focus on consciousness/community niche
-- **Regulation:** AI and crypto face regulatory uncertainty
-  - *Mitigation:* Geographic diversification (10 cities, multiple jurisdictions)
-
-### Execution Risks
-- **Scaling:** Rapid growth requires flawless execution
-  - *Mitigation:* Championship discipline from algoq, systematic project management
-- **Talent:** Need world-class AI, robotics, and city planning talent
-  - *Mitigation:* Capital partners unlock elite networks, strategic connections, community outreach
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Consumer robot failure | HIGH | B2B first, subscription model, <€1K pricing |
+| Tesla dominates | HIGH | Differentiate on AI consensus, not hardware |
+| Chinese undercut | MEDIUM | Premium positioning, local AI, brand |
+| Regulation | MEDIUM | Multi-jurisdiction (10 cities) |
+| Execution | MEDIUM | Championship discipline, phased approach |
 
 ---
 
-## Why This Will Work
+## Immediate Roadmap
 
-### 1. The Team
-- **algoq:** Championship mindset applied to business ("vibe coding" intuition + relentless discipline)
-- **Andy:** Technical legitimacy and execution excellence
-- **Phil:** Elite strategic thinking and consulting expertise
-- **Greg:** Capital and +20% valuation enhancement expertise
-- This combination has never existed in AI/robotics/cities before
+### Q1 2026: AKHAI Engine Beta
+- [ ] Public beta launch
+- [ ] 1,000 beta users
+- [ ] Feedback collection
+- [ ] Performance optimization
 
-### 2. The Timing
-- AI models now capable of multi-agent consensus (impossible 3 years ago)
-- Robotics hardware maturing (Boston Dynamics proves bipedal locomotion)
-- Bitcoin mining economics favorable (renewable energy arbitrage)
-- Consciousness movement growing (people seeking alternatives to industrial civilization)
+### Q2 2026: Monetization
+- [ ] Paid tiers live
+- [ ] $50K MRR target
+- [ ] Enterprise pilots
+- [ ] Agent marketplace beta
 
-### 3. The Vision
-- Not just building products—building civilization's next iteration
-- Every pillar reinforces the others (flywheel effect)
-- Once City 1 proves the model, expansion is inevitable (100% self-financed)
+### Q3-Q4 2026: Scale
+- [ ] 10,000 users
+- [ ] $200K MRR
+- [ ] Series A preparation
+- [ ] Robot design kickoff
+
+### 2027: Robot Development
+- [ ] Industrial design finalization
+- [ ] Prototype builds
+- [ ] Manufacturing partnerships
+- [ ] NO public robot sales
+
+### 2028: Robot Launch
+- [ ] Q2: Portable consumer launch
+- [ ] Q4: Full-Size B2B pilot
+- [ ] Target: $35-85M revenue
 
 ---
 
-## Ecosystem Repositories
+## Repository Structure
 
-This master plan connects multiple GitHub repositories:
+```
+akhai/
+├── packages/
+│   ├── core/           # AKHAI consensus engine
+│   ├── web/            # Next.js web interface
+│   └── mcp-server/     # Claude Code integration
+├── docs/
+│   ├── MASTER_PLAN.md  # This document
+│   ├── ROBOT.md        # Robot specifications
+│   ├── TEAM.md         # Team bios
+│   └── ARCHITECTURE.md # Technical architecture
+└── STATUS_DASHBOARD.md # Current state tracking
+```
 
-1. **[akhai](https://github.com/algoq369/akhai)** - Multi-AI consensus engine (THIS REPO)
-2. **[sempai-monorepo](https://github.com/algoq369/sempai-monorepo)** - Trading/chat/blockchain infrastructure
-3. **[broolykid-network](https://github.com/algoq369/broolykid-network)** - Sovereign smart cities
-4. **[akhai-robot](https://github.com/algoq369/akhai-robot)** - Robotics development (to be created)
-5. **[monadkid-blockchain](https://github.com/algoq369/monadkid-blockchain)** - Custom blockchain for cities (to be created)
+## Connected Repositories
 
----
-
-## Call to Action
-
-**For Investors:**
-- Seed round (Year 0-1): $5M at $50M valuation (10% equity)
-- Series A (Year 2): $50M at $500M valuation
-- Series B (Year 4): $500M at $5B valuation (pre-IPO)
-
-**For Builders:**
-- AI Engineers: Join the multi-AI consensus revolution
-- Roboticists: Build the embodied intelligence layer
-- City Planners: Design sovereign communities
-- Consciousness Practitioners: Shape the culture
-
-**For Citizens:**
-- Join BroolyKid waiting list (first 10,000 get priority access)
-- Beta test AKHAI Portable when dev kits launch
-- Contribute to open-source components
+| Repo | Purpose |
+|------|---------|
+| [akhai](https://github.com/algoq369/akhai) | AI Engine (THIS REPO) |
+| [sempai-monorepo](https://github.com/algoq369/sempai-monorepo) | Wellness platform |
+| [broolykid-network](https://github.com/algoq369/broolykid-network) | Smart cities |
 
 ---
 
 ## The Bottom Line
 
-AKHAI is not a company. It's a movement.
+AKHAI is building a **$10B+ ecosystem** through disciplined execution:
 
-From research engine to robots to cities, we're building an integrated ecosystem that proves:
-- **Technology can serve consciousness** (not just profit)
-- **Communities can be sovereign** (economically and politically)
-- **Humans can flourish** (not just survive)
+1. **2026:** Prove AI consensus superiority
+2. **2027:** Develop robots (no public sales)
+3. **2028:** Launch robots with market validation
+4. **2030+:** Infrastructure + Cities
 
-**10 years. $100 billion. A new civilization.**
+**Not a $100B fantasy. A $10B+ reality.**
 
-Let's build it together.
-
----
-
-**Next Steps:**
-1. Read [ROBOT.md](./ROBOT.md) for detailed robotics specs
-2. Read [TEAM.md](./TEAM.md) for full leadership bios
-3. Visit [broolykid-network](https://github.com/algoq369/broolykid-network) for city details
-4. Star this repo and spread the vision
-
-**Contact:**
-- Email: info@akhai.ai (placeholder)
-- Twitter: @akhai_ai (placeholder)
-- Discord: Join our community (link TBD)
+*Built with championship discipline and market validation.*
 
 ---
 
-*Built with championship discipline, elite strategy, and vibe coding magic.*
-
-*Let's fucking go.*
+*"Build the AI moat first. Hardware is the distribution channel, not the product."*
