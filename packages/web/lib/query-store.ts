@@ -36,14 +36,16 @@ export interface QueryEvent {
     | 'quorum-progress'
     | 'quorum-reached'
     | 'synthesis-start'
-    | 'synthesis-complete';
+    | 'synthesis-complete'
+    // Direct mode event
+    | 'fast-path';
   data: any;
   timestamp: number;
 }
 
 export interface QueryData {
   query: string;
-  flow: 'A' | 'B';
+  flow: 'A' | 'B' | 'direct' | 'gtp' | 'cot' | 'aot' | 'auto';
   status: 'pending' | 'processing' | 'complete' | 'error';
   result?: any;
   events: QueryEvent[];
@@ -56,7 +58,7 @@ export const queries = new Map<string, QueryData>();
 /**
  * Create a new query (persists to database)
  */
-export function createQueryRecord(id: string, query: string, flow: 'A' | 'B'): void {
+export function createQueryRecord(id: string, query: string, flow: QueryData['flow']): void {
   const queryData: QueryData = {
     query,
     flow,
@@ -66,7 +68,7 @@ export function createQueryRecord(id: string, query: string, flow: 'A' | 'B'): v
 
   queries.set(id, queryData);
 
-  // Persist to database
+  // Persist to database (store methodology in flow field for backward compatibility)
   try {
     dbCreateQuery(id, query, flow);
   } catch (error) {
