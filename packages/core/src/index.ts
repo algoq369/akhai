@@ -1,36 +1,16 @@
 /**
  * @akhai/core
  *
- * Super Research Engine with Multi-AI Consensus
+ * AKHAI Super Intelligence - Multi-AI Consensus Engine
+ * Version: 0.4.0
  *
  * Features:
  * - Multi-AI consensus with 4 advisors + Mother Base
- * - Automated verification loops (max 3 rounds, 2 min each)
- * - Flow A: Mother Base Decision
- * - Flow B: Sub-Agent Execution (Direct)
- *
- * Usage:
- * ```typescript
- * import { createAkhAI, ModelFamily } from '@akhai/core';
- *
- * const akhai = createAkhAI('anthropic');
- *
- * akhai.setApiKeys({
- *   anthropic: 'sk-ant-...',
- *   deepseek: 'sk-...',
- *   openrouter: 'sk-or-...'
- * });
- *
- * akhai.setupMotherBase('claude-sonnet-4-20250514');
- * akhai.setupAdvisorLayer('deepseek', 'qwen');
- * akhai.registerSubAgent('CodingAgent');
- *
- * // Flow A: Mother Base Decision
- * const result = await akhai.executeMotherBaseFlow('Analyze architecture');
- *
- * // Flow B: Sub-Agent Execution
- * const agentResult = await akhai.executeSubAgentFlow('Build feature', 'CodingAgent');
- * ```
+ * - GTP Flash parallel architecture (~25s)
+ * - 5 methodologies (Direct, CoT, AoT, Flash, Auto)
+ * - Conversation memory
+ * - Quality scoring
+ * - Specialized agents
  *
  * @packageDocumentation
  */
@@ -117,6 +97,44 @@ export type {
 } from './methodologies/types.js';
 
 // ============================================================================
+// MEMORY (NEW in v0.4.0)
+// ============================================================================
+
+export {
+  ConversationMemory,
+  type Message,
+  type MemoryConfig,
+  type ConversationSummary,
+} from './memory/ConversationMemory.js';
+
+// ============================================================================
+// QUALITY SCORING (NEW in v0.4.0)
+// ============================================================================
+
+export {
+  QualityScorer,
+  type QualityScore,
+  type QualityConfig,
+} from './quality/QualityScorer.js';
+
+// ============================================================================
+// SPECIALIZED AGENTS (NEW in v0.4.0)
+// ============================================================================
+
+export {
+  SPECIALIZED_AGENTS,
+  RESEARCH_AGENT,
+  CODING_AGENT,
+  ANALYSIS_AGENT,
+  WRITING_AGENT,
+  STRATEGY_AGENT,
+  DEBUG_AGENT,
+  getAgentForTask,
+  listAgents,
+  type AgentConfig,
+} from './agents/SpecializedAgents.js';
+
+// ============================================================================
 // MAIN SYSTEM
 // ============================================================================
 
@@ -139,9 +157,27 @@ import type { ModelFamily } from './models/types.js';
  *
  * @example
  * ```typescript
- * import { createAkhAI } from '@akhai/core';
+ * import { createAkhAI, ConversationMemory, QualityScorer } from '@akhai/core';
  *
  * const akhai = createAkhAI('anthropic');
+ * const memory = new ConversationMemory();
+ * const scorer = new QualityScorer();
+ *
+ * // Setup
+ * akhai.setApiKeys({ anthropic, deepseek, xai, mistral });
+ * akhai.setupMotherBase();
+ * akhai.setupAdvisorLayer('deepseek', 'xai');
+ *
+ * // Execute query
+ * const result = await akhai.executeMotherBaseFlow('Analyze this...');
+ *
+ * // Track in memory
+ * memory.addMessage('user', 'Analyze this...');
+ * memory.addMessage('assistant', result.finalDecision);
+ *
+ * // Score quality
+ * const score = scorer.scoreConsensus(result.layerConsensus, result.finalDecision);
+ * console.log(scorer.formatScore(score));
  * ```
  */
 export function createAkhAI(motherBaseFamily: ModelFamily): AkhAISystem {
@@ -150,12 +186,11 @@ export function createAkhAI(motherBaseFamily: ModelFamily): AkhAISystem {
 
 /**
  * Default export: createAkhAI factory function
- *
- * @example
- * ```typescript
- * import createAkhAI from '@akhai/core';
- *
- * const akhai = createAkhAI('anthropic');
- * ```
  */
 export default createAkhAI;
+
+// ============================================================================
+// VERSION
+// ============================================================================
+
+export const VERSION = '0.4.0';
