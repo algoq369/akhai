@@ -13,7 +13,7 @@ export default function Navbar() {
     { href: '/explore', label: 'Explore' },
     { href: '/history', label: 'History' },
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/settings', label: 'Settings' },
+    { href: '/profile', label: 'Profile' },
   ];
 
   return (
