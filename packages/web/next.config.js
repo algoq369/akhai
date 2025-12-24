@@ -7,12 +7,23 @@ const nextConfig = {
   },
   // Fix lockfile warning by setting workspace root
   outputFileTracingRoot: require('path').join(__dirname, '../../'),
-  // Only add CSP header in production - development needs eval for HMR
+  // CSP configuration
   async headers() {
-    // Skip CSP entirely in development to avoid eval warnings
     if (process.env.NODE_ENV === 'development') {
-      return [];
+      // In development, allow unsafe-eval for Next.js HMR (Fast Refresh)
+      return [
+        {
+          source: '/:path*',
+          headers: [
+            {
+              key: 'Content-Security-Policy',
+              value: "script-src 'self' 'unsafe-eval' 'unsafe-inline'; object-src 'none'; base-uri 'self';",
+            },
+          ],
+        },
+      ];
     }
+    // Production: strict CSP
     return [
       {
         source: '/:path*',
