@@ -1,14 +1,9 @@
 {
   "pages": {
-    "/api/side-canal/topics/route": [
+    "/api/mindmap/data/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/side-canal/topics/route.js"
-    ],
-    "/api/simple-query/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/simple-query/route.js"
+      "static/chunks/app/api/mindmap/data/route.js"
     ]
   }
 }

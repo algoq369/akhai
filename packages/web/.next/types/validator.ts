@@ -218,6 +218,24 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../app/api/mindmap/data/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/mindmap/data">> = Specific
+  const handler = {} as typeof import("../../app/api/mindmap/data/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/mindmap/topics/[id]/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/mindmap/topics/[id]">> = Specific
+  const handler = {} as typeof import("../../app/api/mindmap/topics/[id]/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/api/query-all/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/query-all">> = Specific

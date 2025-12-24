@@ -1,4 +1,3 @@
 {
-  "/api/side-canal/topics/route": "app/api/side-canal/topics/route.js",
-  "/api/simple-query/route": "app/api/simple-query/route.js"
+  "/api/mindmap/data/route": "app/api/mindmap/data/route.js"
 }
