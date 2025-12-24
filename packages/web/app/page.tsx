@@ -306,15 +306,65 @@ export default function HomePage() {
 
   const handleGuardRefine = async (messageId: string, refinedQuery?: string) => {
     if (refinedQuery) {
-      // User selected a suggestion - submit it
-      setQuery(refinedQuery)
-      const submitEvent = new Event('submit', { bubbles: true, cancelable: true })
-      await handleSubmit(submitEvent as any)
-
-      // Mark original message as refined
+      // User selected a suggestion - submit it directly
+      // Don't use setQuery + handleSubmit (async state issue)
+      
+      // First, show the original flagged message (un-hide it with refine indicator)
       setMessages(prev => prev.map(m =>
-        m.id === messageId ? { ...m, guardAction: 'refined' } : m
+        m.id === messageId ? { ...m, isHidden: false, guardAction: 'refined' } : m
       ))
+
+      // Add refined query as new user message
+      const userMessage: Message = {
+        id: generateId(),
+        role: 'user',
+        content: `🔄 Refined: ${refinedQuery}`,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, userMessage])
+      setIsLoading(true)
+
+      // Submit the refined query
+      try {
+        const res = await fetch('/api/simple-query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: refinedQuery,
+            methodology,
+            conversationHistory: messages.map(m => ({
+              role: m.role,
+              content: m.content
+            }))
+          })
+        })
+
+        const data = await res.json()
+        
+        const assistantMessage: Message = {
+          id: generateId(),
+          role: 'assistant',
+          content: data.response || data.finalDecision || 'No response',
+          methodology: data.methodology || methodology,
+          metrics: data.metrics,
+          timestamp: new Date(),
+          guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
+          guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
+          isHidden: data.guardResult?.passed === false,
+        }
+        setMessages(prev => [...prev, assistantMessage])
+      } catch (error) {
+        console.error('Refine query error:', error)
+        const errorMessage: Message = {
+          id: generateId(),
+          role: 'assistant',
+          content: 'Sorry, there was an error processing your refined query.',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, errorMessage])
+      } finally {
+        setIsLoading(false)
+      }
     } else {
       // Generate refinement suggestions
       setLoadingSuggestions(messageId)
@@ -359,15 +409,66 @@ export default function HomePage() {
 
   const handleGuardPivot = async (messageId: string, pivotQuery?: string) => {
     if (pivotQuery) {
-      // User selected a suggestion - submit it
-      setQuery(pivotQuery)
-      const submitEvent = new Event('submit', { bubbles: true, cancelable: true })
-      await handleSubmit(submitEvent as any)
-
-      // Mark original message as pivoted
+      // User selected a suggestion - submit it directly
+      // Don't use setQuery + handleSubmit (async state issue)
+      // Instead, directly submit with the pivot query
+      
+      // First, show the original flagged message (un-hide it with pivot indicator)
       setMessages(prev => prev.map(m =>
-        m.id === messageId ? { ...m, guardAction: 'pivoted' } : m
+        m.id === messageId ? { ...m, isHidden: false, guardAction: 'pivoted' } : m
       ))
+
+      // Add pivot query as new user message
+      const userMessage: Message = {
+        id: generateId(),
+        role: 'user',
+        content: `📍 Pivoted: ${pivotQuery}`,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, userMessage])
+      setIsLoading(true)
+
+      // Submit the pivot query
+      try {
+        const res = await fetch('/api/simple-query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: pivotQuery,
+            methodology,
+            conversationHistory: messages.map(m => ({
+              role: m.role,
+              content: m.content
+            }))
+          })
+        })
+
+        const data = await res.json()
+        
+        const assistantMessage: Message = {
+          id: generateId(),
+          role: 'assistant',
+          content: data.response || data.finalDecision || 'No response',
+          methodology: data.methodology || methodology,
+          metrics: data.metrics,
+          timestamp: new Date(),
+          guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
+          guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
+          isHidden: data.guardResult?.passed === false,
+        }
+        setMessages(prev => [...prev, assistantMessage])
+      } catch (error) {
+        console.error('Pivot query error:', error)
+        const errorMessage: Message = {
+          id: generateId(),
+          role: 'assistant',
+          content: 'Sorry, there was an error processing your pivot query.',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, errorMessage])
+      } finally {
+        setIsLoading(false)
+      }
     } else {
       // Generate pivot suggestions
       setLoadingSuggestions(messageId)
