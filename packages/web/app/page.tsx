@@ -688,18 +688,54 @@ export default function HomePage() {
                         />
                       )}
 
-                      {/* Condensed Alert - Shows after Refine/Pivot action was taken */}
-                      {message.guardResult && (message.guardAction === 'refined' || message.guardAction === 'pivoted') && (
-                        <div className="mt-4 mb-2 bg-relic-ghost/20 border-l-2 border-relic-slate/20 p-3 animate-fade-in">
-                          <div className="flex items-center gap-2 text-xs text-relic-silver">
+                      {/* Condensed Alert - Shows after any guard action was taken (Refine/Pivot/Continue) */}
+                      {message.guardResult && (message.guardAction === 'refined' || message.guardAction === 'pivoted' || message.guardAction === 'accepted') && (
+                        <div className="mt-4 mb-4 bg-relic-ghost/20 border-l-2 border-relic-slate/20 p-3 animate-fade-in">
+                          <div className="flex items-center gap-2 text-xs">
                             <span>⚠️</span>
-                            <span>Reality Check flagged: {message.guardResult.sanityViolations[0] || message.guardResult.issues.join(', ')}</span>
+                            <span className="font-medium text-relic-slate">Reality Check</span>
                           </div>
-                          <div className="mt-2 text-xs text-relic-slate">
-                            <span className="text-relic-silver">
-                              {message.guardAction === 'refined' ? '🔄 Refined to:' : '📍 Pivoted to:'}
-                            </span>
-                            <span className="ml-2 italic">{message.guardActionQuery}</span>
+                          
+                          {/* Show violations */}
+                          {message.guardResult.sanityViolations && message.guardResult.sanityViolations.length > 0 && (
+                            <div className="mt-2 text-xs text-relic-silver">
+                              {message.guardResult.sanityViolations.map((v, i) => (
+                                <div key={i} className="flex items-start gap-1">
+                                  <span>→</span>
+                                  <span>{v}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Show other issues */}
+                          {message.guardResult.issues && message.guardResult.issues.filter(i => i !== 'sanity').length > 0 && (
+                            <div className="mt-2 flex gap-2">
+                              {message.guardResult.issues.filter(i => i !== 'sanity').map((issue, i) => (
+                                <span key={i} className="text-[10px] px-2 py-0.5 bg-relic-mist/50 text-relic-silver rounded">
+                                  {issue}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Show action taken */}
+                          <div className="mt-2 text-xs text-relic-slate border-t border-relic-mist/30 pt-2">
+                            {message.guardAction === 'accepted' && (
+                              <span className="text-green-600">✓ Continued with caution</span>
+                            )}
+                            {message.guardAction === 'refined' && (
+                              <>
+                                <span className="text-relic-silver">🔄 Refined to:</span>
+                                <span className="ml-2 italic">{message.guardActionQuery}</span>
+                              </>
+                            )}
+                            {message.guardAction === 'pivoted' && (
+                              <>
+                                <span className="text-relic-silver">📍 Pivoted to:</span>
+                                <span className="ml-2 italic">{message.guardActionQuery}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       )}
@@ -707,13 +743,6 @@ export default function HomePage() {
                       {/* Actual Response - Shows if not hidden */}
                       {!message.isHidden && (
                         <div className="border-l-2 border-relic-slate/30 pl-4">
-                          {/* Warning badge if accepted */}
-                          {message.guardAction === 'accepted' && (
-                            <div className="inline-flex items-center gap-2 text-xs text-relic-silver mb-2">
-                              <span>⚠️</span>
-                              <span>Flagged by Reality Check</span>
-                            </div>
-                          )}
 
                           <p className="text-relic-slate leading-relaxed whitespace-pre-wrap text-sm">
                             {message.content}

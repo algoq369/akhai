@@ -37,40 +37,44 @@ export async function POST(request: NextRequest) {
       const violations = guardResult?.sanityViolations || []
       const issues = guardResult?.issues || []
 
-      systemPrompt = `You are a query refinement assistant. The user's message triggered reality check violations.
+      systemPrompt = `You are a query refinement assistant helping a user rephrase their question to be more realistic.
 ${contextStr}
-User's message that triggered the warning: "${originalQuery}"
+User's original message: "${originalQuery}"
 
-AI response that was flagged: "${aiResponse?.substring(0, 300) || 'N/A'}..."
+This was flagged because: ${violations.length > 0 ? violations.join(', ') : issues.join(', ') || 'unrealistic claims'}
 
-Violations detected:
-${violations.length > 0 ? violations.map((v: string) => `- ${v}`).join('\n') : '- Hype/unrealistic claims detected'}
+Generate exactly 3 refined questions, ORDERED FROM MOST TO LEAST LOGICAL:
 
-Issues: ${issues.join(', ') || 'hype'}
+FIRST suggestion (most direct fix): Rephrase the user's exact question but with realistic parameters
+SECOND suggestion: Ask about the underlying topic with verifiable facts
+THIRD suggestion: Request analysis or historical data about the same subject
 
-Generate 3 refined questions that:
-1. Stay on the SAME TOPIC the user was discussing
-2. Ask for realistic, verifiable information
-3. Are specific and answerable
-4. Relate directly to the conversation context
+Rules:
+- All 3 MUST be about the same topic the user asked about (e.g., if they asked about their project making money, all suggestions should be about their project or business revenue)
+- Replace unrealistic numbers with "realistic" or ask "what would be realistic"
+- Keep the same subject matter, just make it answerable
+- Be concise (under 20 words each)
 
-IMPORTANT: Your suggestions MUST be about the same subject the user was asking about. Do NOT suggest unrelated topics.
-
-Respond with ONLY 3 refined questions, one per line, no numbering, no explanations.`
+Output ONLY 3 questions, one per line, no numbers, no explanations.`
     } else if (action === 'pivot') {
-      systemPrompt = `You are a query pivot assistant. The user's message was flagged for reality check issues.
+      systemPrompt = `You are a query pivot assistant helping a user explore their topic from a different angle.
 ${contextStr}
-User's message: "${originalQuery}"
+User's original message: "${originalQuery}"
 
-Generate 3 alternative approaches that:
-1. Explore the SAME TOPIC from a different, more grounded angle
-2. Ask about realistic aspects of what the user is interested in
-3. Focus on facts, history, or analysis rather than speculation
-4. Stay relevant to the conversation subject
+Generate exactly 3 alternative questions about the SAME TOPIC, ORDERED FROM MOST TO LEAST RELEVANT:
 
-IMPORTANT: Your suggestions MUST relate to what the user was actually discussing. Do NOT suggest unrelated topics.
+FIRST suggestion (closest pivot): A very related question about the same subject from a factual angle
+SECOND suggestion: Ask about what makes this topic realistic or achievable
+THIRD suggestion: Request historical examples or case studies about the same subject
 
-Respond with ONLY 3 alternative questions, one per line, no numbering, no explanations.`
+Rules:
+- All 3 MUST relate to what the user was asking about
+- Focus on facts, analysis, or learning instead of speculation
+- If they asked about making money, pivot to realistic business questions
+- If they asked about price predictions, pivot to analysis or historical data
+- Be concise (under 20 words each)
+
+Output ONLY 3 questions, one per line, no numbers, no explanations.`
     } else {
       return NextResponse.json(
         { error: 'Invalid action. Must be "refine" or "pivot"' },
