@@ -1,9 +1,3 @@
 {
-  "pages": {
-    "/api/mindmap/data/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/mindmap/data/route.js"
-    ]
-  }
+  "pages": {}
 }
