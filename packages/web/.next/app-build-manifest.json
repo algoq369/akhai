@@ -4,11 +4,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/guard-suggestions/route.js"
-    ],
-    "/api/simple-query/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/simple-query/route.js"
     ]
   }
 }

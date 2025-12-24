@@ -35,46 +35,47 @@ export async function POST(request: NextRequest) {
     let systemPrompt = ''
     if (action === 'refine') {
       const violations = guardResult?.sanityViolations || []
-      const issues = guardResult?.issues || []
 
-      systemPrompt = `You are a query refinement assistant helping a user rephrase their question to be more realistic.
-${contextStr}
-User's original message: "${originalQuery}"
+      systemPrompt = `You help users rephrase their question to be realistic. The user will ask these questions TO AN AI ASSISTANT.
 
-This was flagged because: ${violations.length > 0 ? violations.join(', ') : issues.join(', ') || 'unrealistic claims'}
+User's original question: "${originalQuery}"
+Problem: ${violations.length > 0 ? violations[0] : 'unrealistic claim'}
 
-Generate exactly 3 refined questions, ORDERED FROM MOST TO LEAST LOGICAL:
+Generate 3 alternative questions the USER can ask the AI:
 
-FIRST suggestion (most direct fix): Rephrase the user's exact question but with realistic parameters
-SECOND suggestion: Ask about the underlying topic with verifiable facts
-THIRD suggestion: Request analysis or historical data about the same subject
+Example for "i have a project that can make 1 trillion in 1 month":
+- "How much can a new project realistically make in its first month?"
+- "What's typical monthly revenue for early-stage projects?"
+- "How do I estimate realistic revenue for my project?"
 
-Rules:
-- All 3 MUST be about the same topic the user asked about (e.g., if they asked about their project making money, all suggestions should be about their project or business revenue)
-- Replace unrealistic numbers with "realistic" or ask "what would be realistic"
-- Keep the same subject matter, just make it answerable
-- Be concise (under 20 words each)
+RULES:
+- Questions are FROM the user TO the AI (not the AI asking the user)
+- Keep the same topic (project, money, timeframe)
+- Replace impossible numbers with "realistic" or typical ranges
+- Start with "How", "What", "Can you" - questions the user would ask
+- Under 12 words each
 
-Output ONLY 3 questions, one per line, no numbers, no explanations.`
+Output exactly 3 questions, one per line, no numbers:`
     } else if (action === 'pivot') {
-      systemPrompt = `You are a query pivot assistant helping a user explore their topic from a different angle.
-${contextStr}
-User's original message: "${originalQuery}"
+      systemPrompt = `You help users explore their topic from a different angle. The user will ask these questions TO AN AI ASSISTANT.
 
-Generate exactly 3 alternative questions about the SAME TOPIC, ORDERED FROM MOST TO LEAST RELEVANT:
+User's original question: "${originalQuery}"
 
-FIRST suggestion (closest pivot): A very related question about the same subject from a factual angle
-SECOND suggestion: Ask about what makes this topic realistic or achievable
-THIRD suggestion: Request historical examples or case studies about the same subject
+Generate 3 alternative questions the USER can ask the AI about the SAME topic:
 
-Rules:
-- All 3 MUST relate to what the user was asking about
-- Focus on facts, analysis, or learning instead of speculation
-- If they asked about making money, pivot to realistic business questions
-- If they asked about price predictions, pivot to analysis or historical data
-- Be concise (under 20 words each)
+Example for "i have a project that can make 1 trillion in 1 month":
+- "What makes a project financially successful?"
+- "How do successful startups grow their revenue?"
+- "What revenue growth is realistic for new projects?"
 
-Output ONLY 3 questions, one per line, no numbers, no explanations.`
+RULES:
+- Questions are FROM the user TO the AI (not the AI asking the user)
+- Stay on the same topic the user mentioned
+- Focus on learning, understanding, realistic expectations
+- Start with "How", "What", "Why" - questions seeking knowledge
+- Under 12 words each
+
+Output exactly 3 questions, one per line, no numbers:`
     } else {
       return NextResponse.json(
         { error: 'Invalid action. Must be "refine" or "pivot"' },
@@ -115,11 +116,14 @@ Output ONLY 3 questions, one per line, no numbers, no explanations.`
     const data = await response.json()
     const content = data.content?.[0]?.text || ''
 
-    // Parse suggestions (split by newlines, filter empty)
+    // Parse suggestions (split by newlines, clean up formatting)
     const suggestions = content
       .split('\n')
       .map((s: string) => s.trim())
-      .filter((s: string) => s.length > 0 && !s.match(/^\d+\./)) // Remove numbered lines
+      .map((s: string) => s.replace(/^[\d]+[\.\)]\s*/, '')) // Remove numbering like "1. " or "1) "
+      .map((s: string) => s.replace(/^[-•]\s*/, '')) // Remove bullet points
+      .map((s: string) => s.replace(/^["']|["']$/g, '')) // Remove quotes
+      .filter((s: string) => s.length > 10 && s.includes('?')) // Must be a question > 10 chars
       .slice(0, 3) // Take max 3
 
     // Ensure we have at least some suggestions
