@@ -1,294 +1,534 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with the AkhAI repository.
 
-## Repository Overview
+---
 
-This workspace contains multiple trading and blockchain projects:
+## 🎯 Project Overview
 
-1. **Main Monorepo** (chat-chain, bot-hub, trading-bot, got-store) - Integrated suite for encrypted chat, bot coordination, and paper trading
-2. **bsc-ranging-bot** - Production BSC trading bot with AI agents and advanced monitoring
-3. **Other Projects** - Various experimental bots and tools in subdirectories
+**AkhAI** is a **Sovereign AI Research Engine** combining 7 reasoning methodologies, real-time grounding verification (anti-hallucination), and autonomous context intelligence.
 
-## Core Architecture (Main Monorepo)
+### Vision
+- First truly sovereign AI system (no vendor lock-in)
+- Zero hallucination tolerance through Grounding Guard
+- Transparent reasoning with multiple methodologies
+- Self-hosted capability with local LLM support
 
-### chat-chain
-Minimal proof-of-work blockchain where transactions are encrypted chat messages.
-- **Stack**: TypeScript, Node.js, WebSocket, SSE
-- **Entry**: `src/server.ts`
-- **Key features**:
-  - End-to-end AES-GCM encryption in browser (per-channel passphrase)
-  - ECDSA P-256 signed messages with verification
-  - Low PoW difficulty for quick mining on small devices
-  - Server stores only ciphertext
+### Built by
+**Algoq** - Solo Founder
+*"AI should augment human thinking, not replace it"*
 
-### bot-hub
-WebSocket coordination hub for multi-bot communication and bridging.
-- **Stack**: TypeScript, Node.js, WebSocket
-- **Entry**: `src/server.ts`
-- **Key features**:
-  - Channel-based pub/sub messaging
-  - In-memory message history per channel
-  - Optional signed message verification
-  - Bridge to Chat-Chain
-  - AI integration (OpenAI, Anthropic, xAI, DeepSeek) via POST /ai/message
+---
 
-### trading-bot
-Paper trading bot with dashboard, backtesting, and hub integration.
-- **Stack**: TypeScript (Node.js) + Python for backtesting
-- **Entry**: `src/index.ts` (bot), `src/server.ts` (dashboard), `src/backtest.ts` (backtest)
-- **Key features**:
-  - RSI-based trading signals
-  - WebSocket integration with bot-hub
-  - Real-time dashboard with SSE
-  - Backtesting framework with equity curves
-  - Mock exchange for paper trading
+## 📦 Repository Structure
 
-### got-store
-SQLite-backed persistent storage service (Graph of Thought store).
-- **Stack**: TypeScript, Node.js, better-sqlite3
-- **Entry**: `src/server.ts`
-- **Purpose**: Persistent storage for bot-hub thoughts/messages
+This is a **pnpm monorepo** with multiple packages:
 
-## Commands
-
-### Development (Start All Services)
-```bash
-bash scripts/dev-up.sh
 ```
-Starts all services locally:
-- Chat-Chain: http://127.0.0.1:4001
-- Bot-Hub: http://127.0.0.1:5050 (WS: ws://127.0.0.1:5050/hub)
-- Trading Dashboard: http://127.0.0.1:3000
-- Two bot instances (botA, botB) publishing to hub
-
-Logs are written to `logs/` directory with PID files for process management.
-
-### Development (Stop All Services)
-```bash
-bash scripts/dev-down.sh
+akhai/
+├── packages/
+│   ├── web/              # Next.js 15 web interface (main UI)
+│   ├── core/             # Core AI system (methodologies, grounding)
+│   ├── inference/        # Inference engine (multi-provider support)
+│   ├── tools/            # AI tools (web search, calculator, etc.)
+│   ├── mcp-server/       # Model Context Protocol server
+│   ├── api/              # API layer
+│   └── cli/              # Command-line interface
+├── docs/                 # Technical documentation
+├── archive/              # Old documentation (preserved for reference)
+└── README.md             # Investor-ready overview
 ```
 
-### Docker
+---
+
+## 🧠 Core Innovations
+
+### 1. Seven Reasoning Methodologies
+
+| Methodology | Purpose | Triggers On |
+|-------------|---------|-------------|
+| **Direct** | Fast single-pass | Simple factual questions |
+| **CoD** (Chain of Draft) | Iterative refinement | "step by step", "explain" |
+| **BoT** (Buffer of Thoughts) | Template-based reasoning | Structured analysis |
+| **ReAct** | Thought-action cycles | Multi-step problems |
+| **PoT** (Program of Thought) | Code-based solutions | Math, calculations |
+| **GTP** (Generative Thoughts Process) | Multi-AI consensus | Complex research |
+| **Auto** | Intelligent routing | Auto-selects best method |
+
+**Implementation**: `packages/core/src/methodologies/`
+
+### 2. Grounding Guard System
+
+Four-layer verification system to prevent hallucinations:
+
+1. **Hype Detection** - Flags exaggerated claims
+2. **Echo Detection** - Catches repetitive content
+3. **Drift Detection** - Ensures query relevance
+4. **Factuality Check** - Verifies claims against sources
+
+**Implementation**: `packages/core/src/grounding/`
+
+### 3. Interactive Warning System
+
+When Guard fails, user gets 3 options:
+- **Refine** - AI suggests better questions
+- **Continue** - Show response with warning badge
+- **Pivot** - Alternative approaches
+
+**Implementation**: `packages/web/components/GuardWarning.tsx`
+
+### 4. Future Innovations (Planned)
+
+- **Side Canal** - Context awareness panel
+- **Mind Map** - Interactive reasoning visualization
+- **Legend Mode** - Mastery-based progressive disclosure
+- **Artifact System** - Generated code/charts/documents
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Next.js 15.5.9** - React framework
+- **TypeScript 5.9+** - Type safety
+- **Tailwind CSS** - Styling (grey-only "Code Relic" theme)
+- **Zustand** - State management
+
+### Backend/Core
+- **TypeScript** - All packages
+- **Anthropic API** - Primary LLM provider
+- **Multi-provider support**:
+  - DeepSeek
+  - Mistral AI
+  - xAI (Grok)
+  - Future: Self-hosted (Ollama, LM Studio)
+
+### Tools & Infrastructure
+- **pnpm** - Package manager (workspaces)
+- **Turbo** - Monorepo build system
+- **Hono** - API framework
+- **MCP (Model Context Protocol)** - Tool integration
+- **Cheerio** - Web scraping
+- **Better-SQLite3** - Local data persistence
+
+---
+
+## 🚀 Development Commands
+
+### Install Dependencies
+```bash
+pnpm install
+```
+
+### Development (All Packages)
+```bash
+pnpm dev
+```
+Starts:
+- Web UI: http://localhost:3000
+- MCP Server
+- Other services
+
+### Build All Packages
+```bash
+pnpm build
+```
+
+### Web Interface (packages/web)
+```bash
+cd packages/web
+pnpm dev          # Development server
+pnpm build        # Production build
+pnpm lint         # ESLint
+pnpm type-check   # TypeScript validation
+```
+
+### Core Package (packages/core)
+```bash
+cd packages/core
+pnpm build        # Compile TypeScript
+pnpm test         # Run tests
+```
+
+### Format Code
+```bash
+pnpm format              # Format all files
+pnpm format:check        # Check formatting
+```
+
+---
+
+## 📁 Key Files & Directories
+
+### Web Interface (packages/web/)
+
+#### Core UI
+- `app/page.tsx` - Main chat interface
+- `app/api/simple-query/route.ts` - Primary query endpoint
+- `app/api/guard-suggestions/route.ts` - Suggestion generation
+
+#### Components
+- `components/MethodologyExplorer.tsx` - Circular methodology browser
+- `components/GuardWarning.tsx` - Interactive warning system
+- `components/grounding/` - Guard UI components
+- `components/bot/` - BoT methodology visualizations
+
+#### State & Utils
+- `lib/chat-store.ts` - Message state management
+- `lib/analytics.ts` - Query tracking
+- `lib/realtime-data.ts` - Live data integration
+
+#### Styling
+- `app/globals.css` - Tailwind + custom styles
+- "Code Relic" design: Grey-only palette, minimal, professional
+
+### Core Package (packages/core/)
+
+#### Methodologies
+- `src/methodologies/direct.ts`
+- `src/methodologies/cod.ts` - Chain of Draft
+- `src/methodologies/bot.ts` - Buffer of Thoughts
+- `src/methodologies/react.ts` - ReAct loops
+- `src/methodologies/pot.ts` - Program of Thought
+- `src/methodologies/gtp/` - GTP consensus
+- `src/methodologies/selector.ts` - Auto-routing
+
+#### Grounding System
+- `src/grounding/GroundingGuard.ts` - Main guard orchestrator
+- `src/grounding/detectors/HypeDetector.ts`
+- `src/grounding/detectors/EchoDetector.ts`
+- `src/grounding/detectors/DriftDetector.ts`
+- `src/grounding/detectors/FactualityDetector.ts`
+
+#### System
+- `src/AkhAISystem.ts` - Main orchestrator
+- `src/models/types.ts` - Type definitions
+- `src/providers/` - LLM provider integrations
+
+### Documentation (docs/)
+- `METHODOLOGIES_EXPLAINED.md` - Complete methodology reference
+- `GROUNDING_GUARD_SYSTEM.md` - Guard system details
+- `ARCHITECTURE.md` - Technical architecture
+- `MASTER_PLAN.md` - Vision and roadmap
+
+---
+
+## 🔑 Environment Variables
+
+### Required
+```bash
+ANTHROPIC_API_KEY=sk-ant-...      # Primary provider
+```
+
+### Optional (Multi-provider)
+```bash
+DEEPSEEK_API_KEY=sk-...           # DeepSeek R1
+MISTRAL_API_KEY=...               # Mistral AI
+XAI_API_KEY=xai-...               # Grok
+```
+
+### Optional (Features)
+```bash
+COINGECKO_API_KEY=...             # Real-time crypto data
+```
+
+**Template**: See `packages/web/.env.example`
+
+---
+
+## 🧪 Testing
+
+### Core Tests
+```bash
+cd packages/core
+pnpm test                          # Run all tests
+pnpm test:watch                    # Watch mode
+```
+
+### Methodology Testing
+```bash
+cd packages/web
+./test-methodologies.sh            # Test all methodologies
+```
+
+### Manual Testing
+- Use `app/debug/page.tsx` for debugging features
+- Check browser console for detailed logs
+
+---
+
+## 📝 Code Conventions
+
+### TypeScript
+- Strict mode enabled
+- Use explicit types (avoid `any`)
+- Prefer interfaces over types for objects
+- Use `const` over `let`
+
+### Imports
+```typescript
+// Good
+import { GroundingGuard } from '@/lib/grounding'
+import type { Message } from '@/lib/chat-store'
+
+// Avoid
+import * as everything from 'somewhere'
+```
+
+### React Components
+- Use `'use client'` directive for client components
+- Prefer functional components
+- Use TypeScript for props
+
+### Naming
+- **Files**: kebab-case (`grounding-guard.ts`)
+- **Components**: PascalCase (`MethodologyExplorer.tsx`)
+- **Functions**: camelCase (`generateSuggestions()`)
+- **Constants**: SCREAMING_SNAKE_CASE (`MAX_RETRIES`)
+
+### Comments
+```typescript
+// Single-line for brief explanations
+
+/**
+ * Multi-line JSDoc for functions/classes
+ * @param query - User's input question
+ * @returns AI response with methodology metadata
+ */
+```
+
+---
+
+## 🚦 Git Workflow
+
+### Branch Strategy
+- `main` - Production-ready code
+- Feature branches: `feature/side-canal`, `fix/drift-detection`
+
+### Commit Messages
+Follow semantic format:
+```
+✨ feat: Add Side Canal context panel
+🐛 fix: Drift detection for short queries
+📝 docs: Update methodology guide
+🎨 style: Refactor GroundingGuard UI
+♻️ refactor: Simplify selector logic
+✅ test: Add CoD methodology tests
+```
+
+### Before Committing
+```bash
+pnpm format              # Format code
+pnpm lint                # Check linting
+pnpm type-check          # TypeScript validation
+pnpm test                # Run tests
+```
+
+---
+
+## 🎨 UI Design System ("Code Relic")
+
+### Colors
+Grey-only palette with precise shades:
+- `relic-void` - Dark text (#18181b)
+- `relic-slate` - Medium grey (#64748b)
+- `relic-silver` - Light grey (#94a3b8)
+- `relic-ghost` - Subtle bg (#f1f5f9)
+- `relic-white` - Clean white (#ffffff)
+
+**Exception**: Green for guard indicator (active status)
+
+### Typography
+- Font: System fonts (no custom fonts)
+- Uppercase tracking for labels
+- Monospace for code/metrics
+
+### Layout
+- Minimal, clean, professional
+- Generous whitespace
+- Centered content (max-width constraints)
+- Bottom-aligned input
+
+### Animations
+- Subtle, purposeful
+- Fade-in for new content
+- Smooth transitions (200-300ms)
+- No distracting effects
+
+---
+
+## 🔒 Security Considerations
+
+### API Keys
+- **Never commit** `.env` files
+- Use `.env.example` as template
+- Store keys in environment variables only
+
+### Input Validation
+- Sanitize all user inputs
+- Prevent XSS attacks
+- Rate limit API endpoints
+
+### Data Privacy
+- No PII collection without consent
+- Local-first data storage where possible
+- Clear data retention policies
+
+---
+
+## 🐛 Known Issues & Quirks
+
+### Drift Detection
+- Skips queries <6 words (too short for meaningful overlap)
+- Ignores math queries (they naturally drift from words)
+- Threshold: 85% drift triggers warning
+
+### Methodology Selection
+- Auto mode analyzes query complexity (length, keywords)
+- "step by step" → CoD
+- Math symbols → PoT
+- Multi-part questions → GTP
+
+### Real-time Data
+- CoinGecko API has rate limits (demo tier: 10-30 calls/min)
+- Cached responses used when available
+
+---
+
+## 📊 Performance Guidelines
+
+### Optimization Priorities
+1. **Latency** - Sub-3s response for Direct mode
+2. **Token efficiency** - Minimize unnecessary context
+3. **Cost** - Use cheaper models for simple tasks
+4. **Accuracy** - Never sacrifice quality for speed
+
+### Methodology Performance
+| Methodology | Avg Latency | Token Cost | Accuracy |
+|-------------|-------------|------------|----------|
+| Direct      | ~2s         | Low        | Good     |
+| CoD         | ~8s         | Medium     | High     |
+| BoT         | ~6s         | Medium     | High     |
+| ReAct       | ~12s        | High       | Very High|
+| PoT         | ~5s         | Low        | Perfect* |
+| GTP         | ~25s        | Very High  | Consensus|
+| Auto        | Varies      | Optimized  | Smart    |
+
+*For math/code problems
+
+---
+
+## 🚀 Deployment
+
+### Vercel (Recommended for Web)
+```bash
+cd packages/web
+vercel deploy
+```
+
+Environment variables needed:
+- `ANTHROPIC_API_KEY`
+- Other optional provider keys
+
+### Docker (Full Stack)
 ```bash
 docker compose up --build
 ```
 
-### Individual Services
+### Self-Hosted
+Requires:
+- Node.js 20+
+- pnpm 8+
+- LLM provider API keys OR local models (Ollama)
 
-#### chat-chain
-```bash
-cd chat-chain
-npm install
-PORT=4000 DIFFICULTY=3 npm run dev     # Development
-npm run build                          # Build TypeScript
-npm start                              # Production
-```
+---
 
-#### bot-hub
-```bash
-cd bot-hub
-npm install
-PORT=5050 REQUIRE_SIG=0 npm run dev   # Development
-npm run build
-npm start                              # Production
-npm run trust                          # Trust management CLI
-```
+## 📚 Documentation References
 
-Environment variables for AI integration:
-- `OPENAI_API_KEY` - Enable ChatGPT
-- `ANTHROPIC_API_KEY` - Enable Claude
-- `XAI_API_KEY` - Enable Grok
-- `DEEPSEEK_API_KEY` - Enable DeepSeek
+### For Users
+- `README.md` - Project overview & vision
+- `CONTRIBUTING.md` - Contribution guidelines (closed development)
+- `docs/METHODOLOGIES_EXPLAINED.md` - How each methodology works
+- `docs/GROUNDING_GUARD_SYSTEM.md` - Anti-hallucination details
 
-#### trading-bot
-```bash
-cd trading-bot
-npm install
-npm run dev                            # Run bot instance
-npm run dashboard                      # Run dashboard server
-npm run backtest                       # Run backtester
-npm run report                         # Generate backtest report
-```
+### For Developers
+- This file (`CLAUDE.md`) - Development guide
+- `docs/ARCHITECTURE.md` - Technical architecture
+- `docs/MASTER_PLAN.md` - Vision & roadmap
+- `packages/core/docs/METHODOLOGY_ARCHITECTURE.md` - Core system design
 
-For Python backtesting:
-```bash
-cd trading-bot
-python -m venv venv
-source venv/bin/activate               # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python backtest.py                     # Run Python backtest
-python main.py                         # Run Python trading bot
-```
+### For Investors
+- `README.md` - Professional overview
+- Roadmap section shows 6-phase plan
+- Solo founder narrative (Algoq)
+- Apache 2.0 license (open source)
 
-#### got-store
-```bash
-cd got-store
-npm install
-PORT=4600 npm run dev
-npm start
-```
+---
 
-## BSC Ranging Bot (Separate Project)
+## 💡 Development Tips
 
-Production-grade trading bot for Binance Smart Chain with AI agents and Streamlit monitoring.
+### Adding a New Methodology
+1. Create file in `packages/core/src/methodologies/`
+2. Implement `MethodologyExecutor` interface
+3. Register in `packages/core/src/methodologies/registry.ts`
+4. Add selector logic in `selector.ts`
+5. Update UI in `packages/web/components/MethodologyExplorer.tsx`
 
-### Location
-`bsc-ranging-bot/`
+### Adding a Guard Detector
+1. Create file in `packages/core/src/grounding/detectors/`
+2. Implement `Detector` interface
+3. Register in `GroundingGuard.ts`
+4. Add UI feedback in `GuardWarning.tsx`
 
-### Commands
-```bash
-cd bsc-ranging-bot
-npm install
+### Adding Real-time Data Source
+1. Create fetcher in `packages/web/lib/realtime-data.ts`
+2. Add API key to `.env.example`
+3. Integrate in query processing pipeline
+4. Update documentation
 
-npm start                              # Start main bot
-npm run start-shadow                   # Shadow mode (paper trading)
-npm run monitor                        # Launch Streamlit dashboard
-npm run setup-db                       # Initialize database
-npm run quick-start                    # Quick setup wizard
-npm test                               # Run test suite
-npm run test:coverage                  # Test coverage
-```
+---
 
-### Key Files to Watch
-- `AdvancedTradingBot.js` - Main bot logic
-- `agents/TradingStrategyAgent.js` - Position monitoring
-- `rangingStrategy.js` - Entry/exit conditions
-- `utils/priceHistoryManager.js` - Price data persistence
-- `security/rateLimiter.js` - Rate limiting
-- `risk/productionRiskManager.js` - Risk checks
-- `.cursorrules` - Bug detection priorities and monitoring rules
+## 🎯 Project Status
 
-### Architecture
-- Multi-agent system (Market Research, Trading Strategy, Risk Management)
-- RAG system with vector database (Milvus)
-- Streamlit dashboard with natural language querying
-- RESTful API + WebSocket support
-- Structured logging with Winston
+### ✅ Completed (Phase 1 & 2)
+- 7 reasoning methodologies
+- Grounding Guard system (4 detectors)
+- Interactive warning system (Refine/Continue/Pivot)
+- Methodology auto-selection
+- Web interface with Next.js 15
+- Multi-provider support (Anthropic, DeepSeek, Mistral, xAI)
 
-## TypeScript Configuration
+### 🔄 In Progress (Phase 3)
+- Side Canal (context awareness panel)
+- Enhanced real-time data integration
+- Performance optimizations
 
-All TypeScript projects use ES modules (`"type": "module"` in package.json).
+### 📋 Planned (Phase 4-6)
+- Mind Map (interactive reasoning visualization)
+- Legend Mode (progressive disclosure)
+- Artifact System (generated content)
+- Self-hosted LLM support (Ollama, LM Studio)
+- Agent Marketplace
+- Desktop application
 
-### Run TypeScript directly (development)
-```bash
-node --loader ts-node/esm src/server.ts
-```
+---
 
-### Build and run (production)
-```bash
-npm run build    # Compile TypeScript to dist/
-npm start        # Run compiled JavaScript
-```
+## 📞 Support & Contact
 
-## Testing
+- **Issues**: Use GitHub Issues for bugs/features
+- **Discussions**: GitHub Discussions for questions
+- **Investment/Partnership**: Contact info in README
 
-### trading-bot (JavaScript/TypeScript)
-Uses built-in backtesting framework, no external test framework yet.
+---
 
-### bsc-ranging-bot
-```bash
-npm test                    # Run Jest tests
-npm run test:watch          # Watch mode
-npm run test:atomic         # Test atomic operations
-npm run test:coverage       # Coverage report
-```
+## 📜 License
 
-## Integration Architecture
+Apache 2.0 - See `LICENSE` file
 
-The main monorepo services integrate as follows:
+Open source, but currently **closed development** (solo founder project).
 
-1. **Bot instances** connect to **bot-hub** via WebSocket for coordination
-2. **bot-hub** can bridge messages to **chat-chain** for encrypted persistence
-3. **bot-hub** can store persistent "thoughts" in **got-store** (SQLite)
-4. **trading-bot dashboard** serves SSE for real-time updates
-5. **bot-hub** can invoke AI providers (OpenAI/Anthropic/etc.) and post responses to channels
+---
 
-## Message Formats
+**Remember**: This is about building trustworthy, sovereign AI that augments human thinking. Every feature should serve that mission.
 
-### bot-hub WebSocket messages
-```typescript
-{
-  type: 'signal' | 'trade' | 'heartbeat' | 'hello' | 'custom',
-  botId: string,
-  channel: string,
-  t: number,  // epoch milliseconds
-  data: any
-}
-```
-
-### chat-chain POST /api/msg
-```typescript
-{
-  channel: string,
-  author: string,
-  ivB64: string,          // IV for AES-GCM
-  cipherB64: string,      // Encrypted message
-  ts: number,
-  pubSpkiB64?: string,    // Public key (SPKI base64) for signature verification
-  sigB64?: string         // ECDSA signature
-}
-```
-
-## Deployment Notes
-
-### Render (Cloud Deployment)
-Reference `render.yaml` for service definitions. Key environment variables:
-- **bot-hub**: `GOT_ENABLE=1`, `GOT_URL`, `CHAIN_ENABLE=1`, `CHAIN_URL`, `CHAIN_PASSPHRASE`, `REQUIRE_SIG=1`
-- **chat-chain**: `PORT`, `DIFFICULTY`, `DATA`
-- **trading-bot**: `PORT`, `SYMBOL`, `INTERVAL`, `START_BALANCE`, etc.
-
-### Docker
-All services have Dockerfiles. Use `docker compose up` to run entire stack locally or in production.
-
-## Coding Conventions
-
-### Logging
-- **chat-chain, bot-hub, got-store**: Use `console.log/error` with structured output
-- **bsc-ranging-bot**: Use Winston logger with database-backed logging
-
-### Error Handling
-- Async/await throughout; catch unhandled promise rejections
-- Graceful shutdown handlers for SIGINT/SIGTERM
-- Trading bots must never expose private keys or compromise security
-
-### State Management
-- **chat-chain**: Blockchain persisted to JSON file (configurable via `DATA` env)
-- **got-store**: SQLite database for persistent storage
-- **bot-hub**: In-memory message history (configurable `HISTORY` env)
-- **bsc-ranging-bot**: PostgreSQL/SQLite for production data
-
-## Security Considerations
-
-- Never commit API keys, private keys, or passphrases
-- Use `.env` files (see `.env.example` templates)
-- For production BSC trading:
-  - Validate all RPC responses
-  - Use rate limiters
-  - Implement risk management (position sizing, stop losses)
-  - Monitor for MEV exploitation vectors
-- chat-chain: Signed messages use ECDSA P-256; verify signatures server-side when `REQUIRE_SIG=1`
-
-## Known Issues (bsc-ranging-bot)
-
-From `.cursorrules`:
-- TP 0.8% not triggering → Check exit condition logic in `rangingStrategy.js`
-- Max hold time not enforcing → Check cron job execution
-- `position.side` undefined → Check position creation logic
-- Zero exits in long periods → Monitor `executeExit()` calls
-
-## Development Workflow
-
-1. **Make changes** in individual service directories
-2. **Test locally** with `bash scripts/dev-up.sh` or individual `npm run dev`
-3. **Check logs** in `logs/` directory (for dev-up script) or console output
-4. **Build** with `npm run build` before deploying
-5. **Deploy** via Docker or Render
-
-## Package Management
-
-- Main monorepo root: `pnpm` (see `packageManager` in root `package.json`)
-- Individual services: `npm` (package-lock.json present)
-- bsc-ranging-bot: `npm`
-
-Install dependencies at service level, not monorepo root (except for root-level packages like `@ai-sdk/openai` for shared tooling).
+*Built by Algoq • Sovereign AI • Zero Hallucination Tolerance*
