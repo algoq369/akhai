@@ -323,6 +323,10 @@ export default function HomePage() {
       const messageIndex = messages.findIndex(m => m.id === messageId)
       const originalQuery = messageIndex > 0 ? messages[messageIndex - 1]?.content : ''
 
+      // Get conversation context (last few messages for context)
+      const recentMessages = messages.slice(Math.max(0, messageIndex - 4), messageIndex + 1)
+        .map(m => ({ role: m.role, content: m.content }))
+
       try {
         const res = await fetch('/api/guard-suggestions', {
           method: 'POST',
@@ -330,7 +334,9 @@ export default function HomePage() {
           body: JSON.stringify({
             originalQuery,
             guardResult: message?.guardResult,
-            action: 'refine'
+            action: 'refine',
+            conversationContext: recentMessages,
+            aiResponse: message?.content
           })
         })
 
@@ -370,6 +376,10 @@ export default function HomePage() {
       const messageIndex = messages.findIndex(m => m.id === messageId)
       const originalQuery = messageIndex > 0 ? messages[messageIndex - 1]?.content : ''
 
+      // Get conversation context (last few messages for context)
+      const recentMessages = messages.slice(Math.max(0, messageIndex - 4), messageIndex + 1)
+        .map(m => ({ role: m.role, content: m.content }))
+
       try {
         const res = await fetch('/api/guard-suggestions', {
           method: 'POST',
@@ -377,7 +387,9 @@ export default function HomePage() {
           body: JSON.stringify({
             originalQuery,
             guardResult: message?.guardResult,
-            action: 'pivot'
+            action: 'pivot',
+            conversationContext: recentMessages,
+            aiResponse: message?.content
           })
         })
 

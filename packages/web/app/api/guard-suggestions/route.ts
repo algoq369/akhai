@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { originalQuery, guardResult, action } = await request.json()
+    const { originalQuery, guardResult, action, conversationContext, aiResponse } = await request.json()
 
     if (!originalQuery || !action) {
       return NextResponse.json(
@@ -24,38 +24,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Build conversation context string
+    const contextStr = conversationContext && conversationContext.length > 0
+      ? `\nConversation context:\n${conversationContext.map((m: {role: string, content: string}) => 
+          `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content.substring(0, 200)}${m.content.length > 200 ? '...' : ''}`
+        ).join('\n')}\n`
+      : ''
+
     // Build system prompt based on action type
     let systemPrompt = ''
     if (action === 'refine') {
       const violations = guardResult?.sanityViolations || []
       const issues = guardResult?.issues || []
 
-      systemPrompt = `You are a query refinement assistant. The user's query triggered reality check violations:
+      systemPrompt = `You are a query refinement assistant. The user's message triggered reality check violations.
+${contextStr}
+User's message that triggered the warning: "${originalQuery}"
 
-Violations:
-${violations.map((v: string) => `- ${v}`).join('\n')}
+AI response that was flagged: "${aiResponse?.substring(0, 300) || 'N/A'}..."
 
-Issues detected: ${issues.join(', ')}
+Violations detected:
+${violations.length > 0 ? violations.map((v: string) => `- ${v}`).join('\n') : '- Hype/unrealistic claims detected'}
 
-Generate 3 refined versions of the query that:
-1. Address the implausibility/impossibility concerns
-2. Ask for realistic information instead
-3. Are clear and specific
-4. Each should be a standalone question (not numbered)
+Issues: ${issues.join(', ') || 'hype'}
 
-Original query: "${originalQuery}"
+Generate 3 refined questions that:
+1. Stay on the SAME TOPIC the user was discussing
+2. Ask for realistic, verifiable information
+3. Are specific and answerable
+4. Relate directly to the conversation context
+
+IMPORTANT: Your suggestions MUST be about the same subject the user was asking about. Do NOT suggest unrelated topics.
 
 Respond with ONLY 3 refined questions, one per line, no numbering, no explanations.`
     } else if (action === 'pivot') {
-      systemPrompt = `You are a query pivot assistant. The user's query was flagged for reality check issues.
+      systemPrompt = `You are a query pivot assistant. The user's message was flagged for reality check issues.
+${contextStr}
+User's message: "${originalQuery}"
 
-Original query: "${originalQuery}"
+Generate 3 alternative approaches that:
+1. Explore the SAME TOPIC from a different, more grounded angle
+2. Ask about realistic aspects of what the user is interested in
+3. Focus on facts, history, or analysis rather than speculation
+4. Stay relevant to the conversation subject
 
-Generate 3 alternative approaches to this topic that:
-1. Take a different angle or perspective
-2. Ask about related but more realistic aspects
-3. Focus on learning/understanding rather than impossible claims
-4. Each should be a standalone question (not numbered)
+IMPORTANT: Your suggestions MUST relate to what the user was actually discussing. Do NOT suggest unrelated topics.
 
 Respond with ONLY 3 alternative questions, one per line, no numbering, no explanations.`
     } else {
