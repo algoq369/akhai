@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queries } from '@/lib/query-store'
 import { getQuery } from '@/lib/database'
+import { getUserFromSession } from '@/lib/auth'
+
+interface QueryResult {
+  id: string
+  query: string
+  flow: string
+  status: string
+  result: string | null
+  tokens_used: number | null
+  cost: number | null
+  created_at: number | null
+  completed_at: number | null
+}
 
 export async function GET(
   request: NextRequest,
@@ -10,6 +23,11 @@ export async function GET(
   console.log(`[API GET] Fetching query: ${queryId}`)
 
   try {
+    // Get user from session (optional - allows anonymous usage)
+    const token = request.cookies.get('session_token')?.value
+    const user = token ? getUserFromSession(token) : null
+    const userId = user?.id || null
+
     // First check in-memory store
     const memoryQuery = queries.get(queryId)
 
@@ -18,8 +36,8 @@ export async function GET(
       console.log(`[API DEBUG] Full memoryQuery:`, JSON.stringify(memoryQuery, null, 2))
       console.log(`[API DEBUG] result.finalAnswer:`, memoryQuery.result?.finalAnswer)
 
-      // Since tokens/cost are only in database, we need to fetch them
-      const dbQuery = await getQuery(queryId)
+      // Since tokens/cost are only in database, we need to fetch them (scoped to user)
+      const dbQuery = getQuery(queryId, userId) as QueryResult | undefined
 
       return NextResponse.json({
         id: queryId,
@@ -34,14 +52,14 @@ export async function GET(
           latency: memoryQuery.result?.duration ? memoryQuery.result.duration * 1000 : 0,
           cost: dbQuery?.cost || 0,
         },
-        createdAt: dbQuery?.created_at,
+        createdAt: dbQuery?.created_at || null,
         error: memoryQuery.error
       })
     }
 
-    // Fallback to database
+    // Fallback to database (scoped to user)
     console.log(`[API GET] Query not in memory, checking database...`)
-    const dbQuery = await getQuery(queryId) as any
+    const dbQuery = getQuery(queryId, userId) as QueryResult | undefined
 
     if (dbQuery) {
       console.log(`[API GET] Found query in database`)
@@ -70,7 +88,7 @@ export async function GET(
           latency: parsedResult?.duration ? parsedResult.duration * 1000 : 0,
           cost: dbQuery.cost || 0,
         },
-        createdAt: dbQuery.created_at
+        createdAt: dbQuery.created_at || null
       })
     }
 

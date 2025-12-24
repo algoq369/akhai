@@ -83,7 +83,7 @@ export default function GuardWarning({
         {/* Header */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">⚠️</span>
-          <h3 className="text-sm font-medium text-relic-void">Reality Check</h3>
+          <h3 className="text-sm font-medium text-relic-slate">Reality Check</h3>
         </div>
 
         {/* Violations */}
@@ -92,7 +92,7 @@ export default function GuardWarning({
             <p className="text-xs text-relic-slate mb-2">Sanity violations detected:</p>
             <ul className="space-y-1">
               {guardResult.sanityViolations.map((violation, i) => (
-                <li key={i} className="text-xs text-relic-void font-light flex items-start gap-2">
+                <li key={i} className="text-xs text-relic-slate font-light flex items-start gap-2">
                   <span className="text-relic-silver">→</span>
                   <span>{violation}</span>
                 </li>
@@ -130,19 +130,19 @@ export default function GuardWarning({
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="text-relic-slate">Hype:</span>
-                <span className="ml-2 text-relic-void">{guardResult.scores.hype}</span>
+                <span className="ml-2 text-relic-slate">{guardResult.scores.hype}</span>
               </div>
               <div>
                 <span className="text-relic-slate">Echo:</span>
-                <span className="ml-2 text-relic-void">{guardResult.scores.echo}%</span>
+                <span className="ml-2 text-relic-slate">{guardResult.scores.echo}%</span>
               </div>
               <div>
                 <span className="text-relic-slate">Drift:</span>
-                <span className="ml-2 text-relic-void">{guardResult.scores.drift}%</span>
+                <span className="ml-2 text-relic-slate">{guardResult.scores.drift}%</span>
               </div>
               <div>
                 <span className="text-relic-slate">Fact:</span>
-                <span className="ml-2 text-relic-void">{guardResult.scores.fact}</span>
+                <span className="ml-2 text-relic-slate">{guardResult.scores.fact}</span>
               </div>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function GuardWarning({
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">⚠️</span>
-        <h3 className="text-sm font-medium text-relic-void">{modeLabel}</h3>
+        <h3 className="text-sm font-medium text-relic-slate">{modeLabel}</h3>
       </div>
 
       {/* Loading state */}
@@ -212,9 +212,9 @@ export default function GuardWarning({
                   value={suggestion}
                   checked={selectedSuggestion === suggestion}
                   onChange={() => setSelectedSuggestion(suggestion)}
-                  className="mt-0.5 h-4 w-4 text-relic-void border-relic-mist focus:ring-relic-slate"
+                  className="mt-0.5 h-4 w-4 text-relic-slate border-relic-mist focus:ring-relic-slate"
                 />
-                <span className="text-xs text-relic-void flex-1">{suggestion}</span>
+                <span className="text-xs text-relic-slate flex-1">{suggestion}</span>
               </label>
             ))}
           </div>

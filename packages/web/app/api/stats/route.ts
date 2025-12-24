@@ -1,11 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getStats } from '@/lib/database';
+import { getUserFromSession } from '@/lib/auth';
 
 type ProviderStatus = 'active' | 'inactive' | 'error';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const stats = getStats();
+    // Get user from session (optional - allows anonymous usage)
+    const token = request.cookies.get('session_token')?.value
+    const user = token ? getUserFromSession(token) : null
+    const userId = user?.id || null
+
+    const stats = getStats(userId);
 
     // Build provider status from database stats and environment variables
     const providerStatsMap = new Map(

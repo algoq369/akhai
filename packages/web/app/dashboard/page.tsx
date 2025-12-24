@@ -1,13 +1,40 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDashboardStore } from '@/lib/stores/dashboard-store'
 import StatCard from '@/components/StatCard'
 import ProviderCard from '@/components/ProviderCard'
 import RecentQueriesList from '@/components/RecentQueriesList'
 
+interface User {
+  id: string;
+  username: string;
+  email: string | null;
+  avatar_url: string | null;
+  auth_provider: string;
+  isAdmin: boolean;
+}
+
 export default function DashboardPage() {
   const { stats, loading, error, fetchStats } = useDashboardStore()
+  const [user, setUser] = useState<User | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+
+  // Check authentication and admin status
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/session')
+        const data = await res.json()
+        setUser(data.user)
+      } catch (error) {
+        console.error('Auth check failed:', error)
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+    checkAuth()
+  }, [])
 
   useEffect(() => {
     fetchStats()
@@ -53,8 +80,8 @@ export default function DashboardPage() {
           <p className="text-relic-silver text-xs">monitor akhai usage and performance</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {/* Stats Grid - Basic stats for all users */}
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-3 mb-6`}>
           <StatCard
             title="Queries Today"
             value={stats?.queriesToday || 0}
@@ -63,14 +90,19 @@ export default function DashboardPage() {
             title="Queries This Month"
             value={stats?.queriesThisMonth || 0}
           />
-          <StatCard
-            title="Total Tokens"
-            value={stats?.totalTokens?.toLocaleString() || '0'}
-          />
-          <StatCard
-            title="Total Cost"
-            value={`$${stats?.totalCost.toFixed(2) || '0.00'}`}
-          />
+          {/* Admin-only: Token and Cost stats */}
+          {user?.isAdmin && (
+            <>
+              <StatCard
+                title="Total Tokens"
+                value={stats?.totalTokens?.toLocaleString() || '0'}
+              />
+              <StatCard
+                title="Total Cost"
+                value={`$${stats?.totalCost.toFixed(2) || '0.00'}`}
+              />
+            </>
+          )}
         </div>
 
         {/* Performance Stats */}
@@ -96,40 +128,42 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Provider Status */}
-        <div className="bg-relic-ghost/30 border border-relic-mist p-4 mb-6">
-          <h2 className="relic-label mb-3">provider status</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <ProviderCard
-              name="Anthropic"
-              status={stats?.providers.anthropic.status || 'inactive'}
-              model="Claude Sonnet 4"
-              queriesCount={stats?.providers.anthropic.queries}
-              totalCost={stats?.providers.anthropic.cost}
-            />
-            <ProviderCard
-              name="DeepSeek"
-              status={stats?.providers.deepseek.status || 'inactive'}
-              model="deepseek-chat"
-              queriesCount={stats?.providers.deepseek.queries}
-              totalCost={stats?.providers.deepseek.cost}
-            />
-            <ProviderCard
-              name="Grok (xAI)"
-              status={stats?.providers.xai.status || 'inactive'}
-              model="grok-3"
-              queriesCount={stats?.providers.xai.queries}
-              totalCost={stats?.providers.xai.cost}
-            />
-            <ProviderCard
-              name="Mistral AI"
-              status={stats?.providers.mistral?.status || 'inactive'}
-              model="mistral-small-latest"
-              queriesCount={stats?.providers.mistral?.queries || 0}
-              totalCost={stats?.providers.mistral?.cost || 0}
-            />
+        {/* Provider Status - Admin Only */}
+        {user?.isAdmin && (
+          <div className="bg-relic-ghost/30 border border-relic-mist p-4 mb-6">
+            <h2 className="relic-label mb-3">provider status</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              <ProviderCard
+                name="Anthropic"
+                status={stats?.providers.anthropic.status || 'inactive'}
+                model="Claude Sonnet 4"
+                queriesCount={stats?.providers.anthropic.queries}
+                totalCost={stats?.providers.anthropic.cost}
+              />
+              <ProviderCard
+                name="DeepSeek"
+                status={stats?.providers.deepseek.status || 'inactive'}
+                model="deepseek-chat"
+                queriesCount={stats?.providers.deepseek.queries}
+                totalCost={stats?.providers.deepseek.cost}
+              />
+              <ProviderCard
+                name="Grok (xAI)"
+                status={stats?.providers.xai.status || 'inactive'}
+                model="grok-3"
+                queriesCount={stats?.providers.xai.queries}
+                totalCost={stats?.providers.xai.cost}
+              />
+              <ProviderCard
+                name="Mistral AI"
+                status={stats?.providers.mistral?.status || 'inactive'}
+                model="mistral-small-latest"
+                queriesCount={stats?.providers.mistral?.queries || 0}
+                totalCost={stats?.providers.mistral?.cost || 0}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Recent Queries */}
         <div className="bg-relic-ghost/30 border border-relic-mist p-4">

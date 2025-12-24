@@ -94,7 +94,7 @@ export function updateQueryStatus(
 
   // Persist to database
   try {
-    dbUpdateQuery(queryId, { status, result: result ? JSON.stringify(result) : undefined });
+    dbUpdateQuery(queryId, { status, result: result ? JSON.stringify(result) : undefined }, null);
   } catch (dbError) {
     console.error('Failed to update query in database:', dbError);
   }

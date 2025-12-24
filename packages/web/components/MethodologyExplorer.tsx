@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, memo } from 'react'
 
 interface MethodologyDetail {
   id: string
@@ -234,7 +234,8 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
   }
 ]
 
-export default function MethodologyExplorer({ isVisible, onClose }: { isVisible: boolean; onClose: () => void }) {
+const MethodologyExplorer = memo(function MethodologyExplorer({ isVisible, onClose }: { isVisible: boolean; onClose: () => void }) {
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const explorerRef = useRef<HTMLDivElement>(null)
@@ -243,10 +244,22 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
     if (isVisible) {
       setIsAnimating(true)
     } else {
-      setSelectedMethod(null)
+      // Delay resetting animation to allow exit animation
+      const timer = setTimeout(() => {
+        setIsAnimating(false)
+        setSelectedMethod(null)
+      }, 300) // Match transition duration
+      return () => clearTimeout(timer)
     }
   }, [isVisible])
 
+  // useMemo MUST be called before any conditional returns (Rules of Hooks)
+  const selectedDetail = useMemo(() => 
+    METHODOLOGY_DETAILS.find(m => m.id === selectedMethod),
+    [selectedMethod]
+  )
+
+  // Early return AFTER all hooks are called (Rules of Hooks)
   if (!isVisible && !isAnimating) return null
 
   const handleMethodClick = (id: string) => {
@@ -263,36 +276,124 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
     }
   }
 
-  const selectedDetail = METHODOLOGY_DETAILS.find(m => m.id === selectedMethod)
-
   return (
     <div
       ref={explorerRef}
-      className={`fixed inset-0 z-50 flex items-center justify-center pointer-events-none transition-opacity duration-300 ${
+      data-methodology-explorer
+      className={`fixed inset-0 z-50 flex items-center justify-center pointer-events-none transition-opacity duration-300 ease-in-out ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
       onAnimationEnd={handleAnimationEnd}
+      onMouseEnter={() => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/MethodologyExplorer.tsx:280',message:'Mouse enter explorer',data:{isVisible},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'K'})}).catch(()=>{});
+        // #endregion
+      }}
+      onMouseLeave={() => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/MethodologyExplorer.tsx:285',message:'Mouse leave explorer backdrop',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+        // #endregion
+        // Close when mouse leaves the backdrop (outside circle)
+        onClose()
+      }}
     >
       {/* Backdrop blur */}
       <div
-        className={`absolute inset-0 backdrop-blur-sm bg-relic-void/10 transition-opacity duration-300 pointer-events-auto ${
+        data-backdrop
+        className={`absolute inset-0 backdrop-blur-sm bg-relic-mist/5 transition-opacity duration-300 pointer-events-auto ${
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={onClose}
+        onMouseEnter={() => {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/MethodologyExplorer.tsx:300',message:'Mouse enter backdrop - closing',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
+          // #endregion
+          // Close when mouse enters backdrop (outside circle)
+          onClose()
+        }}
       />
 
       {/* Circular Menu or Detail View */}
       <div
-        className={`relative pointer-events-auto transition-all duration-500 ease-out ${
-          isVisible ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
+        className={`relative pointer-events-auto transition-all duration-500 ease-in-out ${
+          isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
         {!selectedMethod ? (
           /* Circular Navigation */
-          <div className="relative w-[600px] h-[600px]">
+          <div 
+            data-methodology-circle
+            className="relative w-[450px] h-[450px]"
+            onMouseEnter={() => {
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/MethodologyExplorer.tsx:324',message:'Mouse enter circle container',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+              // #endregion
+            }}
+            onMouseLeave={(e) => {
+              // #region agent log
+              try {
+                const relatedTarget = e.relatedTarget as Element | null
+                const isElement = relatedTarget instanceof Element
+                let isMovingToDiamond = false
+                if (isElement) {
+                  try {
+                    isMovingToDiamond = !!relatedTarget.closest('[data-diamond-logo]')
+                  } catch (err) {
+                    // Ignore errors from closest()
+                  }
+                }
+                // Only log safe, serializable data (not DOM elements)
+                const logData = {
+                  location: 'components/MethodologyExplorer.tsx:327',
+                  message: 'Mouse leave circle container',
+                  data: {
+                    relatedTargetTag: isElement ? relatedTarget.tagName : null,
+                    isElement,
+                    isMovingToDiamond,
+                  },
+                  timestamp: Date.now(),
+                  sessionId: 'debug-session',
+                  runId: 'run1',
+                  hypothesisId: 'N'
+                }
+                fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
+              } catch (err) {
+                // Silently ignore instrumentation errors
+              }
+              // #endregion
+              // Close when mouse leaves circle container (unless moving back to diamond)
+              try {
+                const relatedTarget = e.relatedTarget as Element | null
+                const isElement = relatedTarget instanceof Element
+                let isMovingToDiamond = false
+                if (isElement) {
+                  try {
+                    isMovingToDiamond = !!relatedTarget.closest('[data-diamond-logo]')
+                  } catch (err) {
+                    // Ignore errors
+                  }
+                }
+                if (!isMovingToDiamond) {
+                  // Small delay to prevent flickering when moving between diamond and circle
+                  setTimeout(() => {
+                    try {
+                      if (!isElement || !relatedTarget?.closest('[data-methodology-circle]')) {
+                        onClose()
+                      }
+                    } catch (err) {
+                      onClose()
+                    }
+                  }, 100)
+                }
+              } catch (err) {
+                // If we can't determine, default to closing
+                onClose()
+              }
+            }}
+          >
             {/* Center Diamond */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="text-7xl text-relic-mist animate-pulse-slow">◊</div>
+              <div className="text-5xl text-relic-mist animate-pulse-slow">◊</div>
               <p className="text-[10px] uppercase tracking-widest text-relic-silver text-center mt-3">
                 methodologies
               </p>
@@ -301,7 +402,7 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
             {/* Circular Menu Items */}
             {METHODOLOGY_DETAILS.map((method, index) => {
               const angle = (index / METHODOLOGY_DETAILS.length) * 2 * Math.PI - Math.PI / 2
-              const radius = 220
+              const radius = 160
               const x = Math.cos(angle) * radius
               const y = Math.sin(angle) * radius
 
@@ -321,14 +422,14 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
                   <div className="absolute inset-0 -m-3 rounded-full border border-relic-mist/20 group-hover:border-relic-slate/50 group-hover:scale-110 transition-all duration-300" />
 
                   {/* Method card */}
-                  <div className="relative w-32 h-32 bg-relic-white/90 backdrop-blur-md border border-relic-mist hover:border-relic-slate hover:bg-relic-ghost transition-all duration-300 flex flex-col items-center justify-center gap-2 group-hover:shadow-lg">
-                    <div className="text-3xl text-relic-slate group-hover:text-relic-void transition-colors">
+                  <div className="relative w-24 h-24 bg-relic-white/90 backdrop-blur-md border border-relic-mist hover:border-relic-slate/60 hover:bg-relic-ghost transition-all duration-300 flex flex-col items-center justify-center gap-1.5 group-hover:shadow-lg">
+                    <div className="text-2xl text-relic-slate group-hover:text-relic-slate transition-colors">
                       {method.symbol}
                     </div>
-                    <div className="text-xs font-mono text-relic-void group-hover:font-semibold transition-all">
+                    <div className="text-xs font-mono text-relic-slate group-hover:font-semibold transition-all">
                       {method.name}
                     </div>
-                    <div className="text-[9px] text-relic-silver text-center px-2 leading-tight">
+                    <div className="text-[8px] text-relic-silver text-center px-2 leading-tight">
                       {method.fullName.split(' ').slice(0, 2).join(' ')}
                     </div>
                   </div>
@@ -362,9 +463,9 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
             {/* Header */}
             <div className="border-b border-relic-mist/50 p-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="text-5xl text-relic-void">{selectedDetail?.symbol}</div>
+                <div className="text-5xl text-relic-slate">{selectedDetail?.symbol}</div>
                 <div>
-                  <h2 className="text-2xl font-mono text-relic-void">{selectedDetail?.name}</h2>
+                  <h2 className="text-2xl font-mono text-relic-slate">{selectedDetail?.name}</h2>
                   <p className="text-sm text-relic-silver">{selectedDetail?.fullName}</p>
                 </div>
               </div>
@@ -381,7 +482,7 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
               {/* Description */}
               <div>
                 <h3 className="relic-label mb-2">Description</h3>
-                <p className="text-sm text-relic-void leading-relaxed">{selectedDetail?.description}</p>
+                <p className="text-sm text-relic-slate leading-relaxed">{selectedDetail?.description}</p>
               </div>
 
               {/* How It Works */}
@@ -391,7 +492,7 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
                   {selectedDetail?.howItWorks.map((step, i) => (
                     <div key={i} className="flex gap-3">
                       <span className="text-xs text-relic-silver mt-0.5">{i + 1}.</span>
-                      <p className="text-sm text-relic-void flex-1">{step}</p>
+                      <p className="text-sm text-relic-slate flex-1">{step}</p>
                     </div>
                   ))}
                 </div>
@@ -401,7 +502,7 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
               <div>
                 <h3 className="relic-label mb-2">Response Format</h3>
                 <div className="bg-relic-ghost/50 border border-relic-mist px-4 py-3">
-                  <code className="text-xs font-mono text-relic-void">{selectedDetail?.format}</code>
+                  <code className="text-xs font-mono text-relic-slate">{selectedDetail?.format}</code>
                 </div>
               </div>
 
@@ -410,7 +511,7 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
                 <h3 className="relic-label mb-3">Best For</h3>
                 <ul className="space-y-1.5">
                   {selectedDetail?.bestFor.map((item, i) => (
-                    <li key={i} className="flex gap-2 text-sm text-relic-void">
+                    <li key={i} className="flex gap-2 text-sm text-relic-slate">
                       <span className="text-relic-silver">•</span>
                       <span>{item}</span>
                     </li>
@@ -436,15 +537,15 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
                 <div className="grid grid-cols-3 gap-4">
                   <div className="bg-relic-ghost/30 border border-relic-mist p-3">
                     <p className="text-[10px] uppercase tracking-widest text-relic-silver mb-1">Tokens</p>
-                    <p className="text-sm font-mono text-relic-void">{selectedDetail?.metrics.tokens}</p>
+                    <p className="text-sm font-mono text-relic-slate">{selectedDetail?.metrics.tokens}</p>
                   </div>
                   <div className="bg-relic-ghost/30 border border-relic-mist p-3">
                     <p className="text-[10px] uppercase tracking-widest text-relic-silver mb-1">Latency</p>
-                    <p className="text-sm font-mono text-relic-void">{selectedDetail?.metrics.latency}</p>
+                    <p className="text-sm font-mono text-relic-slate">{selectedDetail?.metrics.latency}</p>
                   </div>
                   <div className="bg-relic-ghost/30 border border-relic-mist p-3">
                     <p className="text-[10px] uppercase tracking-widest text-relic-silver mb-1">Est. Cost</p>
-                    <p className="text-sm font-mono text-relic-void">{selectedDetail?.metrics.cost}</p>
+                    <p className="text-sm font-mono text-relic-slate">{selectedDetail?.metrics.cost}</p>
                   </div>
                 </div>
               </div>
@@ -454,4 +555,6 @@ export default function MethodologyExplorer({ isVisible, onClose }: { isVisible:
       </div>
     </div>
   )
-}
+})
+
+export default MethodologyExplorer

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 interface QueryItem {
   id: string;
   query: string;
-  flow: 'A' | 'B';
+  flow: string; // Methodology name (direct, cod, bot, etc.)
   status: 'pending' | 'processing' | 'complete' | 'error';
   timestamp: number;
 }
@@ -105,7 +105,7 @@ export default function RecentQueriesList() {
           </div>
           <div className="flex items-center gap-3 text-xs text-gray-600">
             <span className="flex items-center gap-1">
-              <span className="font-medium">Flow {item.flow}</span>
+              <span className="font-medium capitalize">{item.flow}</span>
             </span>
             <span>•</span>
             <span>{formatTimestamp(item.timestamp)}</span>

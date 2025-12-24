@@ -67,7 +67,7 @@ export function ThoughtBufferView({ thoughts, onThoughtSelect }: Props) {
                       <span>tokens: {thought.metadata.tokenCost}</span>
                     )}
                     {thought.isOnSolutionPath && (
-                      <span className="text-relic-void">✓ solution</span>
+                      <span className="text-relic-slate">✓ solution</span>
                     )}
                   </div>
                 </div>

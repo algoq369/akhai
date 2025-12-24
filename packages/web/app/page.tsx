@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { generateId, Message } from '@/lib/chat-store'
 import { trackQuery } from '@/lib/analytics'
 import GuardWarning from '@/components/GuardWarning'
 import MethodologyExplorer from '@/components/MethodologyExplorer'
+import AuthModal from '@/components/AuthModal'
+import UserProfile from '@/components/UserProfile'
+import SuggestionToast from '@/components/SuggestionToast'
 
 const METHODOLOGIES = [
   { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', savings: 'varies' },
@@ -25,22 +28,69 @@ export default function HomePage() {
   const [hoveredMethod, setHoveredMethod] = useState<string | null>(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
   const [loadingSuggestions, setLoadingSuggestions] = useState<string | null>(null)
-  const [suggestions, setSuggestions] = useState<Record<string, { refine?: string[], pivot?: string[] }>>({})
+  const [guardSuggestions, setGuardSuggestions] = useState<Record<string, { refine?: string[], pivot?: string[] }>>({})
   const [showMethodologyExplorer, setShowMethodologyExplorer] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [topicSuggestions, setTopicSuggestions] = useState<Array<{ topicId: string; topicName: string; reason: string; relevance: number }>>([])
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const diamondRef = useRef<HTMLDivElement>(null)
 
+  // Check user session on mount
+  useEffect(() => {
+    checkSession()
+  }, [])
+
+  const checkSession = async () => {
+    try {
+      const response = await fetch('/api/auth/session')
+      const data = await response.json()
+      setUser(data.user)
+    } catch (error) {
+      console.error('Session check error:', error)
+    }
+  }
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Check for topic suggestions after messages update
+  useEffect(() => {
+    if (messages.length > 0) {
+      // Get current topics from recent queries
+      fetch('/api/side-canal/suggestions?topics=')
+        .then(res => res.json())
+        .then(data => {
+          if (data.suggestions && data.suggestions.length > 0) {
+            setTopicSuggestions(data.suggestions)
+          }
+        })
+        .catch(console.error)
+    }
+  }, [messages])
+
+  // Memoize close handler to prevent unnecessary re-renders
+  const handleCloseExplorer = useCallback(() => {
+    setShowMethodologyExplorer(false)
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!query.trim() || isLoading) return
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:41',message:'handleSubmit called',data:{query:query.trim(),methodology,isLoading,queryLength:query.trim().length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+    // #endregion
+    
+    if (!query.trim() || isLoading) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:43',message:'handleSubmit early return',data:{reason:!query.trim()?'empty query':'isLoading'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+      // #endregion
+      return
+    }
 
     const userMessage: Message = {
       id: generateId(),
@@ -57,6 +107,10 @@ export default function HomePage() {
 
     const startTime = Date.now()
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:60',message:'Calling API',data:{query:userMessage.content,methodology},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+    // #endregion
+
     try {
       const res = await fetch('/api/simple-query', {
         method: 'POST',
@@ -71,9 +125,17 @@ export default function HomePage() {
         })
       })
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:74',message:'API response received',data:{ok:res.ok,status:res.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+      // #endregion
+
       if (!res.ok) throw new Error('Failed to get response')
 
       const data = await res.json()
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:76',message:'Response parsed',data:{hasQueryId:!!data.queryId,hasResponse:!!data.response,methodologyUsed:data.methodologyUsed},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+      // #endregion
 
       // Poll for the result if we got a queryId
       if (data.queryId) {
@@ -111,6 +173,9 @@ export default function HomePage() {
         })
       }
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:113',message:'Error caught',data:{error:error instanceof Error?error.message:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'J'})}).catch(()=>{});
+      // #endregion
       console.error('Query error:', error)
       const errorMessage: Message = {
         id: generateId(),
@@ -270,13 +335,13 @@ export default function HomePage() {
         })
 
         const data = await res.json()
-        setSuggestions(prev => ({
+        setGuardSuggestions(prev => ({
           ...prev,
           [messageId]: { ...prev[messageId], refine: data.suggestions }
         }))
       } catch (error) {
         console.error('Failed to generate refine suggestions:', error)
-        setSuggestions(prev => ({
+        setGuardSuggestions(prev => ({
           ...prev,
           [messageId]: { ...prev[messageId], refine: [] }
         }))
@@ -317,13 +382,13 @@ export default function HomePage() {
         })
 
         const data = await res.json()
-        setSuggestions(prev => ({
+        setGuardSuggestions(prev => ({
           ...prev,
           [messageId]: { ...prev[messageId], pivot: data.suggestions }
         }))
       } catch (error) {
         console.error('Failed to generate pivot suggestions:', error)
-        setSuggestions(prev => ({
+        setGuardSuggestions(prev => ({
           ...prev,
           [messageId]: { ...prev[messageId], pivot: [] }
         }))
@@ -384,7 +449,7 @@ export default function HomePage() {
           <h1 className="text-[11px] uppercase tracking-[0.5em] text-relic-silver mb-4">
             akhai
           </h1>
-          <p className="text-3xl font-light text-relic-void tracking-wider">
+          <p className="text-3xl font-light text-relic-slate tracking-wider">
             sovereign intelligence
           </p>
         </div>
@@ -392,8 +457,58 @@ export default function HomePage() {
         {/* Diamond - Shrinks when expanded */}
         <div
           ref={diamondRef}
+          data-diamond-logo
           className={`text-center transition-all duration-500 ease-out ${isExpanded ? 'py-3 mb-2' : 'mb-16'}`}
-          onMouseEnter={() => !isExpanded && setShowMethodologyExplorer(true)}
+          onMouseEnter={() => {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:425',message:'Mouse enter diamond',data:{isExpanded},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
+            // #endregion
+            if (!isExpanded) setShowMethodologyExplorer(true)
+          }}
+          onMouseLeave={(e) => {
+            // #region agent log
+            try {
+              const relatedTarget = e.relatedTarget as Element | null
+              const isElement = relatedTarget instanceof Element
+              let isMovingToCircle = false
+              if (isElement) {
+                try {
+                  isMovingToCircle = !!relatedTarget.closest('[data-methodology-circle]')
+                } catch (err) {
+                  // Ignore errors from closest()
+                }
+              }
+              // Only log safe, serializable data (not DOM elements)
+              const logData = {
+                location: 'app/page.tsx:426',
+                message: 'Mouse leave diamond',
+                data: {
+                  isMovingToCircle,
+                  relatedTargetTag: isElement ? relatedTarget.tagName : null,
+                },
+                timestamp: Date.now(),
+                sessionId: 'debug-session',
+                runId: 'run1',
+                hypothesisId: 'N'
+              }
+              fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
+            } catch (err) {
+              // Silently ignore instrumentation errors
+            }
+            // #endregion
+            // Only hide if not moving to circle
+            try {
+              const relatedTarget = e.relatedTarget as Element | null
+              const isElement = relatedTarget instanceof Element
+              const isMovingToCircle = isElement && relatedTarget.closest('[data-methodology-circle]')
+              if (!isMovingToCircle) {
+                setShowMethodologyExplorer(false)
+              }
+            } catch (err) {
+              // If we can't determine, default to hiding
+              setShowMethodologyExplorer(false)
+            }
+          }}
         >
           <span
             className={`
@@ -422,7 +537,7 @@ export default function HomePage() {
                   {message.role === 'user' ? (
                     // User message
                     <div className="inline-block max-w-[80%] text-left">
-                      <p className="text-relic-void bg-relic-ghost/50 px-4 py-3 rounded-sm text-sm">
+                      <p className="text-relic-slate bg-relic-ghost/50 px-4 py-3 rounded-sm text-sm">
                         {message.content}
                       </p>
                     </div>
@@ -438,8 +553,8 @@ export default function HomePage() {
                           onPivot={(query) => handleGuardPivot(message.id, query)}
                           onContinue={() => handleGuardContinue(message.id)}
                           isLoadingSuggestions={loadingSuggestions === message.id}
-                          refineSuggestions={suggestions[message.id]?.refine}
-                          pivotSuggestions={suggestions[message.id]?.pivot}
+                          refineSuggestions={guardSuggestions[message.id]?.refine}
+                          pivotSuggestions={guardSuggestions[message.id]?.pivot}
                         />
                       )}
 
@@ -454,7 +569,7 @@ export default function HomePage() {
                             </div>
                           )}
 
-                          <p className="text-relic-void leading-relaxed whitespace-pre-wrap text-sm">
+                          <p className="text-relic-slate leading-relaxed whitespace-pre-wrap text-sm">
                             {message.content}
                           </p>
 
@@ -520,10 +635,12 @@ export default function HomePage() {
             <div className={`relative transition-all duration-300 ${isExpanded ? '' : ''}`}>
               <input
                 ref={inputRef}
+                id="query-input"
+                name="query"
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={isExpanded ? "continue conversation..." : "enter query..."}
+                placeholder={isExpanded ? "continue conversation..." : ""}
                 className={`
                   relic-input text-base transition-all duration-300
                   ${isExpanded
@@ -562,8 +679,8 @@ export default function HomePage() {
                       className={`
                         px-3 py-1.5 text-xs font-mono transition-all duration-200
                         ${methodology === m.id
-                          ? 'bg-relic-void text-relic-white'
-                          : 'text-relic-silver hover:text-relic-slate hover:bg-relic-ghost/50'
+                          ? 'border-2 border-relic-slate text-relic-slate bg-transparent'
+                          : 'text-relic-silver hover:text-relic-slate hover:bg-relic-ghost/50 border-2 border-transparent'
                         }
                       `}
                     >
@@ -583,26 +700,26 @@ export default function HomePage() {
                       transform: 'translateX(-50%)'
                     }}
                   >
-                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-[rgba(23,23,23,0.85)]" />
-                    <div className="backdrop-blur-md bg-relic-void/85 text-relic-white p-2.5 text-[10px]">
+                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-relic-slate/30" />
+                    <div className="backdrop-blur-md bg-relic-white/95 border border-relic-slate/30 text-relic-slate p-2.5 text-[10px] shadow-lg">
                       {(() => {
                         const m = METHODOLOGIES.find(x => x.id === hoveredMethod)
                         if (!m) return null
                         return (
                           <>
-                            <p className="text-white/80 mb-2">{m.tooltip}</p>
-                            <div className="grid grid-cols-3 gap-1 text-[9px] border-t border-white/10 pt-2">
+                            <p className="text-relic-slate mb-2">{m.tooltip}</p>
+                            <div className="grid grid-cols-3 gap-1 text-[9px] border-t border-relic-mist/50 pt-2">
                               <div>
-                                <span className="text-white/40 uppercase">tok</span>
-                                <p className="text-white/70">{m.tokens}</p>
+                                <span className="text-relic-silver uppercase">tok</span>
+                                <p className="text-relic-slate">{m.tokens}</p>
                               </div>
                               <div>
-                                <span className="text-white/40 uppercase">lat</span>
-                                <p className="text-white/70">{m.latency}</p>
+                                <span className="text-relic-silver uppercase">lat</span>
+                                <p className="text-relic-slate">{m.latency}</p>
                               </div>
                               <div>
-                                <span className="text-white/40 uppercase">sav</span>
-                                <p className="text-white/70">{m.savings}</p>
+                                <span className="text-relic-silver uppercase">sav</span>
+                                <p className="text-relic-slate">{m.savings}</p>
                               </div>
                             </div>
                           </>
@@ -619,7 +736,9 @@ export default function HomePage() {
               <div className="mt-10 text-center">
                 <button
                   type="submit"
-                  className="relic-button-primary px-8 py-2.5 text-xs"
+                  id="submit-button"
+                  name="submit"
+                  className="px-8 py-2.5 text-xs font-mono border-2 border-relic-slate text-relic-slate bg-transparent hover:bg-relic-ghost/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isLoading}
                 >
                   transmit
@@ -627,12 +746,6 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Hint */}
-            {!isExpanded && (
-              <p className="text-center text-[10px] text-relic-silver/30 mt-8">
-                ↵ enter to send
-              </p>
-            )}
           </form>
         </div>
       </main>
@@ -644,8 +757,21 @@ export default function HomePage() {
             <div className="flex items-center justify-between text-[10px] text-relic-silver">
               <span>7 methodologies · auto-routing · multi-ai consensus · grounding guard active</span>
               <div className="flex gap-5">
-                <a href="/history" className="hover:text-relic-slate transition-colors">history</a>
-                <a href="/settings" className="hover:text-relic-slate transition-colors">settings</a>
+                {user ? (
+                  <>
+                    <a href="/dashboard" className="hover:text-relic-slate transition-colors">dashboard</a>
+                    <a href="/history" className="hover:text-relic-slate transition-colors">history</a>
+                    <span className="text-relic-silver/50 cursor-not-allowed" title="Coming in Session 3">mindmap</span>
+                    <a href="/settings" className="hover:text-relic-slate transition-colors">settings</a>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setShowAuthModal(true)}
+                    className="hover:text-relic-slate transition-colors"
+                  >
+                    create profile
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -655,7 +781,47 @@ export default function HomePage() {
       {/* Methodology Explorer Modal */}
       <MethodologyExplorer
         isVisible={showMethodologyExplorer}
-        onClose={() => setShowMethodologyExplorer(false)}
+        onClose={handleCloseExplorer}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          checkSession()
+          setShowAuthModal(false)
+        }}
+      />
+
+      {/* User Profile - Show when logged in */}
+      {user && (
+        <div className="fixed top-4 right-4 z-30">
+          <UserProfile />
+        </div>
+      )}
+
+      {/* Create Profile Button - Show when not logged in and expanded */}
+      {!user && isExpanded && (
+        <div className="fixed top-4 right-4 z-30">
+          <button
+            onClick={() => setShowAuthModal(true)}
+            className="px-4 py-2 text-xs font-mono border-2 border-relic-slate/30 text-relic-slate bg-transparent hover:bg-relic-ghost/50 transition-all duration-200"
+          >
+            create profile
+          </button>
+        </div>
+      )}
+
+      {/* Topic Suggestions Toast */}
+      <SuggestionToast
+        suggestions={topicSuggestions}
+        onSuggestionClick={(suggestion) => {
+          // Inject topic context into next query
+          setQuery(`[${suggestion.topicName}] `)
+          setTopicSuggestions([])
+        }}
+        onDismiss={() => setTopicSuggestions([])}
       />
     </div>
   )

@@ -1,0 +1,76 @@
+# AkhAI Project Rules for Cursor IDE
+
+## Project Identity
+- **Name**: AkhAI (Sovereign AI Research Engine)
+- **Founder**: Algoq (Solo Founder)
+- **Phase**: Core Engine Complete, Side Canal In Progress
+
+## Tech Stack
+- Framework: Next.js 14 with App Router
+- Language: TypeScript (strict mode)
+- Styling: Tailwind CSS
+- AI Provider: Anthropic Claude API
+- Package Manager: pnpm
+- Port: 3003
+
+## Project Structure
+```
+/packages/web/           # Main application
+  /app/                  # Next.js App Router
+    /api/               # API routes
+      /simple-query/    # Main query endpoint (7 methodologies)
+      /guard-suggestions/ # Refine/Pivot suggestions
+      /debug/           # Debug logging
+    /debug/             # Debug dashboard page
+    page.tsx            # Main chat interface
+  /components/          # React components
+    GuardWarning.tsx    # Interactive warning UI
+  /lib/                 # Utilities
+    logger.ts           # Logging system
+    realtime-data.ts    # CoinGecko integration
+    chat-store.ts       # State management
+```
+
+## Key Features
+1. **7 Methodologies**: direct, cod, bot, react, pot, gtp, auto
+2. **Grounding Guard**: hype, echo, drift, factuality detection
+3. **Interactive Warnings**: Refine/Continue/Pivot buttons
+4. **Real-time Data**: CoinGecko for current crypto prices
+5. **Projection Detection**: AI analysis for future predictions
+
+## API Response Format
+```typescript
+{
+  id: string,
+  query: string,
+  methodology: string,
+  response: string,
+  metrics: { tokens, latency, cost },
+  guard: { hypeTriggered, echoTriggered, driftTriggered, issues[] }
+}
+```
+
+## Common Commands
+```bash
+pnpm dev          # Start dev server (port 3003)
+pnpm build        # Build for production
+npx tsc --noEmit  # Type check
+```
+
+## Phase 2 Implementation Timeline
+
+**Session 2: Side Canal** ← CURRENT
+- lib/side-canal.ts (topic extraction, synopsis)
+- components/SuggestionToast.tsx (alerts)
+
+**Session 3: Mind Map UI**
+- components/MindMap.tsx (visual UI)
+
+**Session 4: Legend Mode**
+- Normal/Legend toggle, token tiers
+
+**Session 5: Artifact System**
+- Export (JSON, SVG, MD)
+
+**Session 6: Deploy**
+- Vercel, beta users

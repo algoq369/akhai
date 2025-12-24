@@ -77,12 +77,31 @@ When Guard fails, user gets 3 options:
 
 **Implementation**: `packages/web/components/GuardWarning.tsx`
 
-### 4. Future Innovations (Planned)
+### 4. Phase 2 Innovations (In Progress)
 
-- **Side Canal** - Context awareness panel
-- **Mind Map** - Interactive reasoning visualization
-- **Legend Mode** - Mastery-based progressive disclosure
-- **Artifact System** - Generated code/charts/documents
+**Session 2: Side Canal** ← CURRENT
+- Topic Extractor - identifies subjects from exchanges
+- Synopsis Generator - 1-2 sentence summaries per topic
+- Suggestion Engine - intelligent alerts (insight, connection, pattern)
+- Context Injection - relevant topics into prompts
+
+**Session 3: Mind Map UI**
+- Interactive visualization of topics
+- Color/pin/archive tools
+- Connection mapping between topics
+- Per-topic AI behavior instructions
+
+**Session 4: Legend Mode**
+- Normal Mode: Haiku, cost-efficient ($0.007/query)
+- Legend Mode 👑: Opus, premium R&D ($0.075/query)
+- Token tier configuration
+- Cost indicator UI
+
+**Session 5: Artifact System**
+- Mind Map export (JSON, SVG)
+- Research summary (Markdown)
+- Action plans (Checklist)
+- Artifact library (localStorage)
 
 ---
 

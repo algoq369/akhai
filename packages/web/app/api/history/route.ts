@@ -1,20 +1,23 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { NextRequest, NextResponse } from 'next/server';
+import { getRecentQueries } from '@/lib/database';
+import { getUserFromSession } from '@/lib/auth';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get('limit') || '100');
   const offset = parseInt(searchParams.get('offset') || '0');
 
   try {
-    const queries = db.prepare(`
-      SELECT id, query, flow, status, created_at, completed_at, tokens_used, cost
-      FROM queries ORDER BY created_at DESC LIMIT ? OFFSET ?
-    `).all(limit, offset);
+    // Get user from session (optional - allows anonymous usage)
+    const token = request.cookies.get('session_token')?.value
+    const user = token ? getUserFromSession(token) : null
+    const userId = user?.id || null
 
-    const total = db.prepare('SELECT COUNT(*) as count FROM queries').get() as any;
+    // Get queries scoped to user (with offset support)
+    const queries = getRecentQueries(limit + offset, userId).slice(offset);
+    const total = queries.length + offset; // Approximate total
 
-    return NextResponse.json({ queries, total: total?.count || 0, limit, offset });
+    return NextResponse.json({ queries, total, limit, offset });
   } catch (error) {
     console.error('History API error:', error);
     return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 });

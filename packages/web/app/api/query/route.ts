@@ -124,7 +124,7 @@ _Live data from ${priceData.source} • Updated just now_`;
           updateQuery(queryId, {
             tokens_used: 0,
             cost: 0,
-          });
+          }, null);
 
           addQueryEvent(queryId, 'complete', {
             totalCost: 0,
@@ -193,7 +193,7 @@ _Live data from ${priceData.source} • Updated just now_`;
       updateQuery(queryId, {
         tokens_used: totalTokens,
         cost: estimatedCost,
-      });
+      }, null);
 
       addQueryEvent(queryId, 'complete', {
         totalCost: estimatedCost,
@@ -370,7 +370,7 @@ _Live data from ${priceData.source} • Updated just now_`;
     updateQuery(queryId, {
       tokens_used: totalTokens,
       cost: totalCost,
-    });
+    }, null);
 
     // Emit completion event
     addQueryEvent(queryId, 'complete', {

@@ -75,20 +75,42 @@ When issues detected, users get:
 ## 🚀 Vision & Roadmap
 
 ### Phase 1: Core Engine ✅ COMPLETE
-- 7 reasoning methodologies
-- Grounding Guard system
-- Real-time data integration
+- [x] 7 reasoning methodologies (direct, cod, bot, react, pot, gtp, auto)
+- [x] Grounding Guard (hype, echo, drift, factuality detection)
+- [x] Interactive warning system (refine/continue/pivot)
+- [x] Real-time data integration (CoinGecko)
+- [x] Debug dashboard
 
 ### Phase 2: Innovations 🔄 IN PROGRESS
-- Side Canal (autonomous context tracking)
-- Interactive Mind Map
-- Legend Mode (premium R&D)
-- Artifact System
+**Session 2: Side Canal** (Current)
+- [ ] Topic extraction from conversations
+- [ ] Synopsis generation per topic
+- [ ] Suggestion engine + alerts
+- [ ] Context injection
+
+**Session 3: Mind Map UI**
+- [ ] Interactive mind map component
+- [ ] Color/pin/archive tools
+- [ ] Connection visualization
+
+**Session 4: Legend Mode**
+- [ ] Normal/Legend toggle
+- [ ] Token tier configuration
+- [ ] Premium R&D features
+
+**Session 5: Artifact System**
+- [ ] Export (JSON, SVG, Markdown)
+- [ ] Research summaries
+- [ ] Artifact library
+
+**Session 6: Deploy**
+- [ ] Vercel deployment
+- [ ] Beta program (50-100 users)
 
 ### Phase 3: Sovereignty 📋 PLANNED
-- Fine-tune Qwen 2.5/Mistral
-- FlokiNET Iceland deployment
-- Zero external AI dependencies
+- [ ] Fine-tune Qwen 2.5/Mistral on user data
+- [ ] Deploy to FlokiNET Iceland
+- [ ] Zero external AI dependencies
 
 ---
 

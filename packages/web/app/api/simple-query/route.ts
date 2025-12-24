@@ -5,13 +5,28 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { logger, log } from '@/lib/logger'
+import { createQuery, updateQuery, trackUsage } from '@/lib/database'
+import { getUserFromSession } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   const queryId = Math.random().toString(36).slice(2, 10)
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:10',message:'POST endpoint called',data:{queryId,startTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+
   try {
+    // Get user from session (optional - allows anonymous usage)
+    const token = request.cookies.get('session_token')?.value
+    const user = token ? getUserFromSession(token) : null
+    const userId = user?.id || null
+
     const { query, methodology = 'auto', conversationHistory = [] } = await request.json()
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:16',message:'Request parsed',data:{query,methodology,hasHistory:conversationHistory.length>0,userId:userId||'anonymous'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
 
     if (!query || typeof query !== 'string') {
       logger.query.apiError('VALIDATION', 'Query is required')
@@ -21,17 +36,43 @@ export async function POST(request: NextRequest) {
     // Log query start
     logger.query.start(query, methodology)
 
-    // Check for crypto price queries (real-time data)
-    const cryptoResult = await checkCryptoQuery(query, queryId, startTime)
-    if (cryptoResult) {
-      return NextResponse.json(cryptoResult)
-    }
-
     // Methodology selection with logging
     const selectedMethod = selectMethodology(query, methodology)
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:26',message:'Methodology selected',data:{selected:selectedMethod.id,reason:selectedMethod.reason},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+
+    // Save query to database (with user_id)
+    try {
+      createQuery(queryId, query, selectedMethod.id, userId)
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'Query saved to DB',data:{queryId,userId:userId||'anonymous',success:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+    } catch (dbError) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'DB save failed',data:{queryId,error:String(dbError)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+    }
+
+    // Check for crypto price queries (real-time data)
+    const cryptoResult = await checkCryptoQuery(query, queryId, startTime)
+    if (cryptoResult) {
+      // Update database for crypto query
+      updateQuery(queryId, {
+        status: 'complete',
+        result: JSON.stringify({ finalAnswer: cryptoResult.response }),
+        tokens_used: cryptoResult.metrics.tokens || 0,
+        cost: cryptoResult.metrics.cost || 0,
+      }, userId)
+      return NextResponse.json(cryptoResult)
+    }
+
     // Check API key
     const apiKey = process.env.ANTHROPIC_API_KEY
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:45',message:'API key check',data:{hasKey:!!apiKey,keyLength:apiKey?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     if (!apiKey) {
       logger.query.apiError('ANTHROPIC', 'API key not configured')
       return NextResponse.json(
@@ -55,6 +96,11 @@ export async function POST(request: NextRequest) {
     // Call Anthropic API
     logger.query.apiCall('ANTHROPIC', 'claude-opus-4-20250514')
 
+    const apiCallStart = Date.now()
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:69',message:'Calling Anthropic API',data:{methodology:selectedMethod.id,model:'claude-opus-4-20250514'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -69,6 +115,11 @@ export async function POST(request: NextRequest) {
         messages,
       }),
     })
+
+    const apiCallLatency = Date.now() - apiCallStart
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:84',message:'Anthropic API response',data:{ok:response.ok,status:response.status,latency:apiCallLatency},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -94,7 +145,31 @@ export async function POST(request: NextRequest) {
     // Run Grounding Guard
     const guardResult = await runGroundingGuard(content, query)
 
+    // Save to database
+    updateQuery(queryId, {
+      status: 'complete',
+      result: JSON.stringify({ finalAnswer: content }),
+      tokens_used: tokens,
+      cost: cost,
+    }, userId)
+
+    // Track API usage
+    trackUsage('anthropic', 'claude-opus-4-20250514', inputTokens, outputTokens, cost)
+
     logger.query.complete(queryId, latency, cost)
+
+    // Extract topics asynchronously (don't block response)
+    if (userId) { // Only extract topics for logged-in users
+      fetch('/api/side-canal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query,
+          response: content,
+          queryId,
+        }),
+      }).catch(err => console.error('Topic extraction error:', err))
+    }
 
     return NextResponse.json({
       id: queryId,
@@ -112,7 +187,24 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:135',message:'Error caught',data:{error:errorMessage,stack:error instanceof Error?error.stack:'no stack'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
+    // #endregion
     logger.system.error(errorMessage)
+    
+    // Update query status to error
+    try {
+      const token = request.cookies.get('session_token')?.value
+      const user = token ? getUserFromSession(token) : null
+      const userId = user?.id || null
+      updateQuery(queryId, {
+        status: 'error',
+        result: JSON.stringify({ error: errorMessage }),
+      }, userId)
+    } catch (dbError) {
+      console.error('[API] Failed to update query status:', dbError)
+    }
+    
     return NextResponse.json(
       { error: 'Query processing failed', details: errorMessage },
       { status: 500 }
@@ -126,7 +218,11 @@ async function checkCryptoQuery(query: string, queryId: string, startTime: numbe
   const cryptoSymbols = ['btc', 'bitcoin', 'eth', 'ethereum', 'ada', 'cardano', 'sol', 'solana']
 
   const matchedSymbol = cryptoSymbols.find(symbol => queryLower.includes(symbol))
-  if (!matchedSymbol || !queryLower.includes('price')) {
+  const hasPriceKeyword = queryLower.includes('price') || queryLower.includes('cost') || queryLower.includes('worth') || queryLower.includes('value')
+  
+  log('DEBUG', 'REALTIME', `Crypto check: "${query}" | matchedSymbol: ${matchedSymbol || 'none'} | hasPrice: ${hasPriceKeyword}`)
+  
+  if (!matchedSymbol || !hasPriceKeyword) {
     return null
   }
 
@@ -366,7 +462,11 @@ async function runGroundingGuard(response: string, query: string) {
 
   const issues: string[] = []
 
-  // 1. Hype detection - excessive superlatives
+  // 1. Hype detection - check both query and response
+  const queryLower = query.toLowerCase()
+  const responseLower = response.toLowerCase()
+  
+  // Hype words (excessive superlatives)
   const hypeWords = [
     'revolutionary',
     'unprecedented',
@@ -379,7 +479,33 @@ async function runGroundingGuard(response: string, query: string) {
     'perfect',
     'flawless',
   ]
-  const hypeCount = hypeWords.filter(w => response.toLowerCase().includes(w)).length
+  
+  // Extreme monetary claims patterns (trillion, billion in short timeframes)
+  const extremeMonetaryPatterns = [
+    /\d+\s*(trillion|billion).*?(day|days|week|weeks|month|months)/i,
+    /(trillion|billion).*?\d+\s*(day|days|week|weeks|month|months)/i,
+    /make.*?\d+\s*(trillion|billion)/i,
+    /earn.*?\d+\s*(trillion|billion)/i,
+  ]
+  
+  // Check response for hype words
+  const responseHypeCount = hypeWords.filter(w => responseLower.includes(w)).length
+  
+  // Check query for extreme monetary claims
+  const queryHasExtremeClaims = extremeMonetaryPatterns.some(pattern => pattern.test(query))
+  
+  // Check response for extreme monetary claims
+  const responseHasExtremeClaims = extremeMonetaryPatterns.some(pattern => pattern.test(responseLower))
+  
+  // Calculate total hype score
+  let hypeCount = responseHypeCount
+  if (queryHasExtremeClaims) hypeCount += 3 // Heavy weight for extreme claims in query
+  if (responseHasExtremeClaims) hypeCount += 2
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:443',message:'Hype detection',data:{query,responseHypeCount,queryHasExtremeClaims,responseHasExtremeClaims,hypeCount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'L'})}).catch(()=>{});
+  // #endregion
+  
   const hypeTriggered = hypeCount >= 2
   logger.guard.hypeCheck(hypeCount, hypeTriggered)
   if (hypeTriggered) issues.push('hype')
@@ -435,7 +561,7 @@ async function runGroundingGuard(response: string, query: string) {
 
   // 4. SANITY CHECK - Reality/Plausibility validation
   const sanityViolations: string[] = []
-  const queryLower = query.toLowerCase()
+  // queryLower already declared above in hype detection section
   const combinedText = (query + ' ' + response).toLowerCase()
 
   // Extreme monetary claims (> $100M in < 5 years for individuals)

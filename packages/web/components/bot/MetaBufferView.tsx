@@ -30,7 +30,7 @@ export function MetaBufferView({ metaBuffers, onMetaBufferSelect }: Props) {
               </span>
               <div className="flex items-center gap-3 text-xs text-relic-silver/50 font-mono">
                 <span>conf: {(mb.confidence * 100).toFixed(0)}%</span>
-                <span className="text-relic-void">−{mb.tokensSaved} tokens</span>
+                <span className="text-relic-slate">−{mb.tokensSaved} tokens</span>
               </div>
             </div>
 
