@@ -373,10 +373,51 @@ export function migrateAddUserIdColumns() {
   }
 }
 
+/**
+ * Migration: Add Mind Map columns to topics table
+ */
+export function migrateAddMindMapColumns() {
+  try {
+    console.log('[DEBUG] Starting migration: migrateAddMindMapColumns');
+    const topicsInfo = db.prepare("PRAGMA table_info(topics)").all() as Array<{ name: string }>;
+    const columnNames = topicsInfo.map(c => c.name);
+    
+    // Add color column
+    if (!columnNames.includes('color')) {
+      db.exec('ALTER TABLE topics ADD COLUMN color TEXT');
+      console.log('✅ Added color column to topics table');
+    }
+    
+    // Add pinned column
+    if (!columnNames.includes('pinned')) {
+      db.exec('ALTER TABLE topics ADD COLUMN pinned INTEGER DEFAULT 0');
+      console.log('✅ Added pinned column to topics table');
+    }
+    
+    // Add archived column
+    if (!columnNames.includes('archived')) {
+      db.exec('ALTER TABLE topics ADD COLUMN archived INTEGER DEFAULT 0');
+      console.log('✅ Added archived column to topics table');
+    }
+    
+    // Add ai_instructions column
+    if (!columnNames.includes('ai_instructions')) {
+      db.exec('ALTER TABLE topics ADD COLUMN ai_instructions TEXT');
+      console.log('✅ Added ai_instructions column to topics table');
+    }
+    
+    console.log('[DEBUG] Mind Map migration completed');
+  } catch (error) {
+    console.error('[DEBUG] Mind Map migration error:', error);
+    // Don't throw - allow app to start
+  }
+}
+
 // Run migration on module load (after schema initialization)
 try {
   console.log('[DEBUG] Running migration on module load');
   migrateAddUserIdColumns();
+  migrateAddMindMapColumns();
   console.log('[DEBUG] Migration completed successfully');
 } catch (error) {
   console.error('[DEBUG] Failed to run migration on module load:', error);
