@@ -111,4 +111,31 @@ yarn.lock
 # Temporary folders
 tmp/
 temp/
+
+# Next.js
+.next/
 packages/web/.next
+apps/web/.next
+
+# Next.js build cache
+.next/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Environment files
+*.env
+*.env.local
+!.env.example
+
+# Database files
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# OS
+.DS_Store

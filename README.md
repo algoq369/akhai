@@ -1,239 +1,137 @@
-# 🧠 AKHAI — Multi-AI Consensus Engine
+<div align="center">
 
-**From AI Engine to Smart Cities: A Market-Validated Journey**
+# ◊ AKHAI
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
-[![Version](https://img.shields.io/badge/version-0.3.0-orange.svg)](package.json)
-[![Phase](https://img.shields.io/badge/Phase-3%20Complete-brightgreen.svg)](README.md#roadmap)
-[![Target](https://img.shields.io/badge/Target-$10B+_Ecosystem-gold.svg)](docs/MASTER_PLAN.md)
+### Sovereign AI Research Engine
 
----
+*Where Intelligence Meets Integrity*
 
-## The Vision
+[![Status](https://img.shields.io/badge/Status-Beta-yellow)]()
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-93.5%25-blue)]()
+[![Solo Founder](https://img.shields.io/badge/Founder-Algoq-purple)]()
 
-**AKHAI is the AI moat for a $10B+ ecosystem:**
-
-| Pillar | Timeline | Target |
-|--------|----------|--------|
-| **AKHAI Engine** | 2025-2026 | Multi-AI consensus platform |
-| **AKHAI Robot** | 2027-2028 | Portable + Full-Size AI embodiment |
-| **Infrastructure** | 2029-2030 | Mining & data centers |
-| **BroolyKid Cities** | 2030+ | Sovereign smart cities |
-
-**Financial Targets (Market-Validated):**
-- **Base Case:** $1.1B revenue, $6.7B valuation by 2035
-- **Optimistic:** $3.5B revenue, $28B valuation by 2035
-
-📖 **[Full Master Plan →](docs/MASTER_PLAN.md)**
+[Live Demo](https://akhai.vercel.app) • [Documentation](#-documentation) • [Vision](#-vision) • [Roadmap](#-roadmap)
 
 ---
 
-## What is AKHAI?
+*"The future of AI isn't about who has the biggest model—it's about who builds the most trustworthy one."*
 
-AKHAI orchestrates **4 AI providers** (Anthropic, DeepSeek, xAI, Mistral) to reach consensus through automated verification loops. The result: more reliable, multi-perspective answers than any single AI.
-
-### Key Features
-
-- 🔬 **Multi-AI Consensus** — 4 advisors + Mother Base
-- ⚡ **GTP Flash** — Parallel consensus in ~25 seconds
-- 🎯 **Smart Routing** — Auto-selects best methodology
-- 🧬 **5 Methodologies** — Direct, CoT, AoT, Flash, Auto
-- 💻 **Production Ready** — TypeScript, Next.js 15, MCP
-
-### Current Status: v0.3.0 ✅
-
-| Component | Status |
-|-----------|--------|
-| GTP Flash Architecture | ✅ Complete |
-| 4 AI Providers | ✅ Integrated |
-| 5 Methodologies | ✅ Working |
-| Web Interface | ✅ Built |
-| MCP Server | ✅ Ready |
+</div>
 
 ---
 
-## Quick Start
+## 🎯 The Problem
 
-### 1. Install
+Today's AI systems share critical flaws:
+
+| Issue | Impact |
+|-------|--------|
+| **Hallucinations** | AI confidently states false information |
+| **Black Box Reasoning** | No insight into how conclusions are reached |
+| **One-Size-Fits-All** | Same approach for simple questions and complex analysis |
+| **Vendor Lock-In** | Dependence on OpenAI/Anthropic APIs |
+| **Hype Without Substance** | Exaggerated claims without grounding |
+
+**Result**: Users can't trust AI outputs for serious work.
+
+---
+
+## 💡 The Solution: AkhAI
+
+AkhAI is the **first sovereign AI research engine** that combines 7 reasoning methodologies, real-time grounding verification, and autonomous context intelligence.
+
+---
+
+## ✨ Key Features
+
+### 🧠 7 Reasoning Methodologies
+
+| Methodology | How It Works | Auto-Triggers On |
+|-------------|--------------|------------------|
+| **Direct** | Fast, concise response | Simple factual questions |
+| **Chain of Draft (CoD)** | Draft → Reflect → Refine | "step by step", "explain how" |
+| **Buffer of Thoughts (BoT)** | Template-based reasoning | Complex context |
+| **ReAct** | Thought → Action → Observation | "search", "find latest" |
+| **Program of Thought (PoT)** | Code-based computation | Math, calculations |
+| **GTP Consensus** | Multi-perspective synthesis | Opinions, decisions |
+| **Auto** | Intelligent routing | Any query |
+
+### 🛡️ Grounding Guard
+
+Every response verified through:
+- **Hype Detection**: Flags exaggerated claims
+- **Echo Detection**: Catches repetitive content
+- **Drift Detection**: Monitors topic relevance
+- **Factuality Check**: Validates claims
+
+When issues detected, users get:
+- **Refine**: AI suggests better questions
+- **Continue**: Show response with warning
+- **Pivot**: Alternative approaches
+
+---
+
+## 🚀 Vision & Roadmap
+
+### Phase 1: Core Engine ✅ COMPLETE
+- 7 reasoning methodologies
+- Grounding Guard system
+- Real-time data integration
+
+### Phase 2: Innovations 🔄 IN PROGRESS
+- Side Canal (autonomous context tracking)
+- Interactive Mind Map
+- Legend Mode (premium R&D)
+- Artifact System
+
+### Phase 3: Sovereignty 📋 PLANNED
+- Fine-tune Qwen 2.5/Mistral
+- FlokiNET Iceland deployment
+- Zero external AI dependencies
+
+---
+
+## 👤 Team
+
+**Algoq** - Solo Founder
+
+Building sovereign, trustworthy AI from first principles.
+
+---
+
+## 🚀 Quick Start
 
 ```bash
+# Clone
+git clone https://github.com/algoq/akhai.git
+cd akhai
+
+# Install
 pnpm install
-```
 
-### 2. Configure
+# Configure
+cp packages/web/.env.example packages/web/.env.local
+# Add ANTHROPIC_API_KEY
 
-```bash
-# .env
-ANTHROPIC_API_KEY=sk-ant-...
-DEEPSEEK_API_KEY=sk-...
-XAI_API_KEY=xai-...
-MISTRAL_API_KEY=...
-```
-
-### 3. Build & Run
-
-```bash
-# Build
-cd packages/core && pnpm build
-cd ../mcp-server && pnpm build
-cd ../web && pnpm dev
-
-# Use with Claude Code
-Use akhai.query to analyze: "What's the best approach for X?"
+# Run
+pnpm dev
 ```
 
 ---
 
-## Architecture
+## 📜 License
 
-```
-Mother Base: Anthropic Claude Sonnet 4
-     │
-     ▼
-Advisor Layer (4 AIs)
-├── Slot 1: DeepSeek (Technical)
-├── Slot 2: xAI Grok (Strategic)
-├── Slot 3: Mistral AI (Diversity)
-└── Slot 4: Redactor (Claude)
-     │
-     ▼
-Consensus → Final Answer
-```
-
-### Five Methodologies
-
-| Method | Use Case | Speed |
-|--------|----------|-------|
-| **Direct** | Simple queries | ~5s |
-| **CoT** | Sequential reasoning | ~30s |
-| **AoT** | Complex decomposition | ~60s |
-| **Flash** | Parallel consensus | ~25s |
-| **Auto** | Smart selection | Variable |
+Apache 2.0
 
 ---
 
-## The Dream Team
+<div align="center">
 
-| Role | Person | Credential |
-|------|--------|------------|
-| **CEO** | Haidar (algoq) | BJJ World Games Champion, Vibe Coder |
-| **Architect** | Andy | Built AKHAI core engine |
-| **Strategy** | Philippe Haydarian | ENA Graduate, Ex-Deloitte |
-| **Investment** | Gregory Sankara | G&V Capital, +20% enhancement |
-| **Technical** | Alex Roubaud | CEO Bitstack (AMF) |
-| **Ambassador** | Cyril Gane | UFC Interim HW Champion |
+**Built by Algoq**
 
-📖 **[Full Team Bios →](docs/TEAM.md)**
+*Sovereign AI • Grounded Intelligence • Zero Hallucination Tolerance*
 
----
+◊
 
-## Roadmap
-
-### ✅ Complete
-
-- **Phase 0-3:** Core engine, GTP Flash, 4 providers, web UI
-
-### 🎯 Next
-
-| Phase | Timeline | Target |
-|-------|----------|--------|
-| **Beta Launch** | Q1 2026 | 1,000 users |
-| **Monetization** | Q2 2026 | $50K MRR |
-| **Scale** | Q4 2026 | 10,000 users, $200K MRR |
-| **Robot Dev** | 2027 | Internal development |
-| **Robot Launch** | 2028 | Portable + Full-Size |
-
-### 📈 Financial Trajectory
-
-| Year | Revenue | Valuation |
-|------|---------|-----------|
-| 2026 | $2-3M | $30-60M |
-| 2028 | $35-85M | $350M-1B |
-| 2030 | $200-540M | $1.4-4.9B |
-| 2035 | $1.1-3.5B | $6.7-28B |
-
----
-
-## Project Structure
-
-```
-akhai/
-├── packages/
-│   ├── core/           # Consensus engine
-│   ├── web/            # Next.js interface
-│   └── mcp-server/     # Claude Code integration
-├── docs/
-│   ├── MASTER_PLAN.md  # 10-year roadmap
-│   ├── ROBOT.md        # Robot specifications
-│   └── TEAM.md         # Team bios
-└── STATUS_DASHBOARD.md # Current state
-```
-
----
-
-## Connected Ecosystem
-
-| Repo | Purpose |
-|------|---------|
-| **akhai** | AI Engine (THIS) |
-| [sempai-monorepo](https://github.com/algoq369/sempai-monorepo) | Wellness platform |
-| [broolykid-network](https://github.com/algoq369/broolykid-network) | Smart cities |
-
----
-
-## Documentation
-
-- 📖 [Master Plan](docs/MASTER_PLAN.md) — Full 10-year roadmap
-- 🤖 [Robot Specs](docs/ROBOT.md) — Portable & Full-Size details
-- 👥 [Team](docs/TEAM.md) — Leadership bios
-- 🏗️ [Architecture](docs/ARCHITECTURE.md) — Technical deep-dive
-
----
-
-## API Reference
-
-### Core
-
-```typescript
-const akhai = createAkhAI('anthropic');
-akhai.setApiKeys({ anthropic, deepseek, xai, mistral });
-akhai.setupMotherBase();
-akhai.setupAdvisorLayer('deepseek', 'xai');
-
-const result = await akhai.executeMotherBaseFlow(query);
-```
-
-### MCP Tools
-
-```typescript
-// akhai.query
-{ query: string, flow?: 'A'|'B', methodology?: string }
-
-// akhai.status
-{} // Returns system state
-
-// akhai.agents  
-{ action: 'list'|'register', agentName?: string }
-```
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/x`)
-3. Commit changes (`git commit -m 'Add x'`)
-4. Push (`git push origin feature/x`)
-5. Open Pull Request
-
----
-
-## License
-
-MIT License — see [LICENSE](LICENSE)
-
----
-
-**AKHAI — Building the AI Moat for Tomorrow's Cities**
-
-*Championship discipline. Market validation. Vibe coding.*
+</div>
