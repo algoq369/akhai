@@ -307,7 +307,8 @@ export default function HomePage() {
   const handleGuardRefine = async (messageId: string, refinedQuery?: string) => {
     if (refinedQuery) {
       // User selected a suggestion - submit it directly
-      // Don't use setQuery + handleSubmit (async state issue)
+      // IMPORTANT: Capture current messages BEFORE any state updates (stale closure fix)
+      const currentMessages = [...messages]
       
       // First, show the original flagged message (un-hide it with refine indicator)
       setMessages(prev => prev.map(m =>
@@ -324,6 +325,12 @@ export default function HomePage() {
       setMessages(prev => [...prev, userMessage])
       setIsLoading(true)
 
+      // Build conversation history from captured messages + new user message
+      const conversationHistory = [
+        ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user' as const, content: refinedQuery }
+      ]
+
       // Submit the refined query
       try {
         const res = await fetch('/api/simple-query', {
@@ -332,10 +339,7 @@ export default function HomePage() {
           body: JSON.stringify({
             query: refinedQuery,
             methodology,
-            conversationHistory: messages.map(m => ({
-              role: m.role,
-              content: m.content
-            }))
+            conversationHistory
           })
         })
 
@@ -410,8 +414,8 @@ export default function HomePage() {
   const handleGuardPivot = async (messageId: string, pivotQuery?: string) => {
     if (pivotQuery) {
       // User selected a suggestion - submit it directly
-      // Don't use setQuery + handleSubmit (async state issue)
-      // Instead, directly submit with the pivot query
+      // IMPORTANT: Capture current messages BEFORE any state updates (stale closure fix)
+      const currentMessages = [...messages]
       
       // First, show the original flagged message (un-hide it with pivot indicator)
       setMessages(prev => prev.map(m =>
@@ -428,6 +432,12 @@ export default function HomePage() {
       setMessages(prev => [...prev, userMessage])
       setIsLoading(true)
 
+      // Build conversation history from captured messages + new user message
+      const conversationHistory = [
+        ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user' as const, content: pivotQuery }
+      ]
+
       // Submit the pivot query
       try {
         const res = await fetch('/api/simple-query', {
@@ -436,10 +446,7 @@ export default function HomePage() {
           body: JSON.stringify({
             query: pivotQuery,
             methodology,
-            conversationHistory: messages.map(m => ({
-              role: m.role,
-              content: m.content
-            }))
+            conversationHistory
           })
         })
 
