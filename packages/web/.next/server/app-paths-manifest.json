@@ -1,3 +1,4 @@
 {
-  "/api/guard-suggestions/route": "app/api/guard-suggestions/route.js"
+  "/api/side-canal/topics/route": "app/api/side-canal/topics/route.js",
+  "/api/simple-query/route": "app/api/simple-query/route.js"
 }

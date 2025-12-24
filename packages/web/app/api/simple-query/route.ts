@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logger, log } from '@/lib/logger'
 import { createQuery, updateQuery, trackUsage } from '@/lib/database'
 import { getUserFromSession } from '@/lib/auth'
+import { getContextForQuery } from '@/lib/side-canal'
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -91,7 +92,16 @@ export async function POST(request: NextRequest) {
     ]
 
     // Get methodology-specific system prompt
-    const systemPrompt = getMethodologyPrompt(selectedMethod.id)
+    let systemPrompt = getMethodologyPrompt(selectedMethod.id)
+
+    // Inject context from Side Canal (previous topic synopses)
+    if (userId) {
+      const context = getContextForQuery(query, userId)
+      if (context) {
+        systemPrompt += `\n\n[Context from previous conversations]\n${context}\n[End context]`
+        log('DEBUG', 'SIDE_CANAL', `Injected context: ${context.substring(0, 100)}...`)
+      }
+    }
 
     // Call Anthropic API with retry logic
     logger.query.apiCall('ANTHROPIC', 'claude-opus-4-20250514')

@@ -1,9 +1,14 @@
 {
   "pages": {
-    "/api/guard-suggestions/route": [
+    "/api/side-canal/topics/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/guard-suggestions/route.js"
+      "static/chunks/app/api/side-canal/topics/route.js"
+    ],
+    "/api/simple-query/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/simple-query/route.js"
     ]
   }
 }

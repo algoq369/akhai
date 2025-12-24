@@ -281,6 +281,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../app/api/side-canal/topics/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/side-canal/topics">> = Specific
+  const handler = {} as typeof import("../../app/api/side-canal/topics/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/api/simple-query/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/simple-query">> = Specific

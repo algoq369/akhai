@@ -8,6 +8,7 @@ import MethodologyExplorer from '@/components/MethodologyExplorer'
 import AuthModal from '@/components/AuthModal'
 import UserProfile from '@/components/UserProfile'
 import SuggestionToast from '@/components/SuggestionToast'
+import TopicsPanel from '@/components/TopicsPanel'
 
 const METHODOLOGIES = [
   { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', savings: 'varies' },
@@ -33,6 +34,7 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [topicSuggestions, setTopicSuggestions] = useState<Array<{ topicId: string; topicName: string; reason: string; relevance: number }>>([])
+  const [showTopicsPanel, setShowTopicsPanel] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -935,6 +937,7 @@ export default function HomePage() {
                 {user ? (
                   <>
                     <a href="/dashboard" className="hover:text-relic-slate transition-colors">dashboard</a>
+                    <button onClick={() => setShowTopicsPanel(true)} className="hover:text-relic-slate transition-colors">topics</button>
                     <a href="/history" className="hover:text-relic-slate transition-colors">history</a>
                     <span className="text-relic-silver/50 cursor-not-allowed" title="Coming in Session 3">mindmap</span>
                     <a href="/settings" className="hover:text-relic-slate transition-colors">settings</a>
@@ -957,6 +960,12 @@ export default function HomePage() {
       <MethodologyExplorer
         isVisible={showMethodologyExplorer}
         onClose={handleCloseExplorer}
+      />
+
+      {/* Topics Panel */}
+      <TopicsPanel
+        isOpen={showTopicsPanel}
+        onClose={() => setShowTopicsPanel(false)}
       />
 
       {/* Auth Modal */}
