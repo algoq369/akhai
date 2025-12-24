@@ -54,17 +54,28 @@ export async function extractTopics(
     const keywords = extractKeywords(query + ' ' + response);
     
     // Step 2: AI-powered topic identification using Claude Haiku
-    const topicPrompt = `Extract 3-5 main topics from this conversation:
+    const topicPrompt = `Extract ALL relevant topics from this conversation. Be thorough and extract 5-10 topics covering:
+- Main subjects discussed
+- Technologies mentioned
+- Concepts explained
+- Industries/domains referenced
+- Key terms and entities
 
 Query: "${query}"
-Response: "${response.substring(0, 500)}..."
+Response: "${response.substring(0, 1000)}..."
 
 Return ONLY a JSON array of topic objects, each with:
-- name: short topic name (2-4 words)
-- description: brief description (optional)
+- name: short topic name (1-4 words, be specific)
+- description: brief description (optional, 5-15 words)
 - category: one of: technology, finance, science, business, health, education, other
 
-Example: [{"name": "Bitcoin", "description": "Cryptocurrency", "category": "finance"}, ...]`;
+Examples:
+- "AI Model Development" (not just "AI")
+- "GPU Infrastructure" (not just "Hardware")
+- "Sovereign AI" (specific concept)
+- "Data Pipeline" (specific component)
+
+Return JSON array: [{"name": "...", "description": "...", "category": "..."}, ...]`;
 
     const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -75,7 +86,7 @@ Example: [{"name": "Bitcoin", "description": "Cryptocurrency", "category": "fina
       },
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
-        max_tokens: 500,
+        max_tokens: 800,
         messages: [
           {
             role: 'user',
@@ -111,12 +122,28 @@ Example: [{"name": "Bitcoin", "description": "Cryptocurrency", "category": "fina
       const topicId = randomBytes(8).toString('hex');
       
       // Check if topic already exists for this user
-      const existing = db.prepare(`
-        SELECT * FROM topics WHERE name = ? AND (user_id = ? OR user_id IS NULL)
-      `).get(topicData.name, userId) as Topic | undefined;
+      // Prioritize user-specific topics over NULL user_id topics
+      const existing = userId
+        ? db.prepare(`
+            SELECT * FROM topics 
+            WHERE name = ? AND user_id = ?
+          `).get(topicData.name, userId) as Topic | undefined
+        : db.prepare(`
+            SELECT * FROM topics 
+            WHERE name = ? AND user_id IS NULL
+          `).get(topicData.name) as Topic | undefined;
 
       if (existing) {
-        storedTopics.push(existing);
+        // If topic exists but has NULL user_id and we have a userId, update it
+        if (userId && !existing.user_id) {
+          db.prepare(`
+            UPDATE topics SET user_id = ? WHERE id = ?
+          `).run(userId, existing.id);
+          const updated = db.prepare('SELECT * FROM topics WHERE id = ?').get(existing.id) as Topic;
+          storedTopics.push(updated);
+        } else {
+          storedTopics.push(existing);
+        }
         continue;
       }
 

@@ -21,6 +21,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Migrate NULL user_id topics to current user (one-time migration)
+    db.prepare(`
+      UPDATE topics 
+      SET user_id = ?, updated_at = ?
+      WHERE user_id IS NULL
+    `).run(userId, Math.floor(Date.now() / 1000))
+
     // Get all topics for user
     const topics = db.prepare(`
       SELECT 

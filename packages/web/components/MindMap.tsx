@@ -54,6 +54,7 @@ export default function MindMap({ isOpen, onClose }: MindMapProps) {
   const [loading, setLoading] = useState(false)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
+  const [reExtracting, setReExtracting] = useState(false)
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
@@ -77,6 +78,24 @@ export default function MindMap({ isOpen, onClose }: MindMapProps) {
       console.error('Failed to fetch mind map data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleReExtract = async () => {
+    setReExtracting(true)
+    try {
+      const res = await fetch('/api/mindmap/re-extract', { method: 'POST' })
+      if (res.ok) {
+        const data = await res.json()
+        // Refresh the mind map
+        await fetchMindMapData()
+        alert(`Re-extracted ${data.topicsExtracted} topics from ${data.queriesProcessed} queries!`)
+      }
+    } catch (error) {
+      console.error('Failed to re-extract topics:', error)
+      alert('Failed to re-extract topics')
+    } finally {
+      setReExtracting(false)
     }
   }
 
@@ -210,12 +229,21 @@ export default function MindMap({ isOpen, onClose }: MindMapProps) {
               {visibleNodes.length} topics · {visibleLinks.length} connections
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-relic-silver hover:text-relic-slate transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleReExtract}
+              disabled={reExtracting}
+              className="px-3 py-1.5 text-xs bg-relic-ghost hover:bg-relic-mist text-relic-slate rounded border border-relic-mist transition-colors disabled:opacity-50"
+            >
+              {reExtracting ? 'Extracting...' : 'Re-extract Topics'}
+            </button>
+            <button
+              onClick={onClose}
+              className="text-relic-silver hover:text-relic-slate transition-colors"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Mind Map Canvas */}
