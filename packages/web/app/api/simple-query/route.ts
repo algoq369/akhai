@@ -271,37 +271,49 @@ async function checkCryptoQuery(query: string, queryId: string, startTime: numbe
   }
 
   const coinId = symbolMap[matchedSymbol]
-  logger.realtime.fetch('CoinGecko', coinId)
+  
+  // Map to Binance trading pairs
+  const binanceSymbolMap: Record<string, string> = {
+    'bitcoin': 'BTCUSDT',
+    'ethereum': 'ETHUSDT',
+    'cardano': 'ADAUSDT',
+    'solana': 'SOLUSDT',
+  }
+  
+  const binanceSymbol = binanceSymbolMap[coinId]
+  logger.realtime.fetch('Binance', binanceSymbol)
 
   try {
+    // Use Binance API (no rate limits, no API key needed)
     const response = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`,
+      `https://api.binance.com/api/v3/ticker/24hr?symbol=${binanceSymbol}`,
       { headers: { 'Accept': 'application/json' } }
     )
 
     if (!response.ok) {
-      logger.realtime.error('CoinGecko', `HTTP ${response.status}`)
+      logger.realtime.error('Binance', `HTTP ${response.status}`)
       return null
     }
 
     const data = await response.json()
-    const price = data[coinId]?.usd
-    const change24h = data[coinId]?.usd_24h_change
+    const price = parseFloat(data.lastPrice)
+    const change24h = parseFloat(data.priceChangePercent)
 
-    if (!price) {
-      logger.realtime.error('CoinGecko', 'No price data returned')
+    if (!price || isNaN(price)) {
+      logger.realtime.error('Binance', 'No price data returned')
       return null
     }
 
-    logger.realtime.success('CoinGecko', coinId.toUpperCase(), price)
+    logger.realtime.success('Binance', coinId.toUpperCase(), price)
 
     const changeEmoji = change24h >= 0 ? '📈' : '📉'
     const changeText = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`
+    const volume24h = parseFloat(data.quoteVolume)
 
     const responseText = `**${coinId.toUpperCase()} Price: $${price.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    })}**\n\n${changeEmoji} 24h Change: ${changeText}\n\n_Live data from CoinGecko • Updated just now_`
+    })}**\n\n${changeEmoji} 24h Change: ${changeText}\n📊 24h Volume: $${(volume24h / 1e9).toFixed(2)}B\n\n_Live data from Binance • Updated just now_`
 
     const latency = Date.now() - startTime
     logger.query.complete(queryId, latency, 0)
@@ -317,11 +329,11 @@ async function checkCryptoQuery(query: string, queryId: string, startTime: numbe
         tokens: 0,
         latency,
         cost: 0,
-        source: 'CoinGecko',
+        source: 'Binance',
       },
     }
   } catch (error) {
-    logger.realtime.error('CoinGecko', error instanceof Error ? error.message : 'Unknown error')
+    logger.realtime.error('Binance', error instanceof Error ? error.message : 'Unknown error')
     return null
   }
 }
