@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       SELECT id, query, result
       FROM queries
       WHERE user_id = ? 
-        AND status = 'completed'
+        AND status = 'complete'
         AND result IS NOT NULL
       ORDER BY created_at DESC
       LIMIT 20
@@ -40,10 +40,13 @@ export async function POST(request: NextRequest) {
 
     for (const q of queries) {
       try {
-        const resultData = q.result ? JSON.parse(q.result) : null
+        if (!q.result) continue
+        
+        const resultData = JSON.parse(q.result)
+        // Handle both response formats: {response: ...} or {finalAnswer: ...}
         const response = resultData?.response || resultData?.finalAnswer || ''
 
-        if (!response) continue
+        if (!response || typeof response !== 'string') continue
 
         // Extract topics
         const topics = await extractTopics(q.query, response, userId)
