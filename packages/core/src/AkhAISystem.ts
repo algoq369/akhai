@@ -13,6 +13,8 @@ import { ModelProviderFactory, IModelProvider } from './models/ModelProviderFact
 import { CostTracker } from './utils/CostTracker.js';
 import { WebSearch } from './tools/WebSearch.js';
 import { getSystemPrompt } from './prompts/system-prompts.js';
+import { GroundingGuard, type GroundingAlert, type GroundingConfig } from './grounding/index.js';
+import { ConversationMemory, type Message } from './memory/ConversationMemory.js';
 
 /**
  * AkhAISystem
@@ -86,6 +88,10 @@ export class AkhAISystem {
   // Sub-Agents
   private subAgentProviders: Map<string, IModelProvider> = new Map();
 
+  // Conversation Memory & Grounding
+  private conversationMemory: ConversationMemory;
+  private groundingGuard: GroundingGuard;
+
   /**
    * Create a new AkhAI system
    *
@@ -95,6 +101,8 @@ export class AkhAISystem {
     this.alignmentManager = new ModelAlignmentManager(motherBaseFamily);
     this.providerFactory = new ModelProviderFactory();
     this.costTracker = new CostTracker();
+    this.conversationMemory = new ConversationMemory();
+    this.groundingGuard = new GroundingGuard();
 
     console.log(`\n🧠 AkhAI System Initialized`);
     console.log(`   Mother Base Family: ${motherBaseFamily}`);
@@ -780,13 +788,47 @@ export class AkhAISystem {
     console.log(`   Total Exchanges: ${exchanges.length}`);
     console.log(`   Approved: ${approvedAt !== null ? 'Yes' : 'No (forced)'}`);
 
+    // ========================================================================
+    // GROUNDING GUARD CHECK
+    // ========================================================================
+    const finalDecision = exchanges[exchanges.length - 1].motherBaseResponse;
+
+    // Add to conversation memory
+    this.conversationMemory.addMessage('user', query);
+    this.conversationMemory.addMessage('assistant', finalDecision);
+
+    // Check if grounding should trigger
+    const memoryStats = this.conversationMemory.getStats();
+    const shouldTrigger = this.groundingGuard.shouldTrigger(memoryStats);
+
+    let groundingAlerts: GroundingAlert[] = [];
+
+    if (shouldTrigger) {
+      console.log('\n🛡️  Running Grounding Guard check...');
+      const conversationHistory = this.conversationMemory.getFullHistory();
+      const groundingResult = await this.groundingGuard.check(conversationHistory);
+
+      if (groundingResult.alerts.length > 0) {
+        console.log(`   ⚠️  ${groundingResult.alerts.length} grounding alert(s) detected`);
+        groundingAlerts = groundingResult.alerts;
+
+        // Invoke callbacks for each alert
+        for (const alert of groundingAlerts) {
+          callbacks?.onGroundingAlert?.(alert);
+        }
+      } else {
+        console.log('   ✅ No grounding issues detected');
+      }
+    }
+
     return {
       layerConsensus: lastConsensus,
       redactorOutput: lastRedactorOutput,
       motherBaseExchanges: exchanges,
       totalMotherBaseExchanges: exchanges.length,
       approvedAt,
-      finalDecision: exchanges[exchanges.length - 1].motherBaseResponse,
+      finalDecision,
+      groundingAlerts,
     };
   }
 
@@ -1012,6 +1054,39 @@ export class AkhAISystem {
     console.log(`   Sub-Agent Completed: ${subAgentCompletedAt !== null ? 'Yes' : 'No (forced)'}`);
     console.log(`   Mother Base Approved: ${approvedAt !== null ? 'Yes' : 'No (forced)'}`);
 
+    // ========================================================================
+    // GROUNDING GUARD CHECK
+    // ========================================================================
+    const finalOutput = approvalExchanges[approvalExchanges.length - 1].motherBaseResponse;
+
+    // Add to conversation memory
+    this.conversationMemory.addMessage('user', query);
+    this.conversationMemory.addMessage('assistant', finalOutput);
+
+    // Check if grounding should trigger
+    const memoryStats = this.conversationMemory.getStats();
+    const shouldTrigger = this.groundingGuard.shouldTrigger(memoryStats);
+
+    let groundingAlerts: GroundingAlert[] = [];
+
+    if (shouldTrigger) {
+      console.log('\n🛡️  Running Grounding Guard check...');
+      const conversationHistory = this.conversationMemory.getFullHistory();
+      const groundingResult = await this.groundingGuard.check(conversationHistory);
+
+      if (groundingResult.alerts.length > 0) {
+        console.log(`   ⚠️  ${groundingResult.alerts.length} grounding alert(s) detected`);
+        groundingAlerts = groundingResult.alerts;
+
+        // Invoke callbacks for each alert
+        for (const alert of groundingAlerts) {
+          callbacks?.onGroundingAlert?.(alert);
+        }
+      } else {
+        console.log('   ✅ No grounding issues detected');
+      }
+    }
+
     return {
       layerConsensus: lastConsensus,
       redactorOutput: lastRedactorOutput,
@@ -1023,7 +1098,8 @@ export class AkhAISystem {
         totalExchanges: approvalExchanges.length,
         approvedAt,
       },
-      finalOutput: approvalExchanges[approvalExchanges.length - 1].motherBaseResponse,
+      finalOutput,
+      groundingAlerts,
     };
   }
 }

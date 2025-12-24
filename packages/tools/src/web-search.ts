@@ -97,7 +97,7 @@ export class WebSearch {
       throw new Error(`Brave search failed: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
 
     return (data.web?.results || []).map((r: any) => ({
       title: r.title,
@@ -126,7 +126,7 @@ export class WebSearch {
       throw new Error(`SearX search failed: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
 
     return (data.results || []).slice(0, count).map((r: any) => ({
       title: r.title,
@@ -151,7 +151,7 @@ export class WebSearch {
       throw new Error(`DuckDuckGo search failed: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
     const results: SearchResult[] = [];
 
     // Abstract (main answer)

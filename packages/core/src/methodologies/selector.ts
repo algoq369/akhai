@@ -1,20 +1,30 @@
 /**
  * Methodology Selector
  *
- * Analyzes user queries and automatically selects the optimal reasoning methodology.
+ * Analyzes user queries and automatically selects the optimal reasoning methodology
+ * from the research-validated Top 7 stack.
  *
- * Available methodologies:
- * - direct: Simple factual queries (~5s)
- * - cot: Chain of Thought, sequential reasoning (~30s)
- * - aot: Atom of Thoughts, decompose→solve→contract (~60s)
- * - gtp: Flash/parallel multi-AI consensus (~25s)
- * - auto: Let selector decide (default)
+ * Core 7 Methodologies (Research-Validated December 2025):
+ * - direct: Simple factual queries (~2s, Tier 1)
+ * - cod: Chain of Draft, 92% cheaper than CoT (~8s, Tier 2)
+ * - bot: Buffer of Thoughts, 88% cheaper than ToT (~18s, Tier 2)
+ * - react: Tool-augmented reasoning (~20s, Tier 3)
+ * - pot: Program of Thought, code-based computation (~12s, Tier 4)
+ * - gtp: Multi-AI consensus with Self-Consistency (~30s, Tier 5)
+ * - auto: Smart selector (meta, default)
  *
- * Selection logic:
+ * Legacy/Optional:
+ * - cot: Standard Chain of Thought (for debugging)
+ * - aot: Atom of Thoughts (optional fallback)
+ *
+ * Selection logic (priority order):
  * - direct: complexity < 0.3, factual queries
- * - cot: sequential reasoning, procedural, troubleshooting
- * - aot: high complexity, research, multi-step decomposition
- * - gtp: comparative, creative, multiple perspectives needed
+ * - cod: procedural, how-to, cost-efficient sequential reasoning
+ * - bot: complex analysis, comparisons, planning (template-based)
+ * - react: requires external tools (search, calculate)
+ * - pot: mathematical, financial, numerical tasks
+ * - gtp: multi-perspective, critical decisions, verification
+ * - Default fallback: cod (most cost-efficient)
  */
 
 import type {
@@ -176,6 +186,10 @@ export class MethodologySelector {
     const scores: Record<Exclude<MethodologyType, 'auto'>, number> = {
       direct: 0,
       cot: 0,
+      cod: 0,
+      bot: 0,
+      react: 0,
+      pot: 0,
       aot: 0,
       gtp: 0,
     };
@@ -183,6 +197,10 @@ export class MethodologySelector {
     const reasons: Record<Exclude<MethodologyType, 'auto'>, string[]> = {
       direct: [],
       cot: [],
+      cod: [],
+      bot: [],
+      react: [],
+      pot: [],
       aot: [],
       gtp: [],
     };
@@ -236,7 +254,111 @@ export class MethodologySelector {
     }
 
     // =======================
-    // AOT (Atom of Thoughts) Scoring
+    // COD (Chain of Draft) Scoring
+    // =======================
+    // Best for: procedural "how to" queries, cost-sensitive scenarios
+    // CoD provides 92% cost savings vs CoT with similar accuracy
+    if (analysis.queryType === 'procedural') {
+      scores.cod += 0.6;
+      reasons.cod.push('Procedural step-by-step (cost-optimized)');
+    }
+
+    if (analysis.requiresSequentialReasoning && analysis.complexity < 0.6) {
+      scores.cod += 0.5;
+      reasons.cod.push('Sequential reasoning with budget constraints');
+    }
+
+    if (analysis.queryType === 'troubleshooting' && analysis.complexity < 0.5) {
+      scores.cod += 0.4;
+      reasons.cod.push('Simple troubleshooting (concise approach)');
+    }
+
+    // CoD is preferred when cost-efficiency is important
+    if (analysis.estimatedTokens < 200) {
+      scores.cod += 0.3;
+      reasons.cod.push('Cost-efficient for shorter queries');
+    }
+
+    if (analysis.timeSensitivity === 'high' && analysis.queryType === 'procedural') {
+      scores.cod += 0.3;
+      reasons.cod.push('Fast procedural reasoning');
+    }
+
+    // =======================
+    // BOT (Buffer of Thoughts) Scoring
+    // =======================
+    // Best for: complex analysis, comparisons, planning
+    // BoT provides 88% cost savings vs ToT with template-based reasoning
+    if (analysis.queryType === 'analytical' || analysis.queryType === 'planning') {
+      scores.bot += 0.8;
+      reasons.bot.push('Complex analysis/planning (template-optimized)');
+    }
+
+    if (analysis.queryType === 'comparative') {
+      scores.bot += 0.7;
+      reasons.bot.push('Systematic comparison analysis');
+    }
+
+    if (analysis.complexity > 0.6 && analysis.requiresDecomposition) {
+      scores.bot += 0.7;
+      reasons.bot.push('Complex decomposition with templates');
+    }
+
+    if (analysis.queryType === 'research') {
+      scores.bot += 0.6;
+      reasons.bot.push('In-depth research with structured approach');
+    }
+
+    if (analysis.requiresMultiplePerspectives && analysis.complexity > 0.5) {
+      scores.bot += 0.4;
+      reasons.bot.push('Multi-faceted analysis');
+    }
+
+    // =======================
+    // REACT (Tool-Augmented) Scoring
+    // =======================
+    // Best for: queries requiring external tools (search, calculate, etc.)
+    const requiresToolsPatterns = [
+      /search|find|lookup|fetch/i,
+      /current|latest|recent|new/i,
+      /calculate|compute|sum|total/i,
+      /check|verify|validate/i,
+    ];
+
+    if (requiresToolsPatterns.some(p => p.test(analysis.query))) {
+      scores.react += 0.85;
+      reasons.react.push('Requires external tools/data');
+    }
+
+    if (analysis.keywords.some(kw => ['search', 'find', 'current', 'latest', 'calculate'].includes(kw))) {
+      scores.react += 0.5;
+      reasons.react.push('Tool-dependent keywords detected');
+    }
+
+    // =======================
+    // POT (Program of Thought) Scoring
+    // =======================
+    // Best for: mathematical, financial, numerical tasks
+    const computationalPatterns = [
+      /math|mathematical/i,
+      /calculate|compute|equation/i,
+      /financial|finance|investment/i,
+      /numerical|number|digit/i,
+      /formula|algorithm|solve/i,
+    ];
+
+    if (computationalPatterns.some(p => p.test(analysis.query))) {
+      scores.pot += 0.85;
+      reasons.pot.push('Computational/numerical task');
+    }
+
+    if (analysis.keywords.some(kw => ['math', 'calculate', 'compute', 'solve', 'equation'].includes(kw))) {
+      scores.pot += 0.5;
+      reasons.pot.push('Mathematical keywords detected');
+    }
+
+    // =======================
+    // AOT (Atom of Thoughts) Scoring - LEGACY
     // =======================
     // Best for: high complexity, research, decomposition
     if (analysis.requiresDecomposition) {

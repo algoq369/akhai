@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { FlashProgress } from './FlashProgress';
 import { ReasoningLog } from './ReasoningLog';
+import { GroundingAlert } from './grounding';
+import { ThoughtBufferView, MetaBufferView, DistillationProgress } from './bot';
+import type { GroundingAlert as GroundingAlertType, ThoughtNode, MetaBuffer, DistillationStrategy } from '@akhai/core';
 
 interface AdvisorResponse {
   slot: number;
@@ -71,6 +74,19 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
   const [roundPaused, setRoundPaused] = useState(false);
   const [pausedRound, setPausedRound] = useState<number | null>(null);
 
+  // Grounding Guard state
+  const [groundingAlerts, setGroundingAlerts] = useState<GroundingAlertType[]>([]);
+
+  // Buffer of Thoughts state
+  const [isBoT, setIsBoT] = useState(false);
+  const [thoughtBuffer, setThoughtBuffer] = useState<ThoughtNode[]>([]);
+  const [metaBuffers, setMetaBuffers] = useState<MetaBuffer[]>([]);
+  const [isDistilling, setIsDistilling] = useState(false);
+  const [distillationStrategy, setDistillationStrategy] = useState<DistillationStrategy>('hierarchical');
+  const [distillationProgress, setDistillationProgress] = useState(0);
+  const [bufferSize, setBufferSize] = useState(0);
+  const [maxBufferSize, setMaxBufferSize] = useState(10);
+
   const addReasoningStep = (phase: string, message: string, data?: any) => {
     setReasoningSteps(prev => [...prev, { timestamp: Date.now(), phase, message, data }]);
     setCurrentPhase(phase);
@@ -95,6 +111,40 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
     setPausedRound(null);
     setError('Query cancelled by user');
     addReasoningStep('Round Cancel', `Query cancelled during round ${pausedRound} pause`);
+  };
+
+  // Grounding Guard action handlers
+  const handleRefine = (alert: GroundingAlertType) => {
+    const prompts: Record<string, string> = {
+      hype: 'provide specific data and sources to verify these claims',
+      echo: 'challenge assumptions and present alternative viewpoints',
+      drift: 'summarize insights and connect back to original question',
+      factuality: 'verify claims and cite sources',
+    };
+    addReasoningStep('Grounding Refine', `User requested refinement for ${alert.type} alert`);
+    console.log('Refinement prompt:', prompts[alert.type]);
+    // In a real implementation, this would trigger a new query with the refinement prompt
+  };
+
+  const handleContinueAlert = (alert: GroundingAlertType) => {
+    addReasoningStep('Grounding Continue', `User acknowledged ${alert.type} alert`);
+    // Just dismiss
+  };
+
+  const handlePivot = (alert: GroundingAlertType) => {
+    const prompts: Record<string, string> = {
+      hype: 'focus only on verified facts - what do we know with certainty?',
+      echo: 'play devil\'s advocate - what are the strongest counterarguments?',
+      drift: 'return to original question - what is the direct answer?',
+      factuality: 'what claims can we support with citations?',
+    };
+    addReasoningStep('Grounding Pivot', `User requested pivot for ${alert.type} alert`);
+    console.log('Pivot prompt:', prompts[alert.type]);
+    // In a real implementation, this would trigger a new query with the pivot prompt
+  };
+
+  const handleDismissAlert = (index: number) => {
+    setGroundingAlerts(prev => prev.filter((_, i) => i !== index));
   };
 
   // Timer for elapsed time
@@ -347,6 +397,80 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
               addReasoningStep('Final Answer', 'Mother Base has provided the final answer');
               setProgress(95);
             }
+            // Check for grounding alerts in result
+            if (data.data?.groundingAlerts && data.data.groundingAlerts.length > 0) {
+              setGroundingAlerts(data.data.groundingAlerts);
+              addReasoningStep('Grounding Check', `${data.data.groundingAlerts.length} grounding alert(s) detected`);
+            }
+            break;
+
+          case 'grounding-alert':
+            // Handle grounding alert event
+            if (data.data?.alert) {
+              setGroundingAlerts(prev => [...prev, data.data.alert]);
+              addReasoningStep('Grounding Alert', `${data.data.alert.type} alert: ${data.data.alert.message}`);
+            }
+            break;
+
+          // Buffer of Thoughts events
+          case 'bot-init':
+            setIsBoT(true);
+            if (data.data?.config) {
+              setMaxBufferSize(data.data.config.maxBufferSize || 10);
+              setDistillationStrategy(data.data.config.distillationStrategy || 'hierarchical');
+            }
+            addReasoningStep('BoT Initialize', 'Buffer of Thoughts methodology activated');
+            break;
+
+          case 'bot-thought-added':
+            if (data.data?.thought) {
+              setThoughtBuffer(prev => [...prev, data.data.thought]);
+              setBufferSize(prev => prev + 1);
+              addReasoningStep('BoT Thought', `New thought added (depth ${data.data.thought.depth}): ${data.data.thought.content.substring(0, 50)}...`);
+            }
+            break;
+
+          case 'bot-distillation-start':
+            setIsDistilling(true);
+            setDistillationProgress(0);
+            addReasoningStep('BoT Distillation', `Starting distillation (${data.data?.bufferSize || bufferSize} thoughts, strategy: ${data.data?.strategy || distillationStrategy})`);
+            break;
+
+          case 'bot-distillation-progress':
+            if (data.data?.progress !== undefined) {
+              setDistillationProgress(data.data.progress);
+            }
+            break;
+
+          case 'bot-distillation-complete':
+            setIsDistilling(false);
+            setDistillationProgress(1);
+            if (data.data?.metaBuffer) {
+              setMetaBuffers(prev => [...prev, data.data.metaBuffer]);
+              addReasoningStep('BoT Meta-Buffer', `Distillation complete: ${data.data.metaBuffer.keyInsights.length} key insights, ${data.data.metaBuffer.tokensSaved} tokens saved`);
+            }
+            // Clear thought buffer after distillation
+            setThoughtBuffer([]);
+            setBufferSize(0);
+            break;
+
+          case 'bot-buffer-update':
+            if (data.data?.snapshot) {
+              setThoughtBuffer(data.data.snapshot.thoughts || []);
+              setMetaBuffers(data.data.snapshot.metaBuffers || []);
+              setBufferSize(data.data.snapshot.thoughts?.length || 0);
+            }
+            break;
+
+          case 'bot-solution-path':
+            if (data.data?.path) {
+              const pathIds = data.data.path.map((t: ThoughtNode) => t.id);
+              setThoughtBuffer(prev => prev.map(t => ({
+                ...t,
+                isOnSolutionPath: pathIds.includes(t.id)
+              })));
+              addReasoningStep('BoT Solution Path', `Identified solution path with ${data.data.path.length} thoughts`);
+            }
             break;
 
           case 'complete':
@@ -554,6 +678,55 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             {isGTP ? 'Mother Base Synthesis (GTP)' : 'Mother Base Decision'}
           </h3>
           <p className="text-gray-300 text-sm">{finalDecision}</p>
+        </div>
+      )}
+
+      {/* Grounding Alerts */}
+      {groundingAlerts.map((alert, index) => (
+        <GroundingAlert
+          key={index}
+          alert={alert}
+          onRefine={() => handleRefine(alert)}
+          onContinue={() => {
+            handleContinueAlert(alert);
+            handleDismissAlert(index);
+          }}
+          onPivot={() => handlePivot(alert)}
+          onDismiss={() => handleDismissAlert(index)}
+        />
+      ))}
+
+      {/* Buffer of Thoughts Visualization */}
+      {isBoT && (
+        <div className="bg-relic-white/80 backdrop-blur-sm border border-relic-mist rounded-sm p-6">
+          <h2 className="text-xs uppercase tracking-widest text-relic-silver mb-6">
+            buffer of thoughts
+          </h2>
+
+          {/* Distillation Progress */}
+          <DistillationProgress
+            isDistilling={isDistilling}
+            bufferSize={bufferSize}
+            maxBufferSize={maxBufferSize}
+            strategy={distillationStrategy}
+            progress={distillationProgress}
+          />
+
+          {/* Thought Buffer */}
+          <ThoughtBufferView
+            thoughts={thoughtBuffer}
+            onThoughtSelect={(thought) => {
+              addReasoningStep('BoT Thought Selected', `User selected thought: ${thought.content.substring(0, 50)}...`);
+            }}
+          />
+
+          {/* Meta-Buffers */}
+          <MetaBufferView
+            metaBuffers={metaBuffers}
+            onMetaBufferSelect={(mb) => {
+              addReasoningStep('BoT Meta-Buffer Selected', `User selected meta-buffer: ${mb.summary.substring(0, 50)}...`);
+            }}
+          />
         </div>
       )}
 

@@ -13,9 +13,9 @@ import { classifyQuery } from '@/lib/query-classifier';
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, flow, methodology } = await request.json();
+    const { query, flow, methodology, conversationHistory = [] } = await request.json();
 
-    console.log('=== QUERY RECEIVED ===', { query: query.substring(0, 50), methodology, flow });
+    console.log('=== QUERY RECEIVED ===', { query: query.substring(0, 50), methodology, flow, historyLength: conversationHistory.length });
 
     if (!query || typeof query !== 'string') {
       return NextResponse.json(
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     createQueryRecord(queryId, query, finalMethodology);
 
     // Start processing in background with real AkhAI integration
-    processQuery(queryId, finalMethodology).catch((error) => {
+    processQuery(queryId, finalMethodology, conversationHistory).catch((error) => {
       console.error('Query processing error:', error);
       const errorMessage = error.message || 'Unknown error occurred';
       updateQueryStatus(queryId, 'error', undefined, errorMessage);
@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processQuery(queryId: string, flowType: string) {
-  console.log('=== PROCESS QUERY CALLED ===', { queryId, flowType });
+async function processQuery(queryId: string, flowType: string, conversationHistory: any[] = []) {
+  console.log('=== PROCESS QUERY CALLED ===', { queryId, flowType, historyLength: conversationHistory.length });
 
   const queryData = queries.get(queryId);
   if (!queryData) return;
@@ -81,8 +81,68 @@ async function processQuery(queryId: string, flowType: string) {
     });
 
     try {
-      const { createProviderFromFamily } = await import('@akhai/core');
       const startTime = Date.now();
+
+      // CHECK FOR CRYPTO PRICE QUERIES - Fetch real-time data!
+      const { isCryptoPriceQuery, getCryptoPrice } = await import('@/lib/realtime-data');
+      const cryptoCheck = isCryptoPriceQuery(queryData.query);
+
+      if (cryptoCheck.isCrypto && cryptoCheck.symbol) {
+        console.log(`🪙 [Crypto] Detected crypto query for: ${cryptoCheck.symbol}`);
+
+        addQueryEvent(queryId, 'fast-path', {
+          mode: 'realtime-crypto',
+          message: `Fetching live ${cryptoCheck.symbol.toUpperCase()} price from CoinGecko...`,
+        });
+
+        const priceData = await getCryptoPrice(cryptoCheck.symbol);
+
+        if (priceData) {
+          const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+          const changeEmoji = priceData.change24h >= 0 ? '📈' : '📉';
+          const changeColor = priceData.change24h >= 0 ? '+' : '';
+
+          const response = `**${priceData.symbol} Price: $${priceData.price.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}**
+
+${changeEmoji} 24h Change: ${changeColor}${priceData.change24h.toFixed(2)}%
+
+_Live data from ${priceData.source} • Updated just now_`;
+
+          console.log(`💰 [Crypto] ${priceData.symbol} = $${priceData.price} (${changeColor}${priceData.change24h.toFixed(2)}%)`);
+
+          // Update query with real-time crypto data
+          updateQueryStatus(queryId, 'complete', {
+            finalAnswer: response,
+            methodology: 'direct',
+            duration: parseFloat(duration),
+          });
+
+          // No tokens used, no cost (free CoinGecko API)
+          updateQuery(queryId, {
+            tokens_used: 0,
+            cost: 0,
+          });
+
+          addQueryEvent(queryId, 'complete', {
+            totalCost: 0,
+            totalTokens: { input: 0, output: 0, total: 0 },
+            duration: parseFloat(duration),
+            mode: 'realtime-crypto',
+            source: priceData.source,
+          });
+
+          return;
+        } else {
+          console.log(`⚠️ [Crypto] Failed to fetch price for ${cryptoCheck.symbol}, falling back to AI`);
+          // Fall through to AI call if crypto fetch fails
+        }
+      }
+
+      // NORMAL AI CALL (if not crypto or crypto fetch failed)
+      const { createProviderFromFamily } = await import('@akhai/core');
 
       // Use Mother Base (Anthropic) for direct queries
       const provider = createProviderFromFamily('anthropic', {
@@ -93,9 +153,19 @@ async function processQuery(queryId: string, flowType: string) {
       });
 
       console.log('=== CALLING MOTHER BASE DIRECTLY (no advisors) ===');
+
+      // Build messages array with conversation history
+      const messages = [
+        ...conversationHistory.slice(-6).map((msg: any) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+        })),
+        { role: 'user' as const, content: queryData.query },
+      ];
+
       const response = await provider.complete({
-        messages: [{ role: 'user', content: queryData.query }],
-        systemPrompt: 'You are a helpful AI assistant. Provide clear, concise, and accurate answers to factual questions. For price queries, note that you cannot access real-time data but can provide general information.',
+        messages,
+        systemPrompt: 'You are a helpful AI assistant. Provide clear, concise, and accurate answers. Use conversation context when relevant.',
       });
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);

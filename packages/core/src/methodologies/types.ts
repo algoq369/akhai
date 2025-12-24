@@ -1,19 +1,45 @@
 /**
  * AkhAI Methodologies - Type Definitions
  *
- * Defines types for multiple reasoning methodologies:
- * - Direct: Simple factual queries
- * - CoT: Chain of Thought (sequential reasoning)
- * - AoT: Atom of Thoughts (decompose→solve→contract)
- * - GTP: Generative Thoughts Process (parallel Flash architecture)
+ * Research-Validated Top 7 Methodologies (December 2025):
+ * - Direct: Simple factual queries (Tier 1)
+ * - CoD: Chain of Draft - 92% cheaper than CoT (Tier 2)
+ * - BoT: Buffer of Thoughts - 88% cheaper than ToT (Tier 2)
+ * - ReAct: Tool-augmented reasoning (Tier 3)
+ * - PoT: Program of Thought - Code-based computation (Tier 4)
+ * - GTP: Multi-AI consensus with Self-Consistency (Tier 5)
+ * - Auto: Smart methodology selector (Meta)
+ *
+ * Legacy/Optional:
+ * - CoT: Standard Chain of Thought (for debugging)
+ * - AoT: Atom of Thoughts (optional fallback)
  */
 
 import type { ModelFamily } from '../models/types.js';
 
 /**
- * Available reasoning methodologies
+ * Core 7 methodologies (research-validated, production-ready)
  */
-export type MethodologyType = 'direct' | 'cot' | 'aot' | 'gtp' | 'auto';
+export type CoreMethodology =
+  | 'direct'    // Tier 1: Instant response
+  | 'cod'       // Tier 2: Chain of Draft (cost-optimized)
+  | 'bot'       // Tier 2: Buffer of Thoughts (template-based)
+  | 'react'     // Tier 3: Tool-augmented reasoning
+  | 'pot'       // Tier 4: Program of Thought (computational)
+  | 'gtp'       // Tier 5: Consensus (includes Self-Consistency)
+  | 'auto';     // Meta: Auto-selector
+
+/**
+ * Legacy/optional methodologies (kept for compatibility)
+ */
+export type LegacyMethodology =
+  | 'cot'       // Standard CoT (for debugging)
+  | 'aot';      // Atom of Thoughts (optional)
+
+/**
+ * All available reasoning methodologies
+ */
+export type MethodologyType = CoreMethodology | LegacyMethodology;
 
 /**
  * Query type classification
@@ -80,6 +106,115 @@ export interface MethodologySelection {
     reason: string;
   }>;
 }
+
+// =============================================================================
+// Methodology Metadata
+// =============================================================================
+
+/**
+ * Methodology information and characteristics
+ */
+export interface MethodologyInfo {
+  /** Display name */
+  name: string;
+
+  /** Tier (0 = meta, 1-5 = core tiers) */
+  tier: number;
+
+  /** Icon for UI display */
+  icon: string;
+
+  /** Description */
+  description: string;
+
+  /** Token usage multiplier (relative to baseline) */
+  tokenMultiplier: number;
+
+  /** Average latency in milliseconds */
+  avgLatencyMs: number;
+
+  /** Cost per 1K tokens (USD) */
+  costPer1K: number;
+
+  /** Best use cases */
+  bestFor: string[];
+}
+
+/**
+ * Comprehensive metadata for all core methodologies
+ */
+export const METHODOLOGY_INFO: Record<CoreMethodology, MethodologyInfo> = {
+  direct: {
+    name: 'Direct',
+    tier: 1,
+    icon: '⚡',
+    description: 'Instant response for simple queries',
+    tokenMultiplier: 1.0,
+    avgLatencyMs: 2000,
+    costPer1K: 0.0001,
+    bestFor: ['factual', 'definitions', 'lookups'],
+  },
+  cod: {
+    name: 'Chain of Draft',
+    tier: 2,
+    icon: '📝',
+    description: 'Token-efficient step-by-step reasoning (92% cheaper than CoT)',
+    tokenMultiplier: 0.08,
+    avgLatencyMs: 8000,
+    costPer1K: 0.0008,
+    bestFor: ['procedural', 'how-to', 'sequential'],
+  },
+  bot: {
+    name: 'Buffer of Thoughts',
+    tier: 2,
+    icon: '🧠',
+    description: 'Template-based analysis (88% cheaper than ToT)',
+    tokenMultiplier: 0.12,
+    avgLatencyMs: 18000,
+    costPer1K: 0.006,
+    bestFor: ['complex', 'analysis', 'comparison', 'planning'],
+  },
+  react: {
+    name: 'ReAct',
+    tier: 3,
+    icon: '🔧',
+    description: 'Tool-augmented reasoning with external actions',
+    tokenMultiplier: 3.0,
+    avgLatencyMs: 20000,
+    costPer1K: 0.02,
+    bestFor: ['search', 'calculate', 'external-data'],
+  },
+  pot: {
+    name: 'Program of Thought',
+    tier: 4,
+    icon: '💻',
+    description: 'Code-based computation (+24% on numerical tasks)',
+    tokenMultiplier: 1.5,
+    avgLatencyMs: 12000,
+    costPer1K: 0.01,
+    bestFor: ['math', 'finance', 'computation'],
+  },
+  gtp: {
+    name: 'GTP + Self-Consistency',
+    tier: 5,
+    icon: '🤝',
+    description: 'Multi-perspective consensus with Self-MoA',
+    tokenMultiplier: 5.0,
+    avgLatencyMs: 30000,
+    costPer1K: 0.03,
+    bestFor: ['debate', 'verification', 'critical-decisions'],
+  },
+  auto: {
+    name: 'Auto Selector',
+    tier: 0,
+    icon: '🎯',
+    description: 'Automatically selects optimal methodology',
+    tokenMultiplier: 1.0,
+    avgLatencyMs: 500,
+    costPer1K: 0,
+    bestFor: ['default'],
+  },
+};
 
 // =============================================================================
 // GTP (Generative Thoughts Process) Types
@@ -471,6 +606,209 @@ export interface BroadcastResult {
 
   /** Total time */
   duration: number;
+}
+
+// =============================================================================
+// Buffer of Thoughts (BoT) Types
+// =============================================================================
+
+/**
+ * Thought node representing a single reasoning step in the buffer
+ */
+export interface ThoughtNode {
+  /** Unique ID for this thought */
+  id: string;
+
+  /** The actual thought content */
+  content: string;
+
+  /** Depth in reasoning tree (0 = root) */
+  depth: number;
+
+  /** Parent thought ID (null for root) */
+  parentId: string | null;
+
+  /** Child thought IDs */
+  childIds: string[];
+
+  /** Timestamp when created */
+  timestamp: number;
+
+  /** Confidence score (0-1) */
+  confidence: number;
+
+  /** Whether this thought is part of the solution path */
+  isOnSolutionPath: boolean;
+
+  /** Metadata for tracking */
+  metadata?: {
+    /** Which reasoning stage this came from */
+    stage?: 'initial' | 'expansion' | 'refinement' | 'synthesis';
+
+    /** Associated evidence or citations */
+    evidence?: string[];
+
+    /** Token cost of this thought */
+    tokenCost?: number;
+  };
+}
+
+/**
+ * Distilled meta-buffer - compressed representation of thought buffer
+ */
+export interface MetaBuffer {
+  /** Compressed summary of all thoughts */
+  summary: string;
+
+  /** Key insights extracted from thought buffer */
+  keyInsights: string[];
+
+  /** Solution template/pattern identified */
+  template: string;
+
+  /** Confidence in this distillation (0-1) */
+  confidence: number;
+
+  /** Original thought IDs included in this distillation */
+  sourceThoughtIds: string[];
+
+  /** Token count saved by distillation */
+  tokensSaved: number;
+
+  /** Timestamp of distillation */
+  timestamp: number;
+}
+
+/**
+ * Distillation strategy - how to compress thought buffers
+ */
+export type DistillationStrategy =
+  | 'summarize'      // Summarize all thoughts into concise points
+  | 'template'       // Extract solution template/pattern
+  | 'prune'          // Remove low-confidence thoughts
+  | 'cluster'        // Group similar thoughts and keep representatives
+  | 'hierarchical';  // Create hierarchical summary (key points → details)
+
+/**
+ * BoT configuration options
+ */
+export interface BoTConfig {
+  /** Maximum thoughts in buffer before distillation */
+  maxBufferSize: number;
+
+  /** Distillation strategy to use */
+  distillationStrategy: DistillationStrategy;
+
+  /** Maximum meta-buffers to maintain */
+  maxMetaBuffers: number;
+
+  /** Minimum confidence threshold for thoughts */
+  minConfidence: number;
+
+  /** Maximum tokens per response */
+  maxTokens: number;
+
+  /** Temperature for generation */
+  temperature: number;
+
+  /** Whether to use problem templates */
+  useTemplates: boolean;
+}
+
+/**
+ * BoT execution result
+ */
+export interface BoTResult {
+  /** Final answer */
+  answer: string;
+
+  /** Methodology used */
+  methodology: 'bot';
+
+  /** Final thought buffer state */
+  thoughtBuffer: ThoughtNode[];
+
+  /** Meta-buffers created during execution */
+  metaBuffers: MetaBuffer[];
+
+  /** Provider used */
+  provider: string;
+
+  /** Token usage */
+  tokens: {
+    input: number;
+    output: number;
+    total: number;
+    saved: number; // Tokens saved through distillation
+  };
+
+  /** Execution time in milliseconds */
+  latencyMs: number;
+
+  /** Estimated cost in USD */
+  cost: number;
+
+  /** Metadata about execution */
+  metadata: {
+    thoughtCount: number;
+    distillationCount: number;
+    avgConfidence: number;
+    solutionDepth: number;
+    tokenSavings: string;
+    comparisonToToT: {
+      estimatedToTTokens: number;
+      actualBoTTokens: number;
+      savingsPercent: number;
+    };
+  };
+}
+
+/**
+ * Thought buffer state snapshot for streaming updates
+ */
+export interface ThoughtBufferSnapshot {
+  /** Current thoughts */
+  thoughts: ThoughtNode[];
+
+  /** Current meta-buffers */
+  metaBuffers: MetaBuffer[];
+
+  /** Buffer statistics */
+  stats: {
+    totalThoughts: number;
+    activeThoughts: number;
+    avgConfidence: number;
+    maxDepth: number;
+  };
+
+  /** Timestamp of snapshot */
+  timestamp: number;
+}
+
+/**
+ * BoT execution callbacks for real-time updates
+ */
+export interface BoTCallbacks {
+  /** New thought added to buffer */
+  onThoughtAdded?: (thought: ThoughtNode) => void;
+
+  /** Distillation started */
+  onDistillationStart?: (bufferSize: number, strategy: DistillationStrategy) => void;
+
+  /** Distillation completed */
+  onDistillationComplete?: (metaBuffer: MetaBuffer) => void;
+
+  /** Buffer state updated */
+  onBufferUpdate?: (snapshot: ThoughtBufferSnapshot) => void;
+
+  /** Solution path identified */
+  onSolutionPath?: (path: ThoughtNode[]) => void;
+
+  /** Final synthesis started */
+  onSynthesisStart?: () => void;
+
+  /** Final synthesis completed */
+  onSynthesisComplete?: (answer: string) => void;
 }
 
 // =============================================================================

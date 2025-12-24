@@ -34,7 +34,7 @@ export function getAkhaiInstance(motherBaseFamily: ModelFamily): ReturnType<type
   akhai.setApiKeys({
     anthropic: process.env.ANTHROPIC_API_KEY,
     deepseek: process.env.DEEPSEEK_API_KEY,
-    openrouter: process.env.OPENROUTER_API_KEY,
+    mistral: process.env.MISTRAL_API_KEY,
     xai: process.env.XAI_API_KEY,
   });
 

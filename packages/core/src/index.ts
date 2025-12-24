@@ -7,10 +7,12 @@
  * Features:
  * - Multi-AI consensus with 4 advisors + Mother Base
  * - GTP Flash parallel architecture (~25s)
- * - 5 methodologies (Direct, CoT, AoT, Flash, Auto)
+ * - 7 research-validated methodologies (Direct, CoD, BoT, ReAct, PoT, GTP, Auto)
+ * - Cost-optimized reasoning (60-92% savings)
  * - Conversation memory
  * - Quality scoring
  * - Specialized agents
+ * - Grounding Guard (bias/hype detection)
  *
  * @packageDocumentation
  */
@@ -79,11 +81,69 @@ export {
   analyzeQuery,
 } from './methodologies/selector.js';
 
+// ============================================================================
+// CHAIN OF DRAFT (COD) - Cost-Optimized Methodology
+// ============================================================================
+
+export {
+  executeChainOfDraft,
+  type CoDConfig,
+  type CoDResult,
+} from './methodologies/cod.js';
+
+// ============================================================================
+// BUFFER OF THOUGHTS (BOT) - Template-Based Reasoning
+// ============================================================================
+
+export {
+  executeBufferOfThoughts,
+  ThoughtBuffer,
+} from './methodologies/bot.js';
+
+// ============================================================================
+// REACT - Reasoning + Acting (Tool-Augmented)
+// ============================================================================
+
+export {
+  executeReAct,
+  createToolRegistry,
+  searchTool,
+  calculateTool,
+  lookupTool,
+  finishTool,
+  type ReActConfig,
+  type ReActResult,
+  type ReActStep,
+  type ReActStepType,
+  type Tool,
+  type ToolParameter,
+  type ToolRegistry,
+} from './methodologies/react.js';
+
+// ============================================================================
+// PROGRAM OF THOUGHT (POT) - Code-Based Reasoning
+// ============================================================================
+
+export {
+  executeProgramOfThought,
+  type PoTConfig,
+  type PoTResult,
+  type PoTStep,
+  type PoTStepType,
+} from './methodologies/pot.js';
+
+// ============================================================================
+// METHODOLOGY TYPES & REGISTRY
+// ============================================================================
+
 export type {
+  CoreMethodology,
+  LegacyMethodology,
   MethodologyType,
   QueryType,
   QueryAnalysis,
   MethodologySelection,
+  MethodologyInfo,
   GTPResult,
   GTPCallbacks,
   FlashContextFrame,
@@ -94,7 +154,29 @@ export type {
   QuorumConfig,
   MergedInsight,
   ConsensusState,
+  // BoT types
+  BoTConfig,
+  BoTResult,
+  ThoughtNode,
+  MetaBuffer,
+  DistillationStrategy,
+  ThoughtBufferSnapshot,
+  BoTCallbacks,
 } from './methodologies/types.js';
+
+export { METHODOLOGY_INFO } from './methodologies/types.js';
+
+export {
+  METHODOLOGY_REGISTRY,
+  getMethodology,
+  getImplementedMethodologies,
+  getPlannedMethodologies,
+  getMethodologyStats,
+  getMethodologiesByTier,
+  isImplemented,
+  getMethodologiesByUseCase,
+  type MethodologyEntry,
+} from './methodologies/registry.js';
 
 // ============================================================================
 // MEMORY (NEW in v0.4.0)
@@ -133,6 +215,30 @@ export {
   listAgents,
   type AgentConfig,
 } from './agents/SpecializedAgents.js';
+
+// ============================================================================
+// GROUNDING GUARD (NEW in v0.4.0)
+// ============================================================================
+
+export {
+  GroundingGuard,
+  DEFAULT_GROUNDING_CONFIG,
+  DEFAULT_TRIGGER_CONFIG,
+  detectHype,
+  detectEcho,
+  detectDrift,
+  detectFactuality,
+  clearEmbeddingCache,
+  checkFactualityServiceHealth,
+  configureFactualityService,
+  type GroundingConfig,
+  type GroundingAlert,
+  type GroundingResult,
+  type AlertType,
+  type AlertSeverity,
+  type TriggerConfig,
+  type TriggerPriority,
+} from './grounding/index.js';
 
 // ============================================================================
 // MAIN SYSTEM

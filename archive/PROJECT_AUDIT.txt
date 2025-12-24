@@ -1,0 +1,90 @@
+═══════════════════════════════════════════════════════════════
+                 AKHAI COMPLETE PROJECT AUDIT
+═══════════════════════════════════════════════════════════════
+
+Generated: $(date)
+
+📁 PROJECT STRUCTURE
+────────────────────────────────────────────────────────────────
+/Users/sheirraza/akhai/packages/web/app/api/admin/reset-stuck/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/debug/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/export/[id]/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/history/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/query-all/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/query/[id]/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/query/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/settings/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/simple-query/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/stats/recent/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/stats/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/stream/[id]/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/test-key/route.ts
+/Users/sheirraza/akhai/packages/web/app/api/test-providers/route.ts
+/Users/sheirraza/akhai/packages/web/app/compare/[id]/page.tsx
+/Users/sheirraza/akhai/packages/web/app/dashboard/page.tsx
+/Users/sheirraza/akhai/packages/web/app/debug/page.tsx
+/Users/sheirraza/akhai/packages/web/app/explore/page.tsx
+/Users/sheirraza/akhai/packages/web/app/history/page.tsx
+/Users/sheirraza/akhai/packages/web/app/layout.tsx
+/Users/sheirraza/akhai/packages/web/app/page.tsx
+/Users/sheirraza/akhai/packages/web/app/profile/page.tsx
+/Users/sheirraza/akhai/packages/web/app/query/[id]/page.tsx
+/Users/sheirraza/akhai/packages/web/app/settings/page.tsx
+/Users/sheirraza/akhai/packages/web/components/ApiKeyInput.tsx
+/Users/sheirraza/akhai/packages/web/components/CustomCursor.tsx
+/Users/sheirraza/akhai/packages/web/components/ErrorBoundary.tsx
+/Users/sheirraza/akhai/packages/web/components/FibonacciBackground.tsx
+/Users/sheirraza/akhai/packages/web/components/FlashProgress.tsx
+/Users/sheirraza/akhai/packages/web/components/FlowToggle.tsx
+/Users/sheirraza/akhai/packages/web/components/ModelSelector.tsx
+/Users/sheirraza/akhai/packages/web/components/Navbar.tsx
+/Users/sheirraza/akhai/packages/web/components/ProviderCard.tsx
+/Users/sheirraza/akhai/packages/web/components/RangeInput.tsx
+/Users/sheirraza/akhai/packages/web/components/ReasoningLog.tsx
+/Users/sheirraza/akhai/packages/web/components/RecentQueriesList.tsx
+/Users/sheirraza/akhai/packages/web/components/SearchBar.tsx
+/Users/sheirraza/akhai/packages/web/components/StatCard.tsx
+/Users/sheirraza/akhai/packages/web/components/Toast.tsx
+/Users/sheirraza/akhai/packages/web/components/ToggleSwitch.tsx
+/Users/sheirraza/akhai/packages/web/components/VerificationWindow.tsx
+/Users/sheirraza/akhai/packages/web/components/bot/DistillationProgress.tsx
+/Users/sheirraza/akhai/packages/web/components/bot/MetaBufferView.tsx
+/Users/sheirraza/akhai/packages/web/components/bot/ThoughtBufferView.tsx
+/Users/sheirraza/akhai/packages/web/components/bot/index.ts
+/Users/sheirraza/akhai/packages/web/components/grounding/GroundingAlert.tsx
+/Users/sheirraza/akhai/packages/web/components/grounding/GroundingHistory.tsx
+/Users/sheirraza/akhai/packages/web/components/grounding/GroundingMetrics.tsx
+/Users/sheirraza/akhai/packages/web/components/grounding/index.ts
+/Users/sheirraza/akhai/packages/web/components/ui/DecryptedText.tsx
+/Users/sheirraza/akhai/packages/web/components/ui/FlowingMenu.tsx
+/Users/sheirraza/akhai/packages/web/components/ui/GalaxyBackground.tsx
+/Users/sheirraza/akhai/packages/web/components/ui/LiquidEther.tsx
+/Users/sheirraza/akhai/packages/web/components/ui/MagicBento.tsx
+/Users/sheirraza/akhai/packages/web/lib/akhai-client.ts
+/Users/sheirraza/akhai/packages/web/lib/akhai-executor.ts
+/Users/sheirraza/akhai/packages/web/lib/analytics.ts
+/Users/sheirraza/akhai/packages/web/lib/chat-store.ts
+/Users/sheirraza/akhai/packages/web/lib/database.ts
+/Users/sheirraza/akhai/packages/web/lib/event-emitter.ts
+/Users/sheirraza/akhai/packages/web/lib/logger.ts
+/Users/sheirraza/akhai/packages/web/lib/query-classifier.test.ts
+/Users/sheirraza/akhai/packages/web/lib/query-classifier.ts
+/Users/sheirraza/akhai/packages/web/lib/query-store.ts
+/Users/sheirraza/akhai/packages/web/lib/realtime-data.ts
+/Users/sheirraza/akhai/packages/web/lib/stores/dashboard-store.ts
+/Users/sheirraza/akhai/packages/web/lib/stores/settings-store.ts
+/Users/sheirraza/akhai/packages/web/tailwind.config.ts
+
+📊 CODE STATISTICS
+────────────────────────────────────────────────────────────────
+    9212 total
+
+🔐 ENVIRONMENT STATUS
+────────────────────────────────────────────────────────────────
+✅ .env.local exists
+Configured variables:
+ANTHROPIC_API_KEY
+DEEPSEEK_API_KEY
+MISTRAL_API_KEY
+XAI_API_KEY
+NEXT_PUBLIC_DEFAULT_PROVIDER

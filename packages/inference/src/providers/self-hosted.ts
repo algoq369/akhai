@@ -109,7 +109,7 @@ export class SelfHostedProvider {
         throw new Error(`API error ${response.status}: ${error}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       const latency = Date.now() - startTime;
 
       console.log(`[Mother Base] ✅ ${this.config.name}: ${latency}ms, ${data.usage?.total_tokens || 0} tokens`);

@@ -1,3 +1,6 @@
+// Grounding Guard Types (imported)
+import type { GroundingAlert } from '../grounding/types.js';
+
 // Model Provider Types
 export type ModelFamily = 'anthropic' | 'deepseek' | 'mistral' | 'xai';
 
@@ -83,6 +86,7 @@ export interface FlowAResult {
   totalMotherBaseExchanges: number;
   approvedAt: number | null;
   finalDecision: string;
+  groundingAlerts: GroundingAlert[];
 }
 
 export interface FlowBResult {
@@ -105,6 +109,7 @@ export interface FlowBResult {
     approvedAt: number | null;
   };
   finalOutput: string;
+  groundingAlerts: GroundingAlert[];
 }
 
 // Execution Callback Types
@@ -118,4 +123,5 @@ export interface ExecutionCallbacks {
   onMotherBaseReview?: (exchange: number, approved: boolean, response: string) => void;
   onSubAgentStart?: (agentName: string, exchange: number) => void;
   onSubAgentComplete?: (agentName: string, exchange: number, output: string, complete: boolean) => void;
+  onGroundingAlert?: (alert: GroundingAlert) => void;
 }

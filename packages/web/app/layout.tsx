@@ -1,23 +1,29 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import Navbar from "@/components/Navbar";
+import type { Metadata } from 'next'
+import './globals.css'
+import { CustomCursor } from '@/components/CustomCursor'
+// import { FibonacciBackground } from '@/components/FibonacciBackground'
 
 export const metadata: Metadata = {
-  title: "AkhAI - Super Research Engine",
-  description: "Multi-AI consensus engine for intelligent research and decision making",
-};
+  title: 'akhai · sovereign intelligence',
+  description: 'Multi-AI consensus research engine',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en">
-      <body className="antialiased bg-white">
-        <Navbar />
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body className="font-mono antialiased bg-relic-white">
+        {/* <FibonacciBackground /> */}
+        <CustomCursor />
         {children}
       </body>
     </html>
-  );
+  )
 }

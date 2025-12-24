@@ -1,27 +1,48 @@
 {
-  "name": "akhai-monorepo",
-  "version": "0.4.0",
-  "description": "The Unicorn AI Research Engine - Multi-AI consensus with GTP Flash architecture, backed by G&V Compagnie",
+  "name": "akhai",
+  "version": "1.0.0",
   "private": true,
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "description": "AkhAI - Sovereign AI Intelligence System with 20 Thinking Methodologies and Multi-AI Consensus",
   "keywords": [
     "ai",
-    "research",
+    "sovereign",
     "consensus",
-    "multi-ai",
-    "gtp",
-    "anthropic",
-    "deepseek",
-    "mistral",
-    "unicorn"
+    "methodologies",
+    "chain-of-thought",
+    "tree-of-thoughts",
+    "multi-agent"
   ],
-  "author": "AkhAI Dream Team (Philippe Haydarian, Gregory Sankara, Andy, Haidar)",
+  "author": "Sheikh Raza",
   "license": "MIT",
-  "packageManager": "pnpm@10.18.1",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/algoq369/akhai.git"
-  }
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "clean:workspaces": "turbo run clean"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "prettier": "^3.2.4",
+    "turbo": "^1.12.0",
+    "typescript": "^5.3.3"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ]
 }

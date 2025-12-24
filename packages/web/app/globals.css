@@ -1,134 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @layer base {
-  :root {
-    --color-bg-primary: #000000;
-    --color-bg-secondary: #111111;
-    --color-bg-tertiary: #1a1a1a;
-    --color-border: #222222;
-    --color-border-hover: #333333;
-    --color-text-primary: #ffffff;
-    --color-text-secondary: #a3a3a3;
-    --color-text-tertiary: #737373;
-    --color-text-muted: #525252;
+  html {
+    @apply antialiased;
   }
 
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    @apply bg-black text-gray-300 antialiased;
-  }
-
-  .font-mono {
-    font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  }
-
-  /* Scrollbar styling - dark theme */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: #111111;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #333333;
-    border-radius: 5px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #525252;
+    @apply bg-relic-white text-relic-slate font-mono;
+    @apply selection:bg-relic-void selection:text-relic-white;
   }
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@layer components {
+  /* Matrix grid */
+  .matrix-grid {
+    background-image:
+      linear-gradient(rgba(0,0,0,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.015) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Containers */
+  .relic-container {
+    @apply max-w-4xl mx-auto px-6 relative z-10;
+  }
+
+  .relic-divider {
+    @apply h-px bg-gradient-to-r from-transparent via-relic-mist to-transparent;
+  }
+
+  /* Buttons */
+  .relic-button {
+    @apply px-5 py-2.5 text-sm font-mono text-relic-slate;
+    @apply border border-relic-mist bg-transparent;
+    @apply hover:bg-relic-ghost hover:border-relic-silver hover:text-relic-void;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus:ring-1 focus:ring-relic-silver;
+  }
+
+  .relic-button-primary {
+    @apply relic-button bg-relic-void text-relic-white border-relic-void;
+    @apply hover:bg-relic-slate hover:border-relic-slate;
+  }
+
+  /* Input */
+  .relic-input {
+    @apply w-full bg-transparent border border-relic-mist px-4 py-3;
+    @apply text-relic-void placeholder:text-relic-silver;
+    @apply focus:outline-none focus:border-relic-silver;
+    @apply font-mono;
+  }
+
+  /* Label */
+  .relic-label {
+    @apply text-xs uppercase tracking-widest text-relic-silver;
+  }
+
+  /* ========================================
+     CUSTOM CURSOR - White Translucent Ring
+     ======================================== */
+  * { cursor: none !important; }
+
+  .custom-cursor {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    border: 1px solid rgba(82, 82, 82, 0.6);
+    background: transparent;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s ease, border-color 0.15s ease, width 0.1s ease, height 0.1s ease;
+    transform: translate(-50%, -50%);
+  }
+
+  .custom-cursor.hovering {
+    width: 10px;
+    height: 10px;
+    border-color: rgba(23, 23, 23, 0.8);
+  }
+
+  .custom-cursor.clicking {
+    width: 4px;
+    height: 4px;
+    border-color: rgba(163, 163, 163, 0.8);
+  }
+
+  .custom-cursor-ring {
+    position: fixed;
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(163, 163, 163, 0.15);
+    background: transparent;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: transform 0.2s ease, opacity 0.2s ease, width 0.15s ease, height 0.15s ease;
+    transform: translate(-50%, -50%);
+  }
+
+  .custom-cursor-ring.hovering {
+    width: 28px;
+    height: 28px;
+    border-color: rgba(163, 163, 163, 0.25);
+  }
+
+  /* ========================================
+     TRANSPARENT TOOLTIP
+     ======================================== */
+  .tooltip-glass {
+    @apply backdrop-blur-md;
+    background: rgba(23, 23, 23, 0.75);
   }
 }
 
 /* Live Indicator Animations */
-@keyframes pulse-dot {
+@keyframes pulse-slow {
   0%, 100% {
-    opacity: 1;
-    transform: scale(1);
+    opacity: 0.6;
   }
   50% {
-    opacity: 0.5;
-    transform: scale(1.1);
+    opacity: 1;
   }
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+.animate-pulse-slow {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Fade-in animation for tooltips */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
-  100% {
-    background-position: 200% 0;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.status-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 6px;
-}
-
-.status-dot.thinking {
-  background: #a3a3a3;
-  animation: pulse-dot 1.5s infinite;
-}
-
-.status-dot.complete {
-  background: #ffffff;
-  animation: none;
-}
-
-.status-dot.waiting {
-  background: #525252;
-  animation: none;
-}
-
-.status-dot.error {
-  background: #737373;
-  animation: pulse-dot 1s infinite;
-}
-
-/* Range input slider custom styling - grey only */
-input[type="range"]::-webkit-slider-thumb {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  border: 2px solid #333333;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  border: 2px solid #333333;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-input[type="range"]::-webkit-slider-runnable-track {
-  height: 8px;
-  border-radius: 4px;
-}
-
-input[type="range"]::-moz-range-track {
-  height: 8px;
-  border-radius: 4px;
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
 }

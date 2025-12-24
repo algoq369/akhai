@@ -1,266 +1,662 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { LiquidEther } from '@/components/ui/LiquidEther';
-import { DecryptedTitle } from '@/components/ui/DecryptedText';
-
-type MethodologyType = 'auto' | 'direct' | 'cot' | 'aot' | 'gtp';
+import { useState, useRef, useEffect } from 'react'
+import { generateId, Message } from '@/lib/chat-store'
+import { trackQuery } from '@/lib/analytics'
+import GuardWarning from '@/components/GuardWarning'
+import MethodologyExplorer from '@/components/MethodologyExplorer'
 
 const METHODOLOGIES = [
-  {
-    id: 'auto',
-    label: 'Auto',
-    description: 'Analyzes your query and selects the best methodology automatically',
-    useCase: 'Unknown complexity, let AI decide'
-  },
-  {
-    id: 'gtp',
-    label: 'Flash',
-    description: 'Broadcasts to 4 AI advisors in parallel',
-    useCase: 'Comparisons, pros/cons analysis'
-  },
-  {
-    id: 'direct',
-    label: 'Direct',
-    description: 'Single AI response for simple questions',
-    useCase: 'Quick facts, definitions'
-  },
-  {
-    id: 'cot',
-    label: 'Chain',
-    description: 'Step-by-step reasoning',
-    useCase: 'Math problems, logical puzzles'
-  },
-  {
-    id: 'aot',
-    label: 'Atom',
-    description: 'Decomposes complex queries',
-    useCase: 'Complex research, deep analysis'
-  },
-] as const;
+  { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', savings: 'varies' },
+  { id: 'direct', symbol: '→', name: 'direct', tooltip: 'Single AI, instant', tokens: '200-500', latency: '~2s', savings: '0%' },
+  { id: 'cod', symbol: '⋯', name: 'cod', tooltip: 'Iterative draft', tokens: '~400', latency: '~8s', savings: '92%' },
+  { id: 'bot', symbol: '◇', name: 'bot', tooltip: 'Template reasoning', tokens: '~600', latency: '~12s', savings: '88%' },
+  { id: 'react', symbol: '⟳', name: 'react', tooltip: 'Tools: search, calc', tokens: '2k-8k', latency: '~20s', savings: '0%' },
+  { id: 'pot', symbol: '△', name: 'pot', tooltip: 'Code computation', tokens: '3k-6k', latency: '~15s', savings: '+24%' },
+  { id: 'gtp', symbol: '◯', name: 'gtp', tooltip: 'Multi-AI consensus', tokens: '8k-15k', latency: '~30s', savings: '0%' },
+]
 
 export default function HomePage() {
-  const [query, setQuery] = useState('');
-  const [methodology, setMethodology] = useState<MethodologyType>('auto');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [query, setQuery] = useState('')
+  const [methodology, setMethodology] = useState('auto')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [hoveredMethod, setHoveredMethod] = useState<string | null>(null)
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
+  const [loadingSuggestions, setLoadingSuggestions] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<Record<string, { refine?: string[], pivot?: string[] }>>({})
+  const [showMethodologyExplorer, setShowMethodologyExplorer] = useState(false)
 
-  // Check for methodology in URL params
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const diamondRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const methodologyParam = params.get('methodology');
-    if (methodologyParam && ['auto', 'direct', 'cot', 'aot', 'gtp'].includes(methodologyParam)) {
-      setMethodology(methodologyParam as MethodologyType);
-    }
-  }, []);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim() || loading) return;
+    e.preventDefault()
+    if (!query.trim() || isLoading) return
 
-    setLoading(true);
+    const userMessage: Message = {
+      id: generateId(),
+      role: 'user',
+      content: query.trim(),
+      timestamp: new Date()
+    }
+
+    // Add user message and expand interface
+    setMessages(prev => [...prev, userMessage])
+    setIsExpanded(true)
+    setQuery('')
+    setIsLoading(true)
+
+    const startTime = Date.now()
+
     try {
-      const res = await fetch('/api/query', {
+      const res = await fetch('/api/simple-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, methodology }),
-      });
+        body: JSON.stringify({
+          query: userMessage.content,
+          methodology,
+          conversationHistory: messages.map(m => ({
+            role: m.role,
+            content: m.content
+          }))
+        })
+      })
 
-      if (!res.ok) throw new Error('Failed to start query');
+      if (!res.ok) throw new Error('Failed to get response')
 
-      const data = await res.json();
-      router.push(`/query/${data.queryId}`);
+      const data = await res.json()
+
+      // Poll for the result if we got a queryId
+      if (data.queryId) {
+        await pollForResult(data.queryId, startTime)
+      } else {
+        // Check for grounding guard failures
+        const guardFailed = data.guardResult && !data.guardResult.passed
+
+        // Immediate response (store guard result, hide if failed)
+        const assistantMessage: Message = {
+          id: generateId(),
+          role: 'assistant',
+          content: data.response || data.finalDecision || 'No response',
+          methodology: data.methodology || methodology,
+          metrics: data.metrics,
+          timestamp: new Date(),
+          guardResult: guardFailed ? data.guardResult : undefined,
+          guardAction: guardFailed ? 'pending' : undefined,
+          isHidden: guardFailed,
+        }
+        setMessages(prev => [...prev, assistantMessage])
+
+        // Track analytics
+        const responseTime = Date.now() - startTime
+        trackQuery({
+          query: userMessage.content,
+          methodology: methodology,
+          methodologySelected: methodology,
+          methodologyUsed: data.methodology || methodology,
+          responseTime,
+          tokens: data.metrics?.tokens || 0,
+          cost: data.metrics?.cost || 0,
+          groundingGuardTriggered: guardFailed,
+          success: true,
+        })
+      }
     } catch (error) {
-      console.error('Query failed:', error);
-      alert('Failed to start query. Please try again.');
+      console.error('Query error:', error)
+      const errorMessage: Message = {
+        id: generateId(),
+        role: 'assistant',
+        content: 'Sorry, there was an error processing your query. Please try again.',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorMessage])
+
+      // Track failed query
+      const responseTime = Date.now() - startTime
+      trackQuery({
+        query: userMessage.content,
+        methodology: methodology,
+        methodologySelected: methodology,
+        methodologyUsed: methodology,
+        responseTime,
+        tokens: 0,
+        cost: 0,
+        groundingGuardTriggered: false,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      })
     } finally {
-      setLoading(false);
+      setIsLoading(false)
+      inputRef.current?.focus()
     }
-  };
+  }
 
-  const handleRunAll = async () => {
-    if (!query.trim() || loading) return;
+  const pollForResult = async (queryId: string, startTime: number) => {
+    const maxAttempts = 30
+    let attempts = 0
 
-    setLoading(true);
-    try {
-      const res = await fetch('/api/query-all', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      });
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/query/${queryId}`)
+        if (!res.ok) return
 
-      if (!res.ok) throw new Error('Failed to start comparison');
+        const data = await res.json()
 
-      const data = await res.json();
-      const queriesParam = encodeURIComponent(JSON.stringify(data));
-      router.push(`/compare/${data.comparisonId}?queries=${queriesParam}`);
-    } catch (error) {
-      console.error('Comparison failed:', error);
-      alert('Failed to start comparison. Please try again.');
-    } finally {
-      setLoading(false);
+        if (data.status === 'complete') {
+          // Check for grounding guard failures
+          const guardFailed = data.guardResult && !data.guardResult.passed
+
+          const assistantMessage: Message = {
+            id: generateId(),
+            role: 'assistant',
+            content: data.response || data.finalDecision || 'No response',
+            methodology: data.methodology,
+            metrics: data.metrics,
+            timestamp: new Date(),
+            guardResult: guardFailed ? data.guardResult : undefined,
+            guardAction: guardFailed ? 'pending' : undefined,
+            isHidden: guardFailed,
+          }
+          setMessages(prev => [...prev, assistantMessage])
+          setIsLoading(false)
+
+          // Track analytics
+          const responseTime = Date.now() - startTime
+          trackQuery({
+            query: messages[messages.length - 1]?.content || '',
+            methodology: methodology,
+            methodologySelected: methodology,
+            methodologyUsed: data.methodology || methodology,
+            responseTime,
+            tokens: data.metrics?.tokens || 0,
+            cost: data.metrics?.cost || 0,
+            groundingGuardTriggered: guardFailed,
+            success: true,
+          })
+
+          return
+        }
+
+        if (data.status === 'error') {
+          const errorMessage: Message = {
+            id: generateId(),
+            role: 'assistant',
+            content: data.error || 'An error occurred',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, errorMessage])
+          setIsLoading(false)
+
+          // Track failed query
+          const responseTime = Date.now() - startTime
+          trackQuery({
+            query: messages[messages.length - 1]?.content || '',
+            methodology: methodology,
+            methodologySelected: methodology,
+            methodologyUsed: methodology,
+            responseTime,
+            tokens: 0,
+            cost: 0,
+            groundingGuardTriggered: false,
+            success: false,
+            errorMessage: data.error || 'Unknown error',
+          })
+
+          return
+        }
+
+        // Continue polling
+        if (attempts < maxAttempts) {
+          attempts++
+          setTimeout(poll, 1000)
+        } else {
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('Polling error:', error)
+        setIsLoading(false)
+      }
     }
-  };
+
+    poll()
+  }
+
+  // Guard action handlers
+  const handleGuardContinue = (messageId: string) => {
+    setMessages(prev => prev.map(m =>
+      m.id === messageId
+        ? { ...m, guardAction: 'accepted', isHidden: false }
+        : m
+    ))
+  }
+
+  const handleGuardRefine = async (messageId: string, refinedQuery?: string) => {
+    if (refinedQuery) {
+      // User selected a suggestion - submit it
+      setQuery(refinedQuery)
+      const submitEvent = new Event('submit', { bubbles: true, cancelable: true })
+      await handleSubmit(submitEvent as any)
+
+      // Mark original message as refined
+      setMessages(prev => prev.map(m =>
+        m.id === messageId ? { ...m, guardAction: 'refined' } : m
+      ))
+    } else {
+      // Generate refinement suggestions
+      setLoadingSuggestions(messageId)
+
+      const message = messages.find(m => m.id === messageId)
+      const messageIndex = messages.findIndex(m => m.id === messageId)
+      const originalQuery = messageIndex > 0 ? messages[messageIndex - 1]?.content : ''
+
+      try {
+        const res = await fetch('/api/guard-suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            originalQuery,
+            guardResult: message?.guardResult,
+            action: 'refine'
+          })
+        })
+
+        const data = await res.json()
+        setSuggestions(prev => ({
+          ...prev,
+          [messageId]: { ...prev[messageId], refine: data.suggestions }
+        }))
+      } catch (error) {
+        console.error('Failed to generate refine suggestions:', error)
+        setSuggestions(prev => ({
+          ...prev,
+          [messageId]: { ...prev[messageId], refine: [] }
+        }))
+      } finally {
+        setLoadingSuggestions(null)
+      }
+    }
+  }
+
+  const handleGuardPivot = async (messageId: string, pivotQuery?: string) => {
+    if (pivotQuery) {
+      // User selected a suggestion - submit it
+      setQuery(pivotQuery)
+      const submitEvent = new Event('submit', { bubbles: true, cancelable: true })
+      await handleSubmit(submitEvent as any)
+
+      // Mark original message as pivoted
+      setMessages(prev => prev.map(m =>
+        m.id === messageId ? { ...m, guardAction: 'pivoted' } : m
+      ))
+    } else {
+      // Generate pivot suggestions
+      setLoadingSuggestions(messageId)
+
+      const message = messages.find(m => m.id === messageId)
+      const messageIndex = messages.findIndex(m => m.id === messageId)
+      const originalQuery = messageIndex > 0 ? messages[messageIndex - 1]?.content : ''
+
+      try {
+        const res = await fetch('/api/guard-suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            originalQuery,
+            guardResult: message?.guardResult,
+            action: 'pivot'
+          })
+        })
+
+        const data = await res.json()
+        setSuggestions(prev => ({
+          ...prev,
+          [messageId]: { ...prev[messageId], pivot: data.suggestions }
+        }))
+      } catch (error) {
+        console.error('Failed to generate pivot suggestions:', error)
+        setSuggestions(prev => ({
+          ...prev,
+          [messageId]: { ...prev[messageId], pivot: [] }
+        }))
+      } finally {
+        setLoadingSuggestions(null)
+      }
+    }
+  }
+
+  const handleMethodHover = (m: typeof METHODOLOGIES[0], e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const containerRect = containerRef.current?.getBoundingClientRect()
+    if (containerRect) {
+      setTooltipPos({
+        x: rect.left + rect.width / 2 - containerRect.left,
+        y: rect.bottom - containerRect.top + 8
+      })
+    }
+    setHoveredMethod(m.id)
+  }
+
+  const handleNewChat = () => {
+    setMessages([])
+    setIsExpanded(false)
+    setQuery('')
+  }
 
   return (
-    <>
-      <LiquidEther />
-      <main className="min-h-screen pt-16 flex flex-col items-center justify-center px-4 relative">
-        {/* Hero Section */}
-        <div className="text-center mb-12 max-w-4xl">
-          <DecryptedTitle
-            text="AkhAI"
-            className="text-5xl md:text-7xl font-bold text-white tracking-tight mb-4"
-          />
-          <p className="text-base md:text-lg text-gray-400 font-light mb-2">
-            Multi-AI Consensus Research Engine
-          </p>
-          <p className="text-sm text-gray-500 font-light">
-            Powered by Anthropic · DeepSeek · Grok · Mistral
+    <div className="min-h-screen bg-relic-white flex flex-col">
+      {/* Header - Only show when expanded */}
+      {isExpanded && (
+        <header className="border-b border-relic-mist/50 bg-relic-white/80 backdrop-blur-sm sticky top-0 z-20 animate-fade-in">
+          <div className="max-w-3xl mx-auto px-6 py-3">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={handleNewChat}
+                className="text-[10px] uppercase tracking-[0.3em] text-relic-silver hover:text-relic-slate transition-colors"
+              >
+                ◊ akhai
+              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] text-relic-silver">{methodology}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse-slow" />
+                  <span className="text-[9px] uppercase tracking-wider text-green-600/80 font-medium">guard active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* Main Content */}
+      <main className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded ? 'justify-start' : 'justify-center'}`}>
+
+        {/* Logo Section - Collapses when expanded */}
+        <div className={`text-center transition-all duration-500 ease-out ${isExpanded ? 'py-0 h-0 opacity-0 overflow-hidden' : 'pt-0 pb-8'}`}>
+          <h1 className="text-[11px] uppercase tracking-[0.5em] text-relic-silver mb-4">
+            akhai
+          </h1>
+          <p className="text-3xl font-light text-relic-void tracking-wider">
+            sovereign intelligence
           </p>
         </div>
 
-        {/* Main Search Form */}
-        <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto space-y-6">
-          {/* Search Input with Glass Morphism */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 rounded-2xl blur-xl"></div>
-            <div className="relative bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 shadow-2xl">
-              <div className="flex gap-3">
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Ask anything..."
-                    className="w-full px-6 py-4 text-base text-white bg-white/5 border border-gray-700 rounded-xl focus:outline-none focus:border-white/30 focus:bg-white/10 placeholder-gray-500 transition-all"
-                    disabled={loading}
-                  />
-                  {query && (
-                    <button
-                      type="button"
-                      onClick={() => setQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading || !query.trim()}
-                  className="px-10 py-4 text-sm font-bold text-black bg-white rounded-xl hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+        {/* Diamond - Shrinks when expanded */}
+        <div
+          ref={diamondRef}
+          className={`text-center transition-all duration-500 ease-out ${isExpanded ? 'py-3 mb-2' : 'mb-16'}`}
+          onMouseEnter={() => !isExpanded && setShowMethodologyExplorer(true)}
+        >
+          <span
+            className={`
+              font-extralight transition-all duration-500 cursor-pointer
+              ${isExpanded ? 'text-2xl opacity-50 text-relic-mist' : 'text-7xl text-relic-mist hover:text-relic-silver hover:scale-110'}
+            `}
+          >
+            ◊
+          </span>
+          {!isExpanded && (
+            <p className="text-[9px] uppercase tracking-widest text-relic-silver/40 mt-3">
+              hover to explore
+            </p>
+          )}
+        </div>
+
+        {/* Messages Area - Appears when expanded */}
+        {isExpanded && (
+          <div className="flex-1 overflow-y-auto px-6 pb-4">
+            <div className="max-w-3xl mx-auto space-y-6">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`animate-fade-in ${message.role === 'user' ? 'text-right' : ''}`}
                 >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full"></span>
-                      Searching
-                    </span>
-                  ) : (
-                    'Search'
-                  )}
-                </button>
-              </div>
-
-              {/* Compare All Button */}
-              <button
-                type="button"
-                onClick={handleRunAll}
-                disabled={loading || !query.trim()}
-                className="mt-4 w-full px-4 py-3 text-sm font-medium text-white bg-white/5 border border-gray-700 rounded-xl hover:bg-white/10 hover:border-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  Compare All Methodologies
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Methodology Selector with Cards */}
-          <div className="space-y-4">
-            <div className="text-sm font-medium text-gray-400 text-center">
-              Choose Reasoning Methodology
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              {METHODOLOGIES.map((method) => {
-                const isSelected = methodology === method.id;
-                return (
-                  <button
-                    key={method.id}
-                    type="button"
-                    onClick={() => setMethodology(method.id as MethodologyType)}
-                    className={`group relative p-4 rounded-xl border transition-all ${
-                      isSelected
-                        ? 'bg-white/10 border-white/30 shadow-lg scale-105'
-                        : 'bg-gray-900/50 border-gray-800 hover:border-gray-700 hover:bg-gray-800/50'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <p className={`text-sm font-bold mb-1 ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-gray-300'}`}>
-                        {method.label}
-                      </p>
-                      <p className={`text-xs ${isSelected ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {method.description}
+                  {message.role === 'user' ? (
+                    // User message
+                    <div className="inline-block max-w-[80%] text-left">
+                      <p className="text-relic-void bg-relic-ghost/50 px-4 py-3 rounded-sm text-sm">
+                        {message.content}
                       </p>
                     </div>
-                    {isSelected && (
-                      <div className="absolute top-2 right-2">
-                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+                  ) : (
+                    // Assistant message
+                    <div className="max-w-[90%]">
+                      {/* Guard Warning - Shows if guard failed and pending */}
+                      {message.guardResult && message.guardAction === 'pending' && (
+                        <GuardWarning
+                          guardResult={message.guardResult}
+                          originalQuery={messages[messages.indexOf(message) - 1]?.content || ''}
+                          onRefine={(query) => handleGuardRefine(message.id, query)}
+                          onPivot={(query) => handleGuardPivot(message.id, query)}
+                          onContinue={() => handleGuardContinue(message.id)}
+                          isLoadingSuggestions={loadingSuggestions === message.id}
+                          refineSuggestions={suggestions[message.id]?.refine}
+                          pivotSuggestions={suggestions[message.id]?.pivot}
+                        />
+                      )}
+
+                      {/* Actual Response - Shows if not hidden */}
+                      {!message.isHidden && (
+                        <div className="border-l-2 border-relic-slate/30 pl-4">
+                          {/* Warning badge if accepted */}
+                          {message.guardAction === 'accepted' && (
+                            <div className="inline-flex items-center gap-2 text-xs text-relic-silver mb-2">
+                              <span>⚠️</span>
+                              <span>Flagged by Reality Check</span>
+                            </div>
+                          )}
+
+                          <p className="text-relic-void leading-relaxed whitespace-pre-wrap text-sm">
+                            {message.content}
+                          </p>
+
+                          {/* Metrics */}
+                          {message.metrics && (
+                            <div className="flex gap-4 mt-3 text-[10px] text-relic-silver">
+                            <span>
+                              {message.metrics.tokens !== undefined ? (
+                                message.metrics.tokens === 0 ? (
+                                  <span className="text-green-600">0 tok (free)</span>
+                                ) : (
+                                  `${message.metrics.tokens} tok`
+                                )
+                              ) : '—'}
+                            </span>
+                            <span>
+                              {message.metrics.latency && message.metrics.latency > 0
+                                ? `${(message.metrics.latency / 1000).toFixed(2)}s`
+                                : '—'}
+                            </span>
+                            <span>
+                              {message.metrics.cost !== undefined ? (
+                                message.metrics.cost === 0 ? (
+                                  <span className="text-green-600">$0 (free)</span>
+                                ) : (
+                                  `$${message.metrics.cost.toFixed(4)}`
+                                )
+                              ) : '—'}
+                            </span>
+                            {message.metrics.source && (
+                              <span className="text-green-600">{message.metrics.source}</span>
+                            )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="animate-fade-in">
+                  <div className="border-l-2 border-relic-slate/30 pl-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border border-relic-mist border-t-relic-slate rounded-full animate-spin" />
+                      <span className="text-xs text-relic-silver">thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
             </div>
-            {methodology !== 'auto' && (
-              <div className="text-center">
-                <p className="inline-block px-4 py-2 text-xs text-gray-400 bg-gray-900/50 border border-gray-800 rounded-full">
-                  Use Case: {METHODOLOGIES.find(m => m.id === methodology)?.useCase}
+          </div>
+        )}
+
+        {/* Input Section */}
+        <div className={`px-6 transition-all duration-500 ease-out ${isExpanded ? 'pb-4 pt-2 border-t border-relic-mist/30 bg-relic-white/80 backdrop-blur-sm sticky bottom-0' : 'pb-8'}`}>
+          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
+            {/* Input Box with Smooth Expansion */}
+            <div className={`relative transition-all duration-300 ${isExpanded ? '' : ''}`}>
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={isExpanded ? "continue conversation..." : "enter query..."}
+                className={`
+                  relic-input text-base transition-all duration-300
+                  ${isExpanded
+                    ? 'text-left py-3 px-4'
+                    : 'text-center py-4'
+                  }
+                `}
+                autoFocus
+                disabled={isLoading}
+              />
+
+              {/* Guard indicator */}
+              {!isExpanded && (
+                <div className="absolute -bottom-6 right-2 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-pulse-slow" />
+                  <span className="text-[9px] uppercase tracking-widest text-green-600/70 font-medium">guard active</span>
+                </div>
+              )}
+            </div>
+
+            {/* Methodology Selection - Only when not expanded */}
+            {!isExpanded && (
+              <div className="mt-20 relative" ref={containerRef}>
+                <p className="text-[10px] uppercase tracking-widest text-relic-silver text-center mb-5">
+                  methodology
                 </p>
+
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {METHODOLOGIES.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setMethodology(m.id)}
+                      onMouseEnter={(e) => handleMethodHover(m, e)}
+                      onMouseLeave={() => setHoveredMethod(null)}
+                      className={`
+                        px-3 py-1.5 text-xs font-mono transition-all duration-200
+                        ${methodology === m.id
+                          ? 'bg-relic-void text-relic-white'
+                          : 'text-relic-silver hover:text-relic-slate hover:bg-relic-ghost/50'
+                        }
+                      `}
+                    >
+                      <span className="mr-1.5 opacity-70">{m.symbol}</span>
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Tooltip */}
+                {hoveredMethod && (
+                  <div
+                    className="absolute w-44 animate-fade-in z-50"
+                    style={{
+                      left: tooltipPos.x,
+                      top: tooltipPos.y,
+                      transform: 'translateX(-50%)'
+                    }}
+                  >
+                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-[rgba(23,23,23,0.85)]" />
+                    <div className="backdrop-blur-md bg-relic-void/85 text-relic-white p-2.5 text-[10px]">
+                      {(() => {
+                        const m = METHODOLOGIES.find(x => x.id === hoveredMethod)
+                        if (!m) return null
+                        return (
+                          <>
+                            <p className="text-white/80 mb-2">{m.tooltip}</p>
+                            <div className="grid grid-cols-3 gap-1 text-[9px] border-t border-white/10 pt-2">
+                              <div>
+                                <span className="text-white/40 uppercase">tok</span>
+                                <p className="text-white/70">{m.tokens}</p>
+                              </div>
+                              <div>
+                                <span className="text-white/40 uppercase">lat</span>
+                                <p className="text-white/70">{m.latency}</p>
+                              </div>
+                              <div>
+                                <span className="text-white/40 uppercase">sav</span>
+                                <p className="text-white/70">{m.savings}</p>
+                              </div>
+                            </div>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        </form>
 
-        {/* Quick Links */}
-        <div className="mt-12 flex items-center gap-6 text-sm">
-          <a
-            href="/explore"
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Learn More</span>
-          </a>
-          <a
-            href="/dashboard"
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <span>Dashboard</span>
-          </a>
-          <a
-            href="/profile"
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span>Profile</span>
-          </a>
+            {/* Submit button - Only when not expanded */}
+            {!isExpanded && (
+              <div className="mt-10 text-center">
+                <button
+                  type="submit"
+                  className="relic-button-primary px-8 py-2.5 text-xs"
+                  disabled={isLoading}
+                >
+                  transmit
+                </button>
+              </div>
+            )}
+
+            {/* Hint */}
+            {!isExpanded && (
+              <p className="text-center text-[10px] text-relic-silver/30 mt-8">
+                ↵ enter to send
+              </p>
+            )}
+          </form>
         </div>
       </main>
-    </>
-  );
+
+      {/* Footer - Only when not expanded */}
+      {!isExpanded && (
+        <footer className="border-t border-relic-mist/50 bg-relic-white/60 backdrop-blur-sm">
+          <div className="max-w-4xl mx-auto px-6 py-3">
+            <div className="flex items-center justify-between text-[10px] text-relic-silver">
+              <span>7 methodologies · auto-routing · multi-ai consensus · grounding guard active</span>
+              <div className="flex gap-5">
+                <a href="/history" className="hover:text-relic-slate transition-colors">history</a>
+                <a href="/settings" className="hover:text-relic-slate transition-colors">settings</a>
+              </div>
+            </div>
+          </div>
+        </footer>
+      )}
+
+      {/* Methodology Explorer Modal */}
+      <MethodologyExplorer
+        isVisible={showMethodologyExplorer}
+        onClose={() => setShowMethodologyExplorer(false)}
+      />
+    </div>
+  )
 }

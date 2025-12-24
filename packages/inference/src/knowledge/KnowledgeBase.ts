@@ -67,10 +67,10 @@ export class GitHubIngester {
   async getRepoTree(owner: string, repo: string, branch = 'main'): Promise<Array<{ path: string; type: string; sha: string }>> {
     try {
       const response = await this.fetch(`/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`);
-      const data = await response.json();
+      const data = await response.json() as any;
       if (!data.tree) {
         const masterResponse = await this.fetch(`/repos/${owner}/${repo}/git/trees/master?recursive=1`);
-        const masterData = await masterResponse.json();
+        const masterData = await masterResponse.json() as any;
         return masterData.tree || [];
       }
       return data.tree;
@@ -83,7 +83,7 @@ export class GitHubIngester {
   async getFileContent(owner: string, repo: string, path: string): Promise<string | null> {
     try {
       const response = await this.fetch(`/repos/${owner}/${repo}/contents/${path}`);
-      const data = await response.json();
+      const data = await response.json() as any;
       if (data.content) {
         return Buffer.from(data.content, 'base64').toString('utf-8');
       }
