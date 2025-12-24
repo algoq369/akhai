@@ -26,6 +26,7 @@ export interface Message {
     sanityViolations: string[]
   }
   guardAction?: 'pending' | 'accepted' | 'refined' | 'pivoted'
+  guardActionQuery?: string // The query used for refine/pivot action
   isHidden?: boolean
 }
 

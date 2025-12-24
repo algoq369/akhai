@@ -310,9 +310,12 @@ export default function HomePage() {
       // IMPORTANT: Capture current messages BEFORE any state updates (stale closure fix)
       const currentMessages = [...messages]
       
-      // First, show the original flagged message (un-hide it with refine indicator)
+      // Mark the original flagged message as "refined" - keep alert visible but hide response content
+      // This preserves the context of what was flagged and what action was taken
       setMessages(prev => prev.map(m =>
-        m.id === messageId ? { ...m, isHidden: false, guardAction: 'refined' } : m
+        m.id === messageId 
+          ? { ...m, guardAction: 'refined', guardActionQuery: refinedQuery, isHidden: true }
+          : m
       ))
 
       // Add refined query as new user message
@@ -325,9 +328,11 @@ export default function HomePage() {
       setMessages(prev => [...prev, userMessage])
       setIsLoading(true)
 
-      // Build conversation history from captured messages + new user message
+      // Build conversation history - EXCLUDE the flagged message (user rejected it)
       const conversationHistory = [
-        ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+        ...currentMessages
+          .filter(m => m.id !== messageId && !m.isHidden) // Exclude flagged/hidden messages
+          .map(m => ({ role: m.role, content: m.content })),
         { role: 'user' as const, content: refinedQuery }
       ]
 
@@ -417,9 +422,12 @@ export default function HomePage() {
       // IMPORTANT: Capture current messages BEFORE any state updates (stale closure fix)
       const currentMessages = [...messages]
       
-      // First, show the original flagged message (un-hide it with pivot indicator)
+      // Mark the original flagged message as "pivoted" - keep alert visible but hide response content
+      // This preserves the context of what was flagged and what action was taken
       setMessages(prev => prev.map(m =>
-        m.id === messageId ? { ...m, isHidden: false, guardAction: 'pivoted' } : m
+        m.id === messageId 
+          ? { ...m, guardAction: 'pivoted', guardActionQuery: pivotQuery, isHidden: true }
+          : m
       ))
 
       // Add pivot query as new user message
@@ -432,9 +440,11 @@ export default function HomePage() {
       setMessages(prev => [...prev, userMessage])
       setIsLoading(true)
 
-      // Build conversation history from captured messages + new user message
+      // Build conversation history - EXCLUDE the flagged message (user rejected it)
       const conversationHistory = [
-        ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+        ...currentMessages
+          .filter(m => m.id !== messageId && !m.isHidden) // Exclude flagged/hidden messages
+          .map(m => ({ role: m.role, content: m.content })),
         { role: 'user' as const, content: pivotQuery }
       ]
 
@@ -676,6 +686,22 @@ export default function HomePage() {
                           refineSuggestions={guardSuggestions[message.id]?.refine}
                           pivotSuggestions={guardSuggestions[message.id]?.pivot}
                         />
+                      )}
+
+                      {/* Condensed Alert - Shows after Refine/Pivot action was taken */}
+                      {message.guardResult && (message.guardAction === 'refined' || message.guardAction === 'pivoted') && (
+                        <div className="mt-4 mb-2 bg-relic-ghost/20 border-l-2 border-relic-slate/20 p-3 animate-fade-in">
+                          <div className="flex items-center gap-2 text-xs text-relic-silver">
+                            <span>⚠️</span>
+                            <span>Reality Check flagged: {message.guardResult.sanityViolations[0] || message.guardResult.issues.join(', ')}</span>
+                          </div>
+                          <div className="mt-2 text-xs text-relic-slate">
+                            <span className="text-relic-silver">
+                              {message.guardAction === 'refined' ? '🔄 Refined to:' : '📍 Pivoted to:'}
+                            </span>
+                            <span className="ml-2 italic">{message.guardActionQuery}</span>
+                          </div>
+                        </div>
                       )}
 
                       {/* Actual Response - Shows if not hidden */}

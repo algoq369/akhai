@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     // Get methodology-specific system prompt
     const systemPrompt = getMethodologyPrompt(selectedMethod.id)
 
-    // Call Anthropic API
+    // Call Anthropic API with retry logic
     logger.query.apiCall('ANTHROPIC', 'claude-opus-4-20250514')
 
     const apiCallStart = Date.now()
@@ -101,20 +101,54 @@ export async function POST(request: NextRequest) {
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:69',message:'Calling Anthropic API',data:{methodology:selectedMethod.id,model:'claude-opus-4-20250514'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
     // #endregion
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-20250514',
-        max_tokens: 4096,
-        system: systemPrompt,
-        messages,
-      }),
-    })
+    // Retry logic for transient network failures
+    let response: Response | null = null
+    let lastError: Error | null = null
+    const maxRetries = 3
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:retry',message:'API attempt',data:{attempt,maxRetries},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'RETRY'})}).catch(()=>{});
+        // #endregion
+        
+        response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-opus-4-20250514',
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages,
+          }),
+        })
+        
+        // If we get a response (even an error response), break out
+        break
+      } catch (fetchError) {
+        lastError = fetchError instanceof Error ? fetchError : new Error(String(fetchError))
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:retry-error',message:'API fetch failed',data:{attempt,error:lastError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'RETRY'})}).catch(()=>{});
+        // #endregion
+        
+        if (attempt < maxRetries) {
+          // Wait before retrying (exponential backoff: 500ms, 1000ms)
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt))
+        }
+      }
+    }
+    
+    if (!response) {
+      logger.system.error(`Anthropic API fetch failed after ${maxRetries} attempts: ${lastError?.message}`)
+      return NextResponse.json(
+        { error: 'Failed to connect to AI service. Please try again.' },
+        { status: 503 }
+      )
+    }
 
     const apiCallLatency = Date.now() - apiCallStart
     // #region agent log
