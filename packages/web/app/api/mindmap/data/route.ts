@@ -21,32 +21,33 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check if topics table exists
+    const tablesCheck = db.prepare(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name='topics'
+    `).all() as Array<{ name: string }>
+
+    if (tablesCheck.length === 0) {
+      // Topics table doesn't exist yet - return empty data
+      return NextResponse.json({
+        nodes: [],
+        links: [],
+      })
+    }
+
     // Migrate NULL user_id topics to current user (one-time migration)
-    const migrationResult = db.prepare(`
-      UPDATE topics 
-      SET user_id = ?, updated_at = ?
-      WHERE user_id IS NULL
-    `).run(userId, Math.floor(Date.now() / 1000))
+    try {
+      db.prepare(`
+        UPDATE topics 
+        SET user_id = ?, updated_at = ?
+        WHERE user_id IS NULL
+      `).run(userId, Math.floor(Date.now() / 1000))
+    } catch (migrationError) {
+      console.error('Migration error (non-fatal):', migrationError)
+    }
 
     // Get all topics for user
-    const topics = db.prepare(`
-      SELECT 
-        t.id,
-        t.name,
-        t.description,
-        t.category,
-        t.color,
-        t.pinned,
-        t.archived,
-        t.ai_instructions,
-        t.created_at,
-        COUNT(DISTINCT qt.query_id) as query_count
-      FROM topics t
-      LEFT JOIN query_topics qt ON t.id = qt.topic_id
-      WHERE t.user_id = ?
-      GROUP BY t.id
-      ORDER BY t.pinned DESC, t.created_at DESC
-    `).all(userId) as Array<{
+    let topics: Array<{
       id: string
       name: string
       description: string | null
@@ -57,23 +58,70 @@ export async function GET(request: NextRequest) {
       ai_instructions: string | null
       created_at: number
       query_count: number
-    }>
+    }> = []
+
+    try {
+      topics = db.prepare(`
+        SELECT 
+          t.id,
+          t.name,
+          t.description,
+          t.category,
+          t.color,
+          t.pinned,
+          t.archived,
+          t.ai_instructions,
+          t.created_at,
+          COUNT(DISTINCT qt.query_id) as query_count
+        FROM topics t
+        LEFT JOIN query_topics qt ON t.id = qt.topic_id
+        WHERE t.user_id = ?
+        GROUP BY t.id
+        ORDER BY t.pinned DESC, t.created_at DESC
+      `).all(userId) as Array<{
+        id: string
+        name: string
+        description: string | null
+        category: string | null
+        color: string | null
+        pinned: number
+        archived: number
+        ai_instructions: string | null
+        created_at: number
+        query_count: number
+      }>
+    } catch (topicsError) {
+      console.error('Error fetching topics:', topicsError)
+      topics = []
+    }
 
     // Get all relationships
-    const relationships = db.prepare(`
-      SELECT 
-        topic_from,
-        topic_to,
-        relationship_type,
-        strength
-      FROM topic_relationships
-      WHERE user_id = ?
-    `).all(userId) as Array<{
+    let relationships: Array<{
       topic_from: string
       topic_to: string
       relationship_type: string
       strength: number
-    }>
+    }> = []
+
+    try {
+      relationships = db.prepare(`
+        SELECT 
+          topic_from,
+          topic_to,
+          relationship_type,
+          strength
+        FROM topic_relationships
+        WHERE user_id = ?
+      `).all(userId) as Array<{
+        topic_from: string
+        topic_to: string
+        relationship_type: string
+        strength: number
+      }>
+    } catch (relError) {
+      console.error('Error fetching relationships:', relError)
+      relationships = []
+    }
 
     const responseData = {
       nodes: topics.map(t => ({
@@ -103,4 +151,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

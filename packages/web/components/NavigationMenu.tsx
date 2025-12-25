@@ -7,29 +7,29 @@ interface NavigationMenuProps {
   user: any
   onTopicsClick: () => void
   onMindMapClick: () => void
+  onDashboardClick?: () => void
 }
 
-export default function NavigationMenu({ user, onTopicsClick, onMindMapClick }: NavigationMenuProps) {
+export default function NavigationMenu({ user, onTopicsClick, onMindMapClick, onDashboardClick }: NavigationMenuProps) {
   const pathname = usePathname()
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
 
   const menuItems = [
-    { id: 'dashboard', label: 'dashboard', href: '/dashboard', isLink: true },
+    { id: 'dashboard', label: 'dashboard', onClick: onDashboardClick, isLink: false },
     { id: 'topics', label: 'topics', onClick: onTopicsClick, isLink: false },
     { id: 'mindmap', label: 'mindmap', onClick: onMindMapClick, isLink: false },
+    { id: 'history', label: 'history', href: '/history', isLink: true },
     { id: 'idea-factory', label: 'idea factory', href: '/idea-factory', isLink: true },
-    { id: 'settings', label: 'settings', href: '/settings', isLink: true },
   ]
 
   const isActive = (id: string) => {
-    if (id === 'dashboard' && pathname === '/dashboard') return true
+    if (id === 'history' && pathname === '/history') return true
     if (id === 'idea-factory' && pathname === '/idea-factory') return true
-    if (id === 'settings' && pathname === '/settings') return true
     return false
   }
 
   return (
-    <nav className="flex items-center gap-5">
+    <nav className="flex items-center gap-4">
       {menuItems.map((item) => {
         const active = isActive(item.id)
         const hovered = hoveredItem === item.id
@@ -74,4 +74,3 @@ export default function NavigationMenu({ user, onTopicsClick, onMindMapClick }: 
     </nav>
   )
 }
-

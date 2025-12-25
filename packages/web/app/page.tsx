@@ -41,6 +41,7 @@ export default function HomePage() {
   const [topicSuggestions, setTopicSuggestions] = useState<Array<{ topicId: string; topicName: string; reason: string; relevance: number }>>([])
   const [showTopicsPanel, setShowTopicsPanel] = useState(false)
   const [showMindMap, setShowMindMap] = useState(false)
+  const [showDashboard, setShowDashboard] = useState(false)
   const [legendMode, setLegendMode] = useState(false)
   const [sideChats, setSideChats] = useState<Array<{ id: string; methodology: string; messages: Message[] }>>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
@@ -986,12 +987,22 @@ export default function HomePage() {
       </main>
 
       {/* Chat Dashboard */}
-      {user && (
+      {user && showDashboard && (
         <ChatDashboard
           userId={user?.id || null}
           currentMethodology={methodology}
+          legendMode={legendMode}
           onMethodologyChange={handleMethodologySwitch}
           onGuardToggle={handleGuardToggle}
+          onLegendModeToggle={(enabled) => {
+            setLegendMode(enabled)
+            if (enabled) {
+              localStorage.setItem('legendMode', 'true')
+            } else {
+              localStorage.removeItem('legendMode')
+            }
+          }}
+          onClose={() => setShowDashboard(false)}
         />
       )}
 
@@ -1116,6 +1127,7 @@ export default function HomePage() {
                     user={user}
                     onTopicsClick={() => setShowTopicsPanel(true)}
                     onMindMapClick={() => setShowMindMap(true)}
+                    onDashboardClick={() => setShowDashboard(!showDashboard)}
                   />
                 ) : (
                   <button
