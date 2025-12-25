@@ -15,58 +15,58 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get recent topics (last 10) - handle case where topics table might not exist yet
+    // Get recent topics (last 10) with their most recent query
     let recentTopics: Array<{
       id: string
       name: string
       category: string | null
       created_at: number
+      query_id: string | null
     }> = []
     try {
       recentTopics = db.prepare(`
-        SELECT id, name, category, created_at
-        FROM topics
-        WHERE user_id = ? AND archived = 0
-        ORDER BY created_at DESC
+        SELECT 
+          t.id, 
+          t.name, 
+          t.category, 
+          t.created_at,
+          (SELECT qt.query_id FROM query_topics qt WHERE qt.topic_id = t.id ORDER BY qt.query_id DESC LIMIT 1) as query_id
+        FROM topics t
+        WHERE t.user_id = ? AND t.archived = 0
+        ORDER BY t.created_at DESC
         LIMIT 10
       `).all(userId) as Array<{
         id: string
         name: string
         category: string | null
         created_at: number
+        query_id: string | null
       }>
     } catch (error) {
       console.error('Error fetching recent topics:', error)
-      // Return empty array if table doesn't exist yet
       recentTopics = []
     }
 
-    // Get topic relationships created in last 5 minutes
-    let recentRelationships = { count: 0 }
+    // Get total topic count
+    let totalTopics = 0
     try {
-      const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 300
-      recentRelationships = db.prepare(`
-        SELECT COUNT(*) as count
-        FROM topic_relationships
-        WHERE user_id = ? AND created_at > ?
-      `).get(userId, fiveMinutesAgo) as { count: number } || { count: 0 }
+      const result = db.prepare(`
+        SELECT COUNT(*) as count FROM topics WHERE user_id = ? AND archived = 0
+      `).get(userId) as { count: number } | undefined
+      totalTopics = result?.count || 0
     } catch (error) {
-      console.error('Error fetching recent relationships:', error)
-      recentRelationships = { count: 0 }
+      console.error('Error fetching topic count:', error)
     }
 
-    // Get query-to-topic associations
-    let queryTopicAssociations = { count: 0 }
+    // Get total connections count
+    let totalConnections = 0
     try {
-      queryTopicAssociations = db.prepare(`
-        SELECT COUNT(DISTINCT qt.query_id) as count
-        FROM query_topics qt
-        JOIN topics t ON qt.topic_id = t.id
-        WHERE t.user_id = ?
-      `).get(userId) as { count: number } || { count: 0 }
+      const result = db.prepare(`
+        SELECT COUNT(*) as count FROM topic_relationships WHERE user_id = ?
+      `).get(userId) as { count: number } | undefined
+      totalConnections = result?.count || 0
     } catch (error) {
-      console.error('Error fetching query-topic associations:', error)
-      queryTopicAssociations = { count: 0 }
+      console.error('Error fetching connection count:', error)
     }
 
     const topics = recentTopics.map(t => ({
@@ -74,13 +74,14 @@ export async function GET(request: NextRequest) {
       name: t.name,
       category: t.category,
       created_at: t.created_at,
+      queryId: t.query_id,
       status: 'extracted' as const
     }))
 
     return NextResponse.json({
       topics,
-      relationshipsCount: recentRelationships.count,
-      queryAssociations: queryTopicAssociations.count
+      totalTopics,
+      totalConnections
     })
   } catch (error) {
     console.error('Dashboard live topics error:', error)
@@ -90,4 +91,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
