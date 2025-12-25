@@ -42,7 +42,8 @@ export interface Suggestion {
 export async function extractTopics(
   query: string,
   response: string,
-  userId: string | null
+  userId: string | null,
+  legendMode: boolean = false
 ): Promise<Topic[]> {
   if (!ANTHROPIC_API_KEY) {
     console.warn('ANTHROPIC_API_KEY not configured, skipping topic extraction');
@@ -53,8 +54,9 @@ export async function extractTopics(
     // Step 1: Keyword extraction (simple noun extraction)
     const keywords = extractKeywords(query + ' ' + response);
     
-    // Step 2: AI-powered topic identification using Claude Haiku
-    const topicPrompt = `Extract ALL relevant topics from this conversation. Be thorough and extract 5-10 topics covering:
+    // Step 2: AI-powered topic identification
+    const topicCount = legendMode ? '10-15' : '5-10'
+    const topicPrompt = `Extract ALL relevant topics from this conversation. Be thorough and extract ${topicCount} topics covering:
 - Main subjects discussed
 - Technologies mentioned
 - Concepts explained
@@ -85,8 +87,8 @@ Return JSON array: [{"name": "...", "description": "...", "category": "..."}, ..
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 800,
+        model: legendMode ? 'claude-3-opus-20240229' : 'claude-3-haiku-20240307',
+        max_tokens: legendMode ? 1200 : 800,
         messages: [
           {
             role: 'user',
@@ -107,12 +109,32 @@ Return JSON array: [{"name": "...", "description": "...", "category": "..."}, ..
     // Parse JSON from response
     let topics: Array<{ name: string; description?: string; category?: string }> = [];
     try {
+      // Try to find JSON array in response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
-        topics = JSON.parse(jsonMatch[0]);
+        let jsonStr = jsonMatch[0];
+        
+        // Clean up common JSON issues
+        // Remove trailing commas before closing brackets/braces
+        jsonStr = jsonStr.replace(/,(\s*[}\]])/g, '$1');
+        
+        // Try parsing
+        topics = JSON.parse(jsonStr);
+      } else {
+        // If no array found, try to parse entire content as JSON
+        try {
+          const cleaned = content.trim().replace(/^[^[]*\[/, '[').replace(/\][^]]*$/, ']');
+          topics = JSON.parse(cleaned);
+        } catch (fallbackError) {
+          console.warn('No valid JSON array found in topic extraction response');
+        }
       }
     } catch (e) {
-      console.error('Failed to parse topics JSON:', e);
+      // Log the problematic content for debugging (truncated to avoid huge logs)
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      const contentPreview = content.substring(0, 500);
+      console.error('Failed to parse topics JSON:', errorMessage);
+      console.error('Content preview:', contentPreview);
       return [];
     }
 

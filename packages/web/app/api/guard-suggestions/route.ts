@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { originalQuery, guardResult, action, conversationContext, aiResponse } = await request.json()
+    const { originalQuery, guardResult, action, conversationContext, aiResponse, legendMode = false } = await request.json()
 
     if (!originalQuery || !action) {
       return NextResponse.json(
@@ -83,7 +83,11 @@ Output exactly 3 questions, one per line, no numbers:`
       )
     }
 
-    // Call Claude Haiku for fast, cheap suggestions
+    // Select model based on legend mode
+    const model = legendMode ? 'claude-3-opus-20240229' : 'claude-3-haiku-20240307'
+    const maxTokens = legendMode ? 500 : 300
+    
+    // Call Claude API for suggestions
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -92,8 +96,8 @@ Output exactly 3 questions, one per line, no numbers:`
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 300,
+        model,
+        max_tokens: maxTokens,
         system: systemPrompt,
         messages: [
           {
@@ -117,6 +121,7 @@ Output exactly 3 questions, one per line, no numbers:`
     const content = data.content?.[0]?.text || ''
 
     // Parse suggestions (split by newlines, clean up formatting)
+    const maxSuggestions = legendMode ? 5 : 3
     const suggestions = content
       .split('\n')
       .map((s: string) => s.trim())
@@ -124,7 +129,7 @@ Output exactly 3 questions, one per line, no numbers:`
       .map((s: string) => s.replace(/^[-•]\s*/, '')) // Remove bullet points
       .map((s: string) => s.replace(/^["']|["']$/g, '')) // Remove quotes
       .filter((s: string) => s.length > 10 && s.includes('?')) // Must be a question > 10 chars
-      .slice(0, 3) // Take max 3
+      .slice(0, maxSuggestions) // Take max suggestions based on mode
 
     // Ensure we have at least some suggestions
     if (suggestions.length === 0) {

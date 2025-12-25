@@ -55,6 +55,8 @@ db.exec(`
     tokens_used INTEGER DEFAULT 0,
     cost REAL DEFAULT 0,
     user_id TEXT,
+    session_id TEXT,
+    chat_id TEXT,
     created_at INTEGER DEFAULT (strftime('%s', 'now')),
     completed_at INTEGER,
     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -145,6 +147,14 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 `);
 
+// Run migrations after schema initialization
+try {
+  migrateAddSessionAndChatId()
+  migrateAddIdeaFactoryTables()
+} catch (error) {
+  console.error('Migration error:', error)
+}
+
 console.log(`✅ Database initialized: ${dbPath}`);
 
 export { db };
@@ -152,9 +162,9 @@ export { db };
 /**
  * Create a new query
  */
-export function createQuery(id: string, query: string, flow: string, userId?: string | null) {
-  const stmt = db.prepare('INSERT INTO queries (id, query, flow, user_id) VALUES (?, ?, ?, ?)');
-  stmt.run(id, query, flow, userId || null);
+export function createQuery(id: string, query: string, flow: string, userId?: string | null, sessionId?: string | null, chatId?: string | null) {
+  const stmt = db.prepare('INSERT INTO queries (id, query, flow, user_id, session_id, chat_id) VALUES (?, ?, ?, ?, ?, ?)');
+  stmt.run(id, query, flow, userId || null, sessionId || null, chatId || null);
 }
 
 /**
@@ -335,19 +345,15 @@ export function closeDatabase() {
  */
 export function migrateAddUserIdColumns() {
   try {
-    console.log('[DEBUG] Starting migration: migrateAddUserIdColumns');
     // Check if user_id column exists in queries table
     const queriesInfo = db.prepare("PRAGMA table_info(queries)").all() as Array<{ name: string }>;
     const hasUserIdInQueries = queriesInfo.some(col => col.name === 'user_id');
-    console.log('[DEBUG] Queries table columns:', queriesInfo.map(c => c.name), 'hasUserId:', hasUserIdInQueries);
     
     if (!hasUserIdInQueries) {
-      console.log('[DEBUG] Adding user_id column to queries table');
       db.exec('ALTER TABLE queries ADD COLUMN user_id TEXT');
       db.exec('CREATE INDEX IF NOT EXISTS idx_queries_user_id ON queries(user_id)');
       console.log('✅ Added user_id column to queries table');
     } else {
-      console.log('[DEBUG] user_id column already exists in queries table');
     }
 
     // Check if user_id column exists in topics table (will be created if table doesn't exist)
@@ -355,11 +361,9 @@ export function migrateAddUserIdColumns() {
     const hasUserIdInTopics = topicsInfo.some(col => col.name === 'user_id');
     
     if (topicsInfo.length > 0 && !hasUserIdInTopics) {
-      console.log('[DEBUG] Adding user_id column to topics table');
       db.exec('ALTER TABLE topics ADD COLUMN user_id TEXT');
       console.log('✅ Added user_id column to topics table');
     } else {
-      console.log('[DEBUG] Topics table check - table exists:', topicsInfo.length > 0, 'hasUserId:', topicsInfo.length > 0 ? hasUserIdInTopics : 'N/A (table does not exist)');
     }
   } catch (error) {
     const errorInfo = {
@@ -368,7 +372,6 @@ export function migrateAddUserIdColumns() {
       code: (error as any)?.code || 'no code',
       stack: error instanceof Error ? error.stack?.substring(0, 300) : 'no stack'
     };
-    console.error('[DEBUG] Migration error:', errorInfo);
     throw error; // Re-throw to prevent silent failures
   }
 }
@@ -378,7 +381,6 @@ export function migrateAddUserIdColumns() {
  */
 export function migrateAddMindMapColumns() {
   try {
-    console.log('[DEBUG] Starting migration: migrateAddMindMapColumns');
     const topicsInfo = db.prepare("PRAGMA table_info(topics)").all() as Array<{ name: string }>;
     const columnNames = topicsInfo.map(c => c.name);
     
@@ -406,21 +408,16 @@ export function migrateAddMindMapColumns() {
       console.log('✅ Added ai_instructions column to topics table');
     }
     
-    console.log('[DEBUG] Mind Map migration completed');
   } catch (error) {
-    console.error('[DEBUG] Mind Map migration error:', error);
     // Don't throw - allow app to start
   }
 }
 
 // Run migration on module load (after schema initialization)
 try {
-  console.log('[DEBUG] Running migration on module load');
   migrateAddUserIdColumns();
   migrateAddMindMapColumns();
-  console.log('[DEBUG] Migration completed successfully');
 } catch (error) {
-  console.error('[DEBUG] Failed to run migration on module load:', error);
   // Don't throw - allow app to start but log the error
 }
 
@@ -554,28 +551,15 @@ export function createSession(userId: string, expiresInSeconds: number = 30 * 24
  * Validate session token and return user
  */
 export function validateSession(token: string): User | null {
-  console.log('[DEBUG] validateSession entry, token:', token.substring(0, 10));
-  // #region agent log
-  try { fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/database.ts:492',message:'validateSession entry',data:{token:token.substring(0,10)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{}); } catch(e) {}
-  // #endregion
   
   try {
-    console.log('[DEBUG] Before SQL query');
-    // #region agent log
-    try { fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/database.ts:495',message:'Before SQL query',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{}); } catch(e) {}
-    // #endregion
     
     // Check if tables exist
     const tablesCheck = db.prepare(`
       SELECT name FROM sqlite_master 
       WHERE type='table' AND (name='users' OR name='sessions')
     `).all() as Array<{ name: string }>;
-    console.log('[DEBUG] Tables check:', tablesCheck.map(t => t.name), 'hasUsers:', !!tablesCheck.find(t => t.name === 'users'), 'hasSessions:', !!tablesCheck.find(t => t.name === 'sessions'));
-    // #region agent log
-    try { fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/database.ts:502',message:'Tables check',data:{tablesFound:tablesCheck.map(t=>t.name),hasUsers:!!tablesCheck.find(t=>t.name==='users'),hasSessions:!!tablesCheck.find(t=>t.name==='sessions')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{}); } catch(e) {}
-    // #endregion
     
-    console.log('[DEBUG] Executing SQL query with token');
     let session;
     try {
       session = db.prepare(`
@@ -600,14 +584,9 @@ export function validateSession(token: string): User | null {
       updated_at: number;
     } | undefined;
     } catch (sqlError) {
-      console.error('[DEBUG] SQL query error:', sqlError);
       throw sqlError;
     }
     
-    console.log('[DEBUG] After SQL query, hasSession:', !!session, 'userId:', session?.id || null);
-    // #region agent log
-    try { fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/database.ts:520',message:'After SQL query',data:{hasSession:!!session,userId:session?.id||null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{}); } catch(e) {}
-    // #endregion
     
     if (!session) {
       return null;
@@ -630,10 +609,6 @@ export function validateSession(token: string): User | null {
       code: (error as any)?.code || 'no code',
       stack: error instanceof Error ? error.stack?.substring(0, 300) : 'no stack'
     };
-    console.error('[DEBUG] validateSession error:', errorInfo);
-    // #region agent log
-    try { fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/database.ts:540',message:'validateSession error',data:errorInfo,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{}); } catch(e) {}
-    // #endregion
     throw error;
   }
 }
@@ -651,3 +626,81 @@ export function destroySession(token: string): void {
 export function cleanExpiredSessions(): void {
   db.prepare('DELETE FROM sessions WHERE expires_at <= strftime(\'%s\', \'now\')').run();
 }
+
+/**
+ * Migration: Add session_id and chat_id columns to queries table
+ */
+export function migrateAddSessionAndChatId(): void {
+  try {
+    // Check if columns exist
+    const columns = db.prepare("PRAGMA table_info(queries)").all() as Array<{ name: string }>
+    const hasSessionId = columns.some(c => c.name === 'session_id')
+    const hasChatId = columns.some(c => c.name === 'chat_id')
+
+    if (!hasSessionId) {
+      db.prepare('ALTER TABLE queries ADD COLUMN session_id TEXT').run()
+      db.prepare('CREATE INDEX IF NOT EXISTS idx_queries_session_id ON queries(session_id)').run()
+    }
+
+    if (!hasChatId) {
+      db.prepare('ALTER TABLE queries ADD COLUMN chat_id TEXT').run()
+      db.prepare('CREATE INDEX IF NOT EXISTS idx_queries_chat_id ON queries(chat_id)').run()
+    }
+  } catch (error) {
+    console.error('Migration error:', error)
+  }
+}
+
+/**
+ * Migration: Add Idea Factory tables
+ */
+export function migrateAddIdeaFactoryTables(): void {
+  try {
+    // Agent configurations
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS agent_configs (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        config_json TEXT NOT NULL,
+        created_at INTEGER DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER DEFAULT (strftime('%s', 'now')),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+    `)
+
+    // Training sessions
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS training_sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        agent_config_id TEXT NOT NULL,
+        session_type TEXT NOT NULL,
+        duration INTEGER,
+        data_json TEXT,
+        created_at INTEGER DEFAULT (strftime('%s', 'now')),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (agent_config_id) REFERENCES agent_configs(id)
+      );
+    `)
+
+    // Agent knowledge base
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS agent_knowledge (
+        id TEXT PRIMARY KEY,
+        agent_config_id TEXT NOT NULL,
+        behavior_type TEXT NOT NULL,
+        data_json TEXT NOT NULL,
+        confidence REAL DEFAULT 0.5,
+        created_at INTEGER DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER DEFAULT (strftime('%s', 'now')),
+        FOREIGN KEY (agent_config_id) REFERENCES agent_configs(id)
+      );
+    `)
+  } catch (error) {
+    console.error('Idea Factory migration error:', error)
+  }
+}
+
+// Migrations will be called at runtime when database is accessed

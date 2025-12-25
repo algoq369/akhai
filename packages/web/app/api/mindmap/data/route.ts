@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Migrate NULL user_id topics to current user (one-time migration)
-    db.prepare(`
+    const migrationResult = db.prepare(`
       UPDATE topics 
       SET user_id = ?, updated_at = ?
       WHERE user_id IS NULL
@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         t.color,
         t.pinned,
         t.archived,
+        t.ai_instructions,
         t.created_at,
         COUNT(DISTINCT qt.query_id) as query_count
       FROM topics t
@@ -53,6 +54,7 @@ export async function GET(request: NextRequest) {
       color: string | null
       pinned: number
       archived: number
+      ai_instructions: string | null
       created_at: number
       query_count: number
     }>
@@ -73,17 +75,17 @@ export async function GET(request: NextRequest) {
       strength: number
     }>
 
-    return NextResponse.json({
+    const responseData = {
       nodes: topics.map(t => ({
         id: t.id,
-        label: t.name,
+        name: t.name,
         description: t.description,
         category: t.category || 'other',
-        color: t.color,
+        color: t.color || '#94a3b8',
         pinned: t.pinned === 1,
         archived: t.archived === 1,
         queryCount: t.query_count,
-        createdAt: t.created_at,
+        ai_instructions: t.ai_instructions,
       })),
       links: relationships.map(r => ({
         source: r.topic_from,
@@ -91,7 +93,8 @@ export async function GET(request: NextRequest) {
         type: r.relationship_type,
         strength: r.strength,
       })),
-    })
+    }
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error('Mind map data error:', error)
     return NextResponse.json(

@@ -13,9 +13,6 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
   const queryId = Math.random().toString(36).slice(2, 10)
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:10',message:'POST endpoint called',data:{queryId,startTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
 
   try {
     // Get user from session (optional - allows anonymous usage)
@@ -23,11 +20,8 @@ export async function POST(request: NextRequest) {
     const user = token ? getUserFromSession(token) : null
     const userId = user?.id || null
 
-    const { query, methodology = 'auto', conversationHistory = [] } = await request.json()
+    const { query, methodology = 'auto', conversationHistory = [], legendMode = false, chatId = null } = await request.json()
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:16',message:'Request parsed',data:{query,methodology,hasHistory:conversationHistory.length>0,userId:userId||'anonymous'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
 
     if (!query || typeof query !== 'string') {
       logger.query.apiError('VALIDATION', 'Query is required')
@@ -40,20 +34,14 @@ export async function POST(request: NextRequest) {
     // Methodology selection with logging
     const selectedMethod = selectMethodology(query, methodology)
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:26',message:'Methodology selected',data:{selected:selectedMethod.id,reason:selectedMethod.reason},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
 
-    // Save query to database (with user_id)
+    // Generate session_id if not provided (for conversation grouping)
+    const sessionId = Math.random().toString(36).substring(2, 15)
+    
+    // Save query to database (with user_id, session_id, chat_id)
     try {
-      createQuery(queryId, query, selectedMethod.id, userId)
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'Query saved to DB',data:{queryId,userId:userId||'anonymous',success:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
+      createQuery(queryId, query, selectedMethod.id, userId, sessionId, chatId || null)
     } catch (dbError) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'DB save failed',data:{queryId,error:String(dbError)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
     }
 
     // Check for crypto price queries (real-time data)
@@ -71,9 +59,6 @@ export async function POST(request: NextRequest) {
 
     // Check API key
     const apiKey = process.env.ANTHROPIC_API_KEY
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:45',message:'API key check',data:{hasKey:!!apiKey,keyLength:apiKey?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     if (!apiKey) {
       logger.query.apiError('ANTHROPIC', 'API key not configured')
       return NextResponse.json(
@@ -103,13 +88,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Select model based on legend mode
+    const model = legendMode ? 'claude-3-opus-20240229' : 'claude-opus-4-20250514'
+    const maxTokens = legendMode ? 4096 : 2048
+    
     // Call Anthropic API with retry logic
-    logger.query.apiCall('ANTHROPIC', 'claude-opus-4-20250514')
+    logger.query.apiCall('ANTHROPIC', model)
 
     const apiCallStart = Date.now()
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:69',message:'Calling Anthropic API',data:{methodology:selectedMethod.id,model:'claude-opus-4-20250514'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
 
     // Retry logic for transient network failures
     let response: Response | null = null
@@ -118,9 +104,6 @@ export async function POST(request: NextRequest) {
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:retry',message:'API attempt',data:{attempt,maxRetries},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'RETRY'})}).catch(()=>{});
-        // #endregion
         
         response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -130,8 +113,8 @@ export async function POST(request: NextRequest) {
             'anthropic-version': '2023-06-01',
           },
           body: JSON.stringify({
-            model: 'claude-opus-4-20250514',
-            max_tokens: 4096,
+            model: model,
+            max_tokens: maxTokens,
             system: systemPrompt,
             messages,
           }),
@@ -141,9 +124,6 @@ export async function POST(request: NextRequest) {
         break
       } catch (fetchError) {
         lastError = fetchError instanceof Error ? fetchError : new Error(String(fetchError))
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:retry-error',message:'API fetch failed',data:{attempt,error:lastError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'RETRY'})}).catch(()=>{});
-        // #endregion
         
         if (attempt < maxRetries) {
           // Wait before retrying (exponential backoff: 500ms, 1000ms)
@@ -161,9 +141,6 @@ export async function POST(request: NextRequest) {
     }
 
     const apiCallLatency = Date.now() - apiCallStart
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:84',message:'Anthropic API response',data:{ok:response.ok,status:response.status,latency:apiCallLatency},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -198,19 +175,23 @@ export async function POST(request: NextRequest) {
     }, userId)
 
     // Track API usage
-    trackUsage('anthropic', 'claude-opus-4-20250514', inputTokens, outputTokens, cost)
+    trackUsage('anthropic', model, inputTokens, outputTokens, cost)
 
     logger.query.complete(queryId, latency, cost)
 
     // Extract topics asynchronously (don't block response)
     if (userId) { // Only extract topics for logged-in users
-      fetch('/api/side-canal', {
+      // Construct absolute URL for server-side fetch
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                     (request.headers.get('host') ? `http://${request.headers.get('host')}` : 'http://localhost:3004')
+      fetch(`${baseUrl}/api/side-canal/extract`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query,
           response: content,
           queryId,
+          legendMode,
         }),
       }).catch(err => console.error('Topic extraction error:', err))
     }
@@ -231,9 +212,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:135',message:'Error caught',data:{error:errorMessage,stack:error instanceof Error?error.stack:'no stack'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
-    // #endregion
     logger.system.error(errorMessage)
     
     // Update query status to error
@@ -558,9 +536,6 @@ async function runGroundingGuard(response: string, query: string) {
   if (queryHasExtremeClaims) hypeCount += 3 // Heavy weight for extreme claims in query
   if (responseHasExtremeClaims) hypeCount += 2
   
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:443',message:'Hype detection',data:{query,responseHypeCount,queryHasExtremeClaims,responseHasExtremeClaims,hypeCount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'L'})}).catch(()=>{});
-  // #endregion
   
   const hypeTriggered = hypeCount >= 2
   logger.guard.hypeCheck(hypeCount, hypeTriggered)
