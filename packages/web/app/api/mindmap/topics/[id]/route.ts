@@ -8,7 +8,7 @@ import { getUserFromSession } from '@/lib/auth'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get user from session
@@ -23,7 +23,7 @@ export async function PATCH(
       )
     }
 
-    const topicId = params.id
+    const { id: topicId } = await params
     const updates = await request.json()
 
     // Verify topic belongs to user

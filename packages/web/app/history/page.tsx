@@ -53,7 +53,7 @@ export default function HistoryPage() {
             {queries.map((q) => (
               <button
                 key={q.id}
-                onClick={() => router.push(`/query/${q.id}`)}
+                onClick={() => router.push(`/?continue=${q.id}`)}
                 className="w-full text-left p-4 bg-relic-ghost/30 border border-relic-mist hover:border-relic-silver transition-colors"
               >
                 <div className="flex items-start justify-between mb-2">

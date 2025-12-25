@@ -10,6 +10,9 @@ import UserProfile from '@/components/UserProfile'
 import SuggestionToast from '@/components/SuggestionToast'
 import TopicsPanel from '@/components/TopicsPanel'
 import MindMap from '@/components/MindMap'
+import NavigationMenu from '@/components/NavigationMenu'
+import ChatDashboard from '@/components/ChatDashboard'
+import SideChat from '@/components/SideChat'
 
 const METHODOLOGIES = [
   { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', savings: 'varies' },
@@ -29,6 +32,7 @@ export default function HomePage() {
   const [isExpanded, setIsExpanded] = useState(false)
   const [hoveredMethod, setHoveredMethod] = useState<string | null>(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
+  const [isBlinking, setIsBlinking] = useState<string | null>(null)
   const [loadingSuggestions, setLoadingSuggestions] = useState<string | null>(null)
   const [guardSuggestions, setGuardSuggestions] = useState<Record<string, { refine?: string[], pivot?: string[] }>>({})
   const [showMethodologyExplorer, setShowMethodologyExplorer] = useState(false)
@@ -37,6 +41,10 @@ export default function HomePage() {
   const [topicSuggestions, setTopicSuggestions] = useState<Array<{ topicId: string; topicName: string; reason: string; relevance: number }>>([])
   const [showTopicsPanel, setShowTopicsPanel] = useState(false)
   const [showMindMap, setShowMindMap] = useState(false)
+  const [legendMode, setLegendMode] = useState(false)
+  const [sideChats, setSideChats] = useState<Array<{ id: string; methodology: string; messages: Message[] }>>([])
+  const [activeChatId, setActiveChatId] = useState<string | null>(null)
+  const [continuingConversation, setContinuingConversation] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -45,7 +53,27 @@ export default function HomePage() {
 
   // Check user session on mount
   useEffect(() => {
-    checkSession()
+    try {
+      checkSession()
+      
+      // Check for conversation continuation from URL
+      const params = new URLSearchParams(window.location.search)
+      const continueId = params.get('continue')
+      if (continueId) {
+        loadConversation(continueId)
+      }
+      
+      // Check for legend mode in localStorage
+      try {
+        const savedLegendMode = localStorage.getItem('legendMode') === 'true'
+        if (savedLegendMode) {
+          setLegendMode(true)
+        }
+      } catch (e) {
+      }
+    } catch (error) {
+      console.error('Mount error:', error)
+    }
   }, [])
 
   const checkSession = async () => {
@@ -62,6 +90,70 @@ export default function HomePage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Legend mode detection in query input
+  const handleQueryChange = (value: string) => {
+    setQuery(value)
+    // Check for legend mode trigger
+    if (value.toLowerCase().includes('algoq369')) {
+      setLegendMode(true)
+      localStorage.setItem('legendMode', 'true')
+      // Remove trigger from query
+      setQuery(value.replace(/algoq369/gi, '').trim())
+    }
+  }
+
+  // Load conversation history
+  const loadConversation = async (queryId: string) => {
+    try {
+      const res = await fetch(`/api/history/${queryId}/conversation`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.messages && data.messages.length > 0) {
+          const loadedMessages = data.messages.map((msg: any) => ({
+            id: generateId(),
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp * 1000),
+            methodology: msg.methodology,
+          }))
+          setMessages(loadedMessages)
+          setContinuingConversation(queryId)
+          setIsExpanded(true)
+          // Clear URL param
+          window.history.replaceState({}, '', '/')
+          setTimeout(() => setContinuingConversation(null), 3000)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error)
+    }
+  }
+
+  // Handle methodology switching
+  const handleMethodologySwitch = (newMethodology: string, option: 'same' | 'side' | 'new') => {
+    if (option === 'same') {
+      setMethodology(newMethodology)
+    } else if (option === 'side') {
+      const sideChatId = generateId()
+      setSideChats(prev => [...prev, {
+        id: sideChatId,
+        methodology: newMethodology,
+        messages: []
+      }])
+      setActiveChatId(sideChatId)
+    } else if (option === 'new') {
+      setMessages([])
+      setMethodology(newMethodology)
+      setQuery('')
+    }
+  }
+
+  // Handle guard toggle
+  const handleGuardToggle = (feature: 'suggestions' | 'bias' | 'hype', enabled: boolean) => {
+    // Store in localStorage for persistence
+    localStorage.setItem(`guard_${feature}`, enabled ? 'true' : 'false')
+  }
 
   // Check for topic suggestions after messages update
   useEffect(() => {
@@ -85,14 +177,8 @@ export default function HomePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:41',message:'handleSubmit called',data:{query:query.trim(),methodology,isLoading,queryLength:query.trim().length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-    // #endregion
     
     if (!query.trim() || isLoading) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:43',message:'handleSubmit early return',data:{reason:!query.trim()?'empty query':'isLoading'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
       return
     }
 
@@ -111,11 +197,9 @@ export default function HomePage() {
 
     const startTime = Date.now()
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:60',message:'Calling API',data:{query:userMessage.content,methodology},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
-    // #endregion
 
     try {
+      const currentChatId = activeChatId || 'main'
       const res = await fetch('/api/simple-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,21 +209,17 @@ export default function HomePage() {
           conversationHistory: messages.map(m => ({
             role: m.role,
             content: m.content
-          }))
+          })),
+          legendMode,
+          chatId: currentChatId
         })
       })
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:74',message:'API response received',data:{ok:res.ok,status:res.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
-      // #endregion
 
       if (!res.ok) throw new Error('Failed to get response')
 
       const data = await res.json()
       
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:76',message:'Response parsed',data:{hasQueryId:!!data.queryId,hasResponse:!!data.response,methodologyUsed:data.methodologyUsed},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
-      // #endregion
 
       // Poll for the result if we got a queryId
       if (data.queryId) {
@@ -177,9 +257,6 @@ export default function HomePage() {
         })
       }
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:113',message:'Error caught',data:{error:error instanceof Error?error.message:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'J'})}).catch(()=>{});
-      // #endregion
       console.error('Query error:', error)
       const errorMessage: Message = {
         id: generateId(),
@@ -348,7 +425,9 @@ export default function HomePage() {
           body: JSON.stringify({
             query: refinedQuery,
             methodology,
-            conversationHistory
+            conversationHistory,
+            legendMode,
+            chatId: activeChatId || 'main'
           })
         })
 
@@ -398,6 +477,7 @@ export default function HomePage() {
             originalQuery,
             guardResult: message?.guardResult,
             action: 'refine',
+            legendMode,
             conversationContext: recentMessages,
             aiResponse: message?.content
           })
@@ -460,7 +540,9 @@ export default function HomePage() {
           body: JSON.stringify({
             query: pivotQuery,
             methodology,
-            conversationHistory
+            conversationHistory,
+            legendMode,
+            chatId: activeChatId || 'main'
           })
         })
 
@@ -510,6 +592,7 @@ export default function HomePage() {
             originalQuery,
             guardResult: message?.guardResult,
             action: 'pivot',
+            legendMode,
             conversationContext: recentMessages,
             aiResponse: message?.content
           })
@@ -530,6 +613,12 @@ export default function HomePage() {
         setLoadingSuggestions(null)
       }
     }
+  }
+
+  const handleMethodologyClick = (id: string) => {
+    setMethodology(id)
+    setIsBlinking(id)
+    setTimeout(() => setIsBlinking(null), 300)
   }
 
   const handleMethodHover = (m: typeof METHODOLOGIES[0], e: React.MouseEvent<HTMLButtonElement>) => {
@@ -566,8 +655,8 @@ export default function HomePage() {
               <div className="flex items-center gap-3">
                 <span className="text-[10px] text-relic-silver">{methodology}</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse-slow" />
-                  <span className="text-[9px] uppercase tracking-wider text-green-600/80 font-medium">guard active</span>
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-blink-green" />
+                  <span className="text-[9px] uppercase tracking-wider text-relic-silver font-medium">guard active</span>
                 </div>
               </div>
             </div>
@@ -594,42 +683,9 @@ export default function HomePage() {
           data-diamond-logo
           className={`text-center transition-all duration-500 ease-out ${isExpanded ? 'py-3 mb-2' : 'mb-16'}`}
           onMouseEnter={() => {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:425',message:'Mouse enter diamond',data:{isExpanded},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
-            // #endregion
             if (!isExpanded) setShowMethodologyExplorer(true)
           }}
           onMouseLeave={(e) => {
-            // #region agent log
-            try {
-              const relatedTarget = e.relatedTarget as Element | null
-              const isElement = relatedTarget instanceof Element
-              let isMovingToCircle = false
-              if (isElement) {
-                try {
-                  isMovingToCircle = !!relatedTarget.closest('[data-methodology-circle]')
-                } catch (err) {
-                  // Ignore errors from closest()
-                }
-              }
-              // Only log safe, serializable data (not DOM elements)
-              const logData = {
-                location: 'app/page.tsx:426',
-                message: 'Mouse leave diamond',
-                data: {
-                  isMovingToCircle,
-                  relatedTargetTag: isElement ? relatedTarget.tagName : null,
-                },
-                timestamp: Date.now(),
-                sessionId: 'debug-session',
-                runId: 'run1',
-                hypothesisId: 'N'
-              }
-              fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
-            } catch (err) {
-              // Silently ignore instrumentation errors
-            }
-            // #endregion
             // Only hide if not moving to circle
             try {
               const relatedTarget = e.relatedTarget as Element | null
@@ -818,7 +874,7 @@ export default function HomePage() {
                 name="query"
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => handleQueryChange(e.target.value)}
                 placeholder={isExpanded ? "continue conversation..." : ""}
                 className={`
                   relic-input text-base transition-all duration-300
@@ -834,8 +890,8 @@ export default function HomePage() {
               {/* Guard indicator */}
               {!isExpanded && (
                 <div className="absolute -bottom-6 right-2 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)] animate-pulse-slow" />
-                  <span className="text-[9px] uppercase tracking-widest text-green-600/70 font-medium">guard active</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-blink-green" />
+                  <span className="text-[9px] uppercase tracking-widest text-relic-silver font-medium">guard active</span>
                 </div>
               )}
             </div>
@@ -843,24 +899,24 @@ export default function HomePage() {
             {/* Methodology Selection - Only when not expanded */}
             {!isExpanded && (
               <div className="mt-20 relative" ref={containerRef}>
-                <p className="text-[10px] uppercase tracking-widest text-relic-silver text-center mb-5">
-                  methodology
-                </p>
-
-                <div className="flex flex-wrap justify-center gap-1.5">
+                <div className="flex items-center gap-3 border-b border-relic-mist pb-4">
                   {METHODOLOGIES.map((m) => (
                     <button
                       key={m.id}
                       type="button"
-                      onClick={() => setMethodology(m.id)}
+                      onClick={() => {
+                        handleMethodologyClick(m.id)
+                      }}
                       onMouseEnter={(e) => handleMethodHover(m, e)}
                       onMouseLeave={() => setHoveredMethod(null)}
                       className={`
-                        px-3 py-1.5 text-xs font-mono transition-all duration-200
+                        px-4 py-2 border border-relic-mist rounded-none
+                        transition-all duration-300 font-mono text-xs
                         ${methodology === m.id
-                          ? 'border-2 border-relic-slate text-relic-slate bg-transparent'
-                          : 'text-relic-silver hover:text-relic-slate hover:bg-relic-ghost/50 border-2 border-transparent'
+                          ? 'bg-relic-ghost border-relic-slate text-relic-slate'
+                          : 'bg-relic-white hover:bg-relic-ghost text-relic-silver hover:text-relic-slate'
                         }
+                        ${isBlinking === m.id ? 'animate-pulse bg-relic-ghost' : ''}
                       `}
                     >
                       <span className="mr-1.5 opacity-70">{m.symbol}</span>
@@ -929,25 +985,142 @@ export default function HomePage() {
         </div>
       </main>
 
+      {/* Chat Dashboard */}
+      {user && (
+        <ChatDashboard
+          userId={user?.id || null}
+          currentMethodology={methodology}
+          onMethodologyChange={handleMethodologySwitch}
+          onGuardToggle={handleGuardToggle}
+        />
+      )}
+
+      {/* Continuing Conversation Indicator */}
+      {continuingConversation && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-relic-ghost border border-relic-mist px-4 py-2 rounded-md animate-chat-continue">
+          <span className="text-xs text-relic-slate font-mono">Continuing conversation...</span>
+        </div>
+      )}
+
+      {/* Legend Mode Indicator */}
+      {legendMode && (
+        <div className="fixed top-4 right-80 z-50 bg-relic-ghost border border-relic-slate px-3 py-1.5 rounded-md">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-relic-slate">LEGEND MODE</span>
+            <button
+              onClick={() => {
+                setLegendMode(false)
+                localStorage.setItem('legendMode', 'false')
+              }}
+              className="text-xs text-relic-silver hover:text-relic-slate"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Side Chats */}
+      {sideChats.map((sideChat) => (
+        <SideChat
+          key={sideChat.id}
+          id={sideChat.id}
+          methodology={sideChat.methodology}
+          messages={sideChat.messages}
+          onClose={() => {
+            setSideChats(prev => prev.filter(c => c.id !== sideChat.id))
+            if (activeChatId === sideChat.id) {
+              setActiveChatId(null)
+            }
+          }}
+          onMinimize={() => {
+            // Toggle minimized state
+          }}
+          onSendMessage={async (query) => {
+            // Handle message sending for side chat
+            const userMessage: Message = {
+              id: generateId(),
+              role: 'user',
+              content: query,
+              timestamp: new Date()
+            }
+            setSideChats(prev => prev.map(c => 
+              c.id === sideChat.id 
+                ? { ...c, messages: [...c.messages, userMessage] }
+                : c
+            ))
+            setIsLoading(true)
+            
+            try {
+              const res = await fetch('/api/simple-query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  query,
+                  methodology: sideChat.methodology,
+                  conversationHistory: sideChat.messages.map(m => ({
+                    role: m.role,
+                    content: m.content
+                  })),
+                  legendMode,
+                  chatId: sideChat.id
+                })
+              })
+              
+              const data = await res.json()
+              const assistantMessage: Message = {
+                id: generateId(),
+                role: 'assistant',
+                content: data.response || 'No response',
+                methodology: data.methodology || sideChat.methodology,
+                metrics: data.metrics,
+                timestamp: new Date(),
+                guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
+                guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
+                isHidden: data.guardResult?.passed === false,
+              }
+              setSideChats(prev => prev.map(c => 
+                c.id === sideChat.id 
+                  ? { ...c, messages: [...c.messages, assistantMessage] }
+                  : c
+              ))
+            } catch (error) {
+              console.error('Side chat error:', error)
+            } finally {
+              setIsLoading(false)
+            }
+          }}
+          isLoading={isLoading && activeChatId === sideChat.id}
+          guardSuggestions={guardSuggestions}
+          onRefine={(suggestion) => {
+            // Handle refine for side chat
+          }}
+          onPivot={(suggestion) => {
+            // Handle pivot for side chat
+          }}
+          onContinue={() => {
+            // Handle continue for side chat
+          }}
+        />
+      ))}
+
       {/* Footer - Only when not expanded */}
       {!isExpanded && (
         <footer className="border-t border-relic-mist/50 bg-relic-white/60 backdrop-blur-sm">
           <div className="max-w-4xl mx-auto px-6 py-3">
             <div className="flex items-center justify-between text-[10px] text-relic-silver">
-              <span>7 methodologies · auto-routing · multi-ai consensus · grounding guard active</span>
-              <div className="flex gap-5">
+              <span className="text-left">autonomous methodology selection · grounding guard for alert or enhancement · intuitive mindmap</span>
+              <div className="flex gap-5 ml-auto">
                 {user ? (
-                  <>
-                    <a href="/dashboard" className="hover:text-relic-slate transition-colors">dashboard</a>
-                    <button onClick={() => setShowTopicsPanel(true)} className="hover:text-relic-slate transition-colors">topics</button>
-                    <a href="/history" className="hover:text-relic-slate transition-colors">history</a>
-                    <button onClick={() => setShowMindMap(true)} className="hover:text-relic-slate transition-colors">mindmap</button>
-                    <a href="/settings" className="hover:text-relic-slate transition-colors">settings</a>
-                  </>
+                  <NavigationMenu
+                    user={user}
+                    onTopicsClick={() => setShowTopicsPanel(true)}
+                    onMindMapClick={() => setShowMindMap(true)}
+                  />
                 ) : (
                   <button
                     onClick={() => setShowAuthModal(true)}
-                    className="hover:text-relic-slate transition-colors"
+                    className="text-[10px] font-mono text-relic-silver hover:text-relic-slate transition-colors"
                   >
                     create profile
                   </button>
@@ -974,6 +1147,7 @@ export default function HomePage() {
       <MindMap
         isOpen={showMindMap}
         onClose={() => setShowMindMap(false)}
+        userId={user?.id || null}
       />
 
       {/* Auth Modal */}

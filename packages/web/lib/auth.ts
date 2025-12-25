@@ -156,7 +156,8 @@ export function authenticateWallet(address: string, signature: string, message: 
  * Get user from session token
  */
 export function getUserFromSession(token: string): User | null {
-  return validateSession(token);
+  const user = validateSession(token);
+  return user;
 }
 
 /**

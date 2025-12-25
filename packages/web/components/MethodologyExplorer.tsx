@@ -285,14 +285,8 @@ const MethodologyExplorer = memo(function MethodologyExplorer({ isVisible, onClo
       }`}
       onAnimationEnd={handleAnimationEnd}
       onMouseEnter={() => {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/MethodologyExplorer.tsx:280',message:'Mouse enter explorer',data:{isVisible},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'K'})}).catch(()=>{});
-        // #endregion
       }}
       onMouseLeave={() => {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/MethodologyExplorer.tsx:285',message:'Mouse leave explorer backdrop',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
-        // #endregion
         // Close when mouse leaves the backdrop (outside circle)
         onClose()
       }}
@@ -305,9 +299,6 @@ const MethodologyExplorer = memo(function MethodologyExplorer({ isVisible, onClo
         }`}
         onClick={onClose}
         onMouseEnter={() => {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/MethodologyExplorer.tsx:300',message:'Mouse enter backdrop - closing',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'M'})}).catch(()=>{});
-          // #endregion
           // Close when mouse enters backdrop (outside circle)
           onClose()
         }}
@@ -320,48 +311,14 @@ const MethodologyExplorer = memo(function MethodologyExplorer({ isVisible, onClo
         }`}
       >
         {!selectedMethod ? (
-          /* Circular Navigation */
+          /* Horizontal Navigation Bar */
           <div 
             data-methodology-circle
-            className="relative w-[450px] h-[450px]"
+            className="bg-relic-white/95 backdrop-blur-md border border-relic-mist shadow-2xl px-6 py-4"
             onMouseEnter={() => {
-              // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/MethodologyExplorer.tsx:324',message:'Mouse enter circle container',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'N'})}).catch(()=>{});
-              // #endregion
             }}
             onMouseLeave={(e) => {
-              // #region agent log
-              try {
-                const relatedTarget = e.relatedTarget as Element | null
-                const isElement = relatedTarget instanceof Element
-                let isMovingToDiamond = false
-                if (isElement) {
-                  try {
-                    isMovingToDiamond = !!relatedTarget.closest('[data-diamond-logo]')
-                  } catch (err) {
-                    // Ignore errors from closest()
-                  }
-                }
-                // Only log safe, serializable data (not DOM elements)
-                const logData = {
-                  location: 'components/MethodologyExplorer.tsx:327',
-                  message: 'Mouse leave circle container',
-                  data: {
-                    relatedTargetTag: isElement ? relatedTarget.tagName : null,
-                    isElement,
-                    isMovingToDiamond,
-                  },
-                  timestamp: Date.now(),
-                  sessionId: 'debug-session',
-                  runId: 'run1',
-                  hypothesisId: 'N'
-                }
-                fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(logData)}).catch(()=>{});
-              } catch (err) {
-                // Silently ignore instrumentation errors
-              }
-              // #endregion
-              // Close when mouse leaves circle container (unless moving back to diamond)
+              // Close when mouse leaves container (unless moving back to diamond)
               try {
                 const relatedTarget = e.relatedTarget as Element | null
                 const isElement = relatedTarget instanceof Element
@@ -374,7 +331,6 @@ const MethodologyExplorer = memo(function MethodologyExplorer({ isVisible, onClo
                   }
                 }
                 if (!isMovingToDiamond) {
-                  // Small delay to prevent flickering when moving between diamond and circle
                   setTimeout(() => {
                     try {
                       if (!isElement || !relatedTarget?.closest('[data-methodology-circle]')) {
@@ -386,76 +342,52 @@ const MethodologyExplorer = memo(function MethodologyExplorer({ isVisible, onClo
                   }, 100)
                 }
               } catch (err) {
-                // If we can't determine, default to closing
                 onClose()
               }
             }}
           >
-            {/* Center Diamond */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="text-5xl text-relic-mist animate-pulse-slow">◊</div>
-              <p className="text-[10px] uppercase tracking-widest text-relic-silver text-center mt-3">
-                methodologies
-              </p>
+            {/* Title */}
+            <div className="text-center mb-4">
+              <div className="flex items-center justify-center gap-3">
+                <div className="text-2xl text-relic-mist">◊</div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-relic-silver">
+                  methodologies
+                </p>
+                <div className="text-2xl text-relic-mist">◊</div>
+              </div>
             </div>
 
-            {/* Circular Menu Items */}
-            {METHODOLOGY_DETAILS.map((method, index) => {
-              const angle = (index / METHODOLOGY_DETAILS.length) * 2 * Math.PI - Math.PI / 2
-              const radius = 160
-              const x = Math.cos(angle) * radius
-              const y = Math.sin(angle) * radius
-
-              return (
+            {/* Horizontal Menu Items */}
+            <div className="flex items-center gap-3">
+              {METHODOLOGY_DETAILS.map((method, index) => (
                 <button
                   key={method.id}
                   onClick={() => handleMethodClick(method.id)}
-                  className="absolute group"
+                  className="group flex-1"
                   style={{
-                    left: `calc(50% + ${x}px)`,
-                    top: `calc(50% + ${y}px)`,
-                    transform: 'translate(-50%, -50%)',
                     transition: `all 0.3s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.05}s`
                   }}
                 >
-                  {/* Outer ring */}
-                  <div className="absolute inset-0 -m-3 rounded-full border border-relic-mist/20 group-hover:border-relic-slate/50 group-hover:scale-110 transition-all duration-300" />
-
-                  {/* Method card */}
-                  <div className="relative w-24 h-24 bg-relic-white/90 backdrop-blur-md border border-relic-mist hover:border-relic-slate/60 hover:bg-relic-ghost transition-all duration-300 flex flex-col items-center justify-center gap-1.5 group-hover:shadow-lg">
-                    <div className="text-2xl text-relic-slate group-hover:text-relic-slate transition-colors">
+                  {/* Method card - rectangular */}
+                  <div className="relative bg-relic-white border border-relic-mist hover:border-relic-slate/60 hover:bg-relic-ghost transition-all duration-300 flex flex-col items-center justify-center py-3 px-4 group-hover:shadow-md">
+                    <div className="text-xl text-relic-slate group-hover:scale-110 transition-transform">
                       {method.symbol}
                     </div>
-                    <div className="text-xs font-mono text-relic-slate group-hover:font-semibold transition-all">
+                    <div className="text-[10px] font-mono text-relic-slate mt-1.5 group-hover:font-semibold transition-all">
                       {method.name}
                     </div>
-                    <div className="text-[8px] text-relic-silver text-center px-2 leading-tight">
+                    <div className="text-[8px] text-relic-silver text-center mt-1 leading-tight opacity-0 group-hover:opacity-100 transition-opacity">
                       {method.fullName.split(' ').slice(0, 2).join(' ')}
                     </div>
                   </div>
-
-                  {/* Connecting line */}
-                  <svg
-                    className="absolute top-1/2 left-1/2 pointer-events-none"
-                    style={{
-                      width: Math.abs(x) * 2,
-                      height: Math.abs(y) * 2,
-                      transform: `translate(${x > 0 ? '-100%' : '0'}, ${y > 0 ? '-100%' : '0'})`
-                    }}
-                  >
-                    <line
-                      x1={x > 0 ? '100%' : '0'}
-                      y1={y > 0 ? '100%' : '0'}
-                      x2={x > 0 ? '50%' : '50%'}
-                      y2={y > 0 ? '50%' : '50%'}
-                      stroke="rgba(163, 163, 163, 0.15)"
-                      strokeWidth="1"
-                      className="group-hover:stroke-relic-slate/30 transition-all"
-                    />
-                  </svg>
                 </button>
-              )
-            })}
+              ))}
+            </div>
+
+            {/* Hint */}
+            <p className="text-center text-[9px] text-relic-silver mt-3">
+              click to learn more about each methodology
+            </p>
           </div>
         ) : (
           /* Detail View */
