@@ -145,3 +145,6 @@ out/
 
 # OS
 .DS_Store
+
+# Exclude history files with potential sensitive data
+.specstory/history/
