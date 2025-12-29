@@ -71,14 +71,60 @@ AkhAI is positioned to enter a validated $20B+ market (Perplexity valuation) wit
 
 ### Pricing Tiers (Recommended)
 
+**All tiers use Claude Opus 4.5 for maximum quality.**
+
 | Tier | Price | Queries | Target Margin | Features |
 |------|-------|---------|---------------|----------|
-| **Free** | $0 | 10/day | Break-even | Basic, Haiku only |
-| **Pro** | $20/mo | Unlimited* | 70% | All features, mixed models |
-| **Team** | $40/user/mo | Unlimited* | 75% | Collaboration, admin |
-| **Enterprise** | Custom | Unlimited | 80% | SSO, SLA, dedicated |
+| **Free** | $0 | 10/day | Acquisition | Opus 4.5, all 7 methodologies |
+| **Pro** | $20/mo | Unlimited* | 70% | All features, priority support |
+| **Legend** | $200/mo | Unlimited | 75% | Opus priority, R&D tier, early access |
+| **Team** | $40/user/mo | Unlimited* | 75% | Collaboration, admin, shared workspace |
+| **Enterprise** | Custom | Unlimited | 80% | SSO, SLA, dedicated support |
 
 *Fair use limits apply
+
+### Token Credits (Pay-As-You-Go) - Anthropic-Style
+
+**For users who prefer usage-based pricing over subscriptions:**
+
+| Credit Pack | Price | Tokens | Approx. Queries | Best For |
+|-------------|-------|--------|-----------------|----------|
+| **Starter** | $5 | 100K | ~50-100 | Trying out |
+| **Builder** | $20 | 500K | ~250-500 | Occasional users |
+| **Scale** | $100 | 3M | ~1,500-3,000 | Heavy usage |
+| **Bulk** | $500 | 20M | ~10,000-20,000 | Enterprise trial |
+
+**Token Usage Per Query Type:**
+- Light (Q&A): ~1.5K tokens → $0.015/query
+- Medium (Research): ~4.5K tokens → $0.045/query  
+- Deep (Analysis): ~20K tokens → $0.10/query
+- Legend (Opus): ~40K tokens → $0.20/query
+
+**Benefits:**
+- ✅ No monthly commitment
+- ✅ Credits never expire
+- ✅ Top up anytime
+- ✅ Crypto payments accepted
+- ✅ Perfect for sporadic usage
+
+### x402 Micropayments (Phase 4 - Post-Launch)
+
+**Real-time pay-per-query using HTTP 402 protocol:**
+
+| Feature | Details |
+|---------|---------|
+| **How it works** | Wallet auto-pays on each query |
+| **Cost per query** | $0.02-0.15 (based on complexity) |
+| **Supported wallets** | MetaMask, Coinbase Wallet, WalletConnect |
+| **Currencies** | ETH, USDC, USDT, BTC (Lightning) |
+| **Best for** | API users, crypto-native users, no-account access |
+
+**Benefits:**
+- ✅ No account required (wallet = identity)
+- ✅ True pay-as-you-go (no prepaid)
+- ✅ Machine-to-machine payments
+- ✅ Sovereign & privacy-first
+- ✅ Perfect for API monetization
 
 ---
 
@@ -330,12 +376,15 @@ AkhAI is positioned to enter a validated $20B+ market (Perplexity valuation) wit
 
 | Task | Status | Target Date |
 |------|--------|-------------|
-| Fix Internal Server Error | 🔴 Blocking | Dec 26 |
-| Deploy to Production | ⬜ Pending | Dec 27 |
-| Stripe Integration | ⬜ Pending | Dec 28-29 |
-| NOWPayments (Crypto) | ⬜ Pending | Dec 30 |
-| Twitter/X Account Setup | ⬜ Pending | Dec 26 |
-| Telegram Community | ⬜ Pending | Dec 27 |
+| Fix Internal Server Error | ✅ Done | Dec 26 |
+| PostHog Analytics | ✅ Done | Dec 28 |
+| Stripe Integration | ✅ Done | Dec 28 |
+| Stripe Billing (Subs + Credits) | ✅ Done | Dec 28 |
+| NOWPayments (Crypto) | 🔄 NEXT | Dec 29 |
+| x402 Micropayments | ⬜ Phase 4 | Post-launch |
+| Deploy to Production | ⬜ Pending | Dec 30 |
+| Twitter/X Account Setup | ⬜ Pending | Dec 30 |
+| Telegram Community | ⬜ Pending | Dec 31 |
 | Product Hunt Prep Start | ⬜ Pending | Jan 1 |
 | Product Hunt Launch | ⬜ Pending | Feb 15-20 |
 
@@ -356,6 +405,50 @@ AkhAI is positioned to enter a validated $20B+ market (Perplexity valuation) wit
 | FlokiNET Deployment | Q2 2025 |
 | Zero External Dependencies | Q3 2025 |
 | Pre-Seed Raise | $500K-$1.5M |
+
+### Phase 6: Tournament Incubator (Q3-Q4 2025)
+
+**See full details:** `/AKHAI_PHASE5_MARKETING_DAO.md`
+
+#### Level System (Not Belts)
+| Level | Points | Title | Icon |
+|-------|--------|-------|------|
+| 1 | 0-500 | Creator | 🌱 |
+| 2 | 501-1500 | Initiateur | 🔥 |
+| 3 | 1501-3000 | Alchimiste | ⚗️ |
+| 4 | 3001-5000 | Architecte | 🏛️ |
+| 5 | 5001+ | Spark | ⚡ |
+
+#### Tournament Calendar
+| Event | Frequency | Prize Pool |
+|-------|-----------|------------|
+| Local Qualifiers | Weekly | Sponsor-funded |
+| Monthly Championship | Monthly | $500-1,000 |
+| Grand Slam Continental | Quarterly | $2,000-5,000 |
+| Grand Slam Mondial | Bi-Annual | $10,000+ |
+| Olympics | Annual | $25,000+ |
+
+#### Sponsorship Model
+- Monthly sponsors provide prize pools
+- Physical venues in collaboration with sponsors
+- Title sponsor naming rights
+- DAO integration for high-level winners
+
+#### DAO Integration
+- Spark level (5001+ pts) = DAO eligibility
+- Grand Slam Mondial winners = DAO seat offer
+- Olympics champion = Lifetime Legend + DAO Council
+
+#### Implementation Timeline
+| Sub-Phase | Target | Focus |
+|-----------|--------|-------|
+| 6.1 Platform Dev | Month 1-2 post-launch | Level system, challenges |
+| 6.2 First Local | Month 3 | Paris pilot event |
+| 6.3 Scale Cities | Month 4-6 | 4+ cities active |
+| 6.4 Continental | Month 6 | EU Grand Slam |
+| 6.5 Full Rollout | Month 9 | EU, NA, APAC, LATAM |
+| 6.6 Mondial | Month 12 | First world championship |
+| 6.7 Olympics | Year 2 | Annual mega-event |
 
 ---
 
@@ -414,21 +507,53 @@ AkhAI is positioned to enter a validated $20B+ market (Perplexity valuation) wit
 
 ---
 
-## 🔧 IMMEDIATE NEXT STEPS (Next 48 Hours)
+## 🔧 IMMEDIATE NEXT STEPS (Updated Dec 28)
 
-### Priority 1: Fix Blocker (Today)
+### ✅ COMPLETED TODAY
+- [x] PostHog Analytics - Tracking live
+- [x] Stripe Integration - Checkout working
+- [x] Stripe Billing - Subscriptions + Token Credits
+
+### 🔄 NEXT: NOWPayments Crypto Integration
+
 ```bash
-# Restart server and capture error
-cd /Users/sheirraza/akhai/packages/web
-pnpm dev
+claude "Implement NOWPayments crypto payments for AkhAI Next.js 14.
 
-# Test API
-curl -X POST http://localhost:3004/api/simple-query \
-  -H "Content-Type: application/json" \
-  -d '{"query": "Hello", "methodology": "direct"}'
+Create:
+1. packages/web/lib/nowpayments.ts - NOWPayments API client
+2. packages/web/app/api/crypto-checkout/route.ts - Create crypto invoice
+3. packages/web/app/api/webhooks/crypto/route.ts - Handle IPN callbacks
+4. packages/web/components/CryptoPaymentModal.tsx - Payment modal with QR
+
+Features:
+- Support 300+ coins (BTC, ETH, XMR, USDT, etc.)
+- Monero (XMR) for privacy-first users
+- Token Credits purchase (Starter $5, Builder $20, Scale $100, Bulk $500)
+- QR code display for wallet scanning
+- Payment status polling
+- PostHog tracking (crypto_checkout_started, crypto_payment_completed)
+
+Integration:
+- Add 'Pay with Crypto' button to app/pricing/page.tsx
+- Show supported coins in modal
+
+Env vars: NOWPAYMENTS_API_KEY, NOWPAYMENTS_IPN_SECRET
+
+API Reference: https://nowpayments.io/help/api-documentation"
 ```
 
-### Priority 2: Deploy (Tomorrow)
+### 📋 REMAINING PHASE 3 TASKS
+
+| Priority | Task | Time Est. | Status |
+|----------|------|-----------|--------|
+| 1 | NOWPayments Crypto | 2 hrs | 🔄 NEXT |
+| 2 | Fix /pricing 500 error | 30 min | ⬜ |
+| 3 | Test all payment flows | 1 hr | ⬜ |
+| 4 | Deploy to FlokiNET | 2 hrs | ⬜ |
+| 5 | Twitter @AkhAI setup | 30 min | ⬜ |
+| 6 | Telegram community | 30 min | ⬜ |
+
+### Priority 2: Deploy (After Payments)
 - [ ] Fix any remaining issues
 - [ ] Deploy to Vercel or Coolify
 - [ ] Test production environment

@@ -73,12 +73,28 @@ When issues detected:
 
 ## 💰 Pricing
 
+**All tiers powered by Claude Opus 4.5**
+
+### Subscriptions
+
 | Plan | Price | Features |
 |------|-------|----------|
-| **Free** | $0 | 10 queries/day, basic features |
-| **Pro** | $20/month | Unlimited*, Legend Mode, all methodologies |
+| **Free** | $0 | 10 queries/day, Opus 4.5, all methodologies |
+| **Pro** | $20/month | Unlimited*, priority support |
+| **Legend** | $200/month | Unlimited, R&D tier, early access |
 | **Team** | $40/user | Collaboration, admin controls |
 | **Enterprise** | Custom | SSO, SLA, dedicated support |
+
+### Token Credits (Pay-As-You-Go)
+
+| Pack | Price | Tokens | ~Queries |
+|------|-------|--------|----------|
+| **Starter** | $5 | 100K | 50-100 |
+| **Builder** | $20 | 500K | 250-500 |
+| **Scale** | $100 | 3M | 1,500-3,000 |
+
+### x402 Micropayments (Coming Soon)
+Pay-per-query from your crypto wallet. No account needed.
 
 **Payments:** Stripe (Card, Apple Pay, Google Pay) + Crypto (BTC, ETH, XMR, 300+ coins)
 
