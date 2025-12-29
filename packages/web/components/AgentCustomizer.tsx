@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { AgentConfig } from '@/lib/agent-config'
+import RobotIntelligence from './RobotIntelligence'
 
 interface AgentCustomizerProps {
   agentId: string | null
@@ -37,7 +38,7 @@ const COMMUNICATION_STYLES = [
 export default function AgentCustomizer({ agentId, onAgentSelect }: AgentCustomizerProps) {
   const [config, setConfig] = useState<Partial<AgentConfig>>({
     name: '',
-    type: 'mini-akhai',
+    type: 'handball',
     physical: {
       walkingSpeed: 1,
       walkingStyle: 'normal',
@@ -162,6 +163,26 @@ export default function AgentCustomizer({ agentId, onAgentSelect }: AgentCustomi
               className="w-full px-4 py-2 border border-relic-mist bg-relic-white text-relic-slate text-sm font-mono focus:outline-none focus:border-relic-slate"
             />
           </div>
+
+          {/* Robot Visualization */}
+          {config.type && (
+            <div className="mt-8">
+              <h3 className="text-sm font-mono text-relic-slate mb-4">AI Component Architecture</h3>
+              <div className="h-[600px] border border-relic-mist rounded-lg overflow-hidden bg-white">
+                <RobotIntelligence
+                  initialScale={
+                    config.type === 'handball' ? 'handball' :
+                    config.type === 'human' ? 'human' :
+                    config.type === 'custom' ? 'human' :
+                    'human'
+                  }
+                  embedded={true}
+                  showToggle={config.type === 'custom'}
+                  theme="light"
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -348,7 +369,7 @@ export default function AgentCustomizer({ agentId, onAgentSelect }: AgentCustomi
             <label className="flex items-center gap-3 p-3 border border-relic-mist cursor-pointer hover:bg-relic-ghost/50">
               <input
                 type="checkbox"
-                checked={true}
+                defaultChecked={true}
                 className="accent-relic-slate"
               />
               <div>
@@ -361,7 +382,7 @@ export default function AgentCustomizer({ agentId, onAgentSelect }: AgentCustomi
             <label className="flex items-center gap-3 p-3 border border-relic-mist cursor-pointer hover:bg-relic-ghost/50">
               <input
                 type="checkbox"
-                checked={true}
+                defaultChecked={true}
                 className="accent-relic-slate"
               />
               <div>

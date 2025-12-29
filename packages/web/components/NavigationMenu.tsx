@@ -5,26 +5,24 @@ import { useState } from 'react'
 
 interface NavigationMenuProps {
   user: any
-  onTopicsClick: () => void
   onMindMapClick: () => void
-  onDashboardClick?: () => void
 }
 
-export default function NavigationMenu({ user, onTopicsClick, onMindMapClick, onDashboardClick }: NavigationMenuProps) {
+export default function NavigationMenu({ user, onMindMapClick }: NavigationMenuProps) {
   const pathname = usePathname()
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
 
   const menuItems = [
-    { id: 'dashboard', label: 'dashboard', onClick: onDashboardClick, isLink: false },
-    { id: 'topics', label: 'topics', onClick: onTopicsClick, isLink: false },
+    { id: 'intelligence-robot-training', label: 'intelligence & robot training', href: '/idea-factory?tab=customize', isLink: true },
     { id: 'mindmap', label: 'mindmap', onClick: onMindMapClick, isLink: false },
     { id: 'history', label: 'history', href: '/history', isLink: true },
-    { id: 'idea-factory', label: 'idea factory', href: '/idea-factory', isLink: true },
+    { id: 'pricing', label: 'pricing', href: '/pricing', isLink: true },
   ]
 
   const isActive = (id: string) => {
     if (id === 'history' && pathname === '/history') return true
-    if (id === 'idea-factory' && pathname === '/idea-factory') return true
+    if (id === 'pricing' && pathname === '/pricing') return true
+    if (id === 'intelligence-robot-training' && pathname === '/idea-factory') return true
     return false
   }
 

@@ -2,16 +2,29 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { XMarkIcon, ChevronDownIcon, ChevronUpIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { SparklesIcon, BellIcon, MoonIcon, SunIcon, CpuChipIcon, LinkIcon, ChartBarIcon, TagIcon } from '@heroicons/react/24/outline'
 
 interface ChatDashboardProps {
   userId: string | null
   currentMethodology: string
   legendMode: boolean
+  darkMode?: boolean
+  sideCanalEnabled?: boolean
+  newsNotificationsEnabled?: boolean
+  realtimeDataEnabled?: boolean
+  contextInjectionEnabled?: boolean
+  autoMethodologyEnabled?: boolean
   onMethodologyChange: (methodology: string, option: 'same' | 'side' | 'new') => void
-  onGuardToggle: (feature: 'suggestions' | 'bias' | 'hype', enabled: boolean) => void
+  onGuardToggle: (feature: 'suggestions' | 'bias' | 'hype' | 'echo' | 'drift' | 'factuality', enabled: boolean) => void
   onLegendModeToggle: (enabled: boolean) => void
+  onDarkModeToggle?: (enabled: boolean) => void
+  onSideCanalToggle?: (enabled: boolean) => void
+  onNewsNotificationsToggle?: (enabled: boolean) => void
+  onRealtimeDataToggle?: (enabled: boolean) => void
+  onContextInjectionToggle?: (enabled: boolean) => void
+  onAutoMethodologyToggle?: (enabled: boolean) => void
   onClose: () => void
+  isCompact?: boolean
 }
 
 interface LiveTopic {
@@ -22,43 +35,123 @@ interface LiveTopic {
   queryId?: string
 }
 
-interface RecentQuery {
-  id: string
-  query: string
-  flow: string
-  created_at: number
+// Modern Status Indicator with Dot
+function StatusIndicator({
+  label,
+  enabled,
+  onChange,
+  color = 'emerald'
+}: {
+  label: string
+  enabled: boolean
+  onChange: (enabled: boolean) => void
+  color?: 'emerald' | 'violet' | 'cyan' | 'amber' | 'rose'
+}) {
+  const colorClasses = {
+    emerald: enabled ? 'bg-emerald-500' : 'bg-gray-300',
+    violet: enabled ? 'bg-violet-500' : 'bg-gray-300',
+    cyan: enabled ? 'bg-cyan-500' : 'bg-gray-300',
+    amber: enabled ? 'bg-amber-500' : 'bg-gray-300',
+    rose: enabled ? 'bg-rose-500' : 'bg-gray-300',
+  }
+
+  return (
+    <button
+      onClick={() => onChange(!enabled)}
+      className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 transition-colors rounded"
+    >
+      <span className="text-xs text-gray-700">{label}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-mono text-gray-500 uppercase">{enabled ? 'ON' : 'OFF'}</span>
+        <div className={`w-2 h-2 rounded-full ${colorClasses[color]} ${enabled ? 'animate-pulse shadow-sm' : ''}`} />
+      </div>
+    </button>
+  )
 }
 
-export default function ChatDashboard({ 
-  userId, 
-  currentMethodology, 
+// Modern Toggle Switch
+function ToggleSwitch({
+  enabled,
+  onChange,
+  label,
+  icon: Icon
+}: {
+  enabled: boolean
+  onChange: (enabled: boolean) => void
+  label: string
+  icon?: React.ComponentType<{ className?: string }>
+}) {
+  return (
+    <button
+      onClick={() => onChange(!enabled)}
+      className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 transition-colors w-full rounded"
+    >
+      <div className="flex items-center gap-2">
+        {Icon && <Icon className="w-4 h-4 text-gray-400" />}
+        <span className="text-xs text-gray-700">{label}</span>
+      </div>
+      <div className={`w-10 h-5 rounded-full transition-colors relative ${
+        enabled ? 'bg-gray-900' : 'bg-gray-300'
+      }`}>
+        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform ${
+          enabled ? 'right-0.5' : 'left-0.5'
+        }`} />
+      </div>
+    </button>
+  )
+}
+
+export default function ChatDashboard({
+  userId,
+  currentMethodology,
   legendMode,
-  onMethodologyChange, 
-  onGuardToggle, 
+  darkMode = false,
+  sideCanalEnabled = true,
+  newsNotificationsEnabled = true,
+  realtimeDataEnabled = true,
+  contextInjectionEnabled = true,
+  autoMethodologyEnabled = true,
+  onGuardToggle,
   onLegendModeToggle,
-  onClose 
+  onDarkModeToggle,
+  onSideCanalToggle,
+  onNewsNotificationsToggle,
+  onRealtimeDataToggle,
+  onContextInjectionToggle,
+  onAutoMethodologyToggle,
+  isCompact = false
 }: ChatDashboardProps) {
   const router = useRouter()
   const [topics, setTopics] = useState<LiveTopic[]>([])
-  const [recentQueries, setRecentQueries] = useState<RecentQuery[]>([])
   const [stats, setStats] = useState({ totalTopics: 0, totalConnections: 0 })
-  const [loading, setLoading] = useState(false)
-  const [expandedSection, setExpandedSection] = useState<'topics' | 'queries' | 'controls' | null>('topics')
-  
+
   // Guard states
-  const [suggestionsEnabled, setSuggestionsEnabled] = useState(true)
-  const [biasEnabled, setBiasEnabled] = useState(true)
-  const [hypeEnabled, setHypeEnabled] = useState(true)
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('guard_suggestions') !== 'false'
+    }
+    return true
+  })
+  const [biasEnabled, setBiasEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('guard_bias') !== 'false'
+    }
+    return true
+  })
+  const [hypeEnabled, setHypeEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('guard_hype') !== 'false'
+    }
+    return true
+  })
+  const [echoEnabled, setEchoEnabled] = useState(true)
+  const [driftEnabled, setDriftEnabled] = useState(true)
+  const [factualityEnabled, setFactualityEnabled] = useState(true)
 
   const fetchDashboardData = useCallback(async () => {
     if (!userId) return
-    setLoading(true)
     try {
-      const [topicsRes, historyRes] = await Promise.all([
-        fetch('/api/dashboard/live-topics'),
-        fetch('/api/history?limit=5')
-      ])
-      
+      const topicsRes = await fetch('/api/dashboard/live-topics')
       if (topicsRes.ok) {
         const data = await topicsRes.json()
         setTopics(data.topics || [])
@@ -67,212 +160,187 @@ export default function ChatDashboard({
           totalConnections: data.totalConnections || 0
         })
       }
-      
-      if (historyRes.ok) {
-        const data = await historyRes.json()
-        setRecentQueries(data.queries || [])
-      }
     } catch (error) {
       console.error('Dashboard fetch error:', error)
-    } finally {
-      setLoading(false)
     }
   }, [userId])
 
   useEffect(() => {
     if (userId) {
       fetchDashboardData()
-      const interval = setInterval(fetchDashboardData, 5000)
-      return () => clearInterval(interval)
     }
   }, [userId, fetchDashboardData])
 
-  const handleContinueChat = (queryId: string) => {
-    router.push(`/?continue=${queryId}`)
-    onClose()
-  }
-
-  const handleGuardChange = (feature: 'suggestions' | 'bias' | 'hype', enabled: boolean) => {
-    if (feature === 'suggestions') setSuggestionsEnabled(enabled)
-    if (feature === 'bias') setBiasEnabled(enabled)
-    if (feature === 'hype') setHypeEnabled(enabled)
+  const handleGuardChange = (feature: 'suggestions' | 'bias' | 'hype' | 'echo' | 'drift' | 'factuality', enabled: boolean) => {
+    if (feature === 'suggestions') {
+      setSuggestionsEnabled(enabled)
+      localStorage.setItem('guard_suggestions', String(enabled))
+    }
+    if (feature === 'bias') {
+      setBiasEnabled(enabled)
+      localStorage.setItem('guard_bias', String(enabled))
+    }
+    if (feature === 'hype') {
+      setHypeEnabled(enabled)
+      localStorage.setItem('guard_hype', String(enabled))
+    }
+    if (feature === 'echo') setEchoEnabled(enabled)
+    if (feature === 'drift') setDriftEnabled(enabled)
+    if (feature === 'factuality') setFactualityEnabled(enabled)
     onGuardToggle(feature, enabled)
   }
 
   if (!userId) return null
 
+  // Only show during active chat
+  if (!isCompact) return null
+
   return (
-    <div className="fixed right-4 top-4 z-50 w-64 bg-relic-white border border-relic-mist shadow-lg animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-relic-mist bg-relic-ghost/30">
-        <span className="text-[10px] uppercase tracking-widest text-relic-slate font-mono">Dashboard</span>
-        <button onClick={onClose} className="text-relic-silver hover:text-relic-slate transition-colors">
-          <XMarkIcon className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="max-h-[70vh] overflow-y-auto">
-        {/* Legend Mode Toggle */}
-        <div className="px-3 py-2 border-b border-relic-mist">
-          <button
-            onClick={() => onLegendModeToggle(!legendMode)}
-            className={`w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-mono uppercase tracking-wider transition-all ${
-              legendMode 
-                ? 'bg-relic-slate text-relic-white' 
-                : 'bg-relic-ghost text-relic-silver hover:bg-relic-mist'
-            }`}
-          >
-            <span className="flex items-center gap-1.5">
-              <SparklesIcon className="w-3 h-3" />
-              Legend Mode
-            </span>
-            <span className={`w-1.5 h-1.5 rounded-full ${legendMode ? 'bg-green-400 animate-pulse' : 'bg-relic-silver/50'}`} />
-          </button>
-          {legendMode && (
-            <p className="text-[8px] text-relic-silver mt-1 px-1">Opus 4.5 · Enhanced suggestions</p>
-          )}
+    <div className="fixed bottom-4 left-4 z-50 w-72">
+      {/* Modern Control Panel */}
+      <div className="bg-white border border-gray-200 shadow-lg rounded-lg overflow-hidden">
+        {/* Header */}
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Controls</span>
+            <select
+              className="text-xs font-mono text-gray-700 bg-white border border-gray-300 rounded px-2 py-1 outline-none cursor-pointer hover:border-gray-400 transition-colors"
+              value={currentMethodology}
+              onChange={(e) => {/* handle methodology change */}}
+            >
+              <option value="auto">auto</option>
+              <option value="cod">cod</option>
+              <option value="bot">bot</option>
+              <option value="react">react</option>
+              <option value="pot">pot</option>
+              <option value="gtp">gtp</option>
+            </select>
+          </div>
         </div>
 
-        {/* Live Topics Section */}
-        <div className="border-b border-relic-mist">
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'topics' ? null : 'topics')}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] uppercase tracking-wider text-relic-slate hover:bg-relic-ghost/30"
-          >
-            <span>Live Topics ({stats.totalTopics})</span>
-            {expandedSection === 'topics' ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />}
-          </button>
-          {expandedSection === 'topics' && (
-            <div className="px-3 pb-2 space-y-1">
-              {loading ? (
-                <p className="text-[10px] text-relic-silver py-2">Loading...</p>
-              ) : topics.length === 0 ? (
-                <p className="text-[10px] text-relic-silver py-2">No topics yet. Start chatting!</p>
-              ) : (
-                topics.slice(0, 5).map((topic) => (
-                  <div
-                    key={topic.id}
-                    className="text-[10px] px-2 py-1.5 bg-relic-ghost/50 hover:bg-relic-mist/50 transition-colors cursor-pointer"
-                    onClick={() => topic.queryId && handleContinueChat(topic.queryId)}
-                  >
-                    <span className="text-relic-slate truncate block">{topic.name}</span>
-                    {topic.category && (
-                      <span className="text-[8px] text-relic-silver">{topic.category}</span>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          )}
+        {/* Core Features Section */}
+        <div className="px-4 py-3 border-b border-gray-100">
+          <h3 className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Core Features</h3>
+          <div className="space-y-1">
+            <ToggleSwitch
+              enabled={legendMode}
+              onChange={onLegendModeToggle}
+              label="Instinct Mode"
+              icon={SparklesIcon}
+            />
+            {onDarkModeToggle && (
+              <ToggleSwitch
+                enabled={darkMode}
+                onChange={onDarkModeToggle}
+                label="Dark Mode"
+                icon={darkMode ? MoonIcon : SunIcon}
+              />
+            )}
+            {onAutoMethodologyToggle && (
+              <ToggleSwitch
+                enabled={autoMethodologyEnabled}
+                onChange={onAutoMethodologyToggle}
+                label="Auto Methodology"
+                icon={CpuChipIcon}
+              />
+            )}
+          </div>
         </div>
 
-        {/* Recent Chats Section */}
-        <div className="border-b border-relic-mist">
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'queries' ? null : 'queries')}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] uppercase tracking-wider text-relic-slate hover:bg-relic-ghost/30"
-          >
-            <span>Recent Chats</span>
-            {expandedSection === 'queries' ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />}
-          </button>
-          {expandedSection === 'queries' && (
-            <div className="px-3 pb-2 space-y-1">
-              {recentQueries.length === 0 ? (
-                <p className="text-[10px] text-relic-silver py-2">No recent chats</p>
-              ) : (
-                recentQueries.map((q) => (
-                  <button
-                    key={q.id}
-                    onClick={() => handleContinueChat(q.id)}
-                    className="w-full text-left text-[10px] px-2 py-1.5 bg-relic-ghost/50 hover:bg-relic-mist/50 transition-colors group"
-                  >
-                    <span className="text-relic-slate truncate block group-hover:text-relic-void">{q.query}</span>
-                    <span className="text-[8px] text-relic-silver">{q.flow}</span>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
+        {/* Grounding Guard Section */}
+        <div className="px-4 py-3 border-b border-gray-100">
+          <h3 className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Grounding Guard</h3>
+          <div className="space-y-1">
+            <StatusIndicator
+              label="Suggestions"
+              enabled={suggestionsEnabled}
+              onChange={(enabled) => handleGuardChange('suggestions', enabled)}
+              color="emerald"
+            />
+            <StatusIndicator
+              label="Bias Detector"
+              enabled={biasEnabled}
+              onChange={(enabled) => handleGuardChange('bias', enabled)}
+              color="violet"
+            />
+            <StatusIndicator
+              label="Hype Detector"
+              enabled={hypeEnabled}
+              onChange={(enabled) => handleGuardChange('hype', enabled)}
+              color="cyan"
+            />
+            <StatusIndicator
+              label="Echo Detector"
+              enabled={echoEnabled}
+              onChange={(enabled) => handleGuardChange('echo', enabled)}
+              color="amber"
+            />
+            <StatusIndicator
+              label="Drift Detector"
+              enabled={driftEnabled}
+              onChange={(enabled) => handleGuardChange('drift', enabled)}
+              color="rose"
+            />
+            <StatusIndicator
+              label="Factuality Check"
+              enabled={factualityEnabled}
+              onChange={(enabled) => handleGuardChange('factuality', enabled)}
+              color="rose"
+            />
+          </div>
         </div>
 
-        {/* Guard Controls Section */}
-        <div>
-          <button
-            onClick={() => setExpandedSection(expandedSection === 'controls' ? null : 'controls')}
-            className="w-full flex items-center justify-between px-3 py-2 text-[10px] uppercase tracking-wider text-relic-slate hover:bg-relic-ghost/30"
-          >
-            <span>Guard Controls</span>
-            {expandedSection === 'controls' ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />}
-          </button>
-          {expandedSection === 'controls' && (
-            <div className="px-3 pb-3 space-y-2">
-              {/* Suggestions Toggle */}
-              <label className="flex items-center justify-between text-[10px] text-relic-slate cursor-pointer">
-                <span>Suggestions</span>
-                <button
-                  onClick={() => handleGuardChange('suggestions', !suggestionsEnabled)}
-                  className={`w-8 h-4 rounded-full transition-colors relative ${
-                    suggestionsEnabled ? 'bg-relic-slate' : 'bg-relic-mist'
-                  }`}
-                >
-                  <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-relic-white transition-transform ${
-                    suggestionsEnabled ? 'right-0.5' : 'left-0.5'
-                  }`} />
-                </button>
-              </label>
-
-              {/* Bias Detector Toggle */}
-              <label className="flex items-center justify-between text-[10px] text-relic-slate cursor-pointer">
-                <span>Bias Detector</span>
-                <button
-                  onClick={() => handleGuardChange('bias', !biasEnabled)}
-                  className={`w-8 h-4 rounded-full transition-colors relative ${
-                    biasEnabled ? 'bg-relic-slate' : 'bg-relic-mist'
-                  }`}
-                >
-                  <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-relic-white transition-transform ${
-                    biasEnabled ? 'right-0.5' : 'left-0.5'
-                  }`} />
-                </button>
-              </label>
-
-              {/* Hype Detector Toggle */}
-              <label className="flex items-center justify-between text-[10px] text-relic-slate cursor-pointer">
-                <span>Hype Detector</span>
-                <button
-                  onClick={() => handleGuardChange('hype', !hypeEnabled)}
-                  className={`w-8 h-4 rounded-full transition-colors relative ${
-                    hypeEnabled ? 'bg-relic-slate' : 'bg-relic-mist'
-                  }`}
-                >
-                  <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-relic-white transition-transform ${
-                    hypeEnabled ? 'right-0.5' : 'left-0.5'
-                  }`} />
-                </button>
-              </label>
-
-              {/* Run Audit Button */}
-              <button
-                onClick={() => {
-                  // Trigger an audit notification
-                  alert('Guard audit initiated. All detectors active.')
-                }}
-                className="w-full mt-2 px-2 py-1.5 text-[9px] uppercase tracking-wider font-mono bg-relic-ghost hover:bg-relic-mist text-relic-slate transition-colors"
-              >
-                Run Guard Audit
-              </button>
-            </div>
-          )}
+        {/* Intelligence Section */}
+        <div className="px-4 py-3">
+          <h3 className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Intelligence</h3>
+          <div className="space-y-1">
+            {onSideCanalToggle && (
+              <ToggleSwitch
+                enabled={sideCanalEnabled}
+                onChange={onSideCanalToggle}
+                label="Side Canal (Topics)"
+                icon={TagIcon}
+              />
+            )}
+            {onContextInjectionToggle && (
+              <ToggleSwitch
+                enabled={contextInjectionEnabled}
+                onChange={onContextInjectionToggle}
+                label="Context Injection"
+                icon={LinkIcon}
+              />
+            )}
+            {onRealtimeDataToggle && (
+              <ToggleSwitch
+                enabled={realtimeDataEnabled}
+                onChange={onRealtimeDataToggle}
+                label="Real-time Data"
+                icon={ChartBarIcon}
+              />
+            )}
+            {onNewsNotificationsToggle && (
+              <ToggleSwitch
+                enabled={newsNotificationsEnabled}
+                onChange={onNewsNotificationsToggle}
+                label="News Notifications"
+                icon={BellIcon}
+              />
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Footer Stats */}
-      <div className="px-3 py-2 border-t border-relic-mist bg-relic-ghost/20 flex items-center justify-between text-[9px] text-relic-silver">
-        <span>{stats.totalTopics} topics</span>
-        <span>·</span>
-        <span>{stats.totalConnections} links</span>
-        <span>·</span>
-        <span className="font-mono">{currentMethodology}</span>
+        {/* Footer Status */}
+        <div className="px-4 py-2 bg-gray-50 border-t border-gray-200">
+          <div className="flex items-center justify-between text-[10px] text-gray-500 font-mono">
+            <span>{stats.totalTopics} topics tracked</span>
+            {legendMode && (
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-amber-600 font-semibold">INSTINCT</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

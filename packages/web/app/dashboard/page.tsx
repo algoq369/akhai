@@ -2,39 +2,31 @@
 
 import { useEffect, useState } from 'react'
 import { useDashboardStore } from '@/lib/stores/dashboard-store'
-import StatCard from '@/components/StatCard'
-import ProviderCard from '@/components/ProviderCard'
-import RecentQueriesList from '@/components/RecentQueriesList'
-
-interface User {
-  id: string;
-  username: string;
-  email: string | null;
-  avatar_url: string | null;
-  auth_provider: string;
-  isAdmin: boolean;
-}
 
 export default function DashboardPage() {
   const { stats, loading, error, fetchStats } = useDashboardStore()
-  const [user, setUser] = useState<User | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
-
-  // Check authentication and admin status
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch('/api/auth/session')
-        const data = await res.json()
-        setUser(data.user)
-      } catch (error) {
-        console.error('Auth check failed:', error)
-      } finally {
-        setAuthLoading(false)
-      }
-    }
-    checkAuth()
-  }, [])
+  const [enabledProviders, setEnabledProviders] = useState<Record<string, boolean>>({
+    anthropic: true,
+    deepseek: true,
+    xai: true,
+    mistral: true,
+  })
+  const [enabledMethods, setEnabledMethods] = useState<Record<string, boolean>>({
+    auto: true,
+    direct: true,
+    cod: true,
+    bot: true,
+    react: true,
+    pot: true,
+    gtp: true,
+  })
+  const [enabledFeatures, setEnabledFeatures] = useState<Record<string, boolean>>({
+    guard: true,
+    suggestions: true,
+    sidecanal: true,
+    realtime: true,
+    warnings: true,
+  })
 
   useEffect(() => {
     fetchStats()
@@ -44,133 +36,154 @@ export default function DashboardPage() {
 
   if (loading && !stats) {
     return (
-      <div className="min-h-screen bg-relic-white matrix-grid flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-relic-mist border-t-relic-slate mx-auto"></div>
-          <p className="text-relic-silver mt-4 text-xs">loading dashboard...</p>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-relic-white matrix-grid flex items-center justify-center">
-        <div className="bg-relic-ghost border border-relic-mist p-6">
-          <h3 className="text-relic-void font-medium mb-2 text-sm">Error</h3>
-          <p className="text-relic-silver text-xs">{error}</p>
-        </div>
-      </div>
-    )
-  }
+  const providers = [
+    { key: 'anthropic', name: 'Anthropic Claude', model: 'claude-opus-4-20250514', active: stats?.providers?.anthropic?.status === 'active' },
+    { key: 'deepseek', name: 'DeepSeek', model: 'deepseek-chat', active: stats?.providers?.deepseek?.status === 'active' },
+    { key: 'xai', name: 'Grok', model: 'grok-3', active: stats?.providers?.xai?.status === 'active' },
+    { key: 'mistral', name: 'Mistral AI', model: 'mistral-small-latest', active: stats?.providers?.mistral?.status === 'active' },
+  ]
+
+  const methodologies = [
+    { key: 'auto', name: 'Auto', desc: 'Smart routing' },
+    { key: 'direct', name: 'Direct', desc: 'Single AI instant' },
+    { key: 'cod', name: 'Chain of Draft', desc: 'Iterative refinement' },
+    { key: 'bot', name: 'Buffer of Thoughts', desc: 'Context reasoning' },
+    { key: 'react', name: 'ReAct', desc: 'Search & calculate' },
+    { key: 'pot', name: 'Program of Thought', desc: 'Code computation' },
+    { key: 'gtp', name: 'GTP Consensus', desc: 'Multi-AI agreement' },
+  ]
+
+  const features = [
+    { key: 'guard', name: 'Grounding Guard', desc: 'Anti-hallucination' },
+    { key: 'suggestions', name: 'Smart Suggestions', desc: 'Query recommendations' },
+    { key: 'sidecanal', name: 'Side Canal', desc: 'Topic extraction' },
+    { key: 'realtime', name: 'Real-time Data', desc: 'Live prices & news' },
+    { key: 'warnings', name: 'Interactive Warnings', desc: 'Quality alerts' },
+  ]
 
   return (
-    <div className="min-h-screen bg-relic-white matrix-grid">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b border-relic-mist/50">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <a href="/" className="text-[10px] uppercase tracking-[0.3em] text-relic-silver hover:text-relic-slate">← akhai</a>
+      <header className="border-b border-slate-100">
+        <div className="max-w-xl mx-auto px-6 py-4">
+          <a href="/" className="text-[10px] text-slate-400 hover:text-slate-600">← akhai</a>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="max-w-xl mx-auto px-6 py-8">
         {/* Title */}
-        <div className="mb-10">
-          <h1 className="text-2xl font-light text-relic-void mb-1">dashboard</h1>
-          <p className="text-relic-silver text-xs">monitor akhai usage and performance</p>
-        </div>
+        <h1 className="text-base font-medium text-slate-900 mb-8">Settings</h1>
 
-        {/* Stats Grid - Basic stats for all users */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-3 mb-6`}>
-          <StatCard
-            title="Queries Today"
-            value={stats?.queriesToday || 0}
-          />
-          <StatCard
-            title="Queries This Month"
-            value={stats?.queriesThisMonth || 0}
-          />
-          {/* Admin-only: Token and Cost stats */}
-          {user?.isAdmin && (
-            <>
-              <StatCard
-                title="Total Tokens"
-                value={stats?.totalTokens?.toLocaleString() || '0'}
-              />
-              <StatCard
-                title="Total Cost"
-                value={`$${stats?.totalCost.toFixed(2) || '0.00'}`}
-              />
-            </>
-          )}
-        </div>
+        {/* Stats */}
+        <Section title="Usage">
+          <Row label="Queries today" value={stats?.queriesToday || 0} />
+          <Row label="Queries this month" value={stats?.queriesThisMonth || 0} />
+          <Row label="Total tokens" value={(stats?.totalTokens || 0).toLocaleString()} />
+          <Row label="Total cost" value={`$${(stats?.totalCost || 0).toFixed(2)}`} />
+        </Section>
 
-        {/* Performance Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-          <div className="bg-relic-ghost/30 border border-relic-mist p-4">
-            <h2 className="relic-label mb-3">performance</h2>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-relic-silver">avg response time</span>
-              <span className="text-xl font-medium text-relic-void font-mono">
-                {stats?.avgResponseTime || 0}s
-              </span>
-            </div>
-          </div>
+        {/* Providers */}
+        <Section title="AI Providers">
+          {providers.map((p) => (
+            <ToggleRow
+              key={p.key}
+              label={p.name}
+              sublabel={p.model}
+              active={p.active}
+              enabled={enabledProviders[p.key]}
+              onToggle={() => setEnabledProviders(prev => ({ ...prev, [p.key]: !prev[p.key] }))}
+            />
+          ))}
+        </Section>
 
-          <div className="bg-relic-ghost/30 border border-relic-mist p-4">
-            <h2 className="relic-label mb-3">success rate</h2>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-relic-silver">completed queries</span>
-              <span className="text-xl font-medium text-relic-void font-mono">
-                {(stats?.queriesToday || 0) > 0 ? '100%' : 'N/A'}
-              </span>
-            </div>
-          </div>
-        </div>
+        {/* Methodologies */}
+        <Section title="Methodologies">
+          {methodologies.map((m) => (
+            <ToggleRow
+              key={m.key}
+              label={m.name}
+              sublabel={m.desc}
+              active={true}
+              enabled={enabledMethods[m.key]}
+              onToggle={() => setEnabledMethods(prev => ({ ...prev, [m.key]: !prev[m.key] }))}
+            />
+          ))}
+        </Section>
 
-        {/* Provider Status - Admin Only */}
-        {user?.isAdmin && (
-          <div className="bg-relic-ghost/30 border border-relic-mist p-4 mb-6">
-            <h2 className="relic-label mb-3">provider status</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <ProviderCard
-                name="Anthropic"
-                status={stats?.providers.anthropic.status || 'inactive'}
-                model="Claude Sonnet 4"
-                queriesCount={stats?.providers.anthropic.queries}
-                totalCost={stats?.providers.anthropic.cost}
-              />
-              <ProviderCard
-                name="DeepSeek"
-                status={stats?.providers.deepseek.status || 'inactive'}
-                model="deepseek-chat"
-                queriesCount={stats?.providers.deepseek.queries}
-                totalCost={stats?.providers.deepseek.cost}
-              />
-              <ProviderCard
-                name="Grok (xAI)"
-                status={stats?.providers.xai.status || 'inactive'}
-                model="grok-3"
-                queriesCount={stats?.providers.xai.queries}
-                totalCost={stats?.providers.xai.cost}
-              />
-              <ProviderCard
-                name="Mistral AI"
-                status={stats?.providers.mistral?.status || 'inactive'}
-                model="mistral-small-latest"
-                queriesCount={stats?.providers.mistral?.queries || 0}
-                totalCost={stats?.providers.mistral?.cost || 0}
-              />
-            </div>
-          </div>
-        )}
+        {/* Features */}
+        <Section title="Features">
+          {features.map((f) => (
+            <ToggleRow
+              key={f.key}
+              label={f.name}
+              sublabel={f.desc}
+              active={true}
+              enabled={enabledFeatures[f.key]}
+              onToggle={() => setEnabledFeatures(prev => ({ ...prev, [f.key]: !prev[f.key] }))}
+            />
+          ))}
+        </Section>
+      </div>
+    </div>
+  )
+}
 
-        {/* Recent Queries */}
-        <div className="bg-relic-ghost/30 border border-relic-mist p-4">
-          <h2 className="relic-label mb-3">recent queries</h2>
-          <RecentQueriesList />
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-8">
+      <h2 className="text-[10px] uppercase tracking-wider text-slate-400 mb-3">{title}</h2>
+      <div className="divide-y divide-slate-100">{children}</div>
+    </div>
+  )
+}
+
+function Row({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="flex items-center justify-between py-2.5">
+      <span className="text-sm text-slate-600">{label}</span>
+      <span className="text-sm text-slate-900 font-mono">{value}</span>
+    </div>
+  )
+}
+
+function ToggleRow({ 
+  label, 
+  sublabel, 
+  active, 
+  enabled, 
+  onToggle 
+}: { 
+  label: string
+  sublabel: string
+  active: boolean
+  enabled: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div className="flex items-center justify-between py-2.5">
+      <div className="flex items-center gap-2.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${active && enabled ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+        <div>
+          <span className="text-sm text-slate-700">{label}</span>
+          <span className="text-xs text-slate-400 ml-2">{sublabel}</span>
         </div>
       </div>
+      <button
+        onClick={onToggle}
+        className={`relative w-8 h-[18px] rounded-full transition-colors ${
+          enabled ? 'bg-emerald-500' : 'bg-slate-200'
+        }`}
+      >
+        <span className={`absolute top-0.5 w-[14px] h-[14px] bg-white rounded-full shadow-sm transition-transform ${
+          enabled ? 'translate-x-[14px]' : 'translate-x-0.5'
+        }`} />
+      </button>
     </div>
   )
 }

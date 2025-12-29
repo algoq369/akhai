@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { CustomCursor } from '@/components/CustomCursor'
+import { PostHogProvider } from './providers'
 // import { FibonacciBackground } from '@/components/FibonacciBackground'
 
 export const metadata: Metadata = {
@@ -137,7 +138,7 @@ export default function RootLayout({
       <body className="font-mono antialiased bg-relic-white">
         {/* <FibonacciBackground /> */}
         <CustomCursor />
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   )

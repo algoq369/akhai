@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface GuardWarningProps {
   guardResult: {
@@ -130,7 +130,7 @@ export default function GuardWarning({
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="text-relic-slate">Hype:</span>
-                <span className="ml-2 text-relic-slate">{Math.min(guardResult.scores.hype * 10, 100)}%</span>
+                <span className="ml-2 text-relic-slate">{guardResult.scores.hype}</span>
               </div>
               <div>
                 <span className="text-relic-slate">Echo:</span>
@@ -142,7 +142,7 @@ export default function GuardWarning({
               </div>
               <div>
                 <span className="text-relic-slate">Fact:</span>
-                <span className="ml-2 text-relic-slate">{Math.min(guardResult.scores.fact * 10, 100)}%</span>
+                <span className="ml-2 text-relic-slate">{guardResult.scores.fact}</span>
               </div>
             </div>
           </div>

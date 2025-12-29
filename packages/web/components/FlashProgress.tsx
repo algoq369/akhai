@@ -70,8 +70,8 @@ export function FlashProgress({ advisorCount, advisors, quorum, insightsCount }:
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[16px]">🧬</span>
-          <span className="text-[12px] font-semibold text-gray-700">Flash Broadcast - Parallel Execution</span>
+          <span className="text-[16px]">◯</span>
+          <span className="text-[12px] font-semibold text-gray-700">GTP - Multi-AI Parallel Execution</span>
         </div>
         <div className="text-[10px] text-gray-500">
           {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
@@ -187,7 +187,7 @@ export function FlashProgress({ advisorCount, advisors, quorum, insightsCount }:
 
       {/* Performance Note */}
       <div className="text-[9px] text-gray-400 text-center">
-        ⚡ Parallel execution - 3x faster than sequential
+        ◯ GTP Methodology • 3x faster via parallel AI execution
       </div>
     </div>
   );

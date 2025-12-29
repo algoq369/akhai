@@ -203,6 +203,12 @@ export default function QueryResultsPage() {
               <a href="/" className="relic-button text-xs">
                 ← new query
               </a>
+              <a 
+                href={`/?continue=${queryId}`} 
+                className="relic-button-primary text-xs"
+              >
+                continue chat →
+              </a>
               {result.status === 'processing' && (
                 <button onClick={fetchResult} className="relic-button text-xs">
                   refresh

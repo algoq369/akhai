@@ -234,7 +234,19 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
   }
 ]
 
-const MethodologyExplorer = memo(function MethodologyExplorer({ isVisible, onClose }: { isVisible: boolean; onClose: () => void }) {
+interface MethodologyExplorerProps {
+  isVisible: boolean
+  onClose: () => void
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+}
+
+const MethodologyExplorer = memo(function MethodologyExplorer({ 
+  isVisible, 
+  onClose,
+  onMouseEnter,
+  onMouseLeave 
+}: MethodologyExplorerProps) {
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -284,110 +296,48 @@ const MethodologyExplorer = memo(function MethodologyExplorer({ isVisible, onClo
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
       onAnimationEnd={handleAnimationEnd}
-      onMouseEnter={() => {
-      }}
-      onMouseLeave={() => {
-        // Close when mouse leaves the backdrop (outside circle)
-        onClose()
-      }}
     >
-      {/* Backdrop blur */}
+      {/* Backdrop blur - only close on click, not hover */}
       <div
         data-backdrop
         className={`absolute inset-0 backdrop-blur-sm bg-relic-mist/5 transition-opacity duration-300 pointer-events-auto ${
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={onClose}
-        onMouseEnter={() => {
-          // Close when mouse enters backdrop (outside circle)
-          onClose()
-        }}
       />
 
-      {/* Circular Menu or Detail View */}
+      {/* Horizontal Menu or Detail View */}
       <div
         className={`relative pointer-events-auto transition-all duration-500 ease-in-out ${
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
         {!selectedMethod ? (
-          /* Horizontal Navigation Bar */
+          /* Horizontal Navigation */
           <div 
             data-methodology-circle
-            className="bg-relic-white/95 backdrop-blur-md border border-relic-mist shadow-2xl px-6 py-4"
-            onMouseEnter={() => {
-            }}
-            onMouseLeave={(e) => {
-              // Close when mouse leaves container (unless moving back to diamond)
-              try {
-                const relatedTarget = e.relatedTarget as Element | null
-                const isElement = relatedTarget instanceof Element
-                let isMovingToDiamond = false
-                if (isElement) {
-                  try {
-                    isMovingToDiamond = !!relatedTarget.closest('[data-diamond-logo]')
-                  } catch (err) {
-                    // Ignore errors
-                  }
-                }
-                if (!isMovingToDiamond) {
-                  setTimeout(() => {
-                    try {
-                      if (!isElement || !relatedTarget?.closest('[data-methodology-circle]')) {
-                        onClose()
-                      }
-                    } catch (err) {
-                      onClose()
-                    }
-                  }, 100)
-                }
-              } catch (err) {
-                onClose()
-              }
-            }}
+            className="flex flex-row items-center gap-2 p-4 bg-relic-white/95 backdrop-blur-md border border-relic-mist shadow-xl"
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
-            {/* Title */}
-            <div className="text-center mb-4">
-              <div className="flex items-center justify-center gap-3">
-                <div className="text-2xl text-relic-mist">◊</div>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-relic-silver">
-                  methodologies
-                </p>
-                <div className="text-2xl text-relic-mist">◊</div>
-              </div>
-            </div>
-
             {/* Horizontal Menu Items */}
-            <div className="flex items-center gap-3">
-              {METHODOLOGY_DETAILS.map((method, index) => (
-                <button
-                  key={method.id}
-                  onClick={() => handleMethodClick(method.id)}
-                  className="group flex-1"
-                  style={{
-                    transition: `all 0.3s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.05}s`
-                  }}
-                >
-                  {/* Method card - rectangular */}
-                  <div className="relative bg-relic-white border border-relic-mist hover:border-relic-slate/60 hover:bg-relic-ghost transition-all duration-300 flex flex-col items-center justify-center py-3 px-4 group-hover:shadow-md">
-                    <div className="text-xl text-relic-slate group-hover:scale-110 transition-transform">
-                      {method.symbol}
-                    </div>
-                    <div className="text-[10px] font-mono text-relic-slate mt-1.5 group-hover:font-semibold transition-all">
-                      {method.name}
-                    </div>
-                    <div className="text-[8px] text-relic-silver text-center mt-1 leading-tight opacity-0 group-hover:opacity-100 transition-opacity">
-                      {method.fullName.split(' ').slice(0, 2).join(' ')}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Hint */}
-            <p className="text-center text-[9px] text-relic-silver mt-3">
-              click to learn more about each methodology
-            </p>
+            {METHODOLOGY_DETAILS.map((method, index) => (
+              <button
+                key={method.id}
+                onClick={() => handleMethodClick(method.id)}
+                className="group flex flex-col items-center justify-center w-20 h-20 bg-relic-ghost/30 border border-relic-mist hover:border-relic-slate/60 hover:bg-relic-ghost transition-all duration-300 hover:shadow-md"
+                style={{
+                  animationDelay: `${index * 0.05}s`
+                }}
+              >
+                <div className="text-xl text-relic-slate group-hover:scale-110 transition-transform">
+                  {method.symbol}
+                </div>
+                <div className="text-[10px] font-mono text-relic-slate mt-1">
+                  {method.name}
+                </div>
+              </button>
+            ))}
           </div>
         ) : (
           /* Detail View */
