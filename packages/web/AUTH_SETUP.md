@@ -8,15 +8,15 @@ To enable GitHub authentication, you need to:
    - Go to https://github.com/settings/developers
    - Click "New OAuth App"
    - Application name: `AkhAI` (or your choice)
-   - Homepage URL: `http://localhost:3004` (or your production URL)
-   - Authorization callback URL: `http://localhost:3004/api/auth/github/callback` (or your production callback URL)
+   - Homepage URL: `http://localhost:3002` (or your production URL)
+   - Authorization callback URL: `http://localhost:3002/api/auth/github/callback` (or your production callback URL)
    - Click "Register application"
 
 2. **Add to `.env.local`:**
    ```bash
    GITHUB_CLIENT_ID=your_client_id_here
    GITHUB_CLIENT_SECRET=your_client_secret_here
-   GITHUB_REDIRECT_URI=http://localhost:3004/api/auth/github/callback
+   GITHUB_REDIRECT_URI=http://localhost:3002/api/auth/github/callback
    ```
 
 3. **For Production:**
@@ -45,7 +45,7 @@ No additional configuration needed - users just need to have a Web3 wallet insta
 **GitHub OAuth 404 Error:**
 - Make sure `GITHUB_CLIENT_ID` is set in `.env.local`
 - Verify the callback URL matches your GitHub OAuth App settings
-- Check that the port matches your dev server (default: 3004)
+- Check that the port matches your dev server (default: 3002)
 
 **Web3 Wallet Not Detected:**
 - User needs to install MetaMask or another Web3 wallet browser extension

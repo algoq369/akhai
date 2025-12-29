@@ -1,7 +1,7 @@
 {
   "name": "@akhai/cli",
   "version": "0.1.0",
-  "description": "AKHAI Terminal Application - Chat with Mother Base from command line",
+  "description": "AKHAI Terminal - Sovereign AI Command Line Interface",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -13,14 +13,12 @@
     "start": "node dist/index.js",
     "link": "npm link"
   },
-  "keywords": ["akhai", "cli", "ai", "chat", "terminal"],
-  "author": "AKHAI Team",
+  "keywords": ["akhai", "cli", "ai", "chat", "terminal", "sovereign"],
+  "author": "Algoq - AkhAI",
   "license": "MIT",
   "dependencies": {
-    "@akhai/inference": "workspace:*",
     "chalk": "^5.3.0",
     "commander": "^12.0.0",
-    "inquirer": "^9.2.0",
     "ora": "^8.0.0"
   },
   "devDependencies": {

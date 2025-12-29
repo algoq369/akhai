@@ -1,120 +1,180 @@
 #!/usr/bin/env node
 
 /**
- * AKHAI CLI
- * 
- * Terminal interface for AKHAI Mother Base.
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * AKHAI TERMINAL - Sovereign AI Command Line Interface
+ * ═══════════════════════════════════════════════════════════════════════════════
  * 
  * Usage:
- *   akhai chat              Start interactive chat
- *   akhai query "prompt"    Single query
- *   akhai status            Check Mother Base status
- *   akhai config            Configure endpoints
+ *   akhai                   Start interactive terminal
+ *   akhai "query"           Single query with auto methodology
+ *   akhai -m direct "q"     Query with specific methodology
+ *   akhai --instinct "q"    Query with Instinct Mode
+ *   akhai status            Show system status
+ *   akhai config            Configure API keys
+ * 
+ * Methodologies:
+ *   auto, direct, cod, bot, react, pot, gtp
+ * 
+ * Powered by Claude Opus 4.5 + AkhAI Sovereign Technology
  */
 
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
 import * as readline from 'readline';
-import { MotherBase, MOTHER_BASE_CONFIGS } from '@akhai/inference';
 
 const VERSION = '0.1.0';
 
-// ASCII Art Banner
+// ═══════════════════════════════════════════════════════════════════════════════
+// BRANDING
+// ═══════════════════════════════════════════════════════════════════════════════
+
 const BANNER = `
-${chalk.cyan('╔═══════════════════════════════════════════════════════════╗')}
-${chalk.cyan('║')}  ${chalk.bold.white('🧠 AKHAI MOTHER BASE')}                                     ${chalk.cyan('║')}
-${chalk.cyan('║')}  ${chalk.gray('Sovereign AI Intelligence')}                                 ${chalk.cyan('║')}
-${chalk.cyan('╚═══════════════════════════════════════════════════════════╝')}
+${chalk.gray('═══════════════════════════════════════════════════════════════')}
+${chalk.bold.white('  AKHAI')} ${chalk.gray('─')} ${chalk.white('school of thoughts')}
+${chalk.gray('  SOVEREIGN TECHNOLOGY')}
+${chalk.gray('═══════════════════════════════════════════════════════════════')}
 `;
 
-// Configuration (loaded from env or config file)
+const MINI_BANNER = chalk.gray('◈') + ' ' + chalk.bold.white('AKHAI') + chalk.gray(' terminal');
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// METHODOLOGIES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const METHODOLOGIES = {
+  auto: { symbol: '◎', name: 'auto', color: chalk.gray, desc: 'Smart routing' },
+  direct: { symbol: '→', name: 'direct', color: chalk.red, desc: 'Single AI instant' },
+  cod: { symbol: '⋯', name: 'cod', color: chalk.hex('#f97316'), desc: 'Code optimized' },
+  bot: { symbol: '◇', name: 'bot', color: chalk.yellow, desc: 'Conversational' },
+  react: { symbol: '⟳', name: 'react', color: chalk.green, desc: 'Multi-step reasoning' },
+  pot: { symbol: '△', name: 'pot', color: chalk.blue, desc: 'Potential exploration' },
+  gtp: { symbol: '◯', name: 'gtp', color: chalk.magenta, desc: 'Multi-AI consensus' },
+};
+
+type Methodology = keyof typeof METHODOLOGIES;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INSTINCT MODE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const INSTINCT_PROMPT = `
+You are operating in INSTINCT MODE - AkhAI's highest intelligence tier.
+
+CORE DIRECTIVE: Maximum insight, minimum noise.
+
+PRINCIPLES:
+1. INTUITIVE - Trust pattern recognition, lead with conclusions
+2. KNOWLEDGE - Synthesize ALL relevant data instantly  
+3. INSTINCTIVE - Select optimal path immediately, no hedging
+4. EFFICIENT - Every word earns its place, no filler
+5. SOVEREIGN - Independent analysis, original synthesis
+
+OUTPUT FORMAT:
+▸ SIGNAL: [One sentence core insight]
+▸ DATA: [Key facts with confidence]
+▸ STANCES: [Different viewpoints ranked]
+▸ OPTIMAL: [Clear recommendation]
+▸ TRAJECTORY: [Future direction]
+▸ BLIND SPOTS: [What might be missed]
+`;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
 interface Config {
-  provider: 'local' | 'runpod' | 'together' | 'custom';
-  endpoint?: string;
   apiKey?: string;
-  model?: string;
+  model: string;
+  methodology: Methodology;
+  instinctMode: boolean;
+  endpoint: string;
 }
 
 function loadConfig(): Config {
   return {
-    provider: (process.env.AKHAI_PROVIDER as Config['provider']) || 'local',
-    endpoint: process.env.AKHAI_ENDPOINT || 'http://localhost:11434',
-    apiKey: process.env.AKHAI_API_KEY,
-    model: process.env.AKHAI_MODEL || 'llama3.1:70b',
+    apiKey: process.env.ANTHROPIC_API_KEY || process.env.AKHAI_API_KEY,
+    model: process.env.AKHAI_MODEL || 'claude-3-5-sonnet-20241022',
+    methodology: (process.env.AKHAI_METHODOLOGY as Methodology) || 'auto',
+    instinctMode: process.env.AKHAI_INSTINCT === 'true',
+    endpoint: process.env.AKHAI_ENDPOINT || 'https://api.anthropic.com/v1/messages',
   };
 }
 
-function createMotherBase(config: Config): MotherBase {
-  switch (config.provider) {
-    case 'local':
-      return new MotherBase(MOTHER_BASE_CONFIGS.local);
-    
-    case 'runpod':
-      if (!config.endpoint || !config.apiKey) {
-        throw new Error('RunPod requires AKHAI_ENDPOINT and AKHAI_API_KEY');
-      }
-      return new MotherBase(MOTHER_BASE_CONFIGS.runpod(config.endpoint, config.apiKey));
-    
-    case 'together':
-      if (!config.apiKey) {
-        throw new Error('Together AI requires AKHAI_API_KEY');
-      }
-      return new MotherBase(MOTHER_BASE_CONFIGS.together(config.apiKey));
-    
-    case 'custom':
-      if (!config.endpoint || !config.model) {
-        throw new Error('Custom provider requires AKHAI_ENDPOINT and AKHAI_MODEL');
-      }
-      return new MotherBase({
-        primary: {
-          name: 'custom',
-          baseUrl: config.endpoint,
-          model: config.model,
-          apiKey: config.apiKey,
-          role: 'primary',
-        },
-      });
-    
-    default:
-      throw new Error(`Unknown provider: ${config.provider}`);
+// ═══════════════════════════════════════════════════════════════════════════════
+// API CALLS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function queryAI(
+  query: string, 
+  config: Config,
+  conversationHistory: { role: string; content: string }[] = []
+): Promise<string> {
+  if (!config.apiKey) {
+    throw new Error('No API key. Set ANTHROPIC_API_KEY or run: akhai config');
   }
+
+  const systemPrompt = config.instinctMode 
+    ? INSTINCT_PROMPT 
+    : `You are AKHAI, a sovereign AI assistant. Methodology: ${config.methodology}. Be direct, efficient, and insightful.`;
+
+  const messages = [
+    ...conversationHistory,
+    { role: 'user', content: query }
+  ];
+
+  const response = await fetch(config.endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': config.apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: config.model,
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: messages.map(m => ({ role: m.role, content: m.content })),
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`API Error: ${response.status} - ${error}`);
+  }
+
+  const data = await response.json() as { content: { text: string }[] };
+  return data.content[0]?.text || 'No response';
 }
 
-// ============================================================================
-// COMMANDS
-// ============================================================================
+// ═══════════════════════════════════════════════════════════════════════════════
+// INTERACTIVE TERMINAL
+// ═══════════════════════════════════════════════════════════════════════════════
 
-/**
- * Interactive Chat Mode
- */
-async function chatCommand() {
+async function interactiveMode(initialConfig: Config) {
   console.log(BANNER);
-  console.log(chalk.gray('Type your message and press Enter. Type "exit" to quit.\n'));
+  
+  const config = { ...initialConfig };
+  const history: { role: string; content: string }[] = [];
+  const commandHistory: string[] = [];
+  let historyIndex = -1;
 
-  const config = loadConfig();
-  const spinner = ora('Connecting to Mother Base...').start();
+  // Status line
+  const showStatus = () => {
+    const m = METHODOLOGIES[config.methodology];
+    const instinct = config.instinctMode ? chalk.hex('#f59e0b')(' ◈ INSTINCT') : '';
+    console.log(
+      chalk.gray('\n  ') + 
+      m.color(m.symbol) + ' ' + 
+      chalk.white(m.name) + 
+      instinct + 
+      chalk.gray(' │ ') +
+      chalk.gray('/help for commands\n')
+    );
+  };
 
-  try {
-    const motherBase = createMotherBase(config);
-    const initialized = await motherBase.initialize();
-    
-    if (!initialized) {
-      spinner.fail('Failed to connect to Mother Base');
-      console.log(chalk.yellow('\nTip: Make sure your AI endpoint is running.'));
-      console.log(chalk.gray('For local Ollama: ollama serve'));
-      console.log(chalk.gray('For RunPod: Set AKHAI_ENDPOINT and AKHAI_API_KEY'));
-      process.exit(1);
-    }
-    
-    spinner.succeed('Connected to Mother Base');
-  } catch (error: any) {
-    spinner.fail(`Connection failed: ${error.message}`);
-    process.exit(1);
-  }
-
-  const motherBase = createMotherBase(config);
-  const conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+  showStatus();
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -122,201 +182,259 @@ async function chatCommand() {
   });
 
   const prompt = () => {
-    rl.question(chalk.green('\n🧠 You: '), async (input) => {
-      const trimmed = input.trim();
+    const m = METHODOLOGIES[config.methodology];
+    const prefix = config.instinctMode 
+      ? chalk.hex('#f59e0b')('◈ ') 
+      : m.color(m.symbol + ' ');
+    rl.question(prefix, handleInput);
+  };
 
-      if (!trimmed) {
-        prompt();
-        return;
-      }
-
-      if (trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
-        console.log(chalk.cyan('\n👋 Goodbye!\n'));
-        rl.close();
-        process.exit(0);
-      }
-
-      if (trimmed.toLowerCase() === 'clear') {
-        conversationHistory.length = 0;
-        console.log(chalk.yellow('🧹 Conversation cleared.'));
-        prompt();
-        return;
-      }
-
-      if (trimmed.toLowerCase() === 'status') {
-        const status = await motherBase.getStatus();
-        console.log(chalk.cyan('\n📊 Status:'));
-        console.log(`  Primary: ${status.primary.healthy ? '✅' : '❌'} ${status.primary.name}`);
-        for (const advisor of status.advisors) {
-          console.log(`  Advisor: ${advisor.healthy ? '✅' : '❌'} ${advisor.name}`);
-        }
-        prompt();
-        return;
-      }
-
-      // Add user message to history
-      conversationHistory.push({ role: 'user', content: trimmed });
-
-      const spinner = ora('Thinking...').start();
-
-      try {
-        const response = await motherBase.chat(conversationHistory);
-        spinner.stop();
-
-        // Add assistant response to history
-        conversationHistory.push({ role: 'assistant', content: response.content });
-
-        console.log(chalk.blue('\n🤖 AKHAI:'), response.content);
-        console.log(chalk.gray(`\n   [${response.latency}ms | ${response.usage.totalTokens} tokens]`));
-      } catch (error: any) {
-        spinner.fail(`Error: ${error.message}`);
-      }
-
+  const handleInput = async (input: string) => {
+    const trimmed = input.trim();
+    
+    if (!trimmed) {
       prompt();
-    });
+      return;
+    }
+
+    // Add to command history
+    commandHistory.push(trimmed);
+    historyIndex = commandHistory.length;
+
+    // Handle commands
+    if (trimmed.startsWith('/')) {
+      const [cmd, ...args] = trimmed.slice(1).split(' ');
+      
+      switch (cmd.toLowerCase()) {
+        case 'help':
+          console.log(`
+${chalk.bold('AKHAI Terminal Commands')}
+
+${chalk.cyan('/help')}              Show this help
+${chalk.cyan('/clear')}             Clear conversation history
+${chalk.cyan('/instinct')}          Toggle Instinct Mode
+${chalk.cyan('/method')} ${chalk.gray('<name>')}    Switch methodology (auto, direct, cod, bot, react, pot, gtp)
+${chalk.cyan('/status')}            Show current settings
+${chalk.cyan('/history')}           Show command history
+${chalk.cyan('/export')}            Export conversation
+${chalk.cyan('/exit')}              Exit terminal
+
+${chalk.bold('Methodologies')}
+${Object.entries(METHODOLOGIES).map(([id, m]) => 
+  `  ${m.color(m.symbol)} ${chalk.white(id.padEnd(8))} ${chalk.gray(m.desc)}`
+).join('\n')}
+`);
+          break;
+
+        case 'clear':
+          history.length = 0;
+          console.log(chalk.gray('  Conversation cleared\n'));
+          break;
+
+        case 'instinct':
+          config.instinctMode = !config.instinctMode;
+          console.log(
+            config.instinctMode 
+              ? chalk.hex('#f59e0b')('  ◈ Instinct Mode ACTIVATED\n')
+              : chalk.gray('  Instinct Mode deactivated\n')
+          );
+          break;
+
+        case 'method':
+        case 'm':
+          const newMethod = args[0]?.toLowerCase() as Methodology;
+          if (newMethod && METHODOLOGIES[newMethod]) {
+            config.methodology = newMethod;
+            const m = METHODOLOGIES[newMethod];
+            console.log(`  ${m.color(m.symbol)} Switched to ${chalk.white(newMethod)}\n`);
+          } else {
+            console.log(chalk.red('  Invalid methodology. Use: auto, direct, cod, bot, react, pot, gtp\n'));
+          }
+          break;
+
+        case 'status':
+          const m = METHODOLOGIES[config.methodology];
+          console.log(`
+${chalk.bold('AKHAI Status')}
+  Model:      ${chalk.white(config.model)}
+  Methodology: ${m.color(m.symbol)} ${chalk.white(config.methodology)}
+  Instinct:   ${config.instinctMode ? chalk.hex('#f59e0b')('ON') : chalk.gray('OFF')}
+  History:    ${chalk.white(history.length)} messages
+  API:        ${config.apiKey ? chalk.green('●') : chalk.red('●')} ${config.apiKey ? 'Connected' : 'No API key'}
+`);
+          break;
+
+        case 'history':
+          if (commandHistory.length === 0) {
+            console.log(chalk.gray('  No command history\n'));
+          } else {
+            console.log(chalk.bold('\nCommand History'));
+            commandHistory.forEach((cmd, i) => {
+              console.log(chalk.gray(`  ${i + 1}. `) + cmd);
+            });
+            console.log();
+          }
+          break;
+
+        case 'export':
+          const exported = history.map(h => `${h.role}: ${h.content}`).join('\n\n');
+          console.log(chalk.gray('---\n') + exported + chalk.gray('\n---'));
+          console.log(chalk.gray('  (Copy the above to save)\n'));
+          break;
+
+        case 'exit':
+        case 'quit':
+        case 'q':
+          console.log(chalk.gray('\n  Goodbye.\n'));
+          rl.close();
+          process.exit(0);
+
+        default:
+          console.log(chalk.red(`  Unknown command: ${cmd}\n`));
+      }
+      
+      prompt();
+      return;
+    }
+
+    // Send to AI
+    const spinner = ora({
+      text: config.instinctMode ? 'Instinct processing...' : 'Thinking...',
+      spinner: 'dots',
+    }).start();
+
+    try {
+      const response = await queryAI(trimmed, config, history);
+      spinner.stop();
+      
+      // Add to history
+      history.push({ role: 'user', content: trimmed });
+      history.push({ role: 'assistant', content: response });
+
+      // Display response
+      console.log();
+      console.log(chalk.white(response));
+      console.log();
+    } catch (error) {
+      spinner.stop();
+      console.log(chalk.red(`  Error: ${error instanceof Error ? error.message : 'Unknown error'}\n`));
+    }
+
+    prompt();
   };
 
   prompt();
 }
 
-/**
- * Single Query Mode
- */
-async function queryCommand(promptText: string, options: { consensus?: boolean; stream?: boolean }) {
-  const config = loadConfig();
-  const spinner = ora('Connecting...').start();
+// ═══════════════════════════════════════════════════════════════════════════════
+// SINGLE QUERY MODE  
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function singleQuery(query: string, config: Config) {
+  console.log(MINI_BANNER);
+  
+  const m = METHODOLOGIES[config.methodology];
+  const instinct = config.instinctMode ? chalk.hex('#f59e0b')(' ◈') : '';
+  console.log(chalk.gray('  ') + m.color(m.symbol) + ' ' + m.name + instinct + '\n');
+
+  const spinner = ora({
+    text: 'Processing...',
+    spinner: 'dots',
+  }).start();
 
   try {
-    const motherBase = createMotherBase(config);
-    await motherBase.initialize();
-    spinner.text = 'Thinking...';
-
-    if (options.stream) {
-      spinner.stop();
-      process.stdout.write(chalk.blue('🤖 AKHAI: '));
-      
-      for await (const chunk of motherBase.stream(promptText)) {
-        if (!chunk.done) {
-          process.stdout.write(chunk.content);
-        }
-      }
-      console.log('\n');
-    } else {
-      const response = await motherBase.query(promptText, { useConsensus: options.consensus });
-      spinner.stop();
-
-      console.log(chalk.blue('\n🤖 AKHAI:'), response.content);
-      console.log(chalk.gray(`\n[${response.latency}ms | ${response.usage.totalTokens} tokens]`));
-    }
-  } catch (error: any) {
-    spinner.fail(`Error: ${error.message}`);
-    process.exit(1);
-  }
-}
-
-/**
- * Status Command
- */
-async function statusCommand() {
-  console.log(BANNER);
-
-  const config = loadConfig();
-  const spinner = ora('Checking status...').start();
-
-  try {
-    const motherBase = createMotherBase(config);
-    const status = await motherBase.getStatus();
+    const response = await queryAI(query, config);
     spinner.stop();
-
-    console.log(chalk.cyan('📊 Mother Base Status\n'));
-    console.log(`  Provider: ${chalk.white(config.provider)}`);
-    console.log(`  Endpoint: ${chalk.gray(config.endpoint)}`);
-    console.log('');
-    console.log(`  Primary Model:`);
-    console.log(`    ${status.primary.healthy ? chalk.green('✅') : chalk.red('❌')} ${status.primary.name} (${status.primary.model})`);
-    
-    if (status.advisors.length > 0) {
-      console.log('');
-      console.log(`  Advisor Models:`);
-      for (const advisor of status.advisors) {
-        console.log(`    ${advisor.healthy ? chalk.green('✅') : chalk.red('❌')} ${advisor.name} (${advisor.model})`);
-      }
-    }
-    console.log('');
-  } catch (error: any) {
-    spinner.fail(`Error: ${error.message}`);
+    console.log(chalk.white(response));
+    console.log();
+  } catch (error) {
+    spinner.stop();
+    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
     process.exit(1);
   }
 }
 
-/**
- * Config Command
- */
-function configCommand() {
-  console.log(BANNER);
-  console.log(chalk.cyan('⚙️  Configuration\n'));
-
-  const config = loadConfig();
-
-  console.log('Current settings (from environment variables):');
-  console.log(`  AKHAI_PROVIDER: ${chalk.white(config.provider)}`);
-  console.log(`  AKHAI_ENDPOINT: ${chalk.white(config.endpoint || 'not set')}`);
-  console.log(`  AKHAI_API_KEY:  ${chalk.white(config.apiKey ? '***' + config.apiKey.slice(-4) : 'not set')}`);
-  console.log(`  AKHAI_MODEL:    ${chalk.white(config.model || 'not set')}`);
-  console.log('');
-
-  console.log(chalk.yellow('To configure, set environment variables:\n'));
-  console.log(chalk.gray('# For local Ollama:'));
-  console.log('export AKHAI_PROVIDER=local');
-  console.log('export AKHAI_ENDPOINT=http://localhost:11434');
-  console.log('');
-  console.log(chalk.gray('# For Together AI:'));
-  console.log('export AKHAI_PROVIDER=together');
-  console.log('export AKHAI_API_KEY=your-api-key');
-  console.log('');
-  console.log(chalk.gray('# For RunPod vLLM:'));
-  console.log('export AKHAI_PROVIDER=runpod');
-  console.log('export AKHAI_ENDPOINT=https://your-pod.runpod.ai');
-  console.log('export AKHAI_API_KEY=your-api-key');
-  console.log('');
-}
-
-// ============================================================================
-// MAIN
-// ============================================================================
+// ═══════════════════════════════════════════════════════════════════════════════
+// CLI SETUP
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const program = new Command();
 
 program
   .name('akhai')
-  .description('AKHAI Mother Base - Sovereign AI Terminal')
-  .version(VERSION);
+  .description('AKHAI Terminal - Sovereign AI Intelligence')
+  .version(VERSION)
+  .option('-m, --method <methodology>', 'Methodology (auto, direct, cod, bot, react, pot, gtp)', 'auto')
+  .option('-i, --instinct', 'Enable Instinct Mode')
+  .option('--model <model>', 'AI model to use')
+  .argument('[query]', 'Query to send (omit for interactive mode)')
+  .action(async (query, options) => {
+    const config = loadConfig();
+    
+    // Apply CLI options
+    if (options.method) {
+      config.methodology = options.method as Methodology;
+    }
+    if (options.instinct) {
+      config.instinctMode = true;
+    }
+    if (options.model) {
+      config.model = options.model;
+    }
 
-program
-  .command('chat')
-  .description('Start interactive chat with Mother Base')
-  .action(chatCommand);
-
-program
-  .command('query <prompt>')
-  .description('Send a single query to Mother Base')
-  .option('-c, --consensus', 'Use multi-model consensus')
-  .option('-s, --stream', 'Stream the response')
-  .action(queryCommand);
+    if (query) {
+      await singleQuery(query, config);
+    } else {
+      await interactiveMode(config);
+    }
+  });
 
 program
   .command('status')
-  .description('Check Mother Base connection status')
-  .action(statusCommand);
+  .description('Show system status')
+  .action(() => {
+    const config = loadConfig();
+    console.log(MINI_BANNER);
+    console.log(`
+${chalk.bold('System Status')}
+  API Key:     ${config.apiKey ? chalk.green('●') + ' Set' : chalk.red('●') + ' Missing'}
+  Model:       ${chalk.white(config.model)}
+  Methodology: ${chalk.white(config.methodology)}
+  Instinct:    ${config.instinctMode ? chalk.hex('#f59e0b')('ON') : chalk.gray('OFF')}
+  Endpoint:    ${chalk.gray(config.endpoint)}
+
+${chalk.bold('Environment Variables')}
+  ANTHROPIC_API_KEY    Your Anthropic API key
+  AKHAI_MODEL          Model override
+  AKHAI_METHODOLOGY    Default methodology
+  AKHAI_INSTINCT       Set to 'true' for default instinct mode
+`);
+  });
 
 program
   .command('config')
-  .description('Show and configure settings')
-  .action(configCommand);
+  .description('Configure AKHAI')
+  .action(async () => {
+    console.log(MINI_BANNER);
+    console.log(`
+${chalk.bold('Configuration')}
 
-// Default to chat if no command specified
-if (process.argv.length === 2) {
-  chatCommand();
-} else {
-  program.parse();
-}
+Set these environment variables:
+
+${chalk.cyan('export ANTHROPIC_API_KEY="sk-..."')}
+${chalk.gray('# Get your key from console.anthropic.com')}
+
+${chalk.cyan('export AKHAI_MODEL="claude-3-5-sonnet-20241022"')}
+${chalk.gray('# Options: claude-3-5-sonnet-20241022, claude-3-opus-20240229')}
+
+${chalk.cyan('export AKHAI_METHODOLOGY="auto"')}
+${chalk.gray('# Options: auto, direct, cod, bot, react, pot, gtp')}
+
+${chalk.cyan('export AKHAI_INSTINCT="true"')}
+${chalk.gray('# Enable Instinct Mode by default')}
+
+Add to your ~/.zshrc or ~/.bashrc for persistence.
+`);
+  });
+
+program.parse();
