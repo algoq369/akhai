@@ -116,6 +116,7 @@ temp/
 .next/
 packages/web/.next
 apps/web/.next
+packages/web/.next/**
 
 # Next.js build cache
 .next/
@@ -132,7 +133,12 @@ out/
 
 # Database files
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
+**/data/*.db
+**/data/*.db-shm
+**/data/*.db-wal
 
 # Logs
 *.log

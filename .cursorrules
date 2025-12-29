@@ -59,9 +59,11 @@ npx tsc --noEmit  # Type check
 
 ## Phase 2 Implementation Timeline
 
-**Session 2: Side Canal** ← CURRENT
-- lib/side-canal.ts (topic extraction, synopsis)
-- components/SuggestionToast.tsx (alerts)
+**Session 2: Side Canal** ✅ COMPLETE
+- ✅ lib/side-canal.ts (topic extraction, synopsis, suggestions, context injection)
+- ✅ components/SuggestionToast.tsx (alerts with expand/collapse, auto-hide)
+- ✅ API routes (/api/side-canal/*)
+- ✅ Integration in simple-query route
 
 **Session 3: Mind Map UI**
 - components/MindMap.tsx (visual UI)
