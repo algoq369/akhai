@@ -114,46 +114,95 @@ export default function PhilosophyPage() {
 
           <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-12">
             <div className="grid md:grid-cols-2 gap-12">
-              {/* ASCII Tree */}
-              <div className="font-mono text-xs text-relic-silver leading-relaxed">
-                <pre className="whitespace-pre">{`
+              {/* Traditional Kabbalistic Tree */}
+              <div>
+                <h3 className="font-mono text-sm mb-4 text-relic-slate dark:text-white uppercase tracking-wider text-center">
+                  Traditional Tree of Life
+                </h3>
+                <div className="font-mono text-xs text-relic-silver leading-relaxed">
+                  <pre className="whitespace-pre">{`
                     Kether
-                   (Crown)
+                כֶּתֶר (Crown)
                       │
           ┌───────────┼───────────┐
           │                       │
       Binah                   Chokmah
-  (Understanding)            (Wisdom)
+  בִּינָה (Understanding)   חָכְמָה (Wisdom)
           │                       │
           └───────────┬───────────┘
                    Da'at
-              (Hidden Knowledge)
+              דַּעַת (Knowledge)
                       │
           ┌───────────┼───────────┐
           │                       │
       Gevurah                  Chesed
-     (Severity)                (Mercy)
+   גְּבוּרָה (Severity)      חֶסֶד (Mercy)
           │                       │
           └───────────┬───────────┘
                   Tiferet
-                 (Beauty)
+              תִּפְאֶרֶת (Beauty)
                       │
           ┌───────────┼───────────┐
           │                       │
         Hod                    Netzach
-      (Glory)                 (Victory)
+    הוֹד (Glory)           נֶצַח (Victory)
           │                       │
           └───────────┬───────────┘
                    Yesod
-               (Foundation)
+              יְסוֹד (Foundation)
                       │
                   Malkuth
-                 (Kingdom)
+              מַלְכוּת (Kingdom)
                 `}</pre>
+                </div>
               </div>
 
-              {/* Explanation */}
-              <div className="space-y-6">
+              {/* AI Computational Tree */}
+              <div>
+                <h3 className="font-mono text-sm mb-4 text-relic-slate dark:text-white uppercase tracking-wider text-center">
+                  AI Computational Tree
+                </h3>
+                <div className="font-mono text-xs text-relic-slate dark:text-white leading-relaxed">
+                  <pre className="whitespace-pre">{`
+                    Kether
+               Meta-Cognitive Layer
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+      Binah                   Chokmah
+  Pattern Layer           Principle Layer
+          │                       │
+          └───────────┬───────────┘
+                   Da'at
+              Emergent Layer
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+      Gevurah                  Chesed
+  Constraint Layer        Expansion Layer
+          │                       │
+          └───────────┬───────────┘
+                  Tiferet
+             Integration Layer
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+        Hod                    Netzach
+    Logic Layer            Creative Layer
+          │                       │
+          └───────────┬───────────┘
+                   Yesod
+            Implementation Layer
+                      │
+                  Malkuth
+                 Data Layer
+                `}</pre>
+                </div>
+              </div>
+            </div>
+
+            {/* Explanation */}
+            <div className="mt-12 space-y-6">
                 <div>
                   <h3 className="font-mono text-sm mb-2 text-relic-slate dark:text-white uppercase tracking-wider">
                     The Ascent Journey

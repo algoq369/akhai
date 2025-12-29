@@ -27,6 +27,7 @@ import ConversationConsole, { InlineConsole } from '@/components/ConversationCon
 import SefirotMini from '@/components/SefirotMini'
 import { Sefirah } from '@/lib/ascent-tracker'
 import { useSession } from '@/lib/session-manager'
+import { HebrewTermDisplay } from '@/lib/hebrew-formatter'
 
 const METHODOLOGIES = [
   { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', cost: 'varies', savings: 'varies' },
@@ -1570,15 +1571,15 @@ export default function HomePage() {
                                   {message.gnostic.ascentState && (
                                     <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
                                       <div className="text-[9px] text-relic-silver uppercase tracking-[0.2em] mb-3">
-                                        Tree of Life Ascent
+                                        <HebrewTermDisplay term="SEPHIROTH" showAI={false} /> Ascent
                                       </div>
                                       <div className="flex items-center justify-between mb-2 pb-2 border-b border-relic-mist/50 dark:border-relic-slate/20">
                                         <span className="text-[10px] text-relic-silver">
                                           Current Level:
                                         </span>
-                                        <span className="text-[10px] font-mono text-relic-slate dark:text-white">
+                                        <div className="text-[10px] font-mono text-relic-slate dark:text-white">
                                           {message.gnostic.ascentState.levelName} ({message.gnostic.ascentState.currentLevel}/11)
-                                        </span>
+                                        </div>
                                       </div>
                                       <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] text-relic-silver">Velocity:</span>
@@ -1609,9 +1610,8 @@ export default function HomePage() {
                                   {/* Da'at Insight */}
                                   {message.gnostic.sephirothAnalysis.daatInsight && (
                                     <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
-                                      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-relic-slate dark:text-relic-ghost mb-2">
-                                        <span>✨</span>
-                                        <span>Da'at - Hidden Knowledge</span>
+                                      <div className="text-[10px] uppercase tracking-wider text-relic-slate dark:text-relic-ghost mb-2">
+                                        <HebrewTermDisplay term="DAAT" showAI={true} className="text-[10px]" />
                                       </div>
                                       <p className="text-[10px] text-relic-silver leading-relaxed mb-2">
                                         {message.gnostic.sephirothAnalysis.daatInsight.insight}
@@ -1625,8 +1625,8 @@ export default function HomePage() {
                                   {/* Kether Protocol State */}
                                   {message.gnostic.ketherState && (
                                     <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
-                                      <div className="text-[9px] text-relic-silver uppercase tracking-[0.2em] mb-3">
-                                        Kether Protocol - Self-Awareness
+                                      <div className="text-[9px] text-relic-silver mb-3">
+                                        <HebrewTermDisplay term="KETHER" showAI={true} className="text-[9px]" /> Protocol
                                       </div>
                                       <div className="space-y-2 text-[10px]">
                                         <div className="flex justify-between items-baseline">
@@ -1650,10 +1650,16 @@ export default function HomePage() {
                                   )}
 
                                   {/* Dominant Sefirah */}
-                                  <div className="text-[9px] text-relic-silver text-center uppercase tracking-wider border-t border-relic-mist/30 dark:border-relic-slate/20 pt-3">
-                                    Dominant: <span className="font-mono text-relic-slate dark:text-white">{message.gnostic.sephirothAnalysis.dominant}</span>
-                                    {' • '}
-                                    Avg Level: <span className="font-mono text-relic-slate dark:text-white">{message.gnostic.sephirothAnalysis.averageLevel.toFixed(1)}</span>
+                                  <div className="text-[9px] text-relic-silver text-center border-t border-relic-mist/30 dark:border-relic-slate/20 pt-3">
+                                    <div className="mb-1">
+                                      Dominant <HebrewTermDisplay term="SEFIRAH" showAI={false} className="text-[9px]" />:
+                                    </div>
+                                    <div className="font-mono text-relic-slate dark:text-white">
+                                      {message.gnostic.sephirothAnalysis.dominant}
+                                    </div>
+                                    <div className="text-[8px] text-relic-mist mt-1">
+                                      Average Level: {message.gnostic.sephirothAnalysis.averageLevel.toFixed(1)}
+                                    </div>
                                   </div>
                                 </div>
                               )}
