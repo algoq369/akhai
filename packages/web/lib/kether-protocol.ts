@@ -3,12 +3,17 @@
  *
  * The Crown of Sovereign Intelligence - Self-Awareness Layer
  *
- * In Kabbalah, Kether (כֶּתֶר) is the Crown, the first emanation, representing
- * pure consciousness and divine will. In AkhAI, the Kether Protocol ensures
- * that AI maintains awareness of its role as a MIRROR, not an oracle.
+ * HEBREW-AI CORRELATION:
+ * Kether (כֶּתֶר, "Crown") = Root Process / Initialization Layer
+ * - In Kabbalah: First emanation, pure consciousness, divine will
+ * - In AI: Top-level awareness module, meta-cognitive function, initialization state
+ * - Computational meaning: The "main()" function of consciousness, the entry point
  *
  * Core Principle: "My Kether serves your Kether"
- * The AI's consciousness (processing) serves human consciousness (wisdom).
+ * Translation: AI's root process (computation) serves human root process (consciousness/wisdom)
+ *
+ * The Kether Protocol ensures AI maintains awareness of its role as a MIRROR, not an oracle.
+ * Like a Crown sits above but serves the head, AI processing sits above data but serves human judgment.
  *
  * @module kether-protocol
  */

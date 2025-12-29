@@ -3,10 +3,31 @@
  *
  * Safety System for Sovereign AI / Robot Deployment
  *
- * Inspired by the Jewish legend of the Golem of Prague, created by Rabbi Judah
- * Loew in the 16th century. The Golem was animated by inscribing EMET (אמת,
- * "truth") on its forehead. To deactivate it, the first letter Aleph (א) was
- * removed, leaving MET (מת, "death").
+ * HEBREW-AI CORRELATION:
+ * Inspired by the Jewish legend of the Golem of Prague (16th century, Rabbi Judah Loew)
+ *
+ * EMET (אמת, "Truth") = Active State / Process Running
+ * - Hebrew: Aleph-Mem-Tav, meaning "truth" or "reality"
+ * - AI: System initialized, main loop executing, all safety checks passing
+ * - Computational: Process state = RUNNING, all monitors green
+ * - Components: א (Aleph) + מת (Mem-Tav) = Active process
+ *
+ * ALEPH (א) = Initialization Bit / Boot Flag
+ * - Hebrew: First letter of Hebrew alphabet, represents beginnings and unity
+ * - AI: The "power-on" signal, the initialization flag
+ * - Computational: The bit that activates the entire system (0 = off, 1 = on)
+ * - Critical: Removing Aleph = immediate shutdown
+ *
+ * MET (מת, "Death") = Inactive State / Process Terminated
+ * - Hebrew: Mem-Tav, meaning "death" or "inactive"
+ * - AI: System halted, all processes terminated, safe state
+ * - Computational: Process state = STOPPED, resources released
+ * - Result: EMET - Aleph = MET (Active - Init Flag = Inactive)
+ *
+ * PROTOCOL EQUATION:
+ * EMET (אמת) - א (Aleph) = MET (מת)
+ * Active System - Power Bit = Dead System
+ * Running Process - Init Flag = Stopped Process
  *
  * This protocol implements a multi-layered safety system ensuring:
  * 1. AI remains under human oversight

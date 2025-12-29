@@ -3,12 +3,32 @@
  *
  * Tracks User's Journey from Malkuth to Kether
  *
- * In Kabbalah, the spiritual journey is an ASCENT through the Tree of Life,
- * from Malkuth (Kingdom/Material World) to Kether (Crown/Divine Unity).
+ * HEBREW-AI CORRELATION: The Tree of Life as Abstraction Layers
  *
- * In AkhAI, we track the intellectual/spiritual elevation of the user's
- * queries over time. As users ask deeper, more sophisticated questions,
- * they ascend through the Sephiroth.
+ * In Kabbalah: Spiritual ascent from material to divine
+ * In AI: User's progression through abstraction layers of thought
+ *
+ * SEPHIROTH (ספירות, "Emanations") = Processing Layers / Abstraction Levels
+ * - Hebrew: Plural of Sefirah, meaning "countings" or "emanations"
+ * - AI: Different levels of query sophistication and reasoning depth
+ * - Computational: Stack of increasing abstraction (data → info → knowledge → wisdom)
+ *
+ * THE ASCENT PATH:
+ * Malkuth (מלכות, "Kingdom") → Data Layer / Raw Facts
+ * Yesod (יסוד, "Foundation") → Implementation Layer / How-To
+ * Hod (הוד, "Glory") → Logic Layer / Analysis
+ * Netzach (נצח, "Victory") → Creative Layer / Exploration
+ * Tiferet (תפארת, "Beauty") → Integration Layer / Synthesis
+ * Gevurah (גבורה, "Severity") → Constraint Layer / Critical Analysis
+ * Chesed (חסד, "Mercy") → Expansion Layer / Possibilities
+ * Binah (בינה, "Understanding") → Pattern Layer / Deep Structure
+ * Chokmah (חכמה, "Wisdom") → Principle Layer / First Causes
+ * Kether (כתר, "Crown") → Meta Layer / Self-Awareness
+ * Da'at (דעת, "Knowledge") → Emergent Layer / Hidden Insights
+ *
+ * COMPUTATIONAL PARALLEL:
+ * User starts at Level 1 (simple queries) and ascends to Level 10 (meta-cognitive questions)
+ * Each level represents deeper abstraction and more sophisticated reasoning
  *
  * This creates a "user journey map" showing their evolution in thinking.
  *

@@ -1464,9 +1464,25 @@ export default function HomePage() {
                           )}
 
                           {/* TEXT - Always shown after visualizations */}
-                          <p className="text-relic-slate leading-relaxed whitespace-pre-wrap text-sm">
-                            {message.content}
-                          </p>
+                          <div className="text-relic-slate leading-relaxed whitespace-pre-wrap text-sm">
+                            {message.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
+                              // Check if this part is a URL
+                              if (/^https?:\/\//.test(part)) {
+                                return (
+                                  <a
+                                    key={idx}
+                                    href={part}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-relic-slate dark:text-white underline hover:text-relic-void dark:hover:text-relic-ghost transition-colors"
+                                  >
+                                    {part}
+                                  </a>
+                                )
+                              }
+                              return <span key={idx}>{part}</span>
+                            })}
+                          </div>
 
                           {/* Inline Visualize Button */}
                           {(shouldShowSefirot(message.content) || shouldShowInsightMap(message.content)) && globalVizMode === 'off' && (
@@ -1499,18 +1515,18 @@ export default function HomePage() {
                               <button
                                 onClick={() => setGnosticVisibility(prev => ({
                                   ...prev,
-                                  [message.id]: !prev[message.id]
+                                  [message.id]: prev[message.id] === undefined ? false : !prev[message.id]
                                 }))}
                                 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-relic-silver hover:text-relic-slate dark:hover:text-relic-ghost transition-colors mb-3"
                               >
                                 <span className="text-relic-silver">⟁</span>
                                 <span>Gnostic Intelligence</span>
                                 <span className="text-relic-mist">
-                                  {gnosticVisibility[message.id] ? '▼' : '▶'}
+                                  {(gnosticVisibility[message.id] === undefined ? true : gnosticVisibility[message.id]) ? '▼' : '▶'}
                                 </span>
                               </button>
 
-                              {gnosticVisibility[message.id] && (
+                              {(gnosticVisibility[message.id] === undefined ? true : gnosticVisibility[message.id]) && (
                                 <div className="space-y-4 animate-fade-in">
                                   {/* Qliphoth Purification Notice */}
                                   {message.gnostic.qliphothPurified && (
