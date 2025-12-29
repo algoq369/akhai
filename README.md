@@ -2,158 +2,143 @@
 
 # ◊ AKHAI
 
-### Sovereign AI Research Engine
+### The Sovereign AI Research Engine
 
-*Where Intelligence Meets Integrity*
+[![Status](https://img.shields.io/badge/Status-Live-brightgreen)]()
+[![Version](https://img.shields.io/badge/Version-2.0-blue)]()
+[![License](https://img.shields.io/badge/License-Proprietary-red)]()
+[![Founder](https://img.shields.io/badge/Founder-Algoq-purple)]()
 
-[![Status](https://img.shields.io/badge/Status-Beta-yellow)]()
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-93.5%25-blue)]()
-[![Solo Founder](https://img.shields.io/badge/Founder-Algoq-purple)]()
+**7 Reasoning Methodologies • Grounding Guard • Zero Hallucinations • Crypto-Native**
 
-[Live Demo](https://akhai.vercel.app) • [Documentation](#-documentation) • [Vision](#-vision) • [Roadmap](#-roadmap)
+[🚀 Try AkhAI](https://akhai.app) • [📱 Telegram](https://t.me/akhai_official) • [🐦 Twitter](https://twitter.com/AkhAI)
 
 ---
 
-*"The future of AI isn't about who has the biggest model—it's about who builds the most trustworthy one."*
+*"The future of AI isn't who has the biggest model—it's who builds the most trustworthy one."*
 
 </div>
 
 ---
 
-## 🎯 The Problem
+## 🎯 What is AkhAI?
 
-Today's AI systems share critical flaws:
+**AkhAI** is the first **sovereign AI research engine** that combines multiple reasoning methodologies with real-time verification to eliminate hallucinations and deliver trustworthy intelligence.
 
-| Issue | Impact |
-|-------|--------|
-| **Hallucinations** | AI confidently states false information |
-| **Black Box Reasoning** | No insight into how conclusions are reached |
-| **One-Size-Fits-All** | Same approach for simple questions and complex analysis |
-| **Vendor Lock-In** | Dependence on OpenAI/Anthropic APIs |
-| **Hype Without Substance** | Exaggerated claims without grounding |
-
-**Result**: Users can't trust AI outputs for serious work.
+Unlike ChatGPT or Perplexity that use single-approach reasoning, AkhAI dynamically selects from **7 specialized methodologies** based on your query, then verifies every response through our **Grounding Guard** system.
 
 ---
 
-## 💡 The Solution: AkhAI
+## ✨ Why AkhAI?
 
-AkhAI is the **first sovereign AI research engine** that combines 7 reasoning methodologies, real-time grounding verification, and autonomous context intelligence.
-
----
-
-## ✨ Key Features
-
-### 🧠 7 Reasoning Methodologies
-
-| Methodology | How It Works | Auto-Triggers On |
-|-------------|--------------|------------------|
-| **Direct** | Fast, concise response | Simple factual questions |
-| **Chain of Draft (CoD)** | Draft → Reflect → Refine | "step by step", "explain how" |
-| **Buffer of Thoughts (BoT)** | Template-based reasoning | Complex context |
-| **ReAct** | Thought → Action → Observation | "search", "find latest" |
-| **Program of Thought (PoT)** | Code-based computation | Math, calculations |
-| **GTP Consensus** | Multi-perspective synthesis | Opinions, decisions |
-| **Auto** | Intelligent routing | Any query |
-
-### 🛡️ Grounding Guard
-
-Every response verified through:
-- **Hype Detection**: Flags exaggerated claims
-- **Echo Detection**: Catches repetitive content
-- **Drift Detection**: Monitors topic relevance
-- **Factuality Check**: Validates claims
-
-When issues detected, users get:
-- **Refine**: AI suggests better questions
-- **Continue**: Show response with warning
-- **Pivot**: Alternative approaches
+| Problem | AkhAI Solution |
+|---------|----------------|
+| AI confidently lies | **Grounding Guard** catches hallucinations in real-time |
+| One-size-fits-all reasoning | **7 Methodologies** auto-selected for your query |
+| Vendor lock-in (OpenAI/Google) | **Sovereignty path** to self-hosted AI |
+| No payment privacy | **Crypto payments** including Monero |
+| Black-box responses | **Transparent reasoning** you can inspect |
 
 ---
 
-## 🚀 Vision & Roadmap
+## 🧠 The 7 Methodologies
 
-### Phase 1: Core Engine ✅ COMPLETE
-- [x] 7 reasoning methodologies (direct, cod, bot, react, pot, gtp, auto)
-- [x] Grounding Guard (hype, echo, drift, factuality detection)
-- [x] Interactive warning system (refine/continue/pivot)
-- [x] Real-time data integration (CoinGecko)
-- [x] Debug dashboard
+| Method | What It Does | Best For |
+|--------|--------------|----------|
+| **Direct** | Fast, single-pass response | Quick facts, simple Q&A |
+| **Chain of Draft** | Draft → Reflect → Refine | Step-by-step explanations |
+| **Buffer of Thoughts** | Template-based deep reasoning | Complex analysis |
+| **ReAct** | Think → Act → Observe loops | Research, fact-finding |
+| **Program of Thought** | Code-based computation | Math, calculations |
+| **GTP Consensus** | Multi-perspective synthesis | Decisions, opinions |
+| **Auto** | Intelligent routing | Any query (default) |
 
-### Phase 2: Innovations 🔄 IN PROGRESS
-**Session 2: Side Canal** (Current)
-- [ ] Topic extraction from conversations
-- [ ] Synopsis generation per topic
-- [ ] Suggestion engine + alerts
-- [ ] Context injection
+---
 
-**Session 3: Mind Map UI**
-- [ ] Interactive mind map component
-- [ ] Color/pin/archive tools
-- [ ] Connection visualization
+## 🛡️ Grounding Guard
 
-**Session 4: Legend Mode**
-- [ ] Normal/Legend toggle
-- [ ] Token tier configuration
-- [ ] Premium R&D features
+Every response passes through 6-layer verification:
 
-**Session 5: Artifact System**
-- [ ] Export (JSON, SVG, Markdown)
-- [ ] Research summaries
-- [ ] Artifact library
+```
+Query → AI Response → [Hype Check] → [Echo Check] → [Drift Check] 
+                   → [Fact Check] → [Bias Check] → Verified Output
+```
 
-**Session 6: Deploy**
-- [ ] Vercel deployment
-- [ ] Beta program (50-100 users)
+When issues detected:
+- **Refine** → AI suggests better questions
+- **Pivot** → Alternative approaches offered
+- **Warning Badge** → Proceed with caution
 
-### Phase 3: Sovereignty 📋 PLANNED
-- [ ] Fine-tune Qwen 2.5/Mistral on user data
-- [ ] Deploy to FlokiNET Iceland
-- [ ] Zero external AI dependencies
+---
+
+## 💰 Pricing
+
+| Plan | Price | Features |
+|------|-------|----------|
+| **Free** | $0 | 10 queries/day, basic features |
+| **Pro** | $20/month | Unlimited*, Legend Mode, all methodologies |
+| **Team** | $40/user | Collaboration, admin controls |
+| **Enterprise** | Custom | SSO, SLA, dedicated support |
+
+**Payments:** Stripe (Card, Apple Pay, Google Pay) + Crypto (BTC, ETH, XMR, 300+ coins)
+
+---
+
+## 🚀 Roadmap
+
+### 2025
+
+| Quarter | Milestone |
+|---------|-----------|
+| **Q1** | Public launch, 1,000 users, $20K MRR |
+| **Q2** | Mobile apps, 10,000 users, $100K MRR |
+| **Q3** | Sovereign model fine-tuning, API launch |
+| **Q4** | Enterprise features, $500K MRR |
+
+### 2026+
+
+- Self-hosted sovereign AI (zero external dependencies)
+- Robotics integration research
+- Global expansion
+- Path to $1B+ valuation
 
 ---
 
 ## 👤 Team
 
-**Algoq** - Solo Founder
+**Algoq** — Solo Founder & CEO
 
-Building sovereign, trustworthy AI from first principles.
+Building sovereign, trustworthy AI from first principles. Previously: [Your background]
+
+> *"AI should augment human intelligence, not replace human judgment."*
 
 ---
 
-## 🚀 Quick Start
+## 🔗 Links
 
-```bash
-# Clone
-git clone https://github.com/algoq/akhai.git
-cd akhai
-
-# Install
-pnpm install
-
-# Configure
-cp packages/web/.env.example packages/web/.env.local
-# Add ANTHROPIC_API_KEY
-
-# Run
-pnpm dev
-```
+- **Product:** [akhai.app](https://akhai.app)
+- **Twitter:** [@AkhAI](https://twitter.com/AkhAI)
+- **Telegram:** [t.me/akhai_official](https://t.me/akhai_official)
+- **Email:** hello@akhai.app
 
 ---
 
 ## 📜 License
 
-Apache 2.0
+**Proprietary Software** — All rights reserved.
+
+AkhAI is proprietary software. The source code is not available for redistribution, modification, or commercial use without explicit written permission.
+
+Selected open-source tools and integrations may be released separately under appropriate licenses.
 
 ---
 
 <div align="center">
 
-**Built by Algoq**
+**◊ AKHAI**
 
-*Sovereign AI • Grounded Intelligence • Zero Hallucination Tolerance*
+*Sovereign Intelligence • Zero Hallucinations • Crypto-Native*
 
-◊
+**© 2025 AkhAI. All Rights Reserved.**
 
 </div>

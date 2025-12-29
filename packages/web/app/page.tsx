@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { generateId, Message } from '@/lib/chat-store'
 import { trackQuery } from '@/lib/analytics'
+import { useSideCanalStore } from '@/lib/stores/side-canal-store'
 import GuardWarning from '@/components/GuardWarning'
-import MethodologyExplorer from '@/components/MethodologyExplorer'
+// MethodologyExplorer removed - now using inline CSS hover
 import AuthModal from '@/components/AuthModal'
 import UserProfile from '@/components/UserProfile'
 import SuggestionToast from '@/components/SuggestionToast'
@@ -13,15 +15,255 @@ import MindMap from '@/components/MindMap'
 import NavigationMenu from '@/components/NavigationMenu'
 import ChatDashboard from '@/components/ChatDashboard'
 import SideChat from '@/components/SideChat'
+import NewsNotification from '@/components/NewsNotification'
+import FunctionIndicators from '@/components/FunctionIndicators'
+import MethodologyChangePrompt from '@/components/MethodologyChangePrompt'
+import MethodologyFrame from '@/components/MethodologyFrame'
+import SuperSaiyanIcon from '@/components/SuperSaiyanIcon'
+import ResponseMindmap, { shouldShowMindmap } from '@/components/ResponseMindmap'
+import InsightMindmap, { shouldShowInsightMap } from '@/components/InsightMindmap'
+import SefirotResponse, { shouldShowSefirot } from '@/components/SefirotResponse'
+import ConversationConsole, { InlineConsole } from '@/components/ConversationConsole'
 
 const METHODOLOGIES = [
-  { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', savings: 'varies' },
-  { id: 'direct', symbol: '→', name: 'direct', tooltip: 'Single AI, instant', tokens: '200-500', latency: '~2s', savings: '0%' },
-  { id: 'cod', symbol: '⋯', name: 'cod', tooltip: 'Iterative draft', tokens: '~400', latency: '~8s', savings: '92%' },
-  { id: 'bot', symbol: '◇', name: 'bot', tooltip: 'Template reasoning', tokens: '~600', latency: '~12s', savings: '88%' },
-  { id: 'react', symbol: '⟳', name: 'react', tooltip: 'Tools: search, calc', tokens: '2k-8k', latency: '~20s', savings: '0%' },
-  { id: 'pot', symbol: '△', name: 'pot', tooltip: 'Code computation', tokens: '3k-6k', latency: '~15s', savings: '+24%' },
-  { id: 'gtp', symbol: '◯', name: 'gtp', tooltip: 'Multi-AI consensus', tokens: '8k-15k', latency: '~30s', savings: '0%' },
+  { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', cost: 'varies', savings: 'varies' },
+  { id: 'direct', symbol: '→', name: 'direct', tooltip: 'Single AI, instant', tokens: '200-500', latency: '~2s', cost: '$0.006', savings: '0%' },
+  { id: 'cod', symbol: '⋯', name: 'cod', tooltip: 'Iterative draft', tokens: '~400', latency: '~8s', cost: '$0.012', savings: '92%' },
+  { id: 'bot', symbol: '◇', name: 'bot', tooltip: 'Template reasoning', tokens: '~600', latency: '~12s', cost: '$0.018', savings: '88%' },
+  { id: 'react', symbol: '⟳', name: 'react', tooltip: 'Tools: search, calc', tokens: '2k-8k', latency: '~20s', cost: '$0.024', savings: '0%' },
+  { id: 'pot', symbol: '△', name: 'pot', tooltip: 'Code computation', tokens: '3k-6k', latency: '~15s', cost: '$0.018', savings: '+24%' },
+  { id: 'gtp', symbol: '◯', name: 'gtp', tooltip: 'DeepSeek+Mistral+Grok', tokens: '8k-15k', latency: '~30s', cost: '$0.042', savings: '0%' },
+]
+
+interface MethodologyDetail {
+  id: string
+  symbol: string
+  name: string
+  fullName: string
+  description: string
+  howItWorks: string[]
+  format: string
+  bestFor: string[]
+  examples: string[]
+  metrics: {
+    tokens: string
+    latency: string
+    cost: string
+  }
+}
+
+const METHODOLOGY_DETAILS: MethodologyDetail[] = [
+  {
+    id: 'auto',
+    symbol: '◎',
+    name: 'auto',
+    fullName: 'Automatic Selection',
+    description: 'Intelligent routing system that analyzes your query and automatically selects the optimal methodology for the best results.',
+    howItWorks: [
+      'Analyzes query complexity and type',
+      'Checks for math, step-by-step, or multi-perspective needs',
+      'Routes to the most efficient methodology',
+      'Optimizes for speed and accuracy'
+    ],
+    format: 'Varies based on selected methodology',
+    bestFor: [
+      'General queries when unsure which methodology to use',
+      'Letting the system optimize for you',
+      'Mixed query types in conversation'
+    ],
+    examples: [
+      '"What is Bitcoin?" → routes to direct',
+      '"Calculate 25 * 36" → routes to pot',
+      '"Explain how to build an app step by step" → routes to cod'
+    ],
+    metrics: {
+      tokens: '200-15k',
+      latency: '2-30s',
+      cost: '$0.006-$0.042'
+    }
+  },
+  {
+    id: 'direct',
+    symbol: '→',
+    name: 'direct',
+    fullName: 'Direct Response',
+    description: 'Single AI call with immediate, comprehensive answer. The fastest and most efficient methodology for simple queries.',
+    howItWorks: [
+      'Send query directly to Claude Opus 4',
+      'Get complete answer in one response',
+      'No intermediate steps or iterations',
+      'Optimized for speed and clarity'
+    ],
+    format: 'Clear, comprehensive, concise answer',
+    bestFor: [
+      'Factual questions with clear answers',
+      'Simple queries under 100 characters',
+      'When you need fast responses',
+      'General knowledge questions'
+    ],
+    examples: [
+      '"What is Bitcoin?"',
+      '"Define blockchain"',
+      '"Who invented Ethereum?"'
+    ],
+    metrics: {
+      tokens: '200-500',
+      latency: '~2s',
+      cost: '$0.006'
+    }
+  },
+  {
+    id: 'cod',
+    symbol: '⋯',
+    name: 'cod',
+    fullName: 'Chain of Draft',
+    description: 'Iterative refinement process with multiple drafts, reflections, and continuous improvement until reaching the polished final answer.',
+    howItWorks: [
+      'Generate initial draft addressing core question',
+      'Reflect on weaknesses, gaps, improvements needed',
+      'Create refined second draft based on reflection',
+      'Present final polished, comprehensive answer'
+    ],
+    format: '[DRAFT 1] → [REFLECTION] → [DRAFT 2] → [FINAL ANSWER]',
+    bestFor: [
+      'Step-by-step explanations',
+      'Complex topics requiring thoroughness',
+      'When quality matters more than speed',
+      'Educational content needing clarity'
+    ],
+    examples: [
+      '"Explain how neural networks work step by step"',
+      '"How do I build a scalable web application?"',
+      '"Draft a comprehensive strategy for..."'
+    ],
+    metrics: {
+      tokens: '600-1000',
+      latency: '~8s',
+      cost: '$0.030'
+    }
+  },
+  {
+    id: 'bot',
+    symbol: '◇',
+    name: 'bot',
+    fullName: 'Buffer of Thoughts',
+    description: 'Maintains a context buffer of key facts, constraints, and requirements while reasoning step-by-step and validating against the buffer.',
+    howItWorks: [
+      'Extract and buffer key facts, constraints, requirements',
+      'Build reasoning chain referencing buffered context',
+      'Cross-check answer against buffered information',
+      'Provide validated answer with supporting reasoning'
+    ],
+    format: '[BUFFER] → [REASONING] → [VALIDATION] → [ANSWER]',
+    bestFor: [
+      'Queries with multiple constraints or requirements',
+      'Complex context needing careful tracking',
+      'Problems with specific conditions',
+      'When accuracy is critical'
+    ],
+    examples: [
+      '"Given budget $10k, 3 months timeline, must use TypeScript and be scalable..."',
+      '"Assuming Bitcoin uses PoW and requires miner validation..."',
+      '"With these requirements: real-time, authenticated, rate-limited..."'
+    ],
+    metrics: {
+      tokens: '400-700',
+      latency: '~12s',
+      cost: '$0.018'
+    }
+  },
+  {
+    id: 'react',
+    symbol: '⟳',
+    name: 'react',
+    fullName: 'Reasoning + Acting',
+    description: 'Cycles of thinking, acting (simulated search/lookup), and observing results until reaching a well-informed final answer.',
+    howItWorks: [
+      'Think: Analyze what information is needed',
+      'Act: Describe search/lookup operation (simulated)',
+      'Observe: State findings or knowledge retrieved',
+      'Repeat: Continue cycles until complete',
+      'Answer: Provide final response based on observations'
+    ],
+    format: '[THOUGHT] → [ACTION] → [OBSERVATION] → ... → [FINAL ANSWER]',
+    bestFor: [
+      'Research-style queries',
+      'Questions requiring information lookup',
+      'Latest trends or current events',
+      'Multi-source information gathering'
+    ],
+    examples: [
+      '"Search for the latest AI research trends in 2025"',
+      '"Find information about recent blockchain innovations"',
+      '"Look up current best practices for..."'
+    ],
+    metrics: {
+      tokens: '500-800',
+      latency: '~20s',
+      cost: '$0.024'
+    }
+  },
+  {
+    id: 'pot',
+    symbol: '△',
+    name: 'pot',
+    fullName: 'Program of Thought',
+    description: 'Computational reasoning with pseudocode, step-by-step execution, and verification. Perfect for math and logical problems.',
+    howItWorks: [
+      'Analyze the computational/mathematical problem',
+      'Write logical steps as pseudocode',
+      'Execute logic step-by-step with actual values',
+      'Verify calculations and logic are correct',
+      'Present final result with full explanation'
+    ],
+    format: '[PROBLEM] → [LOGIC/PSEUDOCODE] → [EXECUTION] → [VERIFICATION] → [RESULT]',
+    bestFor: [
+      'Mathematical calculations',
+      'Computational problems',
+      'Logic puzzles',
+      'Algorithmic thinking'
+    ],
+    examples: [
+      '"Calculate compound interest on $10k at 5% for 10 years"',
+      '"What is 15 * 23?"',
+      '"Compute the factorial of 12"'
+    ],
+    metrics: {
+      tokens: '400-600',
+      latency: '~15s',
+      cost: '$0.020'
+    }
+  },
+  {
+    id: 'gtp',
+    symbol: '◯',
+    name: 'gtp',
+    fullName: 'Generative Thought Process',
+    description: 'Multi-AI consensus using DeepSeek, Mistral, and Grok in parallel. Each AI provides independent analysis, then they cross-pollinate insights before synthesis.',
+    howItWorks: [
+      'Round 1: DeepSeek, Mistral, Grok analyze independently',
+      'Round 2: Each AI sees others\' perspectives and refines',
+      'Synthesis: Claude merges insights into unified response',
+      'Consensus: Balanced answer from multiple AI viewpoints'
+    ],
+    format: '[ROUND 1: Independent] → [ROUND 2: Cross-Pollination] → [SYNTHESIS] → [CONSENSUS]',
+    bestFor: [
+      'Complex decisions needing multiple perspectives',
+      'Strategic analysis with different angles',
+      'When you want AI debate and consensus',
+      'High-stakes questions requiring thorough coverage'
+    ],
+    examples: [
+      '"Analyze blockchain technology from multiple perspectives"',
+      '"What are the pros and cons of remote work?"',
+      '"Evaluate this business strategy from different angles"'
+    ],
+    metrics: {
+      tokens: '8k-15k',
+      latency: '~30s',
+      cost: '$0.042'
+    }
+  }
 ]
 
 export default function HomePage() {
@@ -35,22 +277,144 @@ export default function HomePage() {
   const [isBlinking, setIsBlinking] = useState<string | null>(null)
   const [loadingSuggestions, setLoadingSuggestions] = useState<string | null>(null)
   const [guardSuggestions, setGuardSuggestions] = useState<Record<string, { refine?: string[], pivot?: string[] }>>({})
-  const [showMethodologyExplorer, setShowMethodologyExplorer] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const [expandedMethodology, setExpandedMethodology] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const [topicSuggestions, setTopicSuggestions] = useState<Array<{ topicId: string; topicName: string; reason: string; relevance: number }>>([])
-  const [showTopicsPanel, setShowTopicsPanel] = useState(false)
+  // topicSuggestions and showTopicsPanel now managed by Side Canal store
   const [showMindMap, setShowMindMap] = useState(false)
   const [showDashboard, setShowDashboard] = useState(false)
   const [legendMode, setLegendMode] = useState(false)
   const [sideChats, setSideChats] = useState<Array<{ id: string; methodology: string; messages: Message[] }>>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [continuingConversation, setContinuingConversation] = useState<string | null>(null)
+  const [showMethodologyPrompt, setShowMethodologyPrompt] = useState(false)
+  const [pendingMethodology, setPendingMethodology] = useState<string | null>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [mindmapVisibility, setMindmapVisibility] = useState<Record<string, boolean>>({})
+  const [vizMode, setVizMode] = useState<Record<string, 'sefirot' | 'insight' | 'text' | 'mindmap'>>({})
+
+  // Side Canal Store Integration
+  const {
+    enabled: sideCanalEnabled,
+    contextInjectionEnabled,
+    autoExtractEnabled,
+    suggestions: topicSuggestions,
+    toastVisible: topicToastVisible,
+    panelOpen: showTopicsPanel,
+    extractAndStoreTopics,
+    refreshSuggestions,
+    removeSuggestion,
+    setToastVisible: setTopicToastVisible,
+    setPanelOpen: setShowTopicsPanel,
+    toggleEnabled: setSideCanalEnabled,
+    toggleContextInjection: setContextInjectionEnabled,
+  } = useSideCanalStore()
+
+  // Intelligence toggles
+  const [realtimeDataEnabled, setRealtimeDataEnabled] = useState(false)
+  const [newsNotificationsEnabled, setNewsNotificationsEnabled] = useState(false)
+  
+  // Console feature toggles
+  const [instinctModeEnabled, setInstinctModeEnabled] = useState(false)
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(true)
+  const [auditEnabled, setAuditEnabled] = useState(false)
+  const [mindmapConnectorEnabled, setMindmapConnectorEnabled] = useState(false)
+  const [selectedModel, setSelectedModel] = useState('claude')
+  const [globalVizMode, setGlobalVizMode] = useState<'off' | 'synthesis' | 'insight'>('synthesis')
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const diamondRef = useRef<HTMLDivElement>(null)
+
+  // Extract topics from response and update message (for mindmap visualization)
+  const extractTopicsForMessage = useCallback(async (
+    messageId: string,
+    query: string,
+    response: string
+  ) => {
+    // Skip if Side Canal is disabled or auto-extract is off
+    if (!sideCanalEnabled || !autoExtractEnabled) {
+      return
+    }
+
+    try {
+      // Call store action to extract and store topics
+      const topics = await extractAndStoreTopics(query, response, messageId)
+
+      if (topics && topics.length > 0) {
+        // Update the message with extracted topics (for mindmap visualization)
+        setMessages(prev => prev.map(m =>
+          m.id === messageId
+            ? { ...m, topics: topics.map((t: any) => ({
+                id: t.id,
+                name: t.name,
+                category: t.category
+              }))}
+            : m
+        ))
+      }
+    } catch (error) {
+      console.error('[Side Canal] Topic extraction error:', error)
+    }
+  }, [sideCanalEnabled, autoExtractEnabled, extractAndStoreTopics])
+
+  // Auto-Synopsis Background Task (Side Canal)
+  // Generates synopses for topics with new queries every 5 minutes
+  useEffect(() => {
+    const { autoSynopsisEnabled, currentTopics, generateSynopsisForTopic } = useSideCanalStore.getState()
+
+    if (!sideCanalEnabled || !autoSynopsisEnabled) {
+      return
+    }
+
+    // Generate synopses for current topics on mount (if any)
+    if (currentTopics.length > 0) {
+      currentTopics.forEach(topic => {
+        generateSynopsisForTopic(topic.id).catch(error => {
+          console.error('[Side Canal] Auto-synopsis failed for topic:', topic.id, error)
+        })
+      })
+    }
+
+    // Set up interval for periodic synopsis generation
+    const interval = setInterval(() => {
+      const state = useSideCanalStore.getState()
+      if (state.autoSynopsisEnabled && state.currentTopics.length > 0) {
+        state.currentTopics.forEach(topic => {
+          state.generateSynopsisForTopic(topic.id).catch(error => {
+            console.error('[Side Canal] Auto-synopsis failed for topic:', topic.id, error)
+          })
+        })
+      }
+    }, 5 * 60 * 1000) // 5 minutes
+
+    return () => clearInterval(interval)
+  }, [sideCanalEnabled]) // Re-run when Side Canal is toggled
+
+  // Dark mode initialization
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true'
+    setDarkMode(savedDarkMode)
+    if (savedDarkMode) {
+      document.documentElement.classList.add('dark')
+    }
+  }, [])
+
+  // Toggle dark mode
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => {
+      const newValue = !prev
+      localStorage.setItem('darkMode', String(newValue))
+      if (newValue) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+      return newValue
+    })
+  }, [])
 
   // Check user session on mount
   useEffect(() => {
@@ -151,30 +515,56 @@ export default function HomePage() {
   }
 
   // Handle guard toggle
-  const handleGuardToggle = (feature: 'suggestions' | 'bias' | 'hype', enabled: boolean) => {
+  const handleGuardToggle = (feature: 'suggestions' | 'bias' | 'hype' | 'echo' | 'drift' | 'factuality', enabled: boolean) => {
     // Store in localStorage for persistence
     localStorage.setItem(`guard_${feature}`, enabled ? 'true' : 'false')
   }
 
   // Check for topic suggestions after messages update
   useEffect(() => {
-    if (messages.length > 0) {
-      // Get current topics from recent queries
-      fetch('/api/side-canal/suggestions?topics=')
-        .then(res => res.json())
-        .then(data => {
-          if (data.suggestions && data.suggestions.length > 0) {
-            setTopicSuggestions(data.suggestions)
-          }
-        })
-        .catch(console.error)
+    if (messages.length > 0 && sideCanalEnabled) {
+      // Refresh suggestions from store when messages change
+      refreshSuggestions().catch(console.error)
     }
-  }, [messages])
+  }, [messages, sideCanalEnabled, refreshSuggestions])
 
-  // Memoize close handler to prevent unnecessary re-renders
-  const handleCloseExplorer = useCallback(() => {
-    setShowMethodologyExplorer(false)
-  }, [])
+  // Extract visible page content for context
+  const getPageContext = useCallback(() => {
+    try {
+      // Get all visible text content from the main content area
+      const mainContent = document.querySelector('main')
+      if (!mainContent) return undefined
+
+      // Extract text from messages (if in chat mode)
+      if (isExpanded && messages.length > 0) {
+        const messageTexts = messages
+          .slice(-5) // Last 5 messages for context
+          .map(m => `${m.role === 'user' ? 'User' : 'AkhAI'}: ${m.content}`)
+          .join('\n\n')
+        
+        return `Current conversation context:\n${messageTexts}`
+      }
+
+      // Extract text from visible content on page
+      const visibleText = Array.from(mainContent.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, span'))
+        .filter(el => {
+          const style = window.getComputedStyle(el)
+          return style.display !== 'none' && 
+                 style.visibility !== 'hidden' && 
+                 el.textContent && 
+                 el.textContent.trim().length > 10
+        })
+        .map(el => el.textContent?.trim())
+        .filter(Boolean)
+        .slice(0, 10) // Limit to first 10 elements
+        .join('\n')
+
+      return visibleText || undefined
+    } catch (error) {
+      console.error('Failed to extract page context:', error)
+      return undefined
+    }
+  }, [isExpanded, messages])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -182,6 +572,12 @@ export default function HomePage() {
     if (!query.trim() || isLoading) {
       return
     }
+
+    // Start transition animation
+    setIsTransitioning(true)
+    
+    // Wait for transition animation before proceeding
+    await new Promise(resolve => setTimeout(resolve, 800))
 
     const userMessage: Message = {
       id: generateId(),
@@ -195,12 +591,14 @@ export default function HomePage() {
     setIsExpanded(true)
     setQuery('')
     setIsLoading(true)
+    setIsTransitioning(false)
 
     const startTime = Date.now()
 
 
     try {
       const currentChatId = activeChatId || 'main'
+      const pageContext = getPageContext()
       const res = await fetch('/api/simple-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -212,7 +610,8 @@ export default function HomePage() {
             content: m.content
           })),
           legendMode,
-          chatId: currentChatId
+          chatId: currentChatId,
+          pageContext
         })
       })
 
@@ -221,6 +620,11 @@ export default function HomePage() {
 
       const data = await res.json()
       
+      // Handle Side Canal suggestions - refresh from store
+      if (data.sideCanal?.suggestions && data.sideCanal.suggestions.length > 0) {
+        // Suggestions are now managed by the store, refresh will be triggered automatically
+        // by the extractTopicsForMessage callback
+      }
 
       // Poll for the result if we got a queryId
       if (data.queryId) {
@@ -242,6 +646,13 @@ export default function HomePage() {
           isHidden: guardFailed,
         }
         setMessages(prev => [...prev, assistantMessage])
+
+        // Extract topics for mindmap (async, non-blocking)
+        extractTopicsForMessage(
+          assistantMessage.id,
+          userMessage.content,
+          assistantMessage.content
+        )
 
         // Track analytics
         const responseTime = Date.now() - startTime
@@ -315,6 +726,16 @@ export default function HomePage() {
           }
           setMessages(prev => [...prev, assistantMessage])
           setIsLoading(false)
+
+          // Extract topics for mindmap (async, non-blocking)
+          const lastUserMessage = messages[messages.length - 1]
+          if (lastUserMessage?.role === 'user') {
+            extractTopicsForMessage(
+              assistantMessage.id,
+              lastUserMessage.content,
+              assistantMessage.content
+            )
+          }
 
           // Track analytics
           const responseTime = Date.now() - startTime
@@ -420,6 +841,7 @@ export default function HomePage() {
 
       // Submit the refined query
       try {
+        const pageContext = getPageContext()
         const res = await fetch('/api/simple-query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -428,7 +850,8 @@ export default function HomePage() {
             methodology,
             conversationHistory,
             legendMode,
-            chatId: activeChatId || 'main'
+            chatId: activeChatId || 'main',
+            pageContext
           })
         })
 
@@ -535,6 +958,7 @@ export default function HomePage() {
 
       // Submit the pivot query
       try {
+        const pageContext = getPageContext()
         const res = await fetch('/api/simple-query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -543,7 +967,8 @@ export default function HomePage() {
             methodology,
             conversationHistory,
             legendMode,
-            chatId: activeChatId || 'main'
+            chatId: activeChatId || 'main',
+            pageContext
           })
         })
 
@@ -617,9 +1042,45 @@ export default function HomePage() {
   }
 
   const handleMethodologyClick = (id: string) => {
-    setMethodology(id)
-    setIsBlinking(id)
-    setTimeout(() => setIsBlinking(null), 300)
+    // If conversation is in progress, show prompt
+    if (messages.length > 0) {
+      setPendingMethodology(id)
+      setShowMethodologyPrompt(true)
+    } else {
+      // No conversation yet, directly set methodology
+      setMethodology(id)
+      setIsBlinking(id)
+      setTimeout(() => setIsBlinking(null), 300)
+    }
+  }
+
+  // Handle methodology prompt choices
+  const handleContinueInCurrentChat = () => {
+    if (pendingMethodology) {
+      setMethodology(pendingMethodology)
+      setIsBlinking(pendingMethodology)
+      setTimeout(() => setIsBlinking(null), 300)
+    }
+    setShowMethodologyPrompt(false)
+    setPendingMethodology(null)
+  }
+
+  const handleStartNewChat = () => {
+    if (pendingMethodology) {
+      // Clear current conversation and start fresh with new methodology
+      setMessages([])
+      setMethodology(pendingMethodology)
+      setIsExpanded(false)
+      setIsBlinking(pendingMethodology)
+      setTimeout(() => setIsBlinking(null), 300)
+    }
+    setShowMethodologyPrompt(false)
+    setPendingMethodology(null)
+  }
+
+  const handleCancelMethodologyChange = () => {
+    setShowMethodologyPrompt(false)
+    setPendingMethodology(null)
   }
 
   const handleMethodHover = (m: typeof METHODOLOGIES[0], e: React.MouseEvent<HTMLButtonElement>) => {
@@ -641,23 +1102,23 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-relic-white flex flex-col">
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${darkMode ? 'bg-relic-void' : 'bg-white'}`}>
       {/* Header - Only show when expanded */}
       {isExpanded && (
-        <header className="border-b border-relic-mist/50 bg-relic-white/80 backdrop-blur-sm sticky top-0 z-20 animate-fade-in">
+        <header className="border-b border-relic-mist/50 dark:border-relic-slate/30 bg-relic-white/80 dark:bg-relic-void/80 backdrop-blur-sm sticky top-0 z-20 animate-fade-in">
           <div className="max-w-3xl mx-auto px-6 py-3">
             <div className="flex items-center justify-between">
               <button
                 onClick={handleNewChat}
-                className="text-[10px] uppercase tracking-[0.3em] text-relic-silver hover:text-relic-slate transition-colors"
+                className="text-[10px] uppercase tracking-[0.3em] text-relic-silver dark:text-relic-silver/70 hover:text-relic-slate dark:hover:text-relic-ghost transition-colors"
               >
                 ◊ akhai
               </button>
               <div className="flex items-center gap-3">
-                <span className="text-[10px] text-relic-silver">{methodology}</span>
+                <span className="text-[10px] text-relic-silver dark:text-relic-silver/70">{methodology}</span>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-blink-green" />
-                  <span className="text-[9px] uppercase tracking-wider text-relic-silver font-medium">guard active</span>
+                  <span className="text-[9px] uppercase tracking-wider text-relic-silver dark:text-relic-silver/70 font-medium">guard active</span>
                 </div>
               </div>
             </div>
@@ -666,55 +1127,159 @@ export default function HomePage() {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded ? 'justify-start' : 'justify-center'}`}>
+      <main className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded && user ? 'ml-80' : ''}`}>
 
-        {/* Logo Section - Collapses when expanded */}
-        <div className={`text-center transition-all duration-500 ease-out ${isExpanded ? 'py-0 h-0 opacity-0 overflow-hidden' : 'pt-0 pb-8'}`}>
-          <h1 className="text-[11px] uppercase tracking-[0.5em] text-relic-silver mb-4">
-            akhai
-          </h1>
-          <p className="text-3xl font-light text-relic-slate tracking-wider">
-            sovereign intelligence
-          </p>
-        </div>
-
-        {/* Diamond - Shrinks when expanded */}
+        {/* Logo Section - Fixed at TOP when not expanded */}
+        {!isExpanded && (
+          <div className="text-center pt-8 pb-4">
+            <h1 className="text-3xl font-light text-relic-slate dark:text-white tracking-[0.3em] mb-2">
+              A K H A I
+            </h1>
+            <p className="text-sm font-light text-relic-silver/60 dark:text-white/50 tracking-wide mb-1">
+              school of thoughts
+            </p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-relic-slate/50 dark:text-white/40 mb-6">
+              SOVEREIGN TECHNOLOGY
+            </p>
+            {/* Diamond Logo with INLINE methodology explorer - no more flickering */}
+            <div className="group relative inline-block">
         <div
           ref={diamondRef}
-          data-diamond-logo
-          className={`text-center transition-all duration-500 ease-out ${isExpanded ? 'py-3 mb-2' : 'mb-16'}`}
-          onMouseEnter={() => {
-            if (!isExpanded) setShowMethodologyExplorer(true)
-          }}
-          onMouseLeave={(e) => {
-            // Only hide if not moving to circle
-            try {
-              const relatedTarget = e.relatedTarget as Element | null
-              const isElement = relatedTarget instanceof Element
-              const isMovingToCircle = isElement && relatedTarget.closest('[data-methodology-circle]')
-              if (!isMovingToCircle) {
-                setShowMethodologyExplorer(false)
-              }
-            } catch (err) {
-              // If we can't determine, default to hiding
-              setShowMethodologyExplorer(false)
-            }
-          }}
-        >
-          <span
-            className={`
-              font-extralight transition-all duration-500 cursor-pointer
-              ${isExpanded ? 'text-2xl opacity-50 text-relic-mist' : 'text-7xl text-relic-mist hover:text-relic-silver hover:scale-110'}
-            `}
-          >
+                data-diamond-logo
+                className="cursor-pointer"
+              >
+                <span className="text-5xl font-extralight text-relic-mist dark:text-relic-silver/30 group-hover:text-relic-silver dark:group-hover:text-relic-ghost group-hover:scale-110 transition-all duration-500 inline-block">
             ◊
           </span>
-          {!isExpanded && (
-            <p className="text-[9px] uppercase tracking-widest text-relic-silver/40 mt-3">
+                <p className="text-[9px] uppercase tracking-widest text-relic-silver/40 mt-2">
               hover to explore
             </p>
+              </div>
+              
+              {/* Inline Methodology Explorer - appears on hover or when expanded, no separate component */}
+              <div className={`absolute left-1/2 -translate-x-1/2 mt-4 transition-all duration-300 z-50 ${
+                expandedMethodology 
+                  ? 'opacity-100 visible' 
+                  : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'
+              }`}>
+                {expandedMethodology ? (
+                  /* Detailed View */
+                  <div className="bg-relic-white border border-relic-mist shadow-xl p-6 w-[600px]">
+                    {(() => {
+                      const detail = METHODOLOGY_DETAILS.find(m => m.id === expandedMethodology)
+                      if (!detail) return null
+                      return (
+                        <>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <span className="text-4xl text-relic-slate">{detail.symbol}</span>
+                              <div>
+                                <h3 className="text-xl font-mono text-relic-slate">{detail.name}</h3>
+                                <p className="text-sm text-relic-silver">{detail.fullName}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setExpandedMethodology(null)}
+                              className="text-relic-silver hover:text-relic-slate text-xl"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <p className="text-sm text-relic-slate mb-4">{detail.description}</p>
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="text-xs uppercase tracking-wider text-relic-silver mb-2">How It Works</h4>
+                              <ul className="space-y-1">
+                                {detail.howItWorks.map((step, i) => (
+                                  <li key={i} className="text-xs text-relic-slate flex items-start gap-2">
+                                    <span className="text-relic-silver">→</span>
+                                    <span>{step}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <h4 className="text-xs uppercase tracking-wider text-relic-silver mb-2">Best For</h4>
+                              <ul className="space-y-1">
+                                {detail.bestFor.map((item, i) => (
+                                  <li key={i} className="text-xs text-relic-slate flex items-start gap-2">
+                                    <span className="text-relic-silver">•</span>
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div className="flex gap-4 pt-2 border-t border-relic-mist">
+                              <div>
+                                <span className="text-[9px] uppercase text-relic-silver">Tokens</span>
+                                <p className="text-xs text-relic-slate">{detail.metrics.tokens}</p>
+                              </div>
+                              <div>
+                                <span className="text-[9px] uppercase text-relic-silver">Latency</span>
+                                <p className="text-xs text-relic-slate">{detail.metrics.latency}</p>
+                              </div>
+                              <div>
+                                <span className="text-[9px] uppercase text-relic-silver">Cost</span>
+                                <p className="text-xs text-relic-slate">{detail.metrics.cost}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setMethodology(expandedMethodology)
+                                setExpandedMethodology(null)
+                              }}
+                              className="w-full px-4 py-2 text-xs font-mono bg-relic-slate text-white hover:bg-relic-void transition-colors"
+                            >
+                              Select {detail.name}
+                            </button>
+                          </div>
+                        </>
+                      )
+                    })()}
+                  </div>
+                ) : (
+                  /* Horizontal List */
+                  <div className="bg-relic-white border border-relic-mist shadow-xl p-3">
+                    <div className="flex gap-2">
+                      {METHODOLOGIES.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => {
+                            setExpandedMethodology(m.id)
+                          }}
+                          className={`
+                            flex flex-col items-center justify-center w-16 h-16 
+                            border transition-all duration-200 bg-relic-white
+                            ${methodology === m.id
+                              ? 'border-relic-slate text-relic-slate'
+                              : 'border-relic-mist hover:border-relic-slate/60 text-relic-slate'
+                            }
+                          `}
+                        >
+                          <span className="text-lg">{m.symbol}</span>
+                          <span className="text-[9px] font-mono mt-1">{m.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
           )}
         </div>
+            </div>
+          </div>
+        )}
+
+        {/* Spacer to push query to center when not expanded */}
+        {!isExpanded && <div className="flex-1" />}
+
+        {/* Diamond for expanded mode only - small version */}
+        {isExpanded && (
+          <div className="text-center py-3 mb-2">
+            <span className="text-2xl font-extralight opacity-50 text-relic-mist">
+              ◊
+            </span>
+          </div>
+        )}
 
         {/* Messages Area - Appears when expanded */}
         {isExpanded && (
@@ -753,7 +1318,7 @@ export default function HomePage() {
                       {message.guardResult && (message.guardAction === 'refined' || message.guardAction === 'pivoted' || message.guardAction === 'accepted') && (
                         <div className="mt-4 mb-4 bg-relic-ghost/20 border-l-2 border-relic-slate/20 p-3 animate-fade-in">
                           <div className="flex items-center gap-2 text-xs">
-                            <span>⚠️</span>
+                              <span>⚠️</span>
                             <span className="font-medium text-relic-slate">Reality Check</span>
                           </div>
                           
@@ -768,7 +1333,7 @@ export default function HomePage() {
                               ))}
                             </div>
                           )}
-                          
+
                           {/* Show other issues */}
                           {message.guardResult.issues && message.guardResult.issues.filter(i => i !== 'sanity').length > 0 && (
                             <div className="mt-2 flex gap-2">
@@ -805,9 +1370,105 @@ export default function HomePage() {
                       {!message.isHidden && (
                         <div className="border-l-2 border-relic-slate/30 pl-4">
 
+                          {/* View Mode Toggle */}
+                          {globalVizMode !== 'off' && (shouldShowSefirot(message.content) || shouldShowInsightMap(message.content) || shouldShowMindmap(message.content, message.topics)) && (
+                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-relic-mist/30">
+                              <span className="text-[9px] text-relic-silver uppercase tracking-wide">View:</span>
+                              <button
+                                onClick={() => setVizMode(prev => ({ ...prev, [message.id]: 'sefirot' }))}
+                                className={`px-2 py-1 text-[9px] rounded-md transition-all ${
+                                  (vizMode[message.id] || 'sefirot') === 'sefirot'
+                                    ? 'bg-indigo-100 text-indigo-700 font-medium'
+                                    : 'text-relic-silver hover:bg-relic-ghost'
+                                }`}
+                              >
+                                ◎ Sefirot
+                              </button>
+                              <button
+                                onClick={() => setVizMode(prev => ({ ...prev, [message.id]: 'insight' }))}
+                                className={`px-2 py-1 text-[9px] rounded-md transition-all ${
+                                  vizMode[message.id] === 'insight'
+                                    ? 'bg-purple-100 text-purple-700 font-medium'
+                                    : 'text-relic-silver hover:bg-relic-ghost'
+                                }`}
+                              >
+                                ◇ Insight
+                              </button>
+                              <button
+                                onClick={() => setVizMode(prev => ({ ...prev, [message.id]: 'mindmap' }))}
+                                className={`px-2 py-1 text-[9px] rounded-md transition-all ${
+                                  vizMode[message.id] === 'mindmap'
+                                    ? 'bg-emerald-100 text-emerald-700 font-medium'
+                                    : 'text-relic-silver hover:bg-relic-ghost'
+                                }`}
+                              >
+                                ◈ Mindmap
+                              </button>
+                            </div>
+                          )}
+
+                          {/* SEFIROT VIEW - Sovereign Intelligence Tree */}
+                          {globalVizMode !== 'off' && (vizMode[message.id] || 'sefirot') === 'sefirot' && shouldShowSefirot(message.content) && (
+                            <SefirotResponse
+                              content={message.content}
+                              query={messages[messages.indexOf(message) - 1]?.content || ''}
+                              methodology={message.methodology || methodology}
+                              onSwitchToInsight={() => setVizMode(prev => ({ ...prev, [message.id]: 'insight' }))}
+                              onOpenMindMap={() => setShowMindMap(true)}
+                            />
+                          )}
+
+                          {/* INSIGHT MINDMAP - Grokipedia-style knowledge graph */}
+                          {globalVizMode !== 'off' && vizMode[message.id] === 'insight' && shouldShowInsightMap(message.content) && (
+                            <InsightMindmap
+                              content={message.content}
+                              query={messages[messages.indexOf(message) - 1]?.content || ''}
+                              methodology={message.methodology || methodology}
+                              onSwitchToSefirot={() => setVizMode(prev => ({ ...prev, [message.id]: 'sefirot' }))}
+                              onOpenMindMap={() => setShowMindMap(true)}
+                            />
+                          )}
+
+                          {/* MINDMAP VIEW - Visual concept map */}
+                          {globalVizMode !== 'off' && vizMode[message.id] === 'mindmap' && shouldShowMindmap(message.content, message.topics) && (
+                            <div className="mb-6">
+                              <ResponseMindmap
+                                content={message.content}
+                                topics={message.topics}
+                                isVisible={true}
+                                onToggle={() => {}}
+                                methodology={message.methodology || methodology}
+                                query={messages[messages.indexOf(message) - 1]?.content || ''}
+                              />
+                            </div>
+                          )}
+
+                          {/* TEXT - Always shown after visualizations */}
                           <p className="text-relic-slate leading-relaxed whitespace-pre-wrap text-sm">
                             {message.content}
                           </p>
+
+                          {/* Inline Visualize Button */}
+                          {(shouldShowSefirot(message.content) || shouldShowInsightMap(message.content)) && globalVizMode === 'off' && (
+                            <InlineConsole
+                              onVisualize={() => setVizMode(prev => ({ ...prev, [message.id]: 'sefirot' }))}
+                            />
+                          )}
+
+                          {/* Response Mindmap - Visual concept map */}
+                          {shouldShowMindmap(message.content, message.topics) && (
+                            <ResponseMindmap
+                              content={message.content}
+                              topics={message.topics}
+                              isVisible={mindmapVisibility[message.id] || false}
+                              onToggle={() => setMindmapVisibility(prev => ({
+                                ...prev,
+                                [message.id]: !prev[message.id]
+                              }))}
+                              methodology={methodology}
+                              query={messages[messages.indexOf(message) - 1]?.content || ''}
+                            />
+                          )}
 
                           {/* Metrics */}
                           {message.metrics && (
@@ -865,10 +1526,10 @@ export default function HomePage() {
         )}
 
         {/* Input Section */}
-        <div className={`px-6 transition-all duration-500 ease-out ${isExpanded ? 'pb-4 pt-2 border-t border-relic-mist/30 bg-relic-white/80 backdrop-blur-sm sticky bottom-0' : 'pb-8'}`}>
-          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-            {/* Input Box with Smooth Expansion */}
-            <div className={`relative transition-all duration-300 ${isExpanded ? '' : ''}`}>
+        <div className={`transition-all duration-500 ease-out ${isExpanded ? 'pb-4 pt-2 border-t border-relic-mist/30 bg-white sticky bottom-0' : 'pb-8'}`}>
+          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto px-6">
+            {/* Input Box */}
+            <div className="relative transition-all duration-300">
               <input
                 ref={inputRef}
                 id="query-input"
@@ -877,134 +1538,121 @@ export default function HomePage() {
                 value={query}
                 onChange={(e) => handleQueryChange(e.target.value)}
                 placeholder={isExpanded ? "continue conversation..." : ""}
+                autoComplete="off"
                 className={`
-                  relic-input text-base transition-all duration-300
+                  relic-input text-sm transition-all duration-300 text-center
                   ${isExpanded
-                    ? 'text-left py-3 px-4'
-                    : 'text-center py-4'
+                    ? 'py-3 px-4'
+                    : 'py-3'
                   }
                 `}
                 autoFocus
                 disabled={isLoading}
               />
-
-              {/* Guard indicator */}
-              {!isExpanded && (
-                <div className="absolute -bottom-6 right-2 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-blink-green" />
-                  <span className="text-[9px] uppercase tracking-widest text-relic-silver font-medium">guard active</span>
-                </div>
-              )}
             </div>
 
-            {/* Methodology Selection - Only when not expanded */}
-            {!isExpanded && (
-              <div className="mt-20 relative" ref={containerRef}>
-                <div className="flex items-center gap-3 border-b border-relic-mist pb-4">
-                  {METHODOLOGIES.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => {
-                        handleMethodologyClick(m.id)
-                      }}
-                      onMouseEnter={(e) => handleMethodHover(m, e)}
-                      onMouseLeave={() => setHoveredMethod(null)}
-                      className={`
-                        px-4 py-2 border border-relic-mist rounded-none
-                        transition-all duration-300 font-mono text-xs
-                        ${methodology === m.id
-                          ? 'bg-relic-ghost border-relic-slate text-relic-slate'
-                          : 'bg-relic-white hover:bg-relic-ghost text-relic-silver hover:text-relic-slate'
-                        }
-                        ${isBlinking === m.id ? 'animate-pulse bg-relic-ghost' : ''}
-                      `}
-                    >
-                      <span className="mr-1.5 opacity-70">{m.symbol}</span>
-                      {m.name}
-                    </button>
-                  ))}
-                </div>
+            {/* Methodology Dots - Always visible, smooth transition */}
+            <motion.div 
+              className={`flex justify-center ${isExpanded ? 'mt-2' : 'mt-5'}`}
+              initial={false}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+            >
+              <MethodologyFrame
+                currentMethodology={methodology}
+                onMethodologyChange={handleMethodologyClick}
+                isSubmitting={isTransitioning}
+              />
+            </motion.div>
 
-                {/* Tooltip */}
-                {hoveredMethod && (
-                  <div
-                    className="absolute w-44 animate-fade-in z-50"
-                    style={{
-                      left: tooltipPos.x,
-                      top: tooltipPos.y,
-                      transform: 'translateX(-50%)'
-                    }}
-                  >
-                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-relic-slate/30" />
-                    <div className="backdrop-blur-md bg-relic-white/95 border border-relic-slate/30 text-relic-slate p-2.5 text-[10px] shadow-lg">
-                      {(() => {
-                        const m = METHODOLOGIES.find(x => x.id === hoveredMethod)
-                        if (!m) return null
-                        return (
-                          <>
-                            <p className="text-relic-slate mb-2">{m.tooltip}</p>
-                            <div className="grid grid-cols-3 gap-1 text-[9px] border-t border-relic-mist/50 pt-2">
-                              <div>
-                                <span className="text-relic-silver uppercase">tok</span>
-                                <p className="text-relic-slate">{m.tokens}</p>
-                              </div>
-                              <div>
-                                <span className="text-relic-silver uppercase">lat</span>
-                                <p className="text-relic-slate">{m.latency}</p>
-                              </div>
-                              <div>
-                                <span className="text-relic-silver uppercase">sav</span>
-                                <p className="text-relic-slate">{m.savings}</p>
-                              </div>
-                            </div>
-                          </>
-                        )
-                      })()}
-                    </div>
-                  </div>
-                )}
+            {/* Console - Inline below methodology when in conversation */}
+            {isExpanded && (
+              <div className="mt-1.5 flex justify-center">
+                <ConversationConsole
+                  instinctMode={instinctModeEnabled}
+                  onInstinctModeChange={setInstinctModeEnabled}
+                  suggestions={suggestionsEnabled}
+                  onSuggestionsChange={setSuggestionsEnabled}
+                  audit={auditEnabled}
+                  onAuditChange={setAuditEnabled}
+                  mindmapConnector={mindmapConnectorEnabled}
+                  onMindmapConnectorChange={setMindmapConnectorEnabled}
+                  sideCanalEnabled={sideCanalEnabled}
+                  onSideCanalChange={setSideCanalEnabled}
+                  selectedModel={selectedModel}
+                  onModelChange={setSelectedModel}
+                  visualizationMode={globalVizMode}
+                  onVisualizationChange={setGlobalVizMode}
+                />
               </div>
             )}
 
-            {/* Submit button - Only when not expanded */}
+            {/* Submit button */}
             {!isExpanded && (
-              <div className="mt-10 text-center">
+              <div className="mt-6 text-center">
                 <button
                   type="submit"
                   id="submit-button"
                   name="submit"
-                  className="px-8 py-2.5 text-xs font-mono border-2 border-relic-slate text-relic-slate bg-transparent hover:bg-relic-ghost/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isLoading}
+                  className="px-6 py-2 text-[10px] font-mono uppercase tracking-wider border border-relic-slate dark:border-white text-relic-slate dark:text-white bg-transparent hover:bg-relic-ghost/50 dark:hover:bg-relic-slate/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading || isTransitioning}
                 >
                   transmit
                 </button>
               </div>
             )}
 
+
+
+            {/* Horizontal Dashboard - Only when not in conversation */}
+            {user && !isExpanded && (
+              <ChatDashboard
+                userId={user?.id || null}
+                currentMethodology={methodology}
+                legendMode={legendMode}
+                darkMode={darkMode}
+                sideCanalEnabled={true}
+                newsNotificationsEnabled={true}
+                realtimeDataEnabled={true}
+                contextInjectionEnabled={true}
+                autoMethodologyEnabled={true}
+                onMethodologyChange={handleMethodologySwitch}
+                onGuardToggle={handleGuardToggle}
+                onLegendModeToggle={(enabled) => {
+                  setLegendMode(enabled)
+                  if (enabled) {
+                    localStorage.setItem('legendMode', 'true')
+                  } else {
+                    localStorage.removeItem('legendMode')
+                  }
+                }}
+                onDarkModeToggle={toggleDarkMode}
+                onSideCanalToggle={(enabled) => {
+                  localStorage.setItem('sideCanalEnabled', String(enabled))
+                }}
+                onNewsNotificationsToggle={(enabled) => {
+                  localStorage.setItem('newsNotificationsEnabled', String(enabled))
+                }}
+                onRealtimeDataToggle={(enabled) => {
+                  localStorage.setItem('realtimeDataEnabled', String(enabled))
+                }}
+                onContextInjectionToggle={(enabled) => {
+                  localStorage.setItem('contextInjectionEnabled', String(enabled))
+                }}
+                onAutoMethodologyToggle={(enabled) => {
+                  localStorage.setItem('autoMethodologyEnabled', String(enabled))
+                }}
+                onClose={() => {}}
+                isCompact={isExpanded}
+              />
+            )}
+
           </form>
         </div>
-      </main>
 
-      {/* Chat Dashboard */}
-      {user && showDashboard && (
-        <ChatDashboard
-          userId={user?.id || null}
-          currentMethodology={methodology}
-          legendMode={legendMode}
-          onMethodologyChange={handleMethodologySwitch}
-          onGuardToggle={handleGuardToggle}
-          onLegendModeToggle={(enabled) => {
-            setLegendMode(enabled)
-            if (enabled) {
-              localStorage.setItem('legendMode', 'true')
-            } else {
-              localStorage.removeItem('legendMode')
-            }
-          }}
-          onClose={() => setShowDashboard(false)}
-        />
-      )}
+        {/* Bottom spacer to balance the centering when not expanded */}
+        {!isExpanded && <div className="flex-1" />}
+      </main>
 
       {/* Continuing Conversation Indicator */}
       {continuingConversation && (
@@ -1013,23 +1661,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Legend Mode Indicator */}
-      {legendMode && (
-        <div className="fixed top-4 right-80 z-50 bg-relic-ghost border border-relic-slate px-3 py-1.5 rounded-md">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-relic-slate">LEGEND MODE</span>
-            <button
-              onClick={() => {
-                setLegendMode(false)
-                localStorage.setItem('legendMode', 'false')
-              }}
-              className="text-xs text-relic-silver hover:text-relic-slate"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Legend Mode - No top notification, only footer toggle */}
 
       {/* Side Chats */}
       {sideChats.map((sideChat) => (
@@ -1063,6 +1695,7 @@ export default function HomePage() {
             setIsLoading(true)
             
             try {
+              const pageContext = getPageContext()
               const res = await fetch('/api/simple-query', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1074,7 +1707,8 @@ export default function HomePage() {
                     content: m.content
                   })),
                   legendMode,
-                  chatId: sideChat.id
+                  chatId: sideChat.id,
+                  pageContext
                 })
               })
               
@@ -1118,16 +1752,50 @@ export default function HomePage() {
       {/* Footer - Only when not expanded */}
       {!isExpanded && (
         <footer className="border-t border-relic-mist/50 bg-relic-white/60 backdrop-blur-sm">
-          <div className="max-w-4xl mx-auto px-6 py-3">
-            <div className="flex items-center justify-between text-[10px] text-relic-silver">
-              <span className="text-left">autonomous methodology selection · grounding guard for alert or enhancement · intuitive mindmap</span>
-              <div className="flex gap-5 ml-auto">
+          <div className="w-full px-4 py-3">
+            <div className="flex items-center justify-between">
+              {/* Left side - description text - pushed to left edge */}
+              <span className="text-[11px] text-relic-silver whitespace-nowrap pl-2">
+                self aware - autonomous intelligence
+              </span>
+              
+              {/* Right side - navigation and toggles - pushed to right edge */}
+              <div className="flex items-center gap-4 pr-2">
+                {/* Instinct Mode Toggle with Super Saiyan Icon */}
+                <button
+                  onClick={() => {
+                    setLegendMode(!legendMode)
+                    if (!legendMode) {
+                      localStorage.setItem('legendMode', 'true')
+                    } else {
+                      localStorage.removeItem('legendMode')
+                    }
+                  }}
+                  className="flex items-center gap-2 text-[10px] font-mono text-relic-silver hover:text-relic-slate transition-colors group"
+                >
+                  <SuperSaiyanIcon size={18} active={legendMode} />
+                  <span className={legendMode ? 'text-amber-500' : ''}>instinct</span>
+                </button>
+
+                {/* Dark Mode Toggle */}
+                <button
+                  onClick={toggleDarkMode}
+                  className="flex items-center gap-2 text-[10px] font-mono text-relic-silver hover:text-relic-slate transition-colors"
+                >
+                  <span>dark mode</span>
+                  <span className={`px-2 py-0.5 border border-relic-mist ${
+                    darkMode 
+                      ? 'bg-relic-slate text-white' 
+                      : 'bg-relic-white text-relic-slate'
+                  }`}>
+                    {darkMode ? 'on' : 'off'}
+                  </span>
+                </button>
+                
                 {user ? (
                   <NavigationMenu
                     user={user}
-                    onTopicsClick={() => setShowTopicsPanel(true)}
                     onMindMapClick={() => setShowMindMap(true)}
-                    onDashboardClick={() => setShowDashboard(!showDashboard)}
                   />
                 ) : (
                   <button
@@ -1143,16 +1811,11 @@ export default function HomePage() {
         </footer>
       )}
 
-      {/* Methodology Explorer Modal */}
-      <MethodologyExplorer
-        isVisible={showMethodologyExplorer}
-        onClose={handleCloseExplorer}
-      />
-
       {/* Topics Panel */}
       <TopicsPanel
         isOpen={showTopicsPanel}
         onClose={() => setShowTopicsPanel(false)}
+        onOpenMindMap={() => setShowMindMap(true)}
       />
 
       {/* Mind Map */}
@@ -1194,13 +1857,32 @@ export default function HomePage() {
       {/* Topic Suggestions Toast */}
       <SuggestionToast
         suggestions={topicSuggestions}
-        onSuggestionClick={(suggestion) => {
-          // Inject topic context into next query
-          setQuery(`[${suggestion.topicName}] `)
-          setTopicSuggestions([])
+        onRemoveSuggestion={(suggestionId) => {
+          // Remove suggestion from store
+          removeSuggestion(suggestionId)
         }}
-        onDismiss={() => setTopicSuggestions([])}
+        onSuggestionClick={(suggestion) => {
+          // USER CONFIRMED: Do both - inject topic AND open panel
+          setQuery(suggestion.topicName + ' ')
+          setShowTopicsPanel(true)
+          // Focus input for immediate user action
+          if (inputRef.current) {
+            inputRef.current.focus()
+          }
+        }}
       />
+
+      {/* Methodology Change Prompt */}
+      <MethodologyChangePrompt
+        isOpen={showMethodologyPrompt}
+        methodologyName={pendingMethodology ? METHODOLOGIES.find(m => m.id === pendingMethodology)?.name || pendingMethodology : ''}
+        onContinue={handleContinueInCurrentChat}
+        onNewChat={handleStartNewChat}
+        onCancel={handleCancelMethodologyChange}
+      />
+
+      {/* News Notification - Top Left */}
+      <NewsNotification />
     </div>
   )
 }
