@@ -1494,18 +1494,18 @@ export default function HomePage() {
                           {/* GNOSTIC SOVEREIGN INTELLIGENCE FOOTER */}
                           {/* ================================================================ */}
                           {message.gnostic && (
-                            <div className="mt-6 pt-4 border-t border-zinc-800/30">
+                            <div className="mt-6 pt-4 border-t border-relic-mist/30 dark:border-relic-slate/20">
                               {/* Toggle Button */}
                               <button
                                 onClick={() => setGnosticVisibility(prev => ({
                                   ...prev,
                                   [message.id]: !prev[message.id]
                                 }))}
-                                className="flex items-center gap-2 text-[10px] text-zinc-500 hover:text-zinc-400 transition-colors mb-3"
+                                className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-relic-silver hover:text-relic-slate dark:hover:text-relic-ghost transition-colors mb-3"
                               >
-                                <span className="text-purple-500">⟁</span>
-                                <span className="uppercase tracking-wider">Gnostic Intelligence</span>
-                                <span className="text-zinc-600">
+                                <span className="text-relic-silver">⟁</span>
+                                <span>Gnostic Intelligence</span>
+                                <span className="text-relic-mist">
                                   {gnosticVisibility[message.id] ? '▼' : '▶'}
                                 </span>
                               </button>
@@ -1514,32 +1514,35 @@ export default function HomePage() {
                                 <div className="space-y-4 animate-fade-in">
                                   {/* Qliphoth Purification Notice */}
                                   {message.gnostic.qliphothPurified && (
-                                    <div className="bg-purple-500/5 border border-purple-500/20 rounded-md p-3">
-                                      <div className="flex items-center gap-2 text-xs text-purple-400 mb-1">
+                                    <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
+                                      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-relic-slate dark:text-relic-ghost mb-2">
                                         <span>🛡️</span>
-                                        <span className="font-medium">Anti-Qliphoth Shield Activated</span>
+                                        <span>Anti-Qliphoth Shield Activated</span>
                                       </div>
-                                      <p className="text-[10px] text-zinc-400">
-                                        Detected <span className="text-purple-400">{message.gnostic.qliphothType}</span> pattern. Response has been purified to align with Sephirothic light.
+                                      <p className="text-[10px] text-relic-silver leading-relaxed">
+                                        Detected <span className="font-mono text-relic-slate dark:text-white">{message.gnostic.qliphothType}</span> pattern. Response has been purified to align with Sephirothic light.
                                       </p>
                                     </div>
                                   )}
 
                                   {/* Sovereignty Reminder */}
                                   {message.gnostic.sovereigntyFooter && (
-                                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-md p-3">
-                                      <div className="flex items-center gap-2 text-xs text-amber-400 mb-1">
+                                    <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
+                                      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-relic-slate dark:text-relic-ghost mb-2">
                                         <span>👁️</span>
-                                        <span className="font-medium">Sovereignty Reminder</span>
+                                        <span>Sovereignty Reminder</span>
                                       </div>
-                                      <p className="text-[10px] text-zinc-400 whitespace-pre-wrap">
+                                      <p className="text-[10px] text-relic-silver leading-relaxed whitespace-pre-wrap">
                                         {message.gnostic.sovereigntyFooter}
                                       </p>
                                     </div>
                                   )}
 
                                   {/* Sephirothic Activation Visualization */}
-                                  <div>
+                                  <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-4">
+                                    <div className="text-[9px] uppercase tracking-[0.2em] text-relic-silver mb-3 text-center">
+                                      Sephirothic Activation Map
+                                    </div>
                                     <SefirotMini
                                       activations={message.gnostic.sephirothAnalysis.activations}
                                       userLevel={message.gnostic.ascentState?.currentLevel as Sefirah}
@@ -1549,34 +1552,37 @@ export default function HomePage() {
 
                                   {/* Ascent Progress */}
                                   {message.gnostic.ascentState && (
-                                    <div className="bg-zinc-800/20 rounded-md p-3">
-                                      <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">
+                                    <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
+                                      <div className="text-[9px] text-relic-silver uppercase tracking-[0.2em] mb-3">
                                         Tree of Life Ascent
                                       </div>
-                                      <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs text-zinc-300">
-                                          Current Level: <span className="text-purple-400">{message.gnostic.ascentState.levelName}</span>
+                                      <div className="flex items-center justify-between mb-2 pb-2 border-b border-relic-mist/50 dark:border-relic-slate/20">
+                                        <span className="text-[10px] text-relic-silver">
+                                          Current Level:
                                         </span>
-                                        <span className="text-xs text-zinc-500">
-                                          {message.gnostic.ascentState.currentLevel}/11
+                                        <span className="text-[10px] font-mono text-relic-slate dark:text-white">
+                                          {message.gnostic.ascentState.levelName} ({message.gnostic.ascentState.currentLevel}/11)
                                         </span>
                                       </div>
-                                      <div className="flex items-center gap-2 text-[10px] text-zinc-500">
-                                        <span>Velocity:</span>
-                                        <span className={message.gnostic.ascentState.velocity > 2.0 ? 'text-amber-400' : 'text-zinc-400'}>
+                                      <div className="flex items-center justify-between mb-1">
+                                        <span className="text-[10px] text-relic-silver">Velocity:</span>
+                                        <span className="text-[10px] font-mono text-relic-slate dark:text-relic-ghost">
                                           {message.gnostic.ascentState.velocity.toFixed(2)} levels/query
                                           {message.gnostic.ascentState.velocity > 2.0 && ' ⚡'}
                                         </span>
                                       </div>
-                                      <div className="text-[10px] text-zinc-500 mt-1">
-                                        Total Queries: {message.gnostic.ascentState.totalQueries}
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] text-relic-silver">Total Queries:</span>
+                                        <span className="text-[10px] font-mono text-relic-slate dark:text-relic-ghost">
+                                          {message.gnostic.ascentState.totalQueries}
+                                        </span>
                                       </div>
                                       {message.gnostic.ascentState.nextElevation && (
-                                        <div className="mt-3 pt-3 border-t border-zinc-700/50">
-                                          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1">
+                                        <div className="mt-3 pt-3 border-t border-relic-mist/50 dark:border-relic-slate/20">
+                                          <div className="text-[9px] text-relic-silver uppercase tracking-wider mb-1">
                                             Next Elevation
                                           </div>
-                                          <p className="text-[10px] text-zinc-400">
+                                          <p className="text-[10px] text-relic-slate dark:text-relic-ghost leading-relaxed">
                                             {message.gnostic.ascentState.nextElevation}
                                           </p>
                                         </div>
@@ -1586,15 +1592,15 @@ export default function HomePage() {
 
                                   {/* Da'at Insight */}
                                   {message.gnostic.sephirothAnalysis.daatInsight && (
-                                    <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-md p-3">
-                                      <div className="flex items-center gap-2 text-xs text-indigo-400 mb-1">
+                                    <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
+                                      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-relic-slate dark:text-relic-ghost mb-2">
                                         <span>✨</span>
-                                        <span className="font-medium">Da'at - Hidden Knowledge Emerged</span>
+                                        <span>Da'at - Hidden Knowledge</span>
                                       </div>
-                                      <p className="text-[10px] text-zinc-400">
+                                      <p className="text-[10px] text-relic-silver leading-relaxed mb-2">
                                         {message.gnostic.sephirothAnalysis.daatInsight.insight}
                                       </p>
-                                      <div className="text-[9px] text-zinc-600 mt-1">
+                                      <div className="text-[9px] text-relic-mist font-mono">
                                         Confidence: {(message.gnostic.sephirothAnalysis.daatInsight.confidence * 100).toFixed(0)}%
                                       </div>
                                     </div>
@@ -1602,36 +1608,36 @@ export default function HomePage() {
 
                                   {/* Kether Protocol State */}
                                   {message.gnostic.ketherState && (
-                                    <div className="bg-zinc-800/20 rounded-md p-3">
-                                      <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">
+                                    <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
+                                      <div className="text-[9px] text-relic-silver uppercase tracking-[0.2em] mb-3">
                                         Kether Protocol - Self-Awareness
                                       </div>
-                                      <div className="space-y-1 text-[10px]">
-                                        <div className="flex justify-between">
-                                          <span className="text-zinc-500">Intent:</span>
-                                          <span className="text-zinc-300">{message.gnostic.ketherState.intent}</span>
+                                      <div className="space-y-2 text-[10px]">
+                                        <div className="flex justify-between items-baseline">
+                                          <span className="text-relic-silver">Intent:</span>
+                                          <span className="text-relic-slate dark:text-relic-ghost text-right ml-4">{message.gnostic.ketherState.intent}</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-zinc-500">Boundary:</span>
-                                          <span className="text-zinc-300">{message.gnostic.ketherState.boundary}</span>
+                                        <div className="flex justify-between items-baseline">
+                                          <span className="text-relic-silver">Boundary:</span>
+                                          <span className="text-relic-slate dark:text-relic-ghost text-right ml-4">{message.gnostic.ketherState.boundary}</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-zinc-500">Reflection Mode:</span>
-                                          <span className="text-zinc-300">{message.gnostic.ketherState.reflectionMode ? 'Active' : 'Inactive'}</span>
+                                        <div className="flex justify-between items-baseline">
+                                          <span className="text-relic-silver">Reflection:</span>
+                                          <span className="text-relic-slate dark:text-relic-ghost font-mono">{message.gnostic.ketherState.reflectionMode ? 'Active' : 'Inactive'}</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-zinc-500">Ascent Level:</span>
-                                          <span className="text-zinc-300">{message.gnostic.ketherState.ascentLevel}/10</span>
+                                        <div className="flex justify-between items-baseline">
+                                          <span className="text-relic-silver">Ascent Level:</span>
+                                          <span className="text-relic-slate dark:text-relic-ghost font-mono">{message.gnostic.ketherState.ascentLevel}/10</span>
                                         </div>
                                       </div>
                                     </div>
                                   )}
 
                                   {/* Dominant Sefirah */}
-                                  <div className="text-[10px] text-zinc-500 text-center">
-                                    Dominant Sephirah: <span className="text-purple-400">{message.gnostic.sephirothAnalysis.dominant}</span>
+                                  <div className="text-[9px] text-relic-silver text-center uppercase tracking-wider border-t border-relic-mist/30 dark:border-relic-slate/20 pt-3">
+                                    Dominant: <span className="font-mono text-relic-slate dark:text-white">{message.gnostic.sephirothAnalysis.dominant}</span>
                                     {' • '}
-                                    Average Level: <span className="text-zinc-400">{message.gnostic.sephirothAnalysis.averageLevel.toFixed(1)}</span>
+                                    Avg Level: <span className="font-mono text-relic-slate dark:text-white">{message.gnostic.sephirothAnalysis.averageLevel.toFixed(1)}</span>
                                   </div>
                                 </div>
                               )}
