@@ -54,30 +54,18 @@ export async function extractTopics(
     // Step 1: Keyword extraction (simple noun extraction)
     const keywords = extractKeywords(query + ' ' + response);
     
-    // Step 2: AI-powered topic identification
-    const topicCount = legendMode ? '10-15' : '5-10'
-    const topicPrompt = `Extract ALL relevant topics from this conversation. Be thorough and extract ${topicCount} topics covering:
-- Main subjects discussed
-- Technologies mentioned
-- Concepts explained
-- Industries/domains referenced
-- Key terms and entities
+    // Step 2: AI-powered topic identification using Claude Haiku
+    const topicPrompt = `Extract 3-5 main topics from this conversation:
 
 Query: "${query}"
-Response: "${response.substring(0, 1000)}..."
+Response: "${response.substring(0, 500)}..."
 
 Return ONLY a JSON array of topic objects, each with:
-- name: short topic name (1-4 words, be specific)
-- description: brief description (optional, 5-15 words)
+- name: short topic name (2-4 words)
+- description: brief description (optional)
 - category: one of: technology, finance, science, business, health, education, other
 
-Examples:
-- "AI Model Development" (not just "AI")
-- "GPU Infrastructure" (not just "Hardware")
-- "Sovereign AI" (specific concept)
-- "Data Pipeline" (specific component)
-
-Return JSON array: [{"name": "...", "description": "...", "category": "..."}, ...]`;
+Example: [{"name": "Bitcoin", "description": "Cryptocurrency", "category": "finance"}, ...]`;
 
     const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -87,8 +75,8 @@ Return JSON array: [{"name": "...", "description": "...", "category": "..."}, ..
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: legendMode ? 'claude-3-opus-20240229' : 'claude-3-haiku-20240307',
-        max_tokens: legendMode ? 1200 : 800,
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 500,
         messages: [
           {
             role: 'user',
@@ -109,32 +97,12 @@ Return JSON array: [{"name": "...", "description": "...", "category": "..."}, ..
     // Parse JSON from response
     let topics: Array<{ name: string; description?: string; category?: string }> = [];
     try {
-      // Try to find JSON array in response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
-        let jsonStr = jsonMatch[0];
-        
-        // Clean up common JSON issues
-        // Remove trailing commas before closing brackets/braces
-        jsonStr = jsonStr.replace(/,(\s*[}\]])/g, '$1');
-        
-        // Try parsing
-        topics = JSON.parse(jsonStr);
-      } else {
-        // If no array found, try to parse entire content as JSON
-        try {
-          const cleaned = content.trim().replace(/^[^[]*\[/, '[').replace(/\][^]]*$/, ']');
-          topics = JSON.parse(cleaned);
-        } catch (fallbackError) {
-          console.warn('No valid JSON array found in topic extraction response');
-        }
+        topics = JSON.parse(jsonMatch[0]);
       }
     } catch (e) {
-      // Log the problematic content for debugging (truncated to avoid huge logs)
-      const errorMessage = e instanceof Error ? e.message : String(e);
-      const contentPreview = content.substring(0, 500);
-      console.error('Failed to parse topics JSON:', errorMessage);
-      console.error('Content preview:', contentPreview);
+      console.error('Failed to parse topics JSON:', e);
       return [];
     }
 
@@ -144,28 +112,12 @@ Return JSON array: [{"name": "...", "description": "...", "category": "..."}, ..
       const topicId = randomBytes(8).toString('hex');
       
       // Check if topic already exists for this user
-      // Prioritize user-specific topics over NULL user_id topics
-      const existing = userId
-        ? db.prepare(`
-            SELECT * FROM topics 
-            WHERE name = ? AND user_id = ?
-          `).get(topicData.name, userId) as Topic | undefined
-        : db.prepare(`
-            SELECT * FROM topics 
-            WHERE name = ? AND user_id IS NULL
-          `).get(topicData.name) as Topic | undefined;
+      const existing = db.prepare(`
+        SELECT * FROM topics WHERE name = ? AND (user_id = ? OR user_id IS NULL)
+      `).get(topicData.name, userId) as Topic | undefined;
 
       if (existing) {
-        // If topic exists but has NULL user_id and we have a userId, update it
-        if (userId && !existing.user_id) {
-          db.prepare(`
-            UPDATE topics SET user_id = ? WHERE id = ?
-          `).run(userId, existing.id);
-          const updated = db.prepare('SELECT * FROM topics WHERE id = ?').get(existing.id) as Topic;
-          storedTopics.push(updated);
-        } else {
-          storedTopics.push(existing);
-        }
+        storedTopics.push(existing);
         continue;
       }
 
