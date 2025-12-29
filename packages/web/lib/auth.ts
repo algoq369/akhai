@@ -10,21 +10,6 @@ import { randomBytes } from 'crypto';
 const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
 /**
- * Admin/Founder Configuration
- * Only the founder can see provider status and costs
- */
-const ADMIN_GITHUB_USERNAME = process.env.ADMIN_GITHUB_USERNAME || 'algoq369';
-
-/**
- * Check if a user is the admin/founder
- */
-export function isAdmin(user: User | null): boolean {
-  if (!user) return false;
-  // Admin is identified by GitHub username
-  return user.auth_provider === 'github' && user.username === ADMIN_GITHUB_USERNAME;
-}
-
-/**
  * GitHub OAuth Configuration
  */
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
@@ -156,8 +141,7 @@ export function authenticateWallet(address: string, signature: string, message: 
  * Get user from session token
  */
 export function getUserFromSession(token: string): User | null {
-  const user = validateSession(token);
-  return user;
+  return validateSession(token);
 }
 
 /**

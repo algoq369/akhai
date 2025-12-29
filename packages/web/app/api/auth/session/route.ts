@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromSession, logout, isAdmin } from '@/lib/auth';
 
 /**
  * GET /api/auth/session
  * Get current user session
+ * Always returns JSON - never throws
  */
 export async function GET(request: NextRequest) {
   try {
+    // Dynamic import to avoid build issues
+    const { getUserFromSession } = await import('@/lib/auth');
+    
     const token = request.cookies.get('session_token')?.value;
 
     if (!token) {
@@ -26,16 +29,11 @@ export async function GET(request: NextRequest) {
         email: user.email,
         avatar_url: user.avatar_url,
         auth_provider: user.auth_provider,
-        isAdmin: isAdmin(user),
       },
     });
   } catch (error) {
-    const errorInfo = {
-      message: error instanceof Error ? error.message : String(error),
-      name: error instanceof Error ? error.name : 'Unknown',
-      code: (error as any)?.code || 'no code',
-      stack: error instanceof Error ? error.stack?.substring(0, 300) : 'no stack'
-    };
+    console.error('Session check error:', error);
+    // Always return JSON, even on error
     return NextResponse.json({ user: null });
   }
 }
@@ -46,6 +44,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const { logout } = await import('@/lib/auth');
     const token = request.cookies.get('session_token')?.value;
 
     if (token) {
@@ -58,10 +57,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Logout error:', error);
-    return NextResponse.json(
-      { error: 'Logout failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Logout failed' }, { status: 500 });
   }
 }
-

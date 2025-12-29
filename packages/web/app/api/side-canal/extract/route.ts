@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract topics (with legend mode support)
-    const topics = await extractTopics(query, response, userId, legendMode);
+    // Extract topics
+    const topics = await extractTopics(query, response, userId);
 
     if (topics.length === 0) {
       return NextResponse.json({ topics: [], suggestions: [] });

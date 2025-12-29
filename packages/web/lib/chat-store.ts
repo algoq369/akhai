@@ -13,6 +13,7 @@ export interface Message {
     cost: number
     source?: string
   }
+  topics?: Array<{ id: string; name: string; category?: string }>
   timestamp: Date
   guardResult?: {
     passed: boolean
@@ -26,7 +27,7 @@ export interface Message {
     sanityViolations: string[]
   }
   guardAction?: 'pending' | 'accepted' | 'refined' | 'pivoted'
-  guardActionQuery?: string // The query used for refine/pivot action
+  guardActionQuery?: string
   isHidden?: boolean
 }
 
