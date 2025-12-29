@@ -13,6 +13,7 @@ export default function NavigationMenu({ user, onMindMapClick }: NavigationMenuP
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
 
   const menuItems = [
+    { id: 'philosophy', label: '⟁ philosophy', href: '/philosophy', isLink: true, accent: 'violet' },
     { id: 'intelligence-robot-training', label: 'intelligence & robot training', href: '/idea-factory?tab=customize', isLink: true },
     { id: 'mindmap', label: 'mindmap', onClick: onMindMapClick, isLink: false },
     { id: 'history', label: 'history', href: '/history', isLink: true },
@@ -20,6 +21,7 @@ export default function NavigationMenu({ user, onMindMapClick }: NavigationMenuP
   ]
 
   const isActive = (id: string) => {
+    if (id === 'philosophy' && pathname === '/philosophy') return true
     if (id === 'history' && pathname === '/history') return true
     if (id === 'pricing' && pathname === '/pricing') return true
     if (id === 'intelligence-robot-training' && pathname === '/idea-factory') return true
@@ -42,8 +44,12 @@ export default function NavigationMenu({ user, onMindMapClick }: NavigationMenuP
               className={`
                 text-[10px] font-mono transition-all duration-200
                 ${active
-                  ? 'text-relic-slate border-b border-relic-slate'
-                  : 'text-relic-silver hover:text-relic-slate'
+                  ? item.accent === 'violet'
+                    ? 'text-violet-500 border-b border-violet-500'
+                    : 'text-relic-slate border-b border-relic-slate'
+                  : item.accent === 'violet'
+                    ? 'text-violet-400/70 hover:text-violet-500'
+                    : 'text-relic-silver hover:text-relic-slate'
                 }
                 ${hovered ? 'scale-105' : ''}
               `}

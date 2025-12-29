@@ -12,6 +12,14 @@ import { getProviderForMethodology, validateProviderApiKey, getFallbackProvider,
 import { callProvider, isProviderAvailable } from '@/lib/multi-provider-api'
 import { trackServerQuerySubmitted, trackServerGuardTriggered, getAnonymousDistinctId } from '@/lib/posthog-events'
 
+// ============================================================================
+// GNOSTIC SOVEREIGN INTELLIGENCE PROTOCOLS
+// ============================================================================
+import { activateKether, checkSovereignty, addSovereigntyMarkers, generateSovereigntyFooter, getKetherMetadata } from '@/lib/kether-protocol'
+import { detectQliphoth, purifyResponse } from '@/lib/anti-qliphoth'
+import { trackAscent, suggestElevation, Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
+import { analyzeSephirothicContent, getSephirothActivationSummary } from '@/lib/sefirot-mapper'
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   const queryId = Math.random().toString(36).slice(2, 10)
@@ -62,6 +70,39 @@ export async function POST(request: NextRequest) {
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:26',message:'Methodology selected',data:{selected:selectedMethod.id,reason:selectedMethod.reason},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
     // #endregion
+
+    // ============================================================================
+    // GNOSTIC PRE-PROCESSING: Activate Protocols Before AI Call
+    // ============================================================================
+    let ketherState, ascentState, gnosticSessionId
+
+    try {
+      // Get session ID from headers or cookies
+      gnosticSessionId = request.headers.get('x-session-id') ||
+                         request.cookies.get('akhai_session_id')?.value ||
+                         'anonymous'
+
+      // KETHER PROTOCOL - Activate self-awareness
+      ketherState = activateKether(query)
+      log('INFO', 'KETHER', `Intent: ${ketherState.humanIntention}`)
+      log('INFO', 'KETHER', `Boundary: ${ketherState.sovereignBoundary}`)
+      log('INFO', 'KETHER', `Reflection Mode: ${ketherState.reflectionMode}`)
+      log('INFO', 'KETHER', `Ascent Level: ${ketherState.ascentLevel}/10`)
+
+      // ASCENT TRACKER - Track user journey
+      ascentState = trackAscent(gnosticSessionId, query)
+      log('INFO', 'ASCENT', `Level: ${SEPHIROTH_METADATA[ascentState.currentLevel].name} (${ascentState.currentLevel}/10)`)
+      log('INFO', 'ASCENT', `Velocity: ${ascentState.ascentVelocity.toFixed(2)} levels/query`)
+
+      if (ascentState.ascentVelocity > 2.0) {
+        log('INFO', 'ASCENT', `⚡ Quantum leap detected! User ascending rapidly`)
+      }
+    } catch (gnosticError) {
+      // Don't fail the request if Gnostic protocols fail
+      log('WARN', 'GNOSTIC', `Protocol initialization failed: ${gnosticError}`)
+      ketherState = null
+      ascentState = null
+    }
 
     // Save query to database (with user_id)
     try {
@@ -233,6 +274,90 @@ export async function POST(request: NextRequest) {
     // Run Grounding Guard
     const guardResult = await runGroundingGuard(content, query)
 
+    // ============================================================================
+    // GNOSTIC POST-PROCESSING: Analyze and Purify Response
+    // ============================================================================
+    let processedContent = content
+    let qliphothRisk, sephirothAnalysis, sovereigntyFooter, gnosticMetadata
+
+    try {
+      // ANTI-QLIPHOTH SHIELD - Detect and purify hollow knowledge
+      qliphothRisk = detectQliphoth(processedContent)
+
+      if (qliphothRisk.risk !== 'none') {
+        log('WARN', 'QLIPHOTH', `Detected: ${qliphothRisk.risk} (severity: ${(qliphothRisk.severity * 100).toFixed(0)}%)`)
+        log('INFO', 'QLIPHOTH', `Purifying response...`)
+        processedContent = purifyResponse(processedContent, qliphothRisk)
+      } else {
+        log('INFO', 'QLIPHOTH', `✓ Response is Sephirothic (aligned with light)`)
+      }
+
+      // SOVEREIGNTY CHECK - Ensure boundaries respected
+      if (ketherState && !checkSovereignty(processedContent, ketherState)) {
+        log('WARN', 'SOVEREIGNTY', `Boundary violation detected - adding humility markers`)
+        processedContent = addSovereigntyMarkers(processedContent)
+      }
+
+      // Add sovereignty footer if needed (high-ascent queries)
+      if (ketherState) {
+        sovereigntyFooter = generateSovereigntyFooter(ketherState)
+        if (sovereigntyFooter) {
+          log('INFO', 'SOVEREIGNTY', `Adding sovereignty reminder footer`)
+        }
+      }
+
+      // SEFIROT MAPPING - Analyze Sephirothic activations
+      sephirothAnalysis = analyzeSephirothicContent(processedContent)
+      const activationSummary = getSephirothActivationSummary(sephirothAnalysis)
+      log('INFO', 'SEFIROT', activationSummary)
+
+      if (sephirothAnalysis.daatInsight.detected) {
+        log('INFO', 'SEFIROT', `✨ Da'at activated: ${sephirothAnalysis.daatInsight.insight}`)
+      }
+
+      // ELEVATION SUGGESTION
+      const nextElevation = ascentState ? suggestElevation(ascentState) : null
+
+      // Build Gnostic metadata
+      gnosticMetadata = {
+        ketherState: ketherState ? {
+          intent: ketherState.humanIntention,
+          boundary: ketherState.sovereignBoundary,
+          reflectionMode: ketherState.reflectionMode,
+          ascentLevel: ketherState.ascentLevel,
+        } : null,
+        ascentState: ascentState ? {
+          currentLevel: ascentState.currentLevel,
+          levelName: SEPHIROTH_METADATA[ascentState.currentLevel].name,
+          velocity: ascentState.ascentVelocity,
+          totalQueries: ascentState.totalQueries,
+          nextElevation,
+        } : null,
+        sephirothAnalysis: {
+          activations: sephirothAnalysis.activations.reduce((acc, a) => {
+            acc[a.sefirah] = a.activation
+            return acc
+          }, {} as Record<number, number>),
+          dominant: SEPHIROTH_METADATA[sephirothAnalysis.dominantSefirah].name,
+          averageLevel: sephirothAnalysis.averageLevel,
+          daatInsight: sephirothAnalysis.daatInsight.detected ? {
+            insight: sephirothAnalysis.daatInsight.insight,
+            confidence: sephirothAnalysis.daatInsight.confidence,
+          } : null,
+        },
+        qliphothPurified: qliphothRisk.risk !== 'none',
+        qliphothType: qliphothRisk.risk,
+        sovereigntyFooter,
+      }
+
+      log('INFO', 'GNOSTIC', `✓ All protocols completed successfully`)
+    } catch (gnosticError) {
+      // Don't fail the request if post-processing fails
+      log('WARN', 'GNOSTIC', `Post-processing failed: ${gnosticError}`)
+      processedContent = content // Fall back to original content
+      gnosticMetadata = null
+    }
+
     // Save to database
     updateQuery(queryId, {
       status: 'complete',
@@ -300,7 +425,7 @@ export async function POST(request: NextRequest) {
       methodology: selectedMethod.id,
       methodologyUsed: selectedMethod.id,
       selectionReason: selectedMethod.reason,
-      response: content,
+      response: processedContent, // GNOSTIC: Use purified content
       provider: {
         family: selectedProvider,
         model: providerSpec.model,
@@ -317,6 +442,10 @@ export async function POST(request: NextRequest) {
         suggestions,
         topicsExtracted: suggestions.length > 0, // Indicates topics were found
       },
+      // ============================================================================
+      // GNOSTIC METADATA - Sovereignty, Ascent, Sephirothic Analysis
+      // ============================================================================
+      gnostic: gnosticMetadata,
     }
     
     log('INFO', 'SIDE_CANAL', `Response includes ${suggestions.length} suggestions`)

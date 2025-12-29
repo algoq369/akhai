@@ -24,6 +24,9 @@ import ResponseMindmap, { shouldShowMindmap } from '@/components/ResponseMindmap
 import InsightMindmap, { shouldShowInsightMap } from '@/components/InsightMindmap'
 import SefirotResponse, { shouldShowSefirot } from '@/components/SefirotResponse'
 import ConversationConsole, { InlineConsole } from '@/components/ConversationConsole'
+import SefirotMini from '@/components/SefirotMini'
+import { Sefirah } from '@/lib/ascent-tracker'
+import { useSession } from '@/lib/session-manager'
 
 const METHODOLOGIES = [
   { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', cost: 'varies', savings: 'varies' },
@@ -293,6 +296,10 @@ export default function HomePage() {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [mindmapVisibility, setMindmapVisibility] = useState<Record<string, boolean>>({})
   const [vizMode, setVizMode] = useState<Record<string, 'sefirot' | 'insight' | 'text' | 'mindmap'>>({})
+  const [gnosticVisibility, setGnosticVisibility] = useState<Record<string, boolean>>({})
+
+  // Gnostic Session Management - Track user's ascent journey
+  const { sessionId, isClient } = useSession()
 
   // Side Canal Store Integration
   const {
@@ -601,7 +608,10 @@ export default function HomePage() {
       const pageContext = getPageContext()
       const res = await fetch('/api/simple-query', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-id': sessionId, // GNOSTIC: Send session ID for Ascent Tracker
+        },
         body: JSON.stringify({
           query: userMessage.content,
           methodology,
@@ -644,6 +654,7 @@ export default function HomePage() {
           guardResult: guardFailed ? data.guardResult : undefined,
           guardAction: guardFailed ? 'pending' : undefined,
           isHidden: guardFailed,
+          gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
         }
         setMessages(prev => [...prev, assistantMessage])
 
@@ -723,6 +734,7 @@ export default function HomePage() {
             guardResult: guardFailed ? data.guardResult : undefined,
             guardAction: guardFailed ? 'pending' : undefined,
             isHidden: guardFailed,
+            gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
           }
           setMessages(prev => [...prev, assistantMessage])
           setIsLoading(false)
@@ -844,7 +856,10 @@ export default function HomePage() {
         const pageContext = getPageContext()
         const res = await fetch('/api/simple-query', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-session-id': sessionId, // GNOSTIC: Send session ID for Ascent Tracker
+          },
           body: JSON.stringify({
             query: refinedQuery,
             methodology,
@@ -867,6 +882,7 @@ export default function HomePage() {
           guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
           guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
           isHidden: data.guardResult?.passed === false,
+          gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
         }
         setMessages(prev => [...prev, assistantMessage])
       } catch (error) {
@@ -961,7 +977,10 @@ export default function HomePage() {
         const pageContext = getPageContext()
         const res = await fetch('/api/simple-query', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-session-id': sessionId, // GNOSTIC: Send session ID for Ascent Tracker
+          },
           body: JSON.stringify({
             query: pivotQuery,
             methodology,
@@ -984,6 +1003,7 @@ export default function HomePage() {
           guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
           guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
           isHidden: data.guardResult?.passed === false,
+          gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
         }
         setMessages(prev => [...prev, assistantMessage])
       } catch (error) {
@@ -1470,6 +1490,154 @@ export default function HomePage() {
                             />
                           )}
 
+                          {/* ================================================================ */}
+                          {/* GNOSTIC SOVEREIGN INTELLIGENCE FOOTER */}
+                          {/* ================================================================ */}
+                          {message.gnostic && (
+                            <div className="mt-6 pt-4 border-t border-zinc-800/30">
+                              {/* Toggle Button */}
+                              <button
+                                onClick={() => setGnosticVisibility(prev => ({
+                                  ...prev,
+                                  [message.id]: !prev[message.id]
+                                }))}
+                                className="flex items-center gap-2 text-[10px] text-zinc-500 hover:text-zinc-400 transition-colors mb-3"
+                              >
+                                <span className="text-purple-500">⟁</span>
+                                <span className="uppercase tracking-wider">Gnostic Intelligence</span>
+                                <span className="text-zinc-600">
+                                  {gnosticVisibility[message.id] ? '▼' : '▶'}
+                                </span>
+                              </button>
+
+                              {gnosticVisibility[message.id] && (
+                                <div className="space-y-4 animate-fade-in">
+                                  {/* Qliphoth Purification Notice */}
+                                  {message.gnostic.qliphothPurified && (
+                                    <div className="bg-purple-500/5 border border-purple-500/20 rounded-md p-3">
+                                      <div className="flex items-center gap-2 text-xs text-purple-400 mb-1">
+                                        <span>🛡️</span>
+                                        <span className="font-medium">Anti-Qliphoth Shield Activated</span>
+                                      </div>
+                                      <p className="text-[10px] text-zinc-400">
+                                        Detected <span className="text-purple-400">{message.gnostic.qliphothType}</span> pattern. Response has been purified to align with Sephirothic light.
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {/* Sovereignty Reminder */}
+                                  {message.gnostic.sovereigntyFooter && (
+                                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-md p-3">
+                                      <div className="flex items-center gap-2 text-xs text-amber-400 mb-1">
+                                        <span>👁️</span>
+                                        <span className="font-medium">Sovereignty Reminder</span>
+                                      </div>
+                                      <p className="text-[10px] text-zinc-400 whitespace-pre-wrap">
+                                        {message.gnostic.sovereigntyFooter}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {/* Sephirothic Activation Visualization */}
+                                  <div>
+                                    <SefirotMini
+                                      activations={message.gnostic.sephirothAnalysis.activations}
+                                      userLevel={message.gnostic.ascentState?.currentLevel as Sefirah}
+                                      className="mx-auto"
+                                    />
+                                  </div>
+
+                                  {/* Ascent Progress */}
+                                  {message.gnostic.ascentState && (
+                                    <div className="bg-zinc-800/20 rounded-md p-3">
+                                      <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">
+                                        Tree of Life Ascent
+                                      </div>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs text-zinc-300">
+                                          Current Level: <span className="text-purple-400">{message.gnostic.ascentState.levelName}</span>
+                                        </span>
+                                        <span className="text-xs text-zinc-500">
+                                          {message.gnostic.ascentState.currentLevel}/11
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                                        <span>Velocity:</span>
+                                        <span className={message.gnostic.ascentState.velocity > 2.0 ? 'text-amber-400' : 'text-zinc-400'}>
+                                          {message.gnostic.ascentState.velocity.toFixed(2)} levels/query
+                                          {message.gnostic.ascentState.velocity > 2.0 && ' ⚡'}
+                                        </span>
+                                      </div>
+                                      <div className="text-[10px] text-zinc-500 mt-1">
+                                        Total Queries: {message.gnostic.ascentState.totalQueries}
+                                      </div>
+                                      {message.gnostic.ascentState.nextElevation && (
+                                        <div className="mt-3 pt-3 border-t border-zinc-700/50">
+                                          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1">
+                                            Next Elevation
+                                          </div>
+                                          <p className="text-[10px] text-zinc-400">
+                                            {message.gnostic.ascentState.nextElevation}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Da'at Insight */}
+                                  {message.gnostic.sephirothAnalysis.daatInsight && (
+                                    <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-md p-3">
+                                      <div className="flex items-center gap-2 text-xs text-indigo-400 mb-1">
+                                        <span>✨</span>
+                                        <span className="font-medium">Da'at - Hidden Knowledge Emerged</span>
+                                      </div>
+                                      <p className="text-[10px] text-zinc-400">
+                                        {message.gnostic.sephirothAnalysis.daatInsight.insight}
+                                      </p>
+                                      <div className="text-[9px] text-zinc-600 mt-1">
+                                        Confidence: {(message.gnostic.sephirothAnalysis.daatInsight.confidence * 100).toFixed(0)}%
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Kether Protocol State */}
+                                  {message.gnostic.ketherState && (
+                                    <div className="bg-zinc-800/20 rounded-md p-3">
+                                      <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">
+                                        Kether Protocol - Self-Awareness
+                                      </div>
+                                      <div className="space-y-1 text-[10px]">
+                                        <div className="flex justify-between">
+                                          <span className="text-zinc-500">Intent:</span>
+                                          <span className="text-zinc-300">{message.gnostic.ketherState.intent}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-zinc-500">Boundary:</span>
+                                          <span className="text-zinc-300">{message.gnostic.ketherState.boundary}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-zinc-500">Reflection Mode:</span>
+                                          <span className="text-zinc-300">{message.gnostic.ketherState.reflectionMode ? 'Active' : 'Inactive'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-zinc-500">Ascent Level:</span>
+                                          <span className="text-zinc-300">{message.gnostic.ketherState.ascentLevel}/10</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Dominant Sefirah */}
+                                  <div className="text-[10px] text-zinc-500 text-center">
+                                    Dominant Sephirah: <span className="text-purple-400">{message.gnostic.sephirothAnalysis.dominant}</span>
+                                    {' • '}
+                                    Average Level: <span className="text-zinc-400">{message.gnostic.sephirothAnalysis.averageLevel.toFixed(1)}</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {/* Metrics */}
                           {message.metrics && (
                             <div className="flex gap-4 mt-3 text-[10px] text-relic-silver">
@@ -1698,7 +1866,10 @@ export default function HomePage() {
               const pageContext = getPageContext()
               const res = await fetch('/api/simple-query', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-session-id': sessionId, // GNOSTIC: Send session ID for Ascent Tracker
+                },
                 body: JSON.stringify({
                   query,
                   methodology: sideChat.methodology,
@@ -1723,6 +1894,7 @@ export default function HomePage() {
                 guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
                 guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
                 isHidden: data.guardResult?.passed === false,
+                gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
               }
               setSideChats(prev => prev.map(c => 
                 c.id === sideChat.id 

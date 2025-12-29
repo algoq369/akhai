@@ -29,6 +29,36 @@ export interface Message {
   guardAction?: 'pending' | 'accepted' | 'refined' | 'pivoted'
   guardActionQuery?: string
   isHidden?: boolean
+  // ============================================================================
+  // GNOSTIC SOVEREIGN INTELLIGENCE METADATA
+  // ============================================================================
+  gnostic?: {
+    ketherState: {
+      intent: string
+      boundary: string
+      reflectionMode: boolean
+      ascentLevel: number
+    } | null
+    ascentState: {
+      currentLevel: number
+      levelName: string
+      velocity: number
+      totalQueries: number
+      nextElevation: string | null
+    } | null
+    sephirothAnalysis: {
+      activations: Record<number, number>
+      dominant: string
+      averageLevel: number
+      daatInsight: {
+        insight: string
+        confidence: number
+      } | null
+    }
+    qliphothPurified: boolean
+    qliphothType: string
+    sovereigntyFooter: string | null
+  }
 }
 
 export interface ChatState {
