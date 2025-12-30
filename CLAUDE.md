@@ -532,6 +532,271 @@ Requires:
 
 ---
 
+## 🆕 Latest Updates
+
+### December 30, 2025 - Cryptocurrency Payment System
+
+**New Feature**: Complete dual-provider cryptocurrency payment system
+- ✅ NOWPayments integration (300+ cryptocurrencies) - LIVE
+- ✅ BTCPay Server integration (BTC, Lightning, Monero) - Prepared
+- ✅ Dual modal UI with white/grey minimalist design
+- ✅ Real-time status polling and QR code generation
+- ✅ Cloudflare Tunnel setup for localhost testing
+- 📝 Comprehensive documentation (4 guides, 1,200+ lines)
+
+See `packages/web/CHANGELOG_CRYPTO_PAYMENTS.md` for full details.
+
+### December 29, 2025
+
+### Critical Bug Fixes
+
+#### Side Canal TypeError Fixed
+- **Issue**: Auto-synopsis causing repeated "Failed to fetch" errors
+- **Solution**: Disabled by default, added Zustand migration (v2), 404 error handling
+- **Files**: `lib/stores/side-canal-store.ts`, `app/page.tsx`
+- **Status**: ✅ Resolved
+
+#### Gnostic Metadata Persistence
+- **Issue**: Gnostic Intelligence footer (Tree of Life) not appearing
+- **Solution**: Added `gnostic_metadata` column, save/load in API and history
+- **Files**: `app/api/simple-query/route.ts`, `lib/database.ts`, `app/api/history/[id]/conversation/route.ts`
+- **Database**: `ALTER TABLE queries ADD COLUMN gnostic_metadata TEXT;`
+- **Status**: ✅ Resolved
+- **Note**: Only NEW queries (after Dec 29) have gnostic data
+
+#### SefirotResponse Display Consistency
+- **Issue**: Full Tree visualization only showing for structured content
+- **Solution**: Check `message.gnostic` instead of just content structure
+- **Files**: `app/page.tsx` (lines 1397, 1434, 1491)
+- **Status**: ✅ Resolved
+
+### Major Enhancements
+
+#### SefirotMini (Tree of Life) Visual Upgrade
+- **Size**: Increased 17% (`w-56 h-36`)
+- **Glow**: Dual-layer glow system for depth
+- **Dots**: Spring animations, brightness filters, dynamic strokes
+- **Lines**: Dashed connections, color-coded pillars, better opacity
+- **Tooltip**: Modern glass effect, visual progress bar, 220px width
+- **Footer**: "Tree of Life Activation", shows level number
+- **File**: `components/SefirotMini.tsx`
+
+#### Hebrew → English Replacement
+- **Changed**: `HebrewTermDisplay` component now shows only English
+- **Example**: "Kether (כֶּתֶר) - Crown" → "Crown - Meta-Cognitive Layer"
+- **Affects**: All Sephiroth names (Kether→Crown, Chesed→Mercy, Da'at→Knowledge, etc.)
+- **File**: `lib/hebrew-formatter.tsx`
+
+#### Dark Mode Optimization
+- **Colors**: Brighter palette for dark mode (Red +9, Blue +37, Purple +24 brightness)
+- **Glow**: Enhanced drop shadows and connection lines
+- **Tooltip**: Proper dark mode styling with glass morphism
+- **Progress Bar**: Dark mode gradient (`from-purple-400 to-blue-400`)
+- **File**: `components/SefirotMini.tsx`
+
+### Reference Documents
+
+Comprehensive session details: `packages/web/SESSION_SUMMARY_2025-12-29.md`
+
+### Gnostic Intelligence System
+
+**Components:**
+- **SefirotMini** - Compact Tree of Life visualization (11 Sephiroth nodes)
+- **SefirotResponse** - Full Tree visualization with insights
+- **Gnostic Footer** - Anti-Qliphoth Shield, Ascent Progress, Da'at Insights, Kether Protocol
+- **Ascent Tracker** - User journey from Malkuth (1) to Kether (10) + Da'at (11)
+
+**Tree of Life (11 Sephiroth):**
+1. **Malkuth** (Kingdom) - Data Layer
+2. **Yesod** (Foundation) - Implementation Layer
+3. **Hod** (Glory) - Logic Layer
+4. **Netzach** (Victory) - Creative Layer
+5. **Tiferet** (Beauty) - Integration Layer
+6. **Gevurah** (Severity) - Constraint Layer
+7. **Chesed** (Mercy) - Expansion Layer
+8. **Binah** (Understanding) - Pattern Layer
+9. **Chokmah** (Wisdom) - Principle Layer
+10. **Kether** (Crown) - Meta-Cognitive Layer
+11. **Da'at** (Knowledge) - Emergent Layer (hidden)
+
+**Implementation:**
+- `lib/ascent-tracker.ts` - Sephiroth metadata and ascent tracking
+- `components/SefirotMini.tsx` - Compact visualization
+- `components/SefirotResponse.tsx` - Full Tree view
+- `lib/hebrew-formatter.tsx` - English display (Hebrew removed)
+
+### Side Canal System
+
+**Status:** Core implementation complete, auto-synopsis disabled by default
+
+**Components:**
+- Topic Extractor (AI-powered)
+- Synopsis Generator (2-3 sentence summaries)
+- Suggestion Engine (related topics)
+- Context Injection (into prompts)
+
+**State Management:**
+- Store: `lib/stores/side-canal-store.ts`
+- Version: 2 (with migration)
+- Defaults: `autoSynopsisEnabled: false`, `enabled: true`
+
+**API Endpoints:**
+- `/api/side-canal/extract` - Topic extraction
+- `/api/side-canal/suggestions` - Suggestion generation
+- `/api/side-canal/topics/[id]` - Topic details
+- `/api/side-canal/synopsis` - Synopsis generation
+
+**Important:**
+- Auto-synopsis disabled to prevent errors
+- Can be re-enabled when topic system more stable
+- Feature fully functional, just not running automatically
+
+---
+
+## 💰 Cryptocurrency Payment System (December 30, 2025)
+
+**Status:** ✅ Production Ready (NOWPayments) | ✅ Prepared (BTCPay Server)
+
+Complete dual-provider cryptocurrency payment system with 300+ supported currencies.
+
+### Architecture
+
+**Dual Provider System:**
+- **Convenient Mode** (NOWPayments): 300+ cryptocurrencies, 0.5% fee, custodial
+- **Sovereign Mode** (BTCPay Server): BTC, Lightning, Monero, 0% fees, self-hosted
+
+### Implementation Files
+
+**Core API Clients:**
+- `packages/web/lib/nowpayments.ts` - NOWPayments API client (260 lines)
+- `packages/web/lib/btcpay.ts` - BTCPay Server API client (235 lines)
+
+**API Endpoints:**
+- `packages/web/app/api/crypto-checkout/route.ts` - Payment creation (POST), status checks (GET)
+- `packages/web/app/api/webhooks/crypto/route.ts` - NOWPayments IPN webhook handler
+- `packages/web/app/api/btcpay-checkout/route.ts` - BTCPay invoice creation
+- `packages/web/app/api/webhooks/btcpay/route.ts` - BTCPay webhook handler
+
+**UI Components:**
+- `packages/web/components/CryptoPaymentModalDual.tsx` - Main payment modal (503 lines)
+  - Provider selection (Sovereign/Convenient modes)
+  - Currency grid (3-column layout)
+  - QR code display with countdown timer
+  - Real-time status polling (10s interval)
+  - Copy address functionality
+  - White/grey minimalist design (NO emojis)
+
+**Infrastructure:**
+- `packages/web/docker-compose.btcpay.yml` - BTCPay Server + PostgreSQL
+- `packages/web/start-tunnel.sh` - Cloudflare Tunnel quick start
+
+**Documentation:**
+- `packages/web/CHANGELOG_CRYPTO_PAYMENTS.md` - Complete session summary
+- `packages/web/REAL_CRYPTO_TESTING.md` - Testing guide
+- `packages/web/CLOUDFLARE_TUNNEL_SETUP.md` - Tunnel setup (400+ lines)
+- `packages/web/DUAL_CRYPTO_QUICKSTART.md` - Quick start guide
+
+### Environment Variables
+
+**NOWPayments (Production - LIVE):**
+```bash
+NOWPAYMENTS_API_KEY=<your-api-key>
+NOWPAYMENTS_IPN_SECRET=<your-ipn-secret>
+NOWPAYMENTS_SANDBOX=false
+NEXT_PUBLIC_APP_URL=<your-public-url>
+```
+
+**BTCPay Server (Prepared):**
+```bash
+BTCPAY_SERVER_URL=http://localhost:14142
+BTCPAY_API_KEY=<fill-after-setup>
+BTCPAY_STORE_ID=<fill-after-setup>
+BTCPAY_WEBHOOK_SECRET=<fill-after-setup>
+```
+
+### Database Schema
+
+**New Tables:**
+- `crypto_payments` - NOWPayments transactions
+- `btcpay_payments` - BTCPay Server invoices
+
+### Features
+
+✅ **Working (NOWPayments):**
+- 300+ cryptocurrency support (BTC, ETH, XMR, USDT, SOL, DOGE, etc.)
+- Real-time payment status updates
+- QR code generation for mobile wallets
+- Minimum amount validation per currency
+- HMAC SHA-512 signature verification
+- Comprehensive error handling
+- PostHog analytics integration
+
+✅ **Prepared (BTCPay Server):**
+- Bitcoin (on-chain)
+- Lightning Network
+- Monero support
+- Self-hosted infrastructure
+- Docker deployment ready
+
+### Testing
+
+**Local Testing with Real Crypto:**
+1. Install Cloudflare Tunnel: `brew install cloudflare/cloudflare/cloudflared`
+2. Start tunnel: `cloudflared tunnel --url http://localhost:3001`
+3. Copy tunnel URL (e.g., `https://xxx.trycloudflare.com`)
+4. Update `NEXT_PUBLIC_APP_URL` in `.env.local`
+5. Visit tunnel URL and test payment
+
+**Recommended Test:**
+- Currency: USDT or USDC (stablecoins)
+- Amount: $15 (above $10 minimum)
+
+### Minimum Amounts by Currency
+
+| Currency | Minimum | Best For |
+|----------|---------|----------|
+| USDT     | $10     | Testing (stable value) |
+| USDC     | $10     | Testing (stable value) |
+| SOL      | $5      | Low-value transactions |
+| BTC      | $25     | Traditional crypto |
+| ETH      | $20     | Smart contract platform |
+| XMR      | $15     | Privacy-focused |
+
+### Design System
+
+**Code Relic Aesthetic:**
+- White background with grey accents
+- No emojis (professional, clean)
+- Subtle borders (`border-relic-slate/10-20`)
+- Light grey backgrounds (`bg-relic-ghost`)
+- Dark text on light (`text-relic-void`)
+- Minimalist spacing and typography
+
+### Bugs Fixed
+
+1. **API Key Error (403)**: Changed from sandbox to production mode
+2. **Currency Parameter Bug (400)**: Separated `currency` (USD) from `payCurrency` (crypto)
+3. **Minimum Amount Error (400)**: Added helpful error messages per currency
+4. **Overlapping Badge Text**: Fixed layout from absolute to flex-column
+
+### Security
+
+- HMAC signature verification (SHA-512 for NOW, SHA-256 for BTC)
+- Environment variable based secrets
+- No hardcoded credentials
+- Webhook IP validation
+- Database transaction logging
+
+### Next Steps
+
+- [ ] Test real crypto payment ($10-15 USDT)
+- [ ] Deploy BTCPay Server (Docker)
+- [ ] Configure BTCPay API keys
+- [ ] Add payment history page
+- [ ] Implement refund system
+
+---
+
 ## 📞 Support & Contact
 
 - **Issues**: Use GitHub Issues for bugs/features

@@ -1,0 +1,104 @@
+# BTCPay Server - Docker Compose
+# Self-hosted, non-custodial cryptocurrency payment processor
+# https://docs.btcpayserver.org/Docker/
+
+version: "3"
+
+services:
+  btcpayserver:
+    image: btcpayserver/btcpayserver:latest
+    container_name: akhai_btcpayserver
+    restart: unless-stopped
+    ports:
+      - "14142:49392"  # BTCPay Server web interface
+    environment:
+      # Server Configuration
+      BTCPAY_HOST: localhost:14142
+      BTCPAY_ROOTPATH: /
+
+      # Database (PostgreSQL)
+      BTCPAY_POSTGRES: "User ID=postgres;Host=postgres;Port=5432;Database=btcpayserver"
+
+      # Bitcoin Configuration
+      BTCPAY_BTCEXPLORERURL: https://blockstream.info  # Use public explorer
+      BTCPAY_BTCLIGHTNING: "type=clightning;server=unix://etc/clightning_bitcoin/lightning-rpc"
+
+      # Network (mainnet or testnet)
+      BTCPAY_NETWORK: testnet  # Change to 'mainnet' for production
+
+      # Security
+      BTCPAY_SSHAUTHORIZEDKEYS: ""
+      BTCPAY_SSHTRUSTEDFINGERPRINTS: ""
+
+      # Features
+      BTCPAY_ALLOW_ADMIN_REGISTRATION: "true"  # Only for first setup
+      BTCPAY_DISABLEREGISTRATION: "false"  # Set to true after creating admin account
+
+    volumes:
+      - btcpay_data:/datadir
+      - btcpay_postgres:/var/lib/postgresql/data
+    depends_on:
+      - postgres
+    networks:
+      - btcpaynet
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:13-alpine
+    container_name: akhai_btcpay_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: btcpayserver
+    volumes:
+      - btcpay_postgres:/var/lib/postgresql/data
+    networks:
+      - btcpaynet
+
+  # Optional: NBXplorer (Bitcoin blockchain indexer)
+  # Uncomment if you want full node sync
+  # nbxplorer:
+  #   image: nicolasdorier/nbxplorer:latest
+  #   container_name: akhai_nbxplorer
+  #   restart: unless-stopped
+  #   ports:
+  #     - "24445:24445"
+  #   environment:
+  #     NBXPLORER_NETWORK: testnet
+  #     NBXPLORER_BTCRPCURL: http://bitcoind:43782/
+  #     NBXPLORER_BTCNODEENDPOINT: bitcoind:39388
+  #     NBXPLORER_POSTGRES: "User ID=postgres;Host=postgres;Port=5432;Database=nbxplorer"
+  #   volumes:
+  #     - nbxplorer_data:/datadir
+  #   networks:
+  #     - btcpaynet
+
+volumes:
+  btcpay_data:
+    driver: local
+  btcpay_postgres:
+    driver: local
+  # nbxplorer_data:
+  #   driver: local
+
+networks:
+  btcpaynet:
+    driver: bridge
+
+# Quick Start:
+# 1. Start services: docker-compose -f docker-compose.btcpay.yml up -d
+# 2. Access: http://localhost:14142
+# 3. Create admin account (first time only)
+# 4. Create store: "AkhAI"
+# 5. Configure wallet: Bitcoin (testnet for testing)
+# 6. Get API key: Account Settings → API Keys
+# 7. Set IPN webhook: Store Settings → Webhooks → Add webhook
+
+# Production Checklist:
+# - Change BTCPAY_NETWORK to 'mainnet'
+# - Set BTCPAY_ALLOW_ADMIN_REGISTRATION to 'false'
+# - Set BTCPAY_DISABLEREGISTRATION to 'true'
+# - Use strong PostgreSQL password
+# - Enable HTTPS with reverse proxy (nginx/Caddy)
+# - Configure firewall to only expose necessary ports
