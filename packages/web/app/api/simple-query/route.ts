@@ -13,6 +13,12 @@ import { callProvider, isProviderAvailable } from '@/lib/multi-provider-api'
 import { trackServerQuerySubmitted, trackServerGuardTriggered, getAnonymousDistinctId } from '@/lib/posthog-events'
 
 // ============================================================================
+// URL VISITOR SYSTEM - Fetch content from links shared by user
+// ============================================================================
+import { hasURLs, detectURLs } from '@/lib/url-detector'
+import { fetchMultipleURLs, buildURLContext } from '@/lib/url-content-fetcher'
+
+// ============================================================================
 // GNOSTIC SOVEREIGN INTELLIGENCE PROTOCOLS
 // ============================================================================
 import { activateKether, checkSovereignty, addSovereigntyMarkers, generateSovereigntyFooter, getKetherMetadata } from '@/lib/kether-protocol'
@@ -59,6 +65,43 @@ export async function POST(request: NextRequest) {
     if (!query || typeof query !== 'string') {
       logger.query.apiError('VALIDATION', 'Query is required')
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
+    }
+
+    // ============================================================================
+    // URL VISITOR SYSTEM - Detect and fetch content from shared links
+    // ============================================================================
+    let urlContext = ''
+    let urlsFetched: { url: string; type: string; success: boolean; title?: string }[] = []
+
+    if (hasURLs(query)) {
+      const detectedURLs = detectURLs(query)
+      log('INFO', 'URL_FETCH', `Detected ${detectedURLs.length} URLs in query`)
+
+      try {
+        const fetchedContents = await fetchMultipleURLs(
+          detectedURLs.map(d => d.url),
+          3 // Max 3 URLs per query
+        )
+
+        urlsFetched = fetchedContents.map(c => ({
+          url: c.url,
+          type: c.type,
+          success: c.success,
+          title: c.title,
+        }))
+
+        const successCount = fetchedContents.filter(c => c.success).length
+        log('INFO', 'URL_FETCH', `Successfully fetched ${successCount}/${detectedURLs.length} URLs`)
+
+        // Build context from fetched content
+        urlContext = buildURLContext(fetchedContents)
+
+        if (urlContext) {
+          log('INFO', 'URL_FETCH', `URL context built: ${urlContext.length} chars`)
+        }
+      } catch (urlError) {
+        log('WARN', 'URL_FETCH', `URL fetching failed: ${urlError}`)
+      }
     }
 
     // Log query start
@@ -226,7 +269,13 @@ export async function POST(request: NextRequest) {
     // #endregion
 
     // Get methodology-specific system prompt
-    const systemPrompt = getMethodologyPrompt(selectedMethod.id, pageContext, legendMode)
+    let systemPrompt = getMethodologyPrompt(selectedMethod.id, pageContext, legendMode)
+
+    // Inject URL context if we fetched any content
+    if (urlContext) {
+      systemPrompt = `${systemPrompt}\n\n${urlContext}`
+      log('INFO', 'URL_FETCH', `URL context injected into system prompt`)
+    }
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:115',message:'After getMethodologyPrompt',data:{promptLength:systemPrompt?.length||0,methodology:selectedMethod.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
@@ -441,6 +490,15 @@ export async function POST(request: NextRequest) {
         contextInjected: !!sideCanalContext,
         suggestions,
         topicsExtracted: suggestions.length > 0, // Indicates topics were found
+      },
+      // ============================================================================
+      // URL VISITOR - Content fetched from shared links
+      // ============================================================================
+      urlVisitor: {
+        urlsDetected: urlsFetched.length,
+        urlsFetched: urlsFetched.filter(u => u.success).length,
+        urls: urlsFetched,
+        contextInjected: !!urlContext,
       },
       // ============================================================================
       // GNOSTIC METADATA - Sovereignty, Ascent, Sephirothic Analysis
