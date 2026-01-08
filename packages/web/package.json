@@ -4,22 +4,26 @@
   "description": "AkhAI Web Interface - Next.js 15 app with minimalist UI and GTP Flash visualization",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3000",
     "lint": "next lint"
   },
   "dependencies": {
     "@akhai/core": "workspace:*",
+    "@anthropic-ai/sdk": "^0.71.2",
     "@heroicons/react": "^2.2.0",
     "@stripe/stripe-js": "^8.6.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/d3": "^7.4.3",
     "better-sqlite3": "^12.5.0",
+    "cheerio": "^1.1.2",
     "d3": "^7.9.0",
     "framer-motion": "^12.23.26",
+    "lucide-react": "^0.562.0",
     "nanoid": "^5.0.8",
     "next": "^15.1.0",
+    "pdf-parse": "^2.4.5",
     "posthog-js": "^1.310.1",
     "posthog-node": "^5.18.0",
     "react": "^19.0.0",
@@ -27,6 +31,9 @@
     "react-dom": "^19.0.0",
     "recharts": "^2.10.0",
     "stripe": "^20.1.0",
+    "youtube-captions-scraper": "^2.0.3",
+    "youtube-transcript": "^1.2.1",
+    "youtubei.js": "^16.0.1",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

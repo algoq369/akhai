@@ -1,17 +1,25 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { generateId, Message } from '@/lib/chat-store'
 import { trackQuery } from '@/lib/analytics'
 import { useSideCanalStore } from '@/lib/stores/side-canal-store'
+import { useSettingsStore } from '@/lib/stores/settings-store'
 import GuardWarning from '@/components/GuardWarning'
+import { InstinctModeConsole } from '@/components/InstinctModeConsole'
+import InstinctConsole from '@/components/InstinctConsole'
+import QChat from '@/components/QChat'
 // MethodologyExplorer removed - now using inline CSS hover
 import AuthModal from '@/components/AuthModal'
-import UserProfile from '@/components/UserProfile'
+// UserProfile is now global in layout.tsx
+import { getCurrentLanguage, type SupportedLanguage } from '@/components/LanguageSelector'
+import { getTranslation } from '@/lib/translations'
 import SuggestionToast from '@/components/SuggestionToast'
 import TopicsPanel from '@/components/TopicsPanel'
 import MindMap from '@/components/MindMap'
+import SideMiniChat from '@/components/SideMiniChat'
 import NavigationMenu from '@/components/NavigationMenu'
 import ChatDashboard from '@/components/ChatDashboard'
 import SideChat from '@/components/SideChat'
@@ -25,9 +33,14 @@ import InsightMindmap, { shouldShowInsightMap } from '@/components/InsightMindma
 import SefirotResponse, { shouldShowSefirot } from '@/components/SefirotResponse'
 import ConversationConsole, { InlineConsole } from '@/components/ConversationConsole'
 import SefirotMini from '@/components/SefirotMini'
-import { Sefirah } from '@/lib/ascent-tracker'
+import DarkModeToggle from '@/components/DarkModeToggle'
+import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
 import { useSession } from '@/lib/session-manager'
 import { HebrewTermDisplay } from '@/lib/hebrew-formatter'
+import { analyzeSephirothicContent } from '@/lib/sefirot-mapper'
+import { DepthText } from '@/components/DepthAnnotation'
+import { useDepthAnnotations } from '@/hooks/useDepthAnnotations'
+import FileDropZone from '@/components/FileDropZone'
 
 const METHODOLOGIES = [
   { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', cost: 'varies', savings: 'varies' },
@@ -270,11 +283,52 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
   }
 ]
 
+/**
+ * Generate SefirotMini data for every query - adapts to content and evolves with conversation
+ * Always returns valid activations even if gnostic metadata doesn't exist
+ */
+function generateSefirotData(message: Message, messageIndex: number, totalMessages: number): {
+  activations: Record<number, number>
+  userLevel: Sefirah
+} {
+  // If gnostic metadata exists, use it
+  if (message.gnostic?.sephirothAnalysis) {
+    return {
+      activations: message.gnostic.sephirothAnalysis.activations,
+      userLevel: (message.gnostic.ascentState?.currentLevel || 1) as Sefirah
+    }
+  }
+
+  // Generate activations based on content analysis
+  const content = message.content || ''
+  const analysis = analyzeSephirothicContent(content)
+
+  // Convert analysis to activations record
+  const activations: Record<number, number> = {}
+  analysis.activations.forEach(({ sefirah, activation }) => {
+    activations[sefirah] = activation
+  })
+
+  // Calculate user level based on conversation progression
+  // More messages = higher ascent (evolves with chat)
+  const progressionLevel = Math.min(Math.ceil((messageIndex + 1) / 3), 10)
+  const userLevel = progressionLevel as Sefirah
+
+  return { activations, userLevel }
+}
+
 export default function HomePage() {
+  const searchParams = useSearchParams()
+  const continueParam = searchParams?.get('continue')
+
+  const [currentLang, setCurrentLang] = useState<SupportedLanguage>('en')
   const [query, setQuery] = useState('')
   const [methodology, setMethodology] = useState('auto')
   const [messages, setMessages] = useState<Message[]>([])
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+  const [uploadedFileUrls, setUploadedFileUrls] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [hoveredMethod, setHoveredMethod] = useState<string | null>(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
@@ -287,8 +341,10 @@ export default function HomePage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   // topicSuggestions and showTopicsPanel now managed by Side Canal store
   const [showMindMap, setShowMindMap] = useState(false)
+  const [mindMapInitialView, setMindMapInitialView] = useState<'graph' | 'table' | 'history'>('graph')
   const [showDashboard, setShowDashboard] = useState(false)
   const [legendMode, setLegendMode] = useState(false)
+  const [consoleOpen, setConsoleOpen] = useState(false)
   const [sideChats, setSideChats] = useState<Array<{ id: string; methodology: string; messages: Message[] }>>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [continuingConversation, setContinuingConversation] = useState<string | null>(null)
@@ -298,9 +354,75 @@ export default function HomePage() {
   const [mindmapVisibility, setMindmapVisibility] = useState<Record<string, boolean>>({})
   const [vizMode, setVizMode] = useState<Record<string, 'sefirot' | 'insight' | 'text' | 'mindmap'>>({})
   const [gnosticVisibility, setGnosticVisibility] = useState<Record<string, boolean>>({})
+  const [deepDiveQuery, setDeepDiveQuery] = useState<string>('')  // NEW: For Deep Dive → Mini Chat
+  const [messageAnnotations, setMessageAnnotations] = useState<Record<string, any[]>>({})  // Store annotations per message
+  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(undefined)  // NEW: For sharing conversation
 
   // Gnostic Session Management - Track user's ascent journey
   const { sessionId, isClient } = useSession()
+
+  // Depth Annotations Hook
+  const { processText, reset: resetDepthAnnotations, config: depthConfig } = useDepthAnnotations()
+
+  // Instinct Mode Settings
+  const { settings } = useSettingsStore()
+  const { instinctMode, instinctConfig } = settings
+
+  // Log depth config on mount
+  useEffect(() => {
+    console.log('[DepthAnnotations] Config loaded:', depthConfig)
+    console.log('[DepthAnnotations] LocalStorage:', localStorage.getItem('akhai-depth-config'))
+  }, [])
+
+  // Process depth annotations when new assistant messages arrive
+  useEffect(() => {
+    console.log('[DepthAnnotations] Effect triggered - config.enabled:', depthConfig.enabled, 'messages:', messages.length)
+
+    if (!depthConfig.enabled) {
+      console.log('[DepthAnnotations] Disabled - toggle is OFF')
+      return
+    }
+
+    const lastMessage = messages[messages.length - 1]
+    if (lastMessage && lastMessage.role === 'assistant') {
+      // Check if already processed
+      if (messageAnnotations[lastMessage.id]) {
+        console.log('[DepthAnnotations] Already processed message:', lastMessage.id)
+        return
+      }
+
+      console.log('[DepthAnnotations] Processing NEW message:', lastMessage.content.slice(0, 100))
+
+      // Process the message content for depth annotations
+      const annotations = processText(lastMessage.content)
+
+      console.log('[DepthAnnotations] Detected annotations:', annotations.length, annotations)
+
+      if (annotations.length > 0) {
+        setMessageAnnotations(prev => ({
+          ...prev,
+          [lastMessage.id]: annotations
+        }))
+      } else {
+        console.log('[DepthAnnotations] No annotations detected - text may not match patterns')
+        // Still mark as processed to avoid repeated attempts
+        setMessageAnnotations(prev => ({
+          ...prev,
+          [lastMessage.id]: []
+        }))
+      }
+    }
+  }, [messages, depthConfig.enabled, processText])
+
+  // Clear Deep Dive query after Mini Chat receives it
+  useEffect(() => {
+    if (deepDiveQuery) {
+      const timer = setTimeout(() => {
+        setDeepDiveQuery('')
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [deepDiveQuery])
 
   // Side Canal Store Integration
   const {
@@ -401,12 +523,23 @@ export default function HomePage() {
     return () => clearInterval(interval)
   }, [sideCanalEnabled]) // Re-run when Side Canal is toggled
 
-  // Dark mode initialization
+  // Dark mode initialization and sync
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true'
     setDarkMode(savedDarkMode)
     if (savedDarkMode) {
       document.documentElement.classList.add('dark')
+    }
+
+    // Listen for dark mode changes from other components
+    const handleDarkModeChange = (e: CustomEvent) => {
+      setDarkMode(e.detail.darkMode)
+    }
+
+    window.addEventListener('darkModeChange' as any, handleDarkModeChange as any)
+
+    return () => {
+      window.removeEventListener('darkModeChange' as any, handleDarkModeChange as any)
     }
   }, [])
 
@@ -420,6 +553,11 @@ export default function HomePage() {
       } else {
         document.documentElement.classList.remove('dark')
       }
+
+      // Notify other components about dark mode change
+      const event = new CustomEvent('darkModeChange', { detail: { darkMode: newValue } })
+      window.dispatchEvent(event)
+
       return newValue
     })
   }, [])
@@ -428,14 +566,25 @@ export default function HomePage() {
   useEffect(() => {
     try {
       checkSession()
-      
+
+      // Initialize language from storage
+      const lang = getCurrentLanguage()
+      setCurrentLang(lang)
+
+      // Listen for language changes
+      const handleLanguageChange = (e: CustomEvent<SupportedLanguage>) => {
+        setCurrentLang(e.detail)
+      }
+      window.addEventListener('languagechange', handleLanguageChange as EventListener)
+
       // Check for conversation continuation from URL
       const params = new URLSearchParams(window.location.search)
       const continueId = params.get('continue')
       if (continueId) {
+        setCurrentConversationId(continueId)
         loadConversation(continueId)
       }
-      
+
       // Check for legend mode in localStorage
       try {
         const savedLegendMode = localStorage.getItem('legendMode') === 'true'
@@ -443,6 +592,10 @@ export default function HomePage() {
           setLegendMode(true)
         }
       } catch (e) {
+      }
+
+      return () => {
+        window.removeEventListener('languagechange', handleLanguageChange as EventListener)
       }
     } catch (error) {
       console.error('Mount error:', error)
@@ -464,6 +617,50 @@ export default function HomePage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const loadConversation = useCallback(async (queryId: string) => {
+    try {
+      console.log('[History] Fetching conversation for:', queryId)
+      const res = await fetch(`/api/history/${queryId}/conversation`)
+      console.log('[History] Response status:', res.status)
+      if (res.ok) {
+        const data = await res.json()
+        console.log('[History] Data received:', data.messages?.length, 'messages')
+        if (data.messages && data.messages.length > 0) {
+          const loadedMessages = data.messages.map((msg: any) => ({
+            id: generateId(),
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp * 1000),
+            methodology: msg.methodology,
+            gnostic: msg.gnostic || null,
+          }))
+          console.log('[History] Setting messages:', loadedMessages.length)
+          setMessages(loadedMessages)
+          setContinuingConversation(queryId)
+          setIsExpanded(true)
+          console.log('[History] Conversation loaded successfully')
+          // Clear URL param
+          window.history.replaceState({}, '', '/')
+          setTimeout(() => setContinuingConversation(null), 3000)
+        } else {
+          console.warn('[History] No messages in response')
+        }
+      } else {
+        console.error('[History] Failed to fetch:', res.status)
+      }
+    } catch (error) {
+      console.error('[History] Failed to load conversation:', error)
+    }
+  }, []) // Empty deps - setState functions are stable
+
+  // Watch for URL parameter changes (for history navigation)
+  useEffect(() => {
+    if (continueParam) {
+      console.log('[History] Loading conversation:', continueParam)
+      loadConversation(continueParam)
+    }
+  }, [continueParam, loadConversation]) // Re-run whenever continue parameter changes
+
   // Legend mode detection in query input
   const handleQueryChange = (value: string) => {
     setQuery(value)
@@ -473,33 +670,6 @@ export default function HomePage() {
       localStorage.setItem('legendMode', 'true')
       // Remove trigger from query
       setQuery(value.replace(/algoq369/gi, '').trim())
-    }
-  }
-
-  // Load conversation history
-  const loadConversation = async (queryId: string) => {
-    try {
-      const res = await fetch(`/api/history/${queryId}/conversation`)
-      if (res.ok) {
-        const data = await res.json()
-        if (data.messages && data.messages.length > 0) {
-          const loadedMessages = data.messages.map((msg: any) => ({
-            id: generateId(),
-            role: msg.role,
-            content: msg.content,
-            timestamp: new Date(msg.timestamp * 1000),
-            methodology: msg.methodology,
-          }))
-          setMessages(loadedMessages)
-          setContinuingConversation(queryId)
-          setIsExpanded(true)
-          // Clear URL param
-          window.history.replaceState({}, '', '/')
-          setTimeout(() => setContinuingConversation(null), 3000)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load conversation:', error)
     }
   }
 
@@ -574,18 +744,101 @@ export default function HomePage() {
     }
   }, [isExpanded, messages])
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files)
+      setAttachedFiles(prev => [...prev, ...newFiles].slice(0, 5)) // Max 5 files
+
+      // Upload files immediately
+      const formData = new FormData()
+      newFiles.forEach(file => formData.append('files', file))
+
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const urls = data.files.map((f: any) => f.url)
+          setUploadedFileUrls(prev => [...prev, ...urls])
+          console.log('Files uploaded:', data.files)
+        } else {
+          const error = await response.json()
+          console.error('Upload failed:', error)
+        }
+      } catch (error) {
+        console.error('Upload error:', error)
+      }
+    }
+  }
+
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!query.trim() || isLoading) {
       return
     }
 
+    // Reset depth annotations for new query
+    resetDepthAnnotations()
+
     // Start transition animation
     setIsTransitioning(true)
-    
+
     // Wait for transition animation before proceeding
     await new Promise(resolve => setTimeout(resolve, 800))
+
+    // Process attached files if any
+    const processedFiles = await Promise.all(
+      attachedFiles.map(async (file) => {
+        if (file.type.startsWith('image/')) {
+          // Convert image to base64
+          const reader = new FileReader()
+          return new Promise<any>((resolve) => {
+            reader.onloadend = () => {
+              const base64 = (reader.result as string).split(',')[1]
+              resolve({
+                type: 'image',
+                name: file.name,
+                mimeType: file.type,
+                data: base64
+              })
+            }
+            reader.readAsDataURL(file)
+          })
+        } else if (file.type === 'application/pdf') {
+          // Handle PDF - convert to base64 in chunks to avoid stack overflow
+          const arrayBuffer = await file.arrayBuffer()
+          const bytes = new Uint8Array(arrayBuffer)
+          let binary = ''
+          const chunkSize = 8192
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.slice(i, i + chunkSize)
+            binary += String.fromCharCode.apply(null, Array.from(chunk))
+          }
+          const base64 = btoa(binary)
+          return {
+            type: 'pdf',
+            name: file.name,
+            data: base64
+          }
+        } else {
+          // Handle text documents
+          const text = await file.text()
+          return {
+            type: 'document',
+            name: file.name,
+            content: text
+          }
+        }
+      })
+    )
 
     const userMessage: Message = {
       id: generateId(),
@@ -598,6 +851,9 @@ export default function HomePage() {
     setMessages(prev => [...prev, userMessage])
     setIsExpanded(true)
     setQuery('')
+    setAttachedFiles([]) // Clear attached files
+    const currentFileUrls = uploadedFileUrls // Capture URLs before clearing
+    setUploadedFileUrls([]) // Clear uploaded file URLs
     setIsLoading(true)
     setIsTransitioning(false)
 
@@ -622,7 +878,11 @@ export default function HomePage() {
           })),
           legendMode,
           chatId: currentChatId,
-          pageContext
+          pageContext,
+          instinctMode,
+          instinctConfig,
+          attachments: processedFiles.length > 0 ? processedFiles : undefined,
+          fileUrls: currentFileUrls.length > 0 ? currentFileUrls : undefined
         })
       })
 
@@ -639,6 +899,8 @@ export default function HomePage() {
 
       // Poll for the result if we got a queryId
       if (data.queryId) {
+        // Set conversation ID for sharing
+        setCurrentConversationId(data.queryId)
         await pollForResult(data.queryId, startTime)
       } else {
         // Check for grounding guard failures
@@ -813,6 +1075,16 @@ export default function HomePage() {
 
   // Guard action handlers
   const handleGuardContinue = (messageId: string) => {
+    const message = messages.find(m => m.id === messageId)
+    console.log('[Guard Continue] Clicked for message:', messageId)
+    console.log('[Guard Continue] Message content length:', message?.content?.length || 0)
+    console.log('[Guard Continue] Message content preview:', message?.content?.substring(0, 100))
+
+    if (!message?.content || message.content === 'No response') {
+      console.error('[Guard Continue] WARNING: Message has no content! This should not happen.')
+      console.error('[Guard Continue] Full message:', message)
+    }
+
     setMessages(prev => prev.map(m =>
       m.id === messageId
         ? { ...m, guardAction: 'accepted', isHidden: false }
@@ -867,7 +1139,9 @@ export default function HomePage() {
             conversationHistory,
             legendMode,
             chatId: activeChatId || 'main',
-            pageContext
+            pageContext,
+            instinctMode,
+            instinctConfig
           })
         })
 
@@ -988,7 +1262,9 @@ export default function HomePage() {
             conversationHistory,
             legendMode,
             chatId: activeChatId || 'main',
-            pageContext
+            pageContext,
+            instinctMode,
+            instinctConfig
           })
         })
 
@@ -1124,9 +1400,16 @@ export default function HomePage() {
 
   return (
     <div className={`min-h-screen flex flex-col transition-colors duration-300 ${darkMode ? 'bg-relic-void' : 'bg-white'}`}>
+      {/* Global File Drop Zone */}
+      <FileDropZone
+        onFilesChange={setAttachedFiles}
+        maxFiles={5}
+        maxSizeMB={10}
+      />
+
       {/* Header - Only show when expanded */}
       {isExpanded && (
-        <header className="border-b border-relic-mist/50 dark:border-relic-slate/30 bg-relic-white/80 dark:bg-relic-void/80 backdrop-blur-sm sticky top-0 z-20 animate-fade-in">
+        <header className="border-b border-relic-mist/50 dark:border-relic-slate/30 bg-white/80 dark:bg-relic-void/80 backdrop-blur-sm sticky top-0 z-20 animate-fade-in">
           <div className="max-w-3xl mx-auto px-6 py-3">
             <div className="flex items-center justify-between">
               <button
@@ -1148,19 +1431,19 @@ export default function HomePage() {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded && user ? 'ml-80' : ''}`}>
+      <main className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded ? 'ml-60' : ''} ${isExpanded && user ? 'mr-80' : ''}`}>
 
         {/* Logo Section - Fixed at TOP when not expanded */}
         {!isExpanded && (
           <div className="text-center pt-8 pb-4">
-            <h1 className="text-3xl font-light text-relic-slate dark:text-white tracking-[0.3em] mb-2">
+            <h1 className="text-3xl font-light text-relic-slate dark:text-white tracking-[0.3em] mb-1">
               A K H A I
             </h1>
-            <p className="text-sm font-light text-relic-silver/60 dark:text-white/50 tracking-wide mb-1">
+            <p className="text-sm font-light text-relic-silver/60 dark:text-white/50 tracking-wide mb-0.5">
               school of thoughts
             </p>
             <p className="text-[10px] uppercase tracking-[0.2em] text-relic-slate/50 dark:text-white/40 mb-6">
-              SOVEREIGN TECHNOLOGY
+              SOVEREIGNINTELLIGENCE
             </p>
             {/* Diamond Logo with INLINE methodology explorer - no more flickering */}
             <div className="group relative inline-block">
@@ -1169,10 +1452,10 @@ export default function HomePage() {
                 data-diamond-logo
                 className="cursor-pointer"
               >
-                <span className="text-5xl font-extralight text-relic-mist dark:text-relic-silver/30 group-hover:text-relic-silver dark:group-hover:text-relic-ghost group-hover:scale-110 transition-all duration-500 inline-block">
+                <span className="text-4xl font-extralight text-relic-mist dark:text-relic-silver/30 group-hover:text-relic-silver dark:group-hover:text-relic-ghost group-hover:scale-110 transition-all duration-500 inline-block">
             ◊
           </span>
-                <p className="text-[9px] uppercase tracking-widest text-relic-silver/40 mt-2">
+                <p className="text-[8px] tracking-[0.2em] text-relic-silver/40 mt-2">
               hover to explore
             </p>
               </div>
@@ -1184,75 +1467,91 @@ export default function HomePage() {
                   : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'
               }`}>
                 {expandedMethodology ? (
-                  /* Detailed View */
-                  <div className="bg-relic-white border border-relic-mist shadow-xl p-6 w-[600px]">
+                  /* Rich Data View - 380px x 240px (rectangular) */
+                  <div className="bg-white dark:bg-relic-void backdrop-blur-md border border-relic-mist dark:border-relic-slate/30 shadow-2xl w-[380px]">
                     {(() => {
                       const detail = METHODOLOGY_DETAILS.find(m => m.id === expandedMethodology)
                       if (!detail) return null
+                      const isCoding = detail.id === 'pot'
+                      const isResearch = detail.id === 'react'
                       return (
                         <>
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-4">
-                              <span className="text-4xl text-relic-slate">{detail.symbol}</span>
+                          {/* Header */}
+                          <div className="border-b border-relic-mist/30 dark:border-relic-slate/20 px-3 py-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="text-xl text-relic-slate dark:text-white">{detail.symbol}</div>
                               <div>
-                                <h3 className="text-xl font-mono text-relic-slate">{detail.name}</h3>
-                                <p className="text-sm text-relic-silver">{detail.fullName}</p>
+                                <h2 className="text-sm font-mono text-relic-slate dark:text-white">{detail.name}</h2>
+                                <p className="text-[9px] text-relic-silver dark:text-relic-ghost">{detail.fullName}</p>
                               </div>
                             </div>
                             <button
                               onClick={() => setExpandedMethodology(null)}
-                              className="text-relic-silver hover:text-relic-slate text-xl"
+                              className="text-xs text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white"
                             >
-                              ×
+                              ✕
                             </button>
                           </div>
-                          <p className="text-sm text-relic-slate mb-4">{detail.description}</p>
-                          <div className="space-y-4">
+
+                          {/* Content - Rich Data */}
+                          <div className="px-3 py-2 space-y-2">
+                            {/* Type badges */}
+                            <div className="flex gap-1.5">
+                              {isCoding && (
+                                <span className="text-[8px] px-1.5 py-0.5 bg-relic-ghost dark:bg-relic-slate/20 text-relic-slate dark:text-relic-ghost border border-relic-mist/30 dark:border-relic-slate/30">
+                                  CODE
+                                </span>
+                              )}
+                              {isResearch && (
+                                <span className="text-[8px] px-1.5 py-0.5 bg-relic-ghost dark:bg-relic-slate/20 text-relic-slate dark:text-relic-ghost border border-relic-mist/30 dark:border-relic-slate/30">
+                                  WEB
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Description */}
+                            <p className="text-[9px] text-relic-slate dark:text-relic-ghost leading-tight">{detail.description}</p>
+
+                            {/* How it works - 2 steps */}
+                            <div className="space-y-0.5">
+                              <p className="text-[8px] uppercase tracking-wider text-relic-silver dark:text-relic-ghost">Process</p>
+                              {detail.howItWorks.slice(0, 2).map((step, i) => (
+                                <p key={i} className="text-[9px] text-relic-slate dark:text-relic-ghost leading-tight flex gap-1">
+                                  <span className="text-relic-silver dark:text-relic-ghost">→</span>
+                                  <span>{step}</span>
+                                </p>
+                              ))}
+                            </div>
+
+                            {/* Format */}
                             <div>
-                              <h4 className="text-xs uppercase tracking-wider text-relic-silver mb-2">How It Works</h4>
-                              <ul className="space-y-1">
-                                {detail.howItWorks.map((step, i) => (
-                                  <li key={i} className="text-xs text-relic-slate flex items-start gap-2">
-                                    <span className="text-relic-silver">→</span>
-                                    <span>{step}</span>
-                                  </li>
-                                ))}
-                              </ul>
+                              <p className="text-[8px] uppercase tracking-wider text-relic-silver dark:text-relic-ghost mb-0.5">Format</p>
+                              <p className="text-[9px] font-mono text-relic-slate dark:text-white">{detail.format}</p>
                             </div>
-                            <div>
-                              <h4 className="text-xs uppercase tracking-wider text-relic-silver mb-2">Best For</h4>
-                              <ul className="space-y-1">
-                                {detail.bestFor.map((item, i) => (
-                                  <li key={i} className="text-xs text-relic-slate flex items-start gap-2">
-                                    <span className="text-relic-silver">•</span>
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div className="flex gap-4 pt-2 border-t border-relic-mist">
+
+                            {/* Metrics - Grid */}
+                            <div className="pt-1.5 border-t border-relic-mist/20 dark:border-relic-slate/10 grid grid-cols-3 gap-2">
                               <div>
-                                <span className="text-[9px] uppercase text-relic-silver">Tokens</span>
-                                <p className="text-xs text-relic-slate">{detail.metrics.tokens}</p>
+                                <span className="text-[8px] uppercase text-relic-silver dark:text-relic-ghost block">Tokens</span>
+                                <span className="text-[10px] font-mono text-relic-slate dark:text-white">{detail.metrics.tokens}</span>
                               </div>
                               <div>
-                                <span className="text-[9px] uppercase text-relic-silver">Latency</span>
-                                <p className="text-xs text-relic-slate">{detail.metrics.latency}</p>
+                                <span className="text-[8px] uppercase text-relic-silver dark:text-relic-ghost block">Latency</span>
+                                <span className="text-[10px] font-mono text-relic-slate dark:text-white">{detail.metrics.latency}</span>
                               </div>
                               <div>
-                                <span className="text-[9px] uppercase text-relic-silver">Cost</span>
-                                <p className="text-xs text-relic-slate">{detail.metrics.cost}</p>
+                                <span className="text-[8px] uppercase text-relic-silver dark:text-relic-ghost block">Cost</span>
+                                <span className="text-[10px] font-mono text-relic-slate dark:text-white">{detail.metrics.cost}</span>
                               </div>
                             </div>
-                            <button
-                              onClick={() => {
-                                setMethodology(expandedMethodology)
-                                setExpandedMethodology(null)
-                              }}
-                              className="w-full px-4 py-2 text-xs font-mono bg-relic-slate text-white hover:bg-relic-void transition-colors"
-                            >
-                              Select {detail.name}
-                            </button>
+
+                            {/* Example */}
+                            {detail.examples[0] && (
+                              <div className="pt-1.5 border-t border-relic-mist/20 dark:border-relic-slate/10">
+                                <p className="text-[8px] uppercase tracking-wider text-relic-silver dark:text-relic-ghost mb-0.5">Example</p>
+                                <p className="text-[9px] italic text-relic-slate dark:text-relic-ghost leading-tight">{detail.examples[0]}</p>
+                              </div>
+                            )}
                           </div>
                         </>
                       )
@@ -1260,7 +1559,7 @@ export default function HomePage() {
                   </div>
                 ) : (
                   /* Horizontal List */
-                  <div className="bg-relic-white border border-relic-mist shadow-xl p-3">
+                  <div className="bg-white dark:bg-relic-void border border-relic-mist dark:border-relic-slate/30 shadow-xl p-3">
                     <div className="flex gap-2">
                       {METHODOLOGIES.map((m) => (
                         <button
@@ -1270,11 +1569,11 @@ export default function HomePage() {
                             setExpandedMethodology(m.id)
                           }}
                           className={`
-                            flex flex-col items-center justify-center w-16 h-16 
-                            border transition-all duration-200 bg-relic-white
+                            flex flex-col items-center justify-center w-24 h-16
+                            border transition-all duration-200 bg-white dark:bg-relic-slate/20
                             ${methodology === m.id
-                              ? 'border-relic-slate text-relic-slate'
-                              : 'border-relic-mist hover:border-relic-slate/60 text-relic-slate'
+                              ? 'border-relic-slate dark:border-white text-relic-slate dark:text-white'
+                              : 'border-relic-mist dark:border-relic-slate/30 hover:border-relic-slate/60 dark:hover:border-relic-ghost text-relic-slate dark:text-relic-ghost'
                             }
                           `}
                         >
@@ -1314,7 +1613,7 @@ export default function HomePage() {
                   {message.role === 'user' ? (
                     // User message
                     <div className="inline-block max-w-[80%] text-left">
-                      <p className="text-relic-slate bg-relic-ghost/50 px-4 py-3 rounded-sm text-sm">
+                      <p className="text-relic-slate dark:text-relic-ghost px-4 py-3 text-sm">
                         {message.content}
                       </p>
                     </div>
@@ -1392,7 +1691,7 @@ export default function HomePage() {
                         <div className="border-l-2 border-relic-slate/30 pl-4">
 
                           {/* View Mode Toggle */}
-                          {globalVizMode !== 'off' && (shouldShowSefirot(message.content) || shouldShowInsightMap(message.content) || shouldShowMindmap(message.content, message.topics)) && (
+                          {globalVizMode !== 'off' && (shouldShowSefirot(message.content, !!message.gnostic) || shouldShowInsightMap(message.content, !!message.gnostic) || shouldShowMindmap(message.content, message.topics)) && (
                             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-relic-mist/30">
                               <span className="text-[9px] text-relic-silver uppercase tracking-wide">View:</span>
                               <button
@@ -1429,18 +1728,19 @@ export default function HomePage() {
                           )}
 
                           {/* SEFIROT VIEW - Sovereign Intelligence Tree */}
-                          {globalVizMode !== 'off' && (vizMode[message.id] || 'sefirot') === 'sefirot' && shouldShowSefirot(message.content) && (
+                          {globalVizMode !== 'off' && (vizMode[message.id] || 'sefirot') === 'sefirot' && shouldShowSefirot(message.content, !!message.gnostic) && (
                             <SefirotResponse
                               content={message.content}
                               query={messages[messages.indexOf(message) - 1]?.content || ''}
                               methodology={message.methodology || methodology}
                               onSwitchToInsight={() => setVizMode(prev => ({ ...prev, [message.id]: 'insight' }))}
                               onOpenMindMap={() => setShowMindMap(true)}
+                              onDeepDive={(query) => setDeepDiveQuery(query)}
                             />
                           )}
 
                           {/* INSIGHT MINDMAP - Grokipedia-style knowledge graph */}
-                          {globalVizMode !== 'off' && vizMode[message.id] === 'insight' && shouldShowInsightMap(message.content) && (
+                          {globalVizMode !== 'off' && vizMode[message.id] === 'insight' && shouldShowInsightMap(message.content, !!message.gnostic) && (
                             <InsightMindmap
                               content={message.content}
                               query={messages[messages.indexOf(message) - 1]?.content || ''}
@@ -1465,28 +1765,41 @@ export default function HomePage() {
                           )}
 
                           {/* TEXT - Always shown after visualizations */}
-                          <div className="text-relic-slate leading-relaxed whitespace-pre-wrap text-sm">
-                            {message.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
-                              // Check if this part is a URL
-                              if (/^https?:\/\//.test(part)) {
-                                return (
-                                  <a
-                                    key={idx}
-                                    href={part}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-relic-slate dark:text-white underline hover:text-relic-void dark:hover:text-relic-ghost transition-colors"
-                                  >
-                                    {part}
-                                  </a>
-                                )
-                              }
-                              return <span key={idx}>{part}</span>
-                            })}
-                          </div>
+                          {depthConfig.enabled && messageAnnotations[message.id] && messageAnnotations[message.id].length > 0 ? (
+                            <DepthText
+                              text={message.content}
+                              annotations={messageAnnotations[message.id]}
+                              config={depthConfig}
+                              className="text-relic-slate leading-relaxed text-sm"
+                              onExpand={(query) => {
+                                // When user clicks an expandable annotation, set it as the query
+                                setQuery(query)
+                              }}
+                            />
+                          ) : (
+                            <div className="text-relic-slate leading-relaxed whitespace-pre-wrap text-sm">
+                              {message.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
+                                // Check if this part is a URL
+                                if (/^https?:\/\//.test(part)) {
+                                  return (
+                                    <a
+                                      key={idx}
+                                      href={part}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-relic-slate dark:text-white underline hover:text-relic-void dark:hover:text-relic-ghost transition-colors"
+                                    >
+                                      {part}
+                                    </a>
+                                  )
+                                }
+                                return <span key={idx}>{part}</span>
+                              })}
+                            </div>
+                          )}
 
                           {/* Inline Visualize Button */}
-                          {(shouldShowSefirot(message.content) || shouldShowInsightMap(message.content)) && globalVizMode === 'off' && (
+                          {(shouldShowSefirot(message.content, !!message.gnostic) || shouldShowInsightMap(message.content, !!message.gnostic)) && globalVizMode === 'off' && (
                             <InlineConsole
                               onVisualize={() => setVizMode(prev => ({ ...prev, [message.id]: 'sefirot' }))}
                             />
@@ -1508,10 +1821,37 @@ export default function HomePage() {
                           )}
 
                           {/* ================================================================ */}
-                          {/* GNOSTIC SOVEREIGN INTELLIGENCE FOOTER */}
+                          {/* SEFIROT MINI - ALWAYS VISIBLE (Evolves with conversation) */}
+                          {/* ================================================================ */}
+                          <div className="mt-6 pt-4 border-t border-relic-mist/30 dark:border-relic-slate/20">
+                            {(() => {
+                              const messageIndex = messages.filter(m => m.role === 'assistant').indexOf(message)
+                              const totalMessages = messages.filter(m => m.role === 'assistant').length
+                              const sefirotData = generateSefirotData(message, messageIndex, totalMessages)
+
+                              return (
+                                <div className="bg-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-4 mb-4">
+                                  <div className="text-[9px] uppercase tracking-[0.2em] text-relic-silver mb-3 text-center">
+                                    Tree of Life • Query {messageIndex + 1}/{totalMessages}
+                                  </div>
+                                  <SefirotMini
+                                    activations={sefirotData.activations}
+                                    userLevel={sefirotData.userLevel}
+                                    className="mx-auto"
+                                  />
+                                  <div className="mt-3 text-center text-[8px] text-relic-silver">
+                                    Ascent Level: {sefirotData.userLevel}/11
+                                  </div>
+                                </div>
+                              )
+                            })()}
+                          </div>
+
+                          {/* ================================================================ */}
+                          {/* GNOSTIC SOVEREIGN INTELLIGENCE FOOTER (Optional Details) */}
                           {/* ================================================================ */}
                           {message.gnostic && (
-                            <div className="mt-6 pt-4 border-t border-relic-mist/30 dark:border-relic-slate/20">
+                            <div className="mt-2">
                               {/* Toggle Button */}
                               <button
                                 onClick={() => setGnosticVisibility(prev => ({
@@ -1521,7 +1861,7 @@ export default function HomePage() {
                                 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-relic-silver hover:text-relic-slate dark:hover:text-relic-ghost transition-colors mb-3"
                               >
                                 <span className="text-relic-silver">⟁</span>
-                                <span>Gnostic Intelligence</span>
+                                <span>Gnostic Details</span>
                                 <span className="text-relic-mist">
                                   {(gnosticVisibility[message.id] === undefined ? true : gnosticVisibility[message.id]) ? '▼' : '▶'}
                                 </span>
@@ -1546,26 +1886,14 @@ export default function HomePage() {
                                   {message.gnostic.sovereigntyFooter && (
                                     <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
                                       <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-relic-slate dark:text-relic-ghost mb-2">
-                                        <span>👁️</span>
-                                        <span>Sovereignty Reminder</span>
+                                        <span>◈</span>
+                                        <span>sovereignty reminder</span>
                                       </div>
                                       <p className="text-[10px] text-relic-silver leading-relaxed whitespace-pre-wrap">
                                         {message.gnostic.sovereigntyFooter}
                                       </p>
                                     </div>
                                   )}
-
-                                  {/* Sephirothic Activation Visualization */}
-                                  <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-4">
-                                    <div className="text-[9px] uppercase tracking-[0.2em] text-relic-silver mb-3 text-center">
-                                      Sephirothic Activation Map
-                                    </div>
-                                    <SefirotMini
-                                      activations={message.gnostic.sephirothAnalysis.activations}
-                                      userLevel={message.gnostic.ascentState?.currentLevel as Sefirah}
-                                      className="mx-auto"
-                                    />
-                                  </div>
 
                                   {/* Ascent Progress */}
                                   {message.gnostic.ascentState && (
@@ -1602,6 +1930,57 @@ export default function HomePage() {
                                           <p className="text-[10px] text-relic-slate dark:text-relic-ghost leading-relaxed">
                                             {message.gnostic.ascentState.nextElevation}
                                           </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Detailed Sephirothic Activations */}
+                                  {message.gnostic.sephirothAnalysis?.activations && (
+                                    <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
+                                      <div className="text-[9px] text-relic-silver uppercase tracking-[0.2em] mb-3">
+                                        Sephirothic Analysis
+                                      </div>
+                                      <div className="space-y-1.5">
+                                        {(() => {
+                                          // Convert Record<Sefirah, number> to array and sort
+                                          const activationsArray = Object.entries(message.gnostic.sephirothAnalysis.activations)
+                                            .map(([sefirah, activation]) => ({ sefirah: parseInt(sefirah), activation }))
+                                            .sort((a, b) => b.activation - a.activation)
+                                            .slice(0, 5)
+
+                                          return activationsArray.map((act, idx) => {
+                                            const sefirah = Object.entries(SEPHIROTH_METADATA).find(([_, meta]) => meta.level === act.sefirah)?.[1]
+                                            if (!sefirah) return null
+                                            const percentage = Math.round(act.activation * 100)
+                                            return (
+                                              <div key={idx} className="flex items-center justify-between">
+                                                <span className="text-[10px] text-relic-slate dark:text-relic-ghost">
+                                                  {sefirah.name}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                  <div className="w-24 h-1.5 bg-relic-mist dark:bg-relic-slate/30 rounded-full overflow-hidden">
+                                                    <div
+                                                      className="h-full bg-relic-slate dark:bg-relic-ghost transition-all duration-500"
+                                                      style={{ width: `${percentage}%` }}
+                                                    />
+                                                  </div>
+                                                  <span className="text-[9px] font-mono text-relic-silver w-8 text-right">
+                                                    {percentage}%
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            )
+                                          })
+                                        })()}
+                                      </div>
+                                      {message.gnostic?.sephirothAnalysis?.dominant && (
+                                        <div className="mt-3 pt-2 border-t border-relic-mist/50 dark:border-relic-slate/20">
+                                          <div className="text-[9px] text-relic-silver">
+                                            Dominant: <span className="text-relic-slate dark:text-white font-medium">
+                                              {message.gnostic.sephirothAnalysis.dominant}
+                                            </span>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -1722,7 +2101,7 @@ export default function HomePage() {
         )}
 
         {/* Input Section */}
-        <div className={`transition-all duration-500 ease-out ${isExpanded ? 'pb-4 pt-2 border-t border-relic-mist/30 bg-white sticky bottom-0' : 'pb-8'}`}>
+        <div className={`transition-all duration-500 ease-out ${isExpanded ? 'pb-4 pt-2 border-t border-relic-mist/30 dark:border-relic-slate/30 bg-white dark:bg-relic-void sticky bottom-0' : 'pb-8'}`}>
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto px-6">
             {/* Input Box */}
             <div className="relative transition-all duration-300">
@@ -1745,10 +2124,67 @@ export default function HomePage() {
                 autoFocus
                 disabled={isLoading}
               />
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.txt,.md,.docx"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
             </div>
 
+            {/* Attached Files Display */}
+            {attachedFiles.length > 0 && (
+              <div className="mt-2 flex items-center gap-3 text-[9px] font-mono text-relic-slate dark:text-relic-silver">
+                {attachedFiles.map((file, index) => {
+                  const getFileType = (file: File): 'img' | 'pdf' | 'txt' => {
+                    if (file.type.startsWith('image/')) return 'img'
+                    if (file.type === 'application/pdf') return 'pdf'
+                    return 'txt'
+                  }
+
+                  const fileType = getFileType(file)
+                  const sizeKB = (file.size / 1024).toFixed(0)
+
+                  return (
+                    <div key={index} className="inline-flex items-center gap-1.5">
+                      {/* Status indicator */}
+                      <span className="w-1 h-1 rounded-full bg-emerald-500" />
+
+                      {/* File info */}
+                      <span className="truncate max-w-[100px]">
+                        {file.name}
+                      </span>
+
+                      <span className="text-relic-silver/60">
+                        {sizeKB}k
+                      </span>
+
+                      <span className="text-relic-silver/60">
+                        {fileType}
+                      </span>
+
+                      {/* Remove */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttachedFiles(prev => prev.filter((_, i) => i !== index))
+                        }}
+                        className="text-relic-silver/60 hover:text-relic-void dark:hover:text-white transition-colors text-[8px]"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
             {/* Methodology Dots - Always visible, smooth transition */}
-            <motion.div 
+            <motion.div
               className={`flex justify-center ${isExpanded ? 'mt-2' : 'mt-5'}`}
               initial={false}
               animate={{ opacity: 1 }}
@@ -1758,30 +2194,37 @@ export default function HomePage() {
                 currentMethodology={methodology}
                 onMethodologyChange={handleMethodologyClick}
                 isSubmitting={isTransitioning}
+                consoleOpen={consoleOpen}
+                onConsoleToggle={() => setConsoleOpen(!consoleOpen)}
               />
             </motion.div>
 
-            {/* Console - Inline below methodology when in conversation */}
-            {isExpanded && (
-              <div className="mt-1.5 flex justify-center">
-                <ConversationConsole
-                  instinctMode={instinctModeEnabled}
-                  onInstinctModeChange={setInstinctModeEnabled}
-                  suggestions={suggestionsEnabled}
-                  onSuggestionsChange={setSuggestionsEnabled}
-                  audit={auditEnabled}
-                  onAuditChange={setAuditEnabled}
-                  mindmapConnector={mindmapConnectorEnabled}
-                  onMindmapConnectorChange={setMindmapConnectorEnabled}
-                  sideCanalEnabled={sideCanalEnabled}
-                  onSideCanalChange={setSideCanalEnabled}
-                  selectedModel={selectedModel}
-                  onModelChange={setSelectedModel}
-                  visualizationMode={globalVizMode}
-                  onVisualizationChange={setGlobalVizMode}
-                />
-              </div>
-            )}
+            {/* Instinct Mode Console - Below methodology */}
+            <div className="flex justify-center">
+              <InstinctModeConsole />
+            </div>
+
+            {/* Console - Inline below methodology */}
+            <div className="mt-1.5 flex justify-center">
+              <ConversationConsole
+                instinctMode={instinctModeEnabled}
+                onInstinctModeChange={setInstinctModeEnabled}
+                suggestions={suggestionsEnabled}
+                onSuggestionsChange={setSuggestionsEnabled}
+                audit={auditEnabled}
+                onAuditChange={setAuditEnabled}
+                mindmapConnector={mindmapConnectorEnabled}
+                onMindmapConnectorChange={setMindmapConnectorEnabled}
+                sideCanalEnabled={sideCanalEnabled}
+                onSideCanalChange={setSideCanalEnabled}
+                selectedModel={selectedModel}
+                onModelChange={setSelectedModel}
+                visualizationMode={globalVizMode}
+                onVisualizationChange={setGlobalVizMode}
+                attachedFilesCount={attachedFiles.length}
+                onFilesClick={triggerFileSelect}
+              />
+            </div>
 
             {/* Submit button */}
             {!isExpanded && (
@@ -1907,7 +2350,9 @@ export default function HomePage() {
                   })),
                   legendMode,
                   chatId: sideChat.id,
-                  pageContext
+                  pageContext,
+                  instinctMode,
+                  instinctConfig
                 })
               })
               
@@ -1951,11 +2396,11 @@ export default function HomePage() {
 
       {/* Footer - Only when not expanded */}
       {!isExpanded && (
-        <footer className="border-t border-relic-mist/50 bg-relic-white/60 backdrop-blur-sm">
+        <footer className="border-t border-relic-mist/30 dark:border-relic-slate/20">
           <div className="w-full px-4 py-3">
             <div className="flex items-center justify-between">
               {/* Left side - description text - pushed to left edge */}
-              <span className="text-[11px] text-relic-silver whitespace-nowrap pl-2">
+              <span className="text-[11px] text-relic-silver dark:text-relic-ghost whitespace-nowrap pl-2">
                 self aware - autonomous intelligence
               </span>
               
@@ -1964,43 +2409,31 @@ export default function HomePage() {
                 {/* Instinct Mode Toggle with Super Saiyan Icon */}
                 <button
                   onClick={() => {
-                    setLegendMode(!legendMode)
-                    if (!legendMode) {
-                      localStorage.setItem('legendMode', 'true')
-                    } else {
-                      localStorage.removeItem('legendMode')
-                    }
+                    const { settings, setInstinctMode } = useSettingsStore.getState()
+                    setInstinctMode(!settings.instinctMode)
                   }}
-                  className="flex items-center gap-2 text-[10px] font-mono text-relic-silver hover:text-relic-slate transition-colors group"
+                  className="flex items-center gap-2 text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
                 >
-                  <SuperSaiyanIcon size={18} active={legendMode} />
-                  <span className={legendMode ? 'text-amber-500' : ''}>instinct</span>
+                  <SuperSaiyanIcon size={18} active={settings.instinctMode} />
+                  <span className={settings.instinctMode ? 'text-relic-void dark:text-white' : ''}>instinct</span>
                 </button>
 
-                {/* Dark Mode Toggle */}
-                <button
-                  onClick={toggleDarkMode}
-                  className="flex items-center gap-2 text-[10px] font-mono text-relic-silver hover:text-relic-slate transition-colors"
-                >
-                  <span>dark mode</span>
-                  <span className={`px-2 py-0.5 border border-relic-mist ${
-                    darkMode 
-                      ? 'bg-relic-slate text-white' 
-                      : 'bg-relic-white text-relic-slate'
-                  }`}>
-                    {darkMode ? 'on' : 'off'}
-                  </span>
-                </button>
-                
                 {user ? (
                   <NavigationMenu
                     user={user}
-                    onMindMapClick={() => setShowMindMap(true)}
+                    onMindMapClick={() => {
+                      setMindMapInitialView('graph')
+                      setShowMindMap(true)
+                    }}
+                    onHistoryClick={() => {
+                      setMindMapInitialView('history')
+                      setShowMindMap(true)
+                    }}
                   />
                 ) : (
                   <button
                     onClick={() => setShowAuthModal(true)}
-                    className="text-[10px] font-mono text-relic-silver hover:text-relic-slate transition-colors"
+                    className="text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors"
                   >
                     create profile
                   </button>
@@ -2021,8 +2454,12 @@ export default function HomePage() {
       {/* Mind Map */}
       <MindMap
         isOpen={showMindMap}
-        onClose={() => setShowMindMap(false)}
+        onClose={() => {
+          setShowMindMap(false)
+          setMindMapInitialView('graph') // Reset to graph view when closed
+        }}
         userId={user?.id || null}
+        initialView={mindMapInitialView}
       />
 
       {/* Auth Modal */}
@@ -2035,19 +2472,12 @@ export default function HomePage() {
         }}
       />
 
-      {/* User Profile - Show when logged in */}
-      {user && (
-        <div className="fixed top-4 right-4 z-30">
-          <UserProfile />
-        </div>
-      )}
-
       {/* Create Profile Button - Show when not logged in and expanded */}
       {!user && isExpanded && (
-        <div className="fixed top-4 right-4 z-30">
+        <div className="fixed top-14 right-4 z-30">
           <button
             onClick={() => setShowAuthModal(true)}
-            className="px-4 py-2 text-xs font-mono border-2 border-relic-slate/30 text-relic-slate bg-transparent hover:bg-relic-ghost/50 transition-all duration-200"
+            className="px-4 py-2 text-xs font-mono border-2 border-relic-slate/30 dark:border-relic-ghost/30 text-relic-slate dark:text-relic-ghost bg-transparent hover:bg-relic-ghost/50 dark:hover:bg-relic-slate/20 transition-all duration-200"
           >
             create profile
           </button>
@@ -2072,6 +2502,120 @@ export default function HomePage() {
         }}
       />
 
+      {/* Side Mini Chat - Context Watcher - Always visible if there are messages */}
+      <SideMiniChat
+        isVisible={messages.length > 0}
+        messages={messages}
+        externalQuery={deepDiveQuery}
+        conversationId={currentConversationId}
+        onSendQuery={async (queryText) => {
+          // Check if already loading
+          if (isLoading || !queryText.trim()) return
+
+          // Set the query text
+          setQuery(queryText)
+
+          // Wait a moment for React state to update
+          await new Promise(resolve => setTimeout(resolve, 50))
+
+          // Start transition animation
+          setIsTransitioning(true)
+
+          // Wait for transition animation
+          await new Promise(resolve => setTimeout(resolve, 800))
+
+          const userMessage: Message = {
+            id: generateId(),
+            role: 'user',
+            content: queryText.trim(),
+            timestamp: new Date()
+          }
+
+          // Add user message and expand interface
+          setMessages(prev => [...prev, userMessage])
+          setIsExpanded(true)
+          setQuery('')
+          setIsLoading(true)
+          setIsTransitioning(false)
+
+          const startTime = Date.now()
+
+          try {
+            const currentChatId = activeChatId || 'main'
+            const pageContext = getPageContext()
+            const res = await fetch('/api/simple-query', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-session-id': sessionId,
+              },
+              body: JSON.stringify({
+                query: userMessage.content,
+                methodology,
+                conversationHistory: messages.map(m => ({
+                  role: m.role,
+                  content: m.content
+                })),
+                legendMode,
+                chatId: currentChatId,
+                pageContext,
+                instinctMode,
+                instinctConfig
+              })
+            })
+
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`)
+            }
+
+            const data = await res.json()
+
+            // Handle methodology-specific responses
+            const aiMessage: Message = {
+              id: generateId(),
+              role: 'assistant',
+              content: data.response,
+              timestamp: new Date(),
+              methodology: data.methodologyUsed,
+              topics: data.topics,
+              gnostic: data.gnostic
+            }
+
+            setMessages(prev => [...prev, aiMessage])
+
+            // Auto-track Gnostic progression
+            if (data.gnostic?.ascentState) {
+              console.log(`[GNOSTIC] Ascent Level: ${data.gnostic.ascentState.currentLevel} (${data.gnostic.ascentState.levelName})`)
+            }
+
+            // Analytics tracking
+            const latency = Date.now() - startTime
+            if (typeof window !== 'undefined' && (window as any).posthog) {
+              (window as any).posthog.capture('query_completed', {
+                methodology: data.methodologyUsed,
+                latency,
+                tokens: data.metrics?.tokens,
+                cost: data.metrics?.cost,
+                guardPassed: data.guardResult?.passed,
+                legendMode
+              })
+            }
+
+          } catch (error) {
+            console.error('Query error:', error)
+            const errorMessage: Message = {
+              id: generateId(),
+              role: 'assistant',
+              content: 'An error occurred while processing your query. Please try again.',
+              timestamp: new Date()
+            }
+            setMessages(prev => [...prev, errorMessage])
+          } finally {
+            setIsLoading(false)
+          }
+        }}
+      />
+
       {/* Methodology Change Prompt */}
       <MethodologyChangePrompt
         isOpen={showMethodologyPrompt}
@@ -2083,6 +2627,12 @@ export default function HomePage() {
 
       {/* News Notification - Top Left */}
       <NewsNotification />
+
+      {/* Instinct Console - Connected to horizontal bar indicator */}
+      <InstinctConsole
+        isOpen={consoleOpen}
+        onToggle={() => setConsoleOpen(!consoleOpen)}
+      />
     </div>
   )
 }
