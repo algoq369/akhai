@@ -5,11 +5,11 @@
 ### The Sovereign AI Research Engine
 
 [![Status](https://img.shields.io/badge/Status-Live-brightgreen)]()
-[![Version](https://img.shields.io/badge/Version-2.0-blue)]()
+[![Version](https://img.shields.io/badge/Version-2.5-blue)]()
 [![License](https://img.shields.io/badge/License-Proprietary-red)]()
 [![Founder](https://img.shields.io/badge/Founder-Algoq-purple)]()
 
-**7 Reasoning Methodologies • Grounding Guard • Zero Hallucinations • Crypto-Native**
+**7 Reasoning Methodologies • Grounding Guard • URL Intelligence • Mind Map • Crypto-Native**
 
 [🚀 Try AkhAI](https://akhai.app) • [📱 Telegram](https://t.me/akhai_official) • [🐦 Twitter](https://twitter.com/AkhAI)
 
@@ -57,17 +57,43 @@ Unlike ChatGPT or Perplexity that use single-approach reasoning, AkhAI dynamical
 
 ## 🛡️ Grounding Guard
 
-Every response passes through 6-layer verification:
+Every response passes through 4-layer verification:
 
 ```
-Query → AI Response → [Hype Check] → [Echo Check] → [Drift Check] 
-                   → [Fact Check] → [Bias Check] → Verified Output
+Query → AI Response → [Hype Check] → [Echo Check] → [Drift Check]
+                   → [Fact Check] → Verified Output
 ```
 
 When issues detected:
 - **Refine** → AI suggests better questions
 - **Pivot** → Alternative approaches offered
 - **Warning Badge** → Proceed with caution
+
+---
+
+## 🔗 URL Intelligence System
+
+Share any link—AkhAI understands it:
+
+| Content Type | Capability |
+|--------------|------------|
+| **YouTube** | Extracts transcripts, analyzes video content |
+| **Twitter/X** | Reads threads, understands context |
+| **GitHub** | Analyzes repos, READMEs, code structure |
+| **Webpages** | Scrapes and summarizes any article |
+
+*"Watch this video and summarize" — AkhAI can actually do it.*
+
+---
+
+## 🗺️ Mind Map
+
+Visualize your research knowledge:
+
+- **Topic Extraction** — Auto-identifies subjects from conversations
+- **Intelligent Clustering** — Groups related topics by category
+- **Relationship Mapping** — Shows connections between concepts
+- **Performance Optimized** — Filters large conversations for speed
 
 ---
 
@@ -96,25 +122,28 @@ When issues detected:
 ### x402 Micropayments (Coming Soon)
 Pay-per-query from your crypto wallet. No account needed.
 
-**Payments:** Stripe (Card, Apple Pay, Google Pay) + Crypto (BTC, ETH, XMR, 300+ coins)
+**Payments:**
+- Stripe (Card, Apple Pay, Google Pay)
+- NOWPayments (300+ cryptocurrencies)
+- BTCPay Server (BTC, Lightning, Monero — self-hosted, 0% fees)
 
 ---
 
 ## 🚀 Roadmap
 
-### 2025
+### 2026
 
 | Quarter | Milestone |
 |---------|-----------|
-| **Q1** | Public launch, 1,000 users, $20K MRR |
-| **Q2** | Mobile apps, 10,000 users, $100K MRR |
-| **Q3** | Sovereign model fine-tuning, API launch |
-| **Q4** | Enterprise features, $500K MRR |
+| **Q1** | Public launch, beta users, product-market fit |
+| **Q2** | Fundraising round, team expansion |
+| **Q3** | Sovereign model fine-tuning (Qwen/Mistral) |
+| **Q4** | Deploy to FlokiNET Iceland, zero external dependencies |
 
-### 2026+
+### 2027+
 
-- Self-hosted sovereign AI (zero external dependencies)
-- Robotics integration research
+- Full sovereignty (own trained models)
+- Enterprise features, API platform
 - Global expansion
 - Path to $1B+ valuation
 
@@ -155,6 +184,6 @@ Selected open-source tools and integrations may be released separately under app
 
 *Sovereign Intelligence • Zero Hallucinations • Crypto-Native*
 
-**© 2025 AkhAI. All Rights Reserved.**
+**© 2025-2026 AkhAI. All Rights Reserved.**
 
 </div>
