@@ -14,7 +14,7 @@ import { getUserFromSession } from '@/lib/auth'
 
 // Configuration
 const MAX_CONVERSATION_SIZE = 50 // Exclude topics from conversations with more than this many messages
-const MAX_TOPICS_DISPLAY = 100  // Maximum topics to show in mind map
+const MAX_TOPICS_DISPLAY = 5000  // Maximum topics to show in mind map (increased from 100)
 const CLUSTER_THRESHOLD = 0.3   // Similarity threshold for clustering
 
 export async function GET(request: NextRequest) {
@@ -206,6 +206,17 @@ export async function GET(request: NextRequest) {
         clusterCount: clusters.length,
       },
     }
+
+    // Debug logging
+    console.log('[MindMap API] Returning:', {
+      topicsReturned: topics.length,
+      nodesCount: nodes.length,
+      linksCount: links.length,
+      clustersCount: clusters.length,
+      maxTopicsLimit: MAX_TOPICS_DISPLAY,
+      conversationSizeFilter: MAX_CONVERSATION_SIZE
+    })
+
     return NextResponse.json(responseData)
   } catch (error) {
     console.error('Mind map data error:', error)

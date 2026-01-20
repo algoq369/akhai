@@ -4,7 +4,8 @@ import { getUserFromSession } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const limit = parseInt(searchParams.get('limit') || '100');
+  // Default to 10000 to return all conversations (pagination not yet implemented)
+  const limit = parseInt(searchParams.get('limit') || '10000');
   const offset = parseInt(searchParams.get('offset') || '0');
 
   try {

@@ -66,7 +66,9 @@ export default function HistoryPage() {
     fetch('/api/history')
       .then(res => res.json())
       .then(data => {
-        setQueries(data.queries || [])
+        const queries = data.queries || []
+        console.log('[History] API returned:', queries.length, 'conversations')
+        setQueries(queries)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -96,6 +98,12 @@ export default function HistoryPage() {
       q.flow.toLowerCase().includes(lower)
     )
   }, [filteredByTime, searchQuery])
+
+  // Log filter counts
+  useEffect(() => {
+    console.log('[History] After time filter:', filteredByTime.length)
+    console.log('[History] After search filter:', filteredBySearch.length)
+  }, [filteredByTime.length, filteredBySearch.length])
 
   // Cluster queries by topic
   const clusters = useMemo((): TopicCluster[] => {

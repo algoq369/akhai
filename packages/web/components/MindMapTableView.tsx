@@ -45,7 +45,10 @@ export default function MindMapTableView({ userId, onQueryAction }: MindMapTable
         const res = await fetch('/api/mindmap/data')
         if (!res.ok) return
         const data = await res.json()
-        setNodes(data.nodes || [])
+        const nodes = data.nodes || []
+        console.log('[MindMap TableView] API returned:', nodes.length, 'topics')
+        console.log('[MindMap TableView] Meta:', data.meta)
+        setNodes(nodes)
       } catch (error) {
         console.error('Failed to fetch:', error)
       }
