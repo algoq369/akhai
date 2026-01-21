@@ -1,9 +1,9 @@
 /**
  * AKHAI API Server
- * 
+ *
  * REST and WebSocket API for Mother Base.
  * Provides programmatic access to AKHAI's AI capabilities.
- * 
+ *
  * Endpoints:
  *   POST /v1/chat/completions   - OpenAI-compatible chat
  *   POST /v1/query              - Single query
@@ -13,6 +13,9 @@
  *   GET  /v1/search             - Web search
  *   POST /v1/scrape             - Web page content
  */
+
+// Load environment variables from .env file
+import 'dotenv/config';
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
