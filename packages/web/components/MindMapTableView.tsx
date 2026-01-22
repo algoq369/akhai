@@ -108,16 +108,6 @@ export default function MindMapTableView({ userId, onQueryAction }: MindMapTable
               className="w-full pl-8 pr-3 py-1.5 text-[11px] border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          <select
-            value={filterCategory || ''}
-            onChange={e => setFilterCategory(e.target.value || null)}
-            className="px-2 py-1.5 text-[11px] border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
-          >
-            <option value="">All Categories</option>
-            {categories.map(([cat, count]) => (
-              <option key={cat} value={cat}>{cat} ({count})</option>
-            ))}
-          </select>
         </div>
         
         {/* Category pills */}

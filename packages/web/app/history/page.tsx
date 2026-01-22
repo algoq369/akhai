@@ -33,7 +33,6 @@ interface TopicCluster {
 }
 
 type ViewMode = 'grid' | 'list'
-type SortBy = 'recent' | 'queries' | 'cost' | 'name'
 type TimeFilter = 'all' | 'today' | 'week' | 'month'
 
 // Methodology colors
@@ -52,8 +51,6 @@ export default function HistoryPage() {
   const [queries, setQueries] = useState<QueryHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
-  const [sortBy, setSortBy] = useState<SortBy>('recent')
-  const [sortAsc, setSortAsc] = useState(false)
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
@@ -132,24 +129,11 @@ export default function HistoryPage() {
       lastActivity: Math.max(...queries.map(q => q.created_at)),
     }))
 
-    // Sort clusters
-    switch (sortBy) {
-      case 'recent':
-        result.sort((a, b) => sortAsc ? a.lastActivity - b.lastActivity : b.lastActivity - a.lastActivity)
-        break
-      case 'queries':
-        result.sort((a, b) => sortAsc ? a.queries.length - b.queries.length : b.queries.length - a.queries.length)
-        break
-      case 'cost':
-        result.sort((a, b) => sortAsc ? a.totalCost - b.totalCost : b.totalCost - a.totalCost)
-        break
-      case 'name':
-        result.sort((a, b) => sortAsc ? a.topic.localeCompare(b.topic) : b.topic.localeCompare(a.topic))
-        break
-    }
+    // Sort by most recent
+    result.sort((a, b) => b.lastActivity - a.lastActivity)
 
     return result
-  }, [filteredBySearch, sortBy, sortAsc])
+  }, [filteredBySearch])
 
   const formatDate = (timestamp: number) => {
     const d = new Date(timestamp * 1000)
