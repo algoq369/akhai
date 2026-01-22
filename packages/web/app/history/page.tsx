@@ -10,7 +10,8 @@ import {
   ClockIcon,
   CurrencyDollarIcon,
   DocumentTextIcon,
-  FolderIcon
+  FolderIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline'
 
 interface QueryHistoryItem {
