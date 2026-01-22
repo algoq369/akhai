@@ -56,7 +56,6 @@ export default function SideCanalPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState<string | null>(null)
   const [filterPinned, setFilterPinned] = useState(false)
-  const [sortBy, setSortBy] = useState<'recent' | 'name' | 'queries'>('recent')
 
   // Selected topic
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
@@ -67,7 +66,7 @@ export default function SideCanalPage() {
 
   useEffect(() => {
     applyFilters()
-  }, [searchQuery, filterCategory, filterPinned, sortBy, allTopics])
+  }, [searchQuery, filterCategory, filterPinned, allTopics])
 
   const fetchData = async () => {
     setLoading(true)
@@ -137,16 +136,8 @@ export default function SideCanalPage() {
       filtered = filtered.filter(t => t.pinned)
     }
 
-    // Sort
-    filtered.sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.name.localeCompare(b.name)
-      } else if (sortBy === 'queries') {
-        return (b.query_count || 0) - (a.query_count || 0)
-      } else {
-        return b.updated_at - a.updated_at
-      }
-    })
+    // Sort by most recent
+    filtered.sort((a, b) => b.updated_at - a.updated_at)
 
     setTopics(filtered)
   }
@@ -299,16 +290,6 @@ export default function SideCanalPage() {
                 ))}
               </select>
             )}
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 bg-relic-ghost border border-relic-mist rounded text-xs text-relic-slate cursor-pointer focus:outline-none focus:border-relic-slate transition-colors"
-            >
-              <option value="recent">Most Recent</option>
-              <option value="name">Name (A-Z)</option>
-              <option value="queries">Most Queries</option>
-            </select>
 
             <button
               onClick={fetchData}
