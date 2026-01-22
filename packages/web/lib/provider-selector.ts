@@ -36,37 +36,37 @@ export interface ModelSpec {
 export const METHODOLOGY_PROVIDER_MAP: Record<CoreMethodology, ModelSpec> = {
   direct: {
     provider: 'anthropic',
-    model: 'claude-opus-4-20250514',
+    model: 'claude-opus-4-5-20251101',
     reasoning: 'Premium Claude Opus 4.5 for all queries',
   },
   cod: {
     provider: 'anthropic',
-    model: 'claude-opus-4-20250514',
+    model: 'claude-opus-4-5-20251101',
     reasoning: 'Premium Claude Opus 4.5 for all queries',
   },
   bot: {
     provider: 'anthropic',
-    model: 'claude-opus-4-20250514',
+    model: 'claude-opus-4-5-20251101',
     reasoning: 'Premium Claude Opus 4.5 for all queries',
   },
   react: {
     provider: 'anthropic',
-    model: 'claude-opus-4-20250514',
+    model: 'claude-opus-4-5-20251101',
     reasoning: 'Premium Claude Opus 4.5 for all queries',
   },
   pot: {
     provider: 'anthropic',
-    model: 'claude-opus-4-20250514',
+    model: 'claude-opus-4-5-20251101',
     reasoning: 'Premium Claude Opus 4.5 for all queries',
   },
   gtp: {
     provider: 'anthropic', // Mother Base synthesis uses Anthropic
-    model: 'claude-opus-4-20250514',
+    model: 'claude-opus-4-5-20251101',
     reasoning: 'Multi-AI consensus: Anthropic + DeepSeek + Mistral + xAI advisors',
   },
   auto: {
     provider: 'anthropic',
-    model: 'claude-opus-4-20250514',
+    model: 'claude-opus-4-5-20251101',
     reasoning: 'Premium Claude Opus 4.5 for all queries',
   },
 }
@@ -86,7 +86,7 @@ export function getProviderForMethodology(
   if (legendMode) {
     return {
       provider: 'anthropic',
-      model: 'claude-opus-4-20250514',
+      model: 'claude-opus-4-5-20251101',
       reasoning: 'Legend Mode: Premium R&D with Claude Opus 4.5',
     }
   }

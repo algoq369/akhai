@@ -340,95 +340,35 @@ const MethodologyExplorer = memo(function MethodologyExplorer({
             ))}
           </div>
         ) : (
-          /* Detail View */
-          <div className="w-[800px] bg-relic-white/95 backdrop-blur-md border border-relic-mist shadow-2xl animate-fade-in">
-            {/* Header */}
-            <div className="border-b border-relic-mist/50 p-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="text-5xl text-relic-slate">{selectedDetail?.symbol}</div>
-                <div>
-                  <h2 className="text-2xl font-mono text-relic-slate">{selectedDetail?.name}</h2>
-                  <p className="text-sm text-relic-silver">{selectedDetail?.fullName}</p>
-                </div>
+          /* Detail View - Ultra Minimal */
+          <div className="w-[160px] bg-relic-white/95 dark:bg-relic-void/95 backdrop-blur-md border border-relic-mist dark:border-relic-slate/30 shadow-2xl animate-fade-in">
+            {/* Header - Micro */}
+            <div className="border-b border-relic-mist/30 dark:border-relic-slate/20 px-1.5 py-1 flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <div className="text-sm text-relic-slate dark:text-white">{selectedDetail?.symbol}</div>
+                <h2 className="text-[10px] font-mono text-relic-slate dark:text-white">{selectedDetail?.name}</h2>
               </div>
-              <button
-                onClick={handleBack}
-                className="text-xs uppercase tracking-widest text-relic-silver hover:text-relic-slate transition-colors"
-              >
-                ← back
-              </button>
+              <button onClick={handleBack} className="text-[8px] text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white">✕</button>
             </div>
 
-            {/* Content */}
-            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-              {/* Description */}
-              <div>
-                <h3 className="relic-label mb-2">Description</h3>
-                <p className="text-sm text-relic-slate leading-relaxed">{selectedDetail?.description}</p>
-              </div>
+            {/* Content - Data Only */}
+            <div className="px-1.5 py-1 space-y-1">
+              {/* Single step */}
+              <p className="text-[6px] text-relic-slate dark:text-relic-ghost leading-tight">{selectedDetail?.howItWorks[0]}</p>
 
-              {/* How It Works */}
-              <div>
-                <h3 className="relic-label mb-3">How It Works</h3>
-                <div className="space-y-2">
-                  {selectedDetail?.howItWorks.map((step, i) => (
-                    <div key={i} className="flex gap-3">
-                      <span className="text-xs text-relic-silver mt-0.5">{i + 1}.</span>
-                      <p className="text-sm text-relic-slate flex-1">{step}</p>
-                    </div>
-                  ))}
+              {/* Metrics - Ultra compact */}
+              <div className="pt-0.5 border-t border-relic-mist/20 dark:border-relic-slate/10 space-y-0.5">
+                <div className="flex justify-between">
+                  <span className="text-[6px] text-relic-silver dark:text-relic-ghost">tkn</span>
+                  <span className="text-[6px] font-mono text-relic-slate dark:text-white">{selectedDetail?.metrics.tokens}</span>
                 </div>
-              </div>
-
-              {/* Format */}
-              <div>
-                <h3 className="relic-label mb-2">Response Format</h3>
-                <div className="bg-relic-ghost/50 border border-relic-mist px-4 py-3">
-                  <code className="text-xs font-mono text-relic-slate">{selectedDetail?.format}</code>
+                <div className="flex justify-between">
+                  <span className="text-[6px] text-relic-silver dark:text-relic-ghost">lat</span>
+                  <span className="text-[6px] font-mono text-relic-slate dark:text-white">{selectedDetail?.metrics.latency}</span>
                 </div>
-              </div>
-
-              {/* Best For */}
-              <div>
-                <h3 className="relic-label mb-3">Best For</h3>
-                <ul className="space-y-1.5">
-                  {selectedDetail?.bestFor.map((item, i) => (
-                    <li key={i} className="flex gap-2 text-sm text-relic-slate">
-                      <span className="text-relic-silver">•</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Examples */}
-              <div>
-                <h3 className="relic-label mb-3">Example Queries</h3>
-                <div className="space-y-2">
-                  {selectedDetail?.examples.map((example, i) => (
-                    <div key={i} className="bg-relic-ghost/30 border border-relic-mist px-3 py-2">
-                      <p className="text-xs font-mono text-relic-slate">{example}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Metrics */}
-              <div>
-                <h3 className="relic-label mb-3">Performance Metrics</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-relic-ghost/30 border border-relic-mist p-3">
-                    <p className="text-[10px] uppercase tracking-widest text-relic-silver mb-1">Tokens</p>
-                    <p className="text-sm font-mono text-relic-slate">{selectedDetail?.metrics.tokens}</p>
-                  </div>
-                  <div className="bg-relic-ghost/30 border border-relic-mist p-3">
-                    <p className="text-[10px] uppercase tracking-widest text-relic-silver mb-1">Latency</p>
-                    <p className="text-sm font-mono text-relic-slate">{selectedDetail?.metrics.latency}</p>
-                  </div>
-                  <div className="bg-relic-ghost/30 border border-relic-mist p-3">
-                    <p className="text-[10px] uppercase tracking-widest text-relic-silver mb-1">Est. Cost</p>
-                    <p className="text-sm font-mono text-relic-slate">{selectedDetail?.metrics.cost}</p>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-[6px] text-relic-silver dark:text-relic-ghost">$</span>
+                  <span className="text-[6px] font-mono text-relic-slate dark:text-white">{selectedDetail?.metrics.cost}</span>
                 </div>
               </div>
             </div>

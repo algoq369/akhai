@@ -14,6 +14,10 @@ import {
   LightBulbIcon
 } from '@heroicons/react/24/outline'
 import { MapPinIcon as MapPinIconSolid } from '@heroicons/react/24/solid'
+import DarkModeToggle from '@/components/DarkModeToggle'
+
+// Force dynamic rendering to avoid prerender errors
+export const dynamic = 'force-dynamic'
 
 interface Topic {
   id: string
@@ -74,20 +78,24 @@ export default function SideCanalPage() {
     try {
       // Fetch topics
       const topicsRes = await fetch('/api/side-canal/topics')
+      let fetchedTopics: Topic[] = []
       if (topicsRes.ok) {
         const topicsData = await topicsRes.json()
-        setAllTopics(topicsData.topics || [])
+        fetchedTopics = topicsData.topics || []
+        setAllTopics(fetchedTopics)
       }
 
       // Fetch relationships
       const relsRes = await fetch('/api/side-canal/relationships')
+      let fetchedRels: TopicRelationship[] = []
       if (relsRes.ok) {
         const relsData = await relsRes.json()
-        setRelationships(relsData.relationships || [])
+        fetchedRels = relsData.relationships || []
+        setRelationships(fetchedRels)
       }
 
       // Calculate stats
-      calculateStats(topicsData.topics || [], relsData.relationships || [])
+      calculateStats(fetchedTopics, fetchedRels)
     } catch (error) {
       console.error('Failed to fetch Side Canal data:', error)
     } finally {
@@ -191,65 +199,68 @@ export default function SideCanalPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-relic-white via-relic-ghost/30 to-relic-ghost/60 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-relic-white via-relic-ghost/30 to-relic-ghost/60 dark:from-relic-void dark:via-relic-void/80 dark:to-relic-void/60 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-2 border-relic-mist border-t-relic-slate rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-relic-silver">Loading Side Canal...</p>
+          <div className="w-12 h-12 border-2 border-relic-mist dark:border-relic-slate/30 border-t-relic-slate dark:border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm text-relic-silver dark:text-relic-ghost">Loading Side Canal...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-relic-white via-relic-ghost/30 to-relic-ghost/60">
+    <div className="min-h-screen bg-gradient-to-br from-relic-white via-relic-ghost/30 to-relic-ghost/60 dark:from-relic-void dark:via-relic-void/80 dark:to-relic-void/60">
       {/* Header */}
-      <div className="bg-white border-b border-relic-mist">
+      <div className="bg-white dark:bg-relic-void/50 border-b border-relic-mist dark:border-relic-slate/30">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-mono text-relic-void mb-2">Side Canal</h1>
-              <p className="text-sm text-relic-silver max-w-2xl">
+              <h1 className="text-3xl font-mono text-relic-void dark:text-white mb-2">Side Canal</h1>
+              <p className="text-sm text-relic-silver dark:text-relic-ghost max-w-2xl">
                 Autonomous context intelligence system tracking topics, relationships, and insights across your conversations
               </p>
             </div>
-            <button
-              onClick={() => router.push('/')}
-              className="px-4 py-2 bg-relic-slate text-white text-sm rounded hover:bg-relic-void transition-colors"
-            >
-              Back to Chat
-            </button>
+            <div className="flex items-center gap-3">
+              <DarkModeToggle />
+              <button
+                onClick={() => router.push('/')}
+                className="px-4 py-2 bg-relic-slate dark:bg-white text-white dark:text-relic-void text-sm rounded hover:bg-relic-void dark:hover:bg-relic-ghost transition-colors"
+              >
+                Back to Chat
+              </button>
+            </div>
           </div>
 
           {/* Stats */}
           {stats && (
             <div className="grid grid-cols-4 gap-4 mt-6">
-              <div className="bg-relic-ghost/50 border border-relic-mist rounded p-4">
-                <div className="flex items-center gap-2 text-relic-silver text-xs uppercase tracking-wider mb-2">
+              <div className="bg-relic-ghost/50 dark:bg-relic-slate/10 border border-relic-mist dark:border-relic-slate/30 rounded p-4">
+                <div className="flex items-center gap-2 text-relic-silver dark:text-relic-ghost text-xs uppercase tracking-wider mb-2">
                   <SparklesIcon className="w-4 h-4" />
                   <span>Topics</span>
                 </div>
-                <div className="text-2xl font-mono text-relic-void">{stats.total_topics}</div>
+                <div className="text-2xl font-mono text-relic-void dark:text-white">{stats.total_topics}</div>
               </div>
-              <div className="bg-relic-ghost/50 border border-relic-mist rounded p-4">
-                <div className="flex items-center gap-2 text-relic-silver text-xs uppercase tracking-wider mb-2">
+              <div className="bg-relic-ghost/50 dark:bg-relic-slate/10 border border-relic-mist dark:border-relic-slate/30 rounded p-4">
+                <div className="flex items-center gap-2 text-relic-silver dark:text-relic-ghost text-xs uppercase tracking-wider mb-2">
                   <LinkIcon className="w-4 h-4" />
                   <span>Connections</span>
                 </div>
-                <div className="text-2xl font-mono text-relic-void">{stats.total_connections}</div>
+                <div className="text-2xl font-mono text-relic-void dark:text-white">{stats.total_connections}</div>
               </div>
-              <div className="bg-relic-ghost/50 border border-relic-mist rounded p-4">
-                <div className="flex items-center gap-2 text-relic-silver text-xs uppercase tracking-wider mb-2">
+              <div className="bg-relic-ghost/50 dark:bg-relic-slate/10 border border-relic-mist dark:border-relic-slate/30 rounded p-4">
+                <div className="flex items-center gap-2 text-relic-silver dark:text-relic-ghost text-xs uppercase tracking-wider mb-2">
                   <FunnelIcon className="w-4 h-4" />
                   <span>Categories</span>
                 </div>
-                <div className="text-2xl font-mono text-relic-void">{Object.keys(stats.categories).length}</div>
+                <div className="text-2xl font-mono text-relic-void dark:text-white">{Object.keys(stats.categories).length}</div>
               </div>
-              <div className="bg-relic-ghost/50 border border-relic-mist rounded p-4">
-                <div className="flex items-center gap-2 text-relic-silver text-xs uppercase tracking-wider mb-2">
+              <div className="bg-relic-ghost/50 dark:bg-relic-slate/10 border border-relic-mist dark:border-relic-slate/30 rounded p-4">
+                <div className="flex items-center gap-2 text-relic-silver dark:text-relic-ghost text-xs uppercase tracking-wider mb-2">
                   <ClockIcon className="w-4 h-4" />
                   <span>Active 24h</span>
                 </div>
-                <div className="text-2xl font-mono text-relic-void">{stats.recent_activity}</div>
+                <div className="text-2xl font-mono text-relic-void dark:text-white">{stats.recent_activity}</div>
               </div>
             </div>
           )}
@@ -257,18 +268,18 @@ export default function SideCanalPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white border-b border-relic-mist">
+      <div className="bg-white dark:bg-relic-void/50 border-b border-relic-mist dark:border-relic-slate/30">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center gap-3">
             {/* Search */}
             <div className="flex-1 max-w-md relative">
-              <MagnifyingGlassIcon className="w-4 h-4 text-relic-silver absolute left-3 top-1/2 -translate-y-1/2" />
+              <MagnifyingGlassIcon className="w-4 h-4 text-relic-silver dark:text-relic-ghost absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search topics..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-relic-ghost border border-relic-mist rounded text-sm text-relic-void placeholder-relic-silver focus:outline-none focus:border-relic-slate transition-colors"
+                className="w-full pl-10 pr-4 py-2 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-mist dark:border-relic-slate/30 rounded text-sm text-relic-void dark:text-white placeholder-relic-silver dark:placeholder-relic-ghost focus:outline-none focus:border-relic-slate dark:focus:border-relic-ghost transition-colors"
               />
             </div>
 
@@ -277,8 +288,8 @@ export default function SideCanalPage() {
               onClick={() => setFilterPinned(!filterPinned)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded text-xs font-medium transition-all ${
                 filterPinned
-                  ? 'bg-relic-slate text-white'
-                  : 'bg-relic-ghost border border-relic-mist text-relic-slate hover:bg-white'
+                  ? 'bg-relic-slate dark:bg-white text-white dark:text-relic-void'
+                  : 'bg-relic-ghost dark:bg-relic-slate/20 border border-relic-mist dark:border-relic-slate/30 text-relic-slate dark:text-relic-ghost hover:bg-white dark:hover:bg-relic-slate/30'
               }`}
             >
               {filterPinned ? <MapPinIconSolid className="w-3.5 h-3.5" /> : <MapPinIcon className="w-3.5 h-3.5" />}
@@ -289,7 +300,7 @@ export default function SideCanalPage() {
               <select
                 value={filterCategory || ''}
                 onChange={(e) => setFilterCategory(e.target.value || null)}
-                className="px-3 py-2 bg-relic-ghost border border-relic-mist rounded text-xs text-relic-slate cursor-pointer focus:outline-none focus:border-relic-slate transition-colors"
+                className="px-3 py-2 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-mist dark:border-relic-slate/30 rounded text-xs text-relic-slate dark:text-relic-ghost cursor-pointer focus:outline-none focus:border-relic-slate dark:focus:border-relic-ghost transition-colors"
               >
                 <option value="">All Categories</option>
                 {categories.map((cat) => (
@@ -303,7 +314,7 @@ export default function SideCanalPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 bg-relic-ghost border border-relic-mist rounded text-xs text-relic-slate cursor-pointer focus:outline-none focus:border-relic-slate transition-colors"
+              className="px-3 py-2 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-mist dark:border-relic-slate/30 rounded text-xs text-relic-slate dark:text-relic-ghost cursor-pointer focus:outline-none focus:border-relic-slate dark:focus:border-relic-ghost transition-colors"
             >
               <option value="recent">Most Recent</option>
               <option value="name">Name (A-Z)</option>
@@ -312,7 +323,7 @@ export default function SideCanalPage() {
 
             <button
               onClick={fetchData}
-              className="flex items-center gap-1.5 px-3 py-2 bg-relic-ghost border border-relic-mist rounded text-xs text-relic-slate hover:bg-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-mist dark:border-relic-slate/30 rounded text-xs text-relic-slate dark:text-relic-ghost hover:bg-white dark:hover:bg-relic-slate/30 transition-colors"
             >
               <ArrowPathIcon className="w-3.5 h-3.5" />
               <span>Refresh</span>

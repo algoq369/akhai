@@ -57,7 +57,95 @@ export interface Message {
     }
     qliphothPurified: boolean
     qliphothType: string
+    qliphothCritique?: {
+      severity: number
+      triggers: {
+        patterns: string[]
+        count: number
+      }
+      audit: {
+        sefirotAdjustments: Array<{
+          sefirah: string
+          currentWeight: number
+          suggestedWeight: number
+          rationale: string
+          impact: 'reduce' | 'increase' | 'maintain'
+        }>
+        pillarRebalance?: {
+          current: { left: number; middle: number; right: number }
+          suggested: { left: number; middle: number; right: number }
+          shifts: Array<{ pillar: 'left' | 'middle' | 'right'; direction: 'increase' | 'decrease'; amount: number }>
+        }
+        explanation: {
+          whatWasDetected: string
+          whyItMatters: string
+          howToFix: string
+        }
+        confidence: number
+        priority: 'low' | 'medium' | 'high' | 'critical'
+      }
+      purificationActions: {
+        before: string
+        after: string
+        transformations: Array<{
+          type: 'replace' | 'remove' | 'qualify'
+          pattern: string
+          replacement: string
+        }>
+      } | null
+      qliphothEducation: {
+        name: string
+        description: string
+        commonCauses: string[]
+        aiManifestation: string
+      }
+    } | null
     sovereigntyFooter: string | null
+  }
+  // ============================================================================
+  // INTELLIGENCE FUSION METADATA
+  // ============================================================================
+  intelligence?: {
+    analysis: {
+      complexity: number
+      queryType: string
+      keywords: string[]
+    }
+    sefirotActivations: Array<{
+      sefirah: number
+      name: string
+      activation: number
+      effectiveWeight: number
+    }>
+    dominantSefirot: string[]
+    pathActivations: Array<{
+      from: number
+      to: number
+      strength: number
+    }>
+    methodologySelection: {
+      selected: string
+      confidence: number
+      alternatives: Array<{
+        methodology: string
+        score: number
+      }>
+    }
+    guard: {
+      recommendation: 'proceed' | 'warn' | 'block'
+      reasons: string[]
+    }
+    instinct: {
+      enabled: boolean
+      activeLenses: string[]
+    }
+    processing: {
+      mode: 'weighted' | 'parallel' | 'adaptive'
+      extendedThinkingBudget: number
+    }
+    timing: {
+      fusionMs: number
+    }
   }
 }
 

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { generateId, Message } from '@/lib/chat-store'
 import { trackQuery } from '@/lib/analytics'
@@ -9,7 +10,8 @@ import { useSideCanalStore } from '@/lib/stores/side-canal-store'
 import { useSettingsStore } from '@/lib/stores/settings-store'
 import GuardWarning from '@/components/GuardWarning'
 import { InstinctModeConsole } from '@/components/InstinctModeConsole'
-import InstinctConsole from '@/components/InstinctConsole'
+import SefirotConsole from '@/components/SefirotConsole'
+import TreeConfigurationModal from '@/components/TreeConfigurationModal'
 import QChat from '@/components/QChat'
 // MethodologyExplorer removed - now using inline CSS hover
 import AuthModal from '@/components/AuthModal'
@@ -32,7 +34,9 @@ import ResponseMindmap, { shouldShowMindmap } from '@/components/ResponseMindmap
 import InsightMindmap, { shouldShowInsightMap } from '@/components/InsightMindmap'
 import SefirotResponse, { shouldShowSefirot } from '@/components/SefirotResponse'
 import ConversationConsole, { InlineConsole } from '@/components/ConversationConsole'
-import SefirotMini from '@/components/SefirotMini'
+import { SefirotTreeFull } from '@/components/SefirotTreeFull'
+import QliphothBadge from '@/components/QliphothBadge'
+import IntelligenceBadge from '@/components/IntelligenceBadge'
 import DarkModeToggle from '@/components/DarkModeToggle'
 import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
 import { useSession } from '@/lib/session-manager'
@@ -291,13 +295,38 @@ function generateSefirotData(message: Message, messageIndex: number, totalMessag
   activations: Record<number, number>
   userLevel: Sefirah
 } {
-  // If gnostic metadata exists, use it
+  // 🔍 DIAGNOSTIC: Log what we receive
+  console.log('🌳 RENDER: generateSefirotData called:', {
+    messageId: message.id,
+    hasGnostic: !!message.gnostic,
+    hasIntelligence: !!message.intelligence,
+    hasSephirothAnalysis: !!message.gnostic?.sephirothAnalysis,
+  })
+
+  // PRIORITY 1: Use Intelligence Fusion activations (most accurate from pre-processing)
+  if (message.intelligence?.sefirotActivations && message.intelligence.sefirotActivations.length > 0) {
+    console.log('✅ RENDER: Using Intelligence Fusion sefirotActivations')
+    const activations: Record<number, number> = {}
+    message.intelligence.sefirotActivations.forEach(({ sefirah, activation }) => {
+      activations[sefirah] = activation
+    })
+    return {
+      activations,
+      userLevel: (message.gnostic?.ascentState?.currentLevel || 1) as Sefirah
+    }
+  }
+
+  // PRIORITY 2: Use gnostic metadata (from API response processing)
   if (message.gnostic?.sephirothAnalysis) {
+    console.log('✅ RENDER: Using gnostic sephirothAnalysis from API:', message.gnostic.sephirothAnalysis)
     return {
       activations: message.gnostic.sephirothAnalysis.activations,
       userLevel: (message.gnostic.ascentState?.currentLevel || 1) as Sefirah
     }
   }
+
+  // 🔍 DIAGNOSTIC: Falling back to content analysis
+  console.log('⚠️  RENDER: No gnostic data, falling back to content analysis')
 
   // Generate activations based on content analysis
   const content = message.content || ''
@@ -317,9 +346,25 @@ function generateSefirotData(message: Message, messageIndex: number, totalMessag
   return { activations, userLevel }
 }
 
-export default function HomePage() {
+/**
+ * Helper component to watch URL parameters
+ * Separated to enable proper Suspense boundary for Next.js 15
+ */
+function ContinueParamWatcher({ onContinue }: { onContinue: (id: string) => void }) {
   const searchParams = useSearchParams()
   const continueParam = searchParams?.get('continue')
+
+  useEffect(() => {
+    if (continueParam) {
+      console.log('[History] Loading conversation:', continueParam)
+      onContinue(continueParam)
+    }
+  }, [continueParam, onContinue])
+
+  return null
+}
+
+function HomePage() {
 
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>('en')
   const [query, setQuery] = useState('')
@@ -341,10 +386,10 @@ export default function HomePage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   // topicSuggestions and showTopicsPanel now managed by Side Canal store
   const [showMindMap, setShowMindMap] = useState(false)
-  const [mindMapInitialView, setMindMapInitialView] = useState<'graph' | 'table' | 'history'>('graph')
+  const [mindMapInitialView, setMindMapInitialView] = useState<'graph' | 'history' | 'grimoire'>('graph')
   const [showDashboard, setShowDashboard] = useState(false)
+  const [showSefirotDashboard, setShowSefirotDashboard] = useState(false)
   const [legendMode, setLegendMode] = useState(false)
-  const [consoleOpen, setConsoleOpen] = useState(false)
   const [sideChats, setSideChats] = useState<Array<{ id: string; methodology: string; messages: Message[] }>>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [continuingConversation, setContinuingConversation] = useState<string | null>(null)
@@ -653,14 +698,6 @@ export default function HomePage() {
     }
   }, []) // Empty deps - setState functions are stable
 
-  // Watch for URL parameter changes (for history navigation)
-  useEffect(() => {
-    if (continueParam) {
-      console.log('[History] Loading conversation:', continueParam)
-      loadConversation(continueParam)
-    }
-  }, [continueParam, loadConversation]) // Re-run whenever continue parameter changes
-
   // Legend mode detection in query input
   const handleQueryChange = (value: string) => {
     setQuery(value)
@@ -903,6 +940,14 @@ export default function HomePage() {
         setCurrentConversationId(data.queryId)
         await pollForResult(data.queryId, startTime)
       } else {
+        // 🔍 DIAGNOSTIC: Log received gnostic data from API
+        console.log('🌳 FRONTEND: Received API response with gnostic:', {
+          hasGnostic: !!data.gnostic,
+          gnosticKeys: data.gnostic ? Object.keys(data.gnostic) : [],
+          sephirothAnalysis: data.gnostic?.sephirothAnalysis,
+          activations: data.gnostic?.sephirothAnalysis?.activations,
+        })
+
         // Check for grounding guard failures
         const guardFailed = data.guardResult && !data.guardResult.passed
 
@@ -918,7 +963,16 @@ export default function HomePage() {
           guardAction: guardFailed ? 'pending' : undefined,
           isHidden: guardFailed,
           gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
+          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
         }
+
+        // 🔍 DIAGNOSTIC: Log message with gnostic before setting state
+        console.log('🌳 FRONTEND: Created message with gnostic:', {
+          messageId: assistantMessage.id,
+          hasGnostic: !!assistantMessage.gnostic,
+          gnosticData: assistantMessage.gnostic,
+        })
+
         setMessages(prev => [...prev, assistantMessage])
 
         // Extract topics for mindmap (async, non-blocking)
@@ -998,6 +1052,7 @@ export default function HomePage() {
             guardAction: guardFailed ? 'pending' : undefined,
             isHidden: guardFailed,
             gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
+          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
           }
           setMessages(prev => [...prev, assistantMessage])
           setIsLoading(false)
@@ -1158,6 +1213,7 @@ export default function HomePage() {
           guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
           isHidden: data.guardResult?.passed === false,
           gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
+          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
         }
         setMessages(prev => [...prev, assistantMessage])
       } catch (error) {
@@ -1281,6 +1337,7 @@ export default function HomePage() {
           guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
           isHidden: data.guardResult?.passed === false,
           gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
+          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
         }
         setMessages(prev => [...prev, assistantMessage])
       } catch (error) {
@@ -1396,6 +1453,10 @@ export default function HomePage() {
     setMessages([])
     setIsExpanded(false)
     setQuery('')
+    setCurrentConversationId(undefined)
+    setContinuingConversation(null)
+    setMessageAnnotations({})
+    resetDepthAnnotations()
   }
 
   return (
@@ -1403,6 +1464,11 @@ export default function HomePage() {
       {/* Global File Drop Zone */}
       <FileDropZone
         onFilesChange={setAttachedFiles}
+        onUploadComplete={(files) => {
+          const urls = files.map(f => f.url)
+          console.log('📎 page.tsx: File URLs stored in state:', urls)
+          setUploadedFileUrls(urls)
+        }}
         maxFiles={5}
         maxSizeMB={10}
       />
@@ -1431,7 +1497,9 @@ export default function HomePage() {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded ? 'ml-60' : ''} ${isExpanded && user ? 'mr-80' : ''}`}>
+      <main className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded ? 'ml-60' : ''} ${
+        isExpanded && user ? 'mr-80' : ''
+      }`}>
 
         {/* Logo Section - Fixed at TOP when not expanded */}
         {!isExpanded && (
@@ -1821,6 +1889,19 @@ export default function HomePage() {
                           )}
 
                           {/* ================================================================ */}
+                          {/* INTELLIGENCE FUSION BADGE */}
+                          {/* ================================================================ */}
+                          {message.intelligence && (
+                            <div className="mt-4 pt-3 border-t border-relic-mist/20 dark:border-relic-slate/15">
+                              <IntelligenceBadge
+                                intelligence={message.intelligence}
+                                methodology={message.methodology}
+                                selectionReason={message.gnostic?.sephirothAnalysis?.dominant ? `Sefirot analysis: ${message.gnostic.sephirothAnalysis.dominant} dominant` : undefined}
+                              />
+                            </div>
+                          )}
+
+                          {/* ================================================================ */}
                           {/* SEFIROT MINI - ALWAYS VISIBLE (Evolves with conversation) */}
                           {/* ================================================================ */}
                           <div className="mt-6 pt-4 border-t border-relic-mist/30 dark:border-relic-slate/20">
@@ -1829,20 +1910,33 @@ export default function HomePage() {
                               const totalMessages = messages.filter(m => m.role === 'assistant').length
                               const sefirotData = generateSefirotData(message, messageIndex, totalMessages)
 
+                              // 🔍 DIAGNOSTIC: Log final data passed to SefirotMini
+                              console.log('🌳 RENDER: Passing data to SefirotMini:', {
+                                messageId: message.id,
+                                activations: sefirotData.activations,
+                                userLevel: sefirotData.userLevel,
+                                activationCount: Object.keys(sefirotData.activations).length,
+                              })
+
                               return (
-                                <div className="bg-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-4 mb-4">
-                                  <div className="text-[9px] uppercase tracking-[0.2em] text-relic-silver mb-3 text-center">
-                                    Tree of Life • Query {messageIndex + 1}/{totalMessages}
+                                <Link href="/tree-of-life" className="block cursor-pointer transition-all hover:shadow-lg">
+                                  <div className="bg-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-4 mb-4 hover:border-purple-300 dark:hover:border-purple-500 transition-colors">
+                                    <div className="text-[9px] uppercase tracking-[0.2em] text-relic-silver mb-3 text-center flex items-center justify-center gap-2">
+                                      <span>Tree of Life • Query {messageIndex + 1}/{totalMessages}</span>
+                                      <span className="text-[8px] text-relic-silver dark:text-relic-ghost opacity-60">Click to explore →</span>
+                                    </div>
+                                    <SefirotTreeFull
+                                      activations={sefirotData.activations}
+                                      compact={true}
+                                      showLabels={true}
+                                      showPaths={true}
+                                      className="mx-auto"
+                                    />
+                                    <div className="mt-3 text-center text-[8px] text-relic-silver">
+                                      Ascent Level: {sefirotData.userLevel}/11
+                                    </div>
                                   </div>
-                                  <SefirotMini
-                                    activations={sefirotData.activations}
-                                    userLevel={sefirotData.userLevel}
-                                    className="mx-auto"
-                                  />
-                                  <div className="mt-3 text-center text-[8px] text-relic-silver">
-                                    Ascent Level: {sefirotData.userLevel}/11
-                                  </div>
-                                </div>
+                                </Link>
                               )
                             })()}
                           </div>
@@ -1871,15 +1965,11 @@ export default function HomePage() {
                                 <div className="space-y-4 animate-fade-in">
                                   {/* Qliphoth Purification Notice */}
                                   {message.gnostic.qliphothPurified && (
-                                    <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
-                                      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-relic-slate dark:text-relic-ghost mb-2">
-                                        <span>🛡️</span>
-                                        <span>Anti-Qliphoth Shield Activated</span>
-                                      </div>
-                                      <p className="text-[10px] text-relic-silver leading-relaxed">
-                                        Detected <span className="font-mono text-relic-slate dark:text-white">{message.gnostic.qliphothType}</span> pattern. Response has been purified to align with Sephirothic light.
-                                      </p>
-                                    </div>
+                                    <QliphothBadge
+                                      qliphothType={message.gnostic.qliphothType}
+                                      severity={message.gnostic.qliphothCritique?.severity ?? 0.5}
+                                      critique={message.gnostic.qliphothCritique ?? null}
+                                    />
                                   )}
 
                                   {/* Sovereignty Reminder */}
@@ -2194,8 +2284,8 @@ export default function HomePage() {
                 currentMethodology={methodology}
                 onMethodologyChange={handleMethodologyClick}
                 isSubmitting={isTransitioning}
-                consoleOpen={consoleOpen}
-                onConsoleToggle={() => setConsoleOpen(!consoleOpen)}
+                consoleOpen={showSefirotDashboard}
+                onConsoleToggle={() => setShowSefirotDashboard(!showSefirotDashboard)}
               />
             </motion.div>
 
@@ -2368,6 +2458,7 @@ export default function HomePage() {
                 guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
                 isHidden: data.guardResult?.passed === false,
                 gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
+          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
               }
               setSideChats(prev => prev.map(c => 
                 c.id === sideChat.id 
@@ -2406,7 +2497,7 @@ export default function HomePage() {
               
               {/* Right side - navigation and toggles - pushed to right edge */}
               <div className="flex items-center gap-4 pr-2">
-                {/* Instinct Mode Toggle with Super Saiyan Icon */}
+                {/* Instinct Mode Toggle */}
                 <button
                   onClick={() => {
                     const { settings, setInstinctMode } = useSettingsStore.getState()
@@ -2416,6 +2507,23 @@ export default function HomePage() {
                 >
                   <SuperSaiyanIcon size={18} active={settings.instinctMode} />
                   <span className={settings.instinctMode ? 'text-relic-void dark:text-white' : ''}>instinct</span>
+                </button>
+
+                {/* Sefirot Tree Console Toggle (Tree of Life Configuration) */}
+                <button
+                  onClick={() => setShowSefirotDashboard(!showSefirotDashboard)}
+                  className="flex items-center gap-2 text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
+                >
+                  <span
+                    className="text-[14px] transition-all"
+                    style={{
+                      color: showSefirotDashboard ? '#a855f7' : '#94a3b8',
+                      filter: showSefirotDashboard ? 'drop-shadow(0 0 3px #a855f7)' : 'none'
+                    }}
+                  >
+                    ✦
+                  </span>
+                  <span className={showSefirotDashboard ? 'text-relic-void dark:text-white' : ''}>sefirot tree</span>
                 </button>
 
                 {user ? (
@@ -2578,7 +2686,8 @@ export default function HomePage() {
               timestamp: new Date(),
               methodology: data.methodologyUsed,
               topics: data.topics,
-              gnostic: data.gnostic
+              gnostic: data.gnostic,
+              intelligence: data.intelligence
             }
 
             setMessages(prev => [...prev, aiMessage])
@@ -2614,6 +2723,24 @@ export default function HomePage() {
             setIsLoading(false)
           }
         }}
+        onPromoteToMain={(query, response) => {
+          // Add mini chat exchange to main chat
+          const userMsg: Message = {
+            id: generateId(),
+            role: 'user',
+            content: `[Promoted from Side Chat] ${query}`,
+            timestamp: new Date()
+          }
+          const aiMsg: Message = {
+            id: generateId(),
+            role: 'assistant',
+            content: response,
+            timestamp: new Date(),
+            methodology: 'direct'
+          }
+          setMessages(prev => [...prev, userMsg, aiMsg])
+          if (!isExpanded) setIsExpanded(true)
+        }}
       />
 
       {/* Methodology Change Prompt */}
@@ -2628,11 +2755,31 @@ export default function HomePage() {
       {/* News Notification - Top Left */}
       <NewsNotification />
 
-      {/* Instinct Console - Connected to horizontal bar indicator */}
-      <InstinctConsole
-        isOpen={consoleOpen}
-        onToggle={() => setConsoleOpen(!consoleOpen)}
+      {/* Tree Configuration Modal - Single entry point for both buttons */}
+      <TreeConfigurationModal
+        isOpen={showSefirotDashboard}
+        onClose={() => setShowSefirotDashboard(false)}
       />
+
+      {/* URL Parameter Watcher - Wrapped in Suspense for Next.js 15 compatibility */}
+      <Suspense fallback={null}>
+        <ContinueParamWatcher onContinue={loadConversation} />
+      </Suspense>
     </div>
+  )
+}
+
+// Export with Suspense boundary for production builds
+export default function HomePageWithSuspense() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-relic-white dark:bg-relic-void flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-pulse text-relic-slate dark:text-relic-ghost">Loading...</div>
+        </div>
+      </div>
+    }>
+      <HomePage />
+    </Suspense>
   )
 }

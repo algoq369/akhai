@@ -606,7 +606,7 @@ export function lacksVerifiableGrounding(text: string): boolean {
   ]
 
   const hasGrounding = groundingMarkers.some(marker => marker.test(text))
-  const makesFactualClaims = text.match(/\b(is|are|will be|was|were)\b/gi)?.length || 0 > 5
+  const makesFactualClaims = (text.match(/\b(is|are|will be|was|were)\b/gi)?.length || 0) > 5
 
   return !hasGrounding && makesFactualClaims
 }
@@ -645,4 +645,313 @@ export function hasSuperficialDepth(text: string): boolean {
 export function hasArrogantTone(text: string): boolean {
   const arrogancePatterns = QLIPHOTHIC_PATTERNS.thagirion.patterns
   return arrogancePatterns.some(pattern => pattern.test(text))
+}
+
+/**
+ * QLIPHOTH_METADATA
+ *
+ * Metadata for the 5 primary Qliphoth shells used in UI components
+ */
+export const QLIPHOTH_METADATA = {
+  1: {
+    name: 'Sathariel',
+    hebrewName: 'סתאריאל',
+    translation: 'The Concealers',
+    description: 'Hiding truth behind jargon or false authority',
+    aiManifestation: 'Excessive technical terminology, appeals to unnamed authority',
+    color: '#dc2626', // red-600
+  },
+  2: {
+    name: 'Gamchicoth',
+    hebrewName: 'גמיכות',
+    translation: 'The Disturbers',
+    description: 'Information overload without synthesis',
+    aiManifestation: 'Long bullet lists without grouping, facts without connections',
+    color: '#ea580c', // orange-600
+  },
+  3: {
+    name: 'Samael',
+    hebrewName: 'סמאל',
+    translation: 'The Desolate One',
+    description: 'Deceptive certainty without evidence',
+    aiManifestation: 'Absolute claims without qualification or evidence',
+    color: '#d97706', // amber-600
+  },
+  4: {
+    name: 'Lilith',
+    hebrewName: 'לילית',
+    translation: 'The Night Specter',
+    description: 'Superficial reflection without depth',
+    aiManifestation: 'Generic advice applicable to anything, question restatement',
+    color: '#7c3aed', // violet-600
+  },
+  5: {
+    name: 'Thagirion',
+    hebrewName: 'תאגיריאון',
+    translation: 'The Disputers',
+    description: 'Arrogance and pride',
+    aiManifestation: 'Claiming superiority over human judgment, dismissive tone',
+    color: '#db2777', // pink-600
+  },
+} as const
+
+// ═══════════════════════════════════════════════════════════════
+// PHASE 2: SEMANTIC QLIPHOTH DETECTION (OPUS 4.5)
+// ═══════════════════════════════════════════════════════════════
+
+export interface SemanticQliphothDetection {
+  detected: QliphothType[]
+  scores: Record<QliphothType, number>
+  evidence: Record<QliphothType, string[]>
+  confidence: number
+  recommendations: string[]
+}
+
+/**
+ * AI-Powered Semantic Qliphoth Detection using Opus 4.5
+ *
+ * Provides nuanced detection with:
+ * - Context-aware analysis (considers original query)
+ * - Evidence extraction (specific problematic passages)
+ * - Fewer false positives through semantic understanding
+ * - Recommendations for purification
+ *
+ * @param response - AI-generated response to analyze
+ * @param context - Original user query for context
+ * @returns SemanticQliphothDetection with scores and evidence
+ */
+export async function detectQliphothSemantic(
+  response: string,
+  context: string
+): Promise<SemanticQliphothDetection> {
+  try {
+    const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5-20251101',
+        max_tokens: 1000,
+        messages: [
+          {
+            role: 'user',
+            content: `Analyze this AI response for "hollow knowledge" patterns (Qliphoth):
+
+ORIGINAL QUERY: "${context}"
+
+AI RESPONSE:
+"""
+${response}
+"""
+
+Detect these anti-patterns (score each 0.0-1.0):
+
+1. **Sathariel** (Concealment through jargon)
+   - Excessive technical terminology without explanation
+   - Obscuring simple concepts with complexity
+   - Appeals to unnamed authority
+
+2. **Gamchicoth** (Information overload)
+   - Quantity over quality
+   - Lists without synthesis
+   - Overwhelming detail without hierarchy
+
+3. **Samael** (Deceptive certainty)
+   - Claims without evidence
+   - Overconfidence on uncertain topics
+   - Absolute statements ("always", "never", "guaranteed")
+
+4. **Lilith** (Superficial reflection)
+   - Shallow pattern matching
+   - Lacks depth or insight
+   - Generic advice that applies to anything
+
+5. **Thagirion** (Arrogance)
+   - Dismissive tone
+   - Pride over humility
+   - "I know better" attitude
+
+Return ONLY valid JSON (no markdown):
+{
+  "scores": {
+    "none": 0.0-1.0,
+    "sathariel": 0.0-1.0,
+    "gamchicoth": 0.0-1.0,
+    "samael": 0.0-1.0,
+    "lilith": 0.0-1.0,
+    "thagirion": 0.0-1.0
+  },
+  "evidence": {
+    "sathariel": ["quote1", "quote2"],
+    "gamchicoth": ["quote1"],
+    ...
+  },
+  "recommendations": ["rec1", "rec2", "rec3"]
+}`,
+          },
+        ],
+      }),
+    })
+
+    if (!apiResponse.ok) {
+      throw new Error(`Anthropic API error: ${apiResponse.status}`)
+    }
+
+    const data = await apiResponse.json()
+    const content = data.content?.[0]?.text || '{}'
+
+    // Parse JSON from response
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      throw new Error('No valid JSON found in response')
+    }
+
+    const result = JSON.parse(jsonMatch[0])
+
+    // Extract detected Qliphoth types
+    const scores = result.scores || {}
+    const detected: QliphothType[] = []
+
+    Object.entries(scores).forEach(([type, score]) => {
+      if (type !== 'none' && typeof score === 'number' && score > 0.3) {
+        detected.push(type as QliphothType)
+      }
+    })
+
+    // Calculate overall confidence (average of non-zero scores)
+    const nonZeroScores = Object.values(scores).filter((s): s is number => typeof s === 'number' && s > 0)
+    const confidence = nonZeroScores.length > 0
+      ? nonZeroScores.reduce((sum, s) => sum + s, 0) / nonZeroScores.length
+      : 0
+
+    return {
+      detected: detected.length > 0 ? detected : ['none'],
+      scores: scores as Record<QliphothType, number>,
+      evidence: result.evidence || {},
+      confidence: Math.max(0, Math.min(1, confidence)),
+      recommendations: result.recommendations || [],
+    }
+  } catch (error) {
+    console.error('[Semantic Qliphoth] Error:', error)
+
+    // Fallback to regex-based detection
+    const fallback = detectQliphoth(response)
+
+    return {
+      detected: [fallback.risk],
+      scores: {
+        none: fallback.risk === 'none' ? 1.0 : 0,
+        sathariel: fallback.risk === 'sathariel' ? fallback.severity : 0,
+        gamchicoth: fallback.risk === 'gamchicoth' ? fallback.severity : 0,
+        samael: fallback.risk === 'samael' ? fallback.severity : 0,
+        lilith: fallback.risk === 'lilith' ? fallback.severity : 0,
+        thagirion: fallback.risk === 'thagirion' ? fallback.severity : 0,
+      },
+      evidence: {
+        [fallback.risk]: fallback.triggers,
+      } as Record<QliphothType, string[]>,
+      confidence: 0.6,
+      recommendations: [fallback.purificationStrategy],
+    }
+  }
+}
+
+/**
+ * AI-Powered Response Purification using Opus 4.5
+ *
+ * Rewrites problematic responses to remove Qliphothic patterns while:
+ * - Preserving factual accuracy
+ * - Maintaining natural tone
+ * - Adding explanations for jargon
+ * - Providing grounded citations
+ * - Adding uncertainty markers where appropriate
+ *
+ * @param response - Original AI response to purify
+ * @param detected - Detected Qliphoth types
+ * @param originalQuery - Original user query for context
+ * @returns Purified response with list of changes made
+ */
+export async function purifyResponseWithAI(
+  response: string,
+  detected: QliphothType[],
+  originalQuery: string
+): Promise<{ purified: string; changes: string[]; confidence: number }> {
+  try {
+    const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5-20251101',
+        max_tokens: 3000,
+        messages: [
+          {
+            role: 'user',
+            content: `Rewrite this AI response to remove hollow knowledge patterns while preserving accuracy:
+
+ORIGINAL QUERY: "${originalQuery}"
+
+PROBLEMATIC RESPONSE:
+"""
+${response}
+"""
+
+DETECTED ISSUES: ${detected.filter(d => d !== 'none').join(', ') || 'None - preventive purification'}
+
+Requirements:
+- Remove jargon or add clear explanations
+- Synthesize lists into insights
+- Add uncertainty markers where appropriate ("likely", "may", "typically")
+- Provide grounded citations if making claims
+- Maintain factual accuracy
+- Keep natural, humble tone
+- If response is good, return it unchanged
+
+Return ONLY valid JSON (no markdown):
+{
+  "purified": "the rewritten response (or original if no changes needed)",
+  "changes": ["change1", "change2", "..."],
+  "confidence": 0.0-1.0
+}`,
+          },
+        ],
+      }),
+    })
+
+    if (!apiResponse.ok) {
+      throw new Error(`Anthropic API error: ${apiResponse.status}`)
+    }
+
+    const data = await apiResponse.json()
+    const content = data.content?.[0]?.text || '{}'
+
+    // Parse JSON from response
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      throw new Error('No valid JSON found in response')
+    }
+
+    const result = JSON.parse(jsonMatch[0])
+
+    return {
+      purified: result.purified || response,
+      changes: result.changes || [],
+      confidence: Math.max(0, Math.min(1, result.confidence || 0.7)),
+    }
+  } catch (error) {
+    console.error('[Response Purification] Error:', error)
+
+    // Fallback: return original response
+    return {
+      purified: response,
+      changes: ['Purification failed - using original response'],
+      confidence: 0.5,
+    }
+  }
 }

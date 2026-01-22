@@ -27,7 +27,7 @@ export interface WebSearchConfig {
 }
 
 const DEFAULT_CONFIG: WebSearchConfig = {
-  provider: 'brave',
+  provider: 'duckduckgo', // Default to DuckDuckGo (no API key required)
   maxResults: 5,
 };
 
@@ -37,11 +37,27 @@ export class WebSearch {
   constructor(config: Partial<WebSearchConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
 
-    if (this.config.provider === 'brave' && !this.config.apiKey) {
-      this.config.apiKey = process.env.BRAVE_API_KEY;
+    // Auto-select provider based on available API keys
+    if (!config.provider) {
+      if (process.env.BRAVE_API_KEY) {
+        this.config.provider = 'brave';
+        this.config.apiKey = process.env.BRAVE_API_KEY;
+        console.log('[WebSearch] Using Brave Search (API key found)');
+      } else {
+        this.config.provider = 'duckduckgo';
+        console.log('[WebSearch] Using DuckDuckGo (no BRAVE_API_KEY set)');
+      }
+    } else if (this.config.provider === 'brave' && !this.config.apiKey) {
+      // Brave explicitly requested but no API key - fallback to DuckDuckGo
+      if (process.env.BRAVE_API_KEY) {
+        this.config.apiKey = process.env.BRAVE_API_KEY;
+      } else {
+        console.log('[WebSearch] BRAVE_API_KEY not set, falling back to DuckDuckGo');
+        this.config.provider = 'duckduckgo';
+      }
     }
 
-    console.log(`[WebSearch] 🔍 Initialized with ${this.config.provider}`);
+    console.log(`[WebSearch] Initialized with ${this.config.provider}`);
   }
 
   /**

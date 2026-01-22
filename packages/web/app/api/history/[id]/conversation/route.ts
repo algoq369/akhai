@@ -11,26 +11,40 @@ export async function GET(
     const token = request.cookies.get('session_token')?.value
     const user = token ? getUserFromSession(token) : null
     const userId = user?.id || null
+    const sessionId = request.cookies.get('akhai_session')?.value || null
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    // Get the query
-    const query = db.prepare(`
-      SELECT id, query, flow, created_at, session_id
-      FROM queries
-      WHERE id = ? AND user_id = ?
-    `).get(queryId, userId) as {
+    // Get the query (allow authenticated user, session, or legacy queries)
+    let query: {
       id: string
       query: string
       flow: string
       created_at: number
       session_id: string | null
+      user_id: string | null
     } | undefined
+
+    if (userId) {
+      // Authenticated user: get their query or legacy queries
+      query = db.prepare(`
+        SELECT id, query, flow, created_at, session_id, user_id
+        FROM queries
+        WHERE id = ? AND (user_id = ? OR user_id IS NULL OR user_id = '')
+      `).get(queryId, userId) as typeof query
+    } else if (sessionId) {
+      // Anonymous user: get their session query or legacy queries
+      query = db.prepare(`
+        SELECT id, query, flow, created_at, session_id, user_id
+        FROM queries
+        WHERE id = ? AND (session_id = ? OR session_id IS NULL OR session_id = '')
+      `).get(queryId, sessionId) as typeof query
+    } else {
+      // No auth: only allow legacy queries (single-user dev mode)
+      query = db.prepare(`
+        SELECT id, query, flow, created_at, session_id, user_id
+        FROM queries
+        WHERE id = ?
+      `).get(queryId) as typeof query
+    }
 
     if (!query) {
       return NextResponse.json(
@@ -41,25 +55,52 @@ export async function GET(
 
     // Get all queries in the same session (or within 1 hour if no session_id)
     const oneHourAgo = query.created_at - 3600
-    const sessionQueries = db.prepare(`
-      SELECT id, query, flow, result, created_at
-      FROM queries
-      WHERE user_id = ?
-        AND (
-          (session_id IS NOT NULL AND session_id = ?)
-          OR (session_id IS NULL AND created_at >= ? AND created_at <= ? + 3600)
-        )
-      ORDER BY created_at ASC
-    `).all(userId, query.session_id || '', oneHourAgo, query.created_at) as Array<{
+    let sessionQueries: Array<{
       id: string
       query: string
       flow: string
       result: string | null
       created_at: number
+      gnostic_metadata: string | null
     }>
 
+    if (userId) {
+      // Authenticated user: get their session queries + legacy
+      sessionQueries = db.prepare(`
+        SELECT id, query, flow, result, created_at, gnostic_metadata
+        FROM queries
+        WHERE (user_id = ? OR user_id IS NULL OR user_id = '')
+          AND (
+            (session_id IS NOT NULL AND session_id = ?)
+            OR (session_id IS NULL AND created_at >= ? AND created_at <= ? + 3600)
+          )
+        ORDER BY created_at ASC
+      `).all(userId, query.session_id || '', oneHourAgo, query.created_at) as typeof sessionQueries
+    } else if (sessionId) {
+      // Anonymous user: get their session queries + legacy
+      sessionQueries = db.prepare(`
+        SELECT id, query, flow, result, created_at, gnostic_metadata
+        FROM queries
+        WHERE (session_id = ? OR session_id IS NULL OR session_id = '')
+          AND (
+            (session_id IS NOT NULL AND session_id = ?)
+            OR (session_id IS NULL AND created_at >= ? AND created_at <= ? + 3600)
+          )
+        ORDER BY created_at ASC
+      `).all(sessionId, query.session_id || '', oneHourAgo, query.created_at) as typeof sessionQueries
+    } else {
+      // No auth: get legacy queries only (single-user dev mode)
+      sessionQueries = db.prepare(`
+        SELECT id, query, flow, result, created_at, gnostic_metadata
+        FROM queries
+        WHERE (session_id IS NULL OR session_id = '')
+          AND created_at >= ? AND created_at <= ? + 3600
+        ORDER BY created_at ASC
+      `).all(oneHourAgo, query.created_at) as typeof sessionQueries
+    }
+
     // Build conversation messages
-    const messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: number; methodology?: string }> = []
+    const messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: number; methodology?: string; gnostic?: any }> = []
 
     sessionQueries.forEach((q) => {
       // Add user query
@@ -72,6 +113,16 @@ export async function GET(
 
       // Add assistant response if available
       if (q.result) {
+        // Parse gnostic metadata if available
+        let gnosticData = null
+        if (q.gnostic_metadata) {
+          try {
+            gnosticData = JSON.parse(q.gnostic_metadata)
+          } catch (e) {
+            console.warn('Failed to parse gnostic metadata:', e)
+          }
+        }
+
         try {
           const result = JSON.parse(q.result)
           const response = result.finalAnswer || result.response || ''
@@ -80,7 +131,8 @@ export async function GET(
               role: 'assistant',
               content: response,
               timestamp: q.created_at,
-              methodology: q.flow
+              methodology: q.flow,
+              gnostic: gnosticData
             })
           }
         } catch (e) {
@@ -90,7 +142,8 @@ export async function GET(
               role: 'assistant',
               content: q.result,
               timestamp: q.created_at,
-              methodology: q.flow
+              methodology: q.flow,
+              gnostic: gnosticData
             })
           }
         }

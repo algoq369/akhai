@@ -14,14 +14,21 @@ import { trackServerQuerySubmitted, trackServerGuardTriggered, getAnonymousDisti
 import { generateInstinctPrompt, DEFAULT_INSTINCT_CONFIG } from '@/lib/instinct-mode'
 import { formatMemoriesForPrompt, type Memory } from '@/lib/memory-extractor'
 import { processFiles, createFileContext } from '@/lib/file-processor'
+import { formatTopicContextForPrompt, type TopicContext } from '@/lib/topic-context-formatter'
+import { fuseIntelligence, generateEnhancedSystemPrompt, type IntelligenceFusionResult } from '@/lib/intelligence-fusion'
+import { createAutoInstinctConfig } from '@/lib/instinct-mode'
 
 // ============================================================================
 // GNOSTIC SOVEREIGN INTELLIGENCE PROTOCOLS
 // ============================================================================
 import { activateKether, checkSovereignty, addSovereigntyMarkers, generateSovereigntyFooter, getKetherMetadata } from '@/lib/kether-protocol'
 import { detectQliphoth, purifyResponse } from '@/lib/anti-qliphoth'
+import { verifyFactuality } from '@/lib/factuality-verifier'
+import { generateQliphothAudit } from '@/lib/qliphoth-audit-engine'
 import { trackAscent, suggestElevation, Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
 import { analyzeSephirothicContent, getSephirothActivationSummary } from '@/lib/sefirot-mapper'
+import { processQueryThroughSefirot, type SefirotProcessingResult } from '@/lib/sefirot-processor'
+import { getActiveTreeConfiguration, type TreeConfiguration } from '@/lib/tree-configuration'
 
 // Force Node.js runtime for PDF processing compatibility
 export const runtime = 'nodejs'
@@ -52,7 +59,7 @@ export async function POST(request: NextRequest) {
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'Before request.json()',data:{queryId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
     // #endregion
 
-    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, instinctMode = false, instinctConfig = DEFAULT_INSTINCT_CONFIG, grimoireId, grimoireMemories = [], grimoireInstructions, attachments = [], fileUrls = [] } = await request.json()
+    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, instinctMode = false, instinctConfig = DEFAULT_INSTINCT_CONFIG, grimoireId, grimoireMemories = [], grimoireInstructions, attachments = [], fileUrls = [], treeConfigOverride, topicContext } = await request.json()
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:33',message:'Request parsed successfully',data:{query:query?.substring(0,50)||'null',methodology,hasHistory:conversationHistory.length>0,hasPageContext:!!pageContext,legendMode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
@@ -164,12 +171,128 @@ export async function POST(request: NextRequest) {
       // Non-fatal - continue without URL context
     }
 
-    // Methodology selection with logging
-    const selectedMethod = selectMethodology(query, methodology)
+    // ════════════════════════════════════════════════════════════════════════════
+    // INTELLIGENCE FUSION LAYER - Unified AI Intelligence
+    // ════════════════════════════════════════════════════════════════════════════
+    let intelligenceFusion: IntelligenceFusionResult | null = null
+    try {
+      // Get Sefirot weights from tree config or use defaults
+      const treeConfig = treeConfigOverride || await getActiveTreeConfiguration(userId)
+      const sefirotWeights: Record<number, number> = treeConfig?.sephiroth_weights || {}
+
+      // Create auto instinct config based on query analysis
+      const autoInstinctConfig = instinctMode
+        ? { ...instinctConfig, enabled: true }
+        : createAutoInstinctConfig(query, 0.5, sefirotWeights) // Will be refined by fusion
+
+      // Get Side Canal context
+      let sideCanalData: { contextInjection: string | null; relatedTopics: string[] } | undefined
+      try {
+        const contextInjection = getContextForQuery(query, userId)
+        sideCanalData = { contextInjection, relatedTopics: [] }
+      } catch (e) {
+        // Non-fatal
+      }
+
+      // Run Intelligence Fusion
+      intelligenceFusion = await fuseIntelligence(
+        query,
+        sefirotWeights,
+        autoInstinctConfig,
+        sideCanalData
+      )
+
+      // Log fusion results
+      log('INFO', 'INTELLIGENCE_FUSION', `Query complexity: ${(intelligenceFusion.analysis.complexity * 100).toFixed(0)}%`)
+      log('INFO', 'INTELLIGENCE_FUSION', `Query type: ${intelligenceFusion.analysis.queryType}`)
+      log('INFO', 'INTELLIGENCE_FUSION', `Selected methodology: ${intelligenceFusion.selectedMethodology} (${(intelligenceFusion.confidence * 100).toFixed(0)}% confidence)`)
+      log('INFO', 'INTELLIGENCE_FUSION', `Guard recommendation: ${intelligenceFusion.guardRecommendation}`)
+      log('INFO', 'INTELLIGENCE_FUSION', `Extended thinking budget: ${intelligenceFusion.extendedThinkingBudget} tokens`)
+      log('INFO', 'INTELLIGENCE_FUSION', `Processing mode: ${intelligenceFusion.processingMode}`)
+
+      // Log dominant Sefirot
+      const dominantNames = intelligenceFusion.sefirotActivations
+        .filter(s => s.effectiveWeight > 0.3)
+        .map(s => `${s.name}(${(s.effectiveWeight * 100).toFixed(0)}%)`)
+        .slice(0, 3)
+      if (dominantNames.length > 0) {
+        log('INFO', 'INTELLIGENCE_FUSION', `Dominant Sefirot: ${dominantNames.join(', ')}`)
+      }
+
+      // Log active lenses
+      if (intelligenceFusion.activeLenses.length > 0) {
+        log('INFO', 'INTELLIGENCE_FUSION', `Active lenses: ${intelligenceFusion.activeLenses.join(', ')}`)
+      }
+    } catch (fusionError) {
+      log('WARN', 'INTELLIGENCE_FUSION', `Fusion failed: ${fusionError}, continuing with standard processing`)
+      intelligenceFusion = null
+    }
+
+    // Methodology selection with logging (use fusion result if available)
+    let selectedMethod = selectMethodology(query, methodology)
+
+    // Override with intelligence fusion methodology if auto mode and fusion succeeded
+    if (methodology === 'auto' && intelligenceFusion) {
+      selectedMethod = {
+        id: intelligenceFusion.selectedMethodology,
+        reason: `Intelligence Fusion: ${intelligenceFusion.methodologyScores[0]?.reasons.join(', ') || 'Auto-selected'} (${(intelligenceFusion.confidence * 100).toFixed(0)}% confidence)`
+      }
+      log('INFO', 'METHODOLOGY', `Fusion-selected: ${selectedMethod.id} - ${selectedMethod.reason}`)
+    }
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:26',message:'Methodology selected',data:{selected:selectedMethod.id,reason:selectedMethod.reason},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
     // #endregion
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // LAYER 1: SEFIROT MULTI-PASS PROCESSING
+    // ════════════════════════════════════════════════════════════════════════════
+    let sefirotResult: SefirotProcessingResult | null = null
+    const SEFIROT_ENABLED = process.env.NEXT_PUBLIC_SEFIROT_ENABLED === 'true'
+
+    if (SEFIROT_ENABLED) {
+      try {
+        // Load active tree configuration (or use override for A/B testing)
+        const treeConfig = treeConfigOverride || await getActiveTreeConfiguration(userId)
+
+        if (treeConfig && hasActiveSefirot(treeConfig)) {
+          const activeCount = Object.keys(treeConfig.sephiroth_weights).filter(
+            (k) => treeConfig.sephiroth_weights[parseInt(k)] > 0.1
+          ).length
+
+          log('INFO', 'SEFIROT', `Processing through Tree of Life (${activeCount} active Sephiroth)`)
+
+          const processingMode = (treeConfig.processing_mode as 'weighted' | 'parallel' | 'adaptive') || 'adaptive'
+
+          sefirotResult = await processQueryThroughSefirot(
+            query,
+            treeConfig,
+            'anthropic', // Default to Anthropic for Sefirot processing
+            processingMode,
+            conversationHistory
+          )
+
+          log('INFO', 'SEFIROT', `Dominant: ${SEPHIROTH_METADATA[sefirotResult.dominantSefirah].name}`)
+          log(
+            'INFO',
+            'SEFIROT',
+            `Mode: ${sefirotResult.mode}, Cost: $${sefirotResult.totalCost.toFixed(3)}, Latency: ${sefirotResult.totalLatency}ms`
+          )
+
+          // Override methodology selection if auto mode
+          if (methodology === 'auto') {
+            selectedMethod.id = sefirotResult.methodologySuggestion
+            selectedMethod.reason = `Sefirot analysis: ${SEPHIROTH_METADATA[sefirotResult.dominantSefirah].name} dominant (${(sefirotResult.activations[sefirotResult.dominantSefirah] * 100).toFixed(0)}%) → ${sefirotResult.methodologySuggestion}`
+
+            log('INFO', 'METHODOLOGY', `Sefirot-suggested: ${sefirotResult.methodologySuggestion}`)
+          }
+        }
+      } catch (sefirotError) {
+        log('ERROR', 'SEFIROT', `Sefirot processing failed: ${sefirotError}`)
+        // Don't fail the request if Sefirot processing fails
+        sefirotResult = null
+      }
+    }
 
     // ============================================================================
     // GNOSTIC PRE-PROCESSING: Activate Protocols Before AI Call
@@ -373,6 +496,7 @@ export async function POST(request: NextRequest) {
 
     if (fileUrls && fileUrls.length > 0) {
       try {
+        console.log('📄 simple-query API: Processing files from URLs:', fileUrls)
         log('INFO', 'FILE_PROCESSOR', `Processing ${fileUrls.length} uploaded files`)
         processedFiles = await processFiles(fileUrls)
 
@@ -389,6 +513,58 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         log('ERROR', 'FILE_PROCESSOR', `File processing failed: ${error}`)
         // Non-fatal - continue without file context
+      }
+    }
+
+    // Process inline attachments (PDFs, documents)
+    let attachmentContext: string | null = null
+    const pdfAttachments = attachments.filter((file: any) => file.type === 'pdf')
+    const documentAttachments = attachments.filter((file: any) => file.type === 'document')
+
+    if (pdfAttachments.length > 0 || documentAttachments.length > 0) {
+      try {
+        const parts: string[] = []
+
+        // Process PDFs
+        for (const pdf of pdfAttachments) {
+          try {
+            log('INFO', 'FILE_PROCESSOR', `Processing inline PDF: ${pdf.name}`)
+            // Decode base64 to buffer
+            const buffer = Buffer.from(pdf.data, 'base64')
+            // Use unpdf - Next.js compatible
+            const { getDocumentProxy, extractText } = await import('unpdf')
+            const uint8Array = new Uint8Array(buffer)
+            const pdfDoc = await getDocumentProxy(uint8Array)
+            const { text } = await extractText(pdfDoc, { mergePages: true })
+            const content = text.trim()
+
+            if (content) {
+              parts.push(`[PDF: ${pdf.name}]\n${content}\n`)
+              log('INFO', 'FILE_PROCESSOR', `Extracted ${content.length} chars from PDF`)
+            } else {
+              parts.push(`[PDF: ${pdf.name}] - PDF appears to be empty or contains only images`)
+            }
+          } catch (pdfError) {
+            log('ERROR', 'FILE_PROCESSOR', `PDF extraction failed for ${pdf.name}: ${pdfError}`)
+            parts.push(`[PDF: ${pdf.name}] - Error extracting PDF text`)
+          }
+        }
+
+        // Process text documents
+        for (const doc of documentAttachments) {
+          if (doc.content) {
+            parts.push(`[Document: ${doc.name}]\n${doc.content}\n`)
+            log('INFO', 'FILE_PROCESSOR', `Processed text document: ${doc.name}`)
+          }
+        }
+
+        if (parts.length > 0) {
+          attachmentContext = `\n\n--- Attached Files ---\n${parts.join('\n---\n')}--- End of Files ---\n`
+          log('INFO', 'FILE_PROCESSOR', `Created attachment context from ${pdfAttachments.length} PDFs, ${documentAttachments.length} documents`)
+        }
+      } catch (error) {
+        log('ERROR', 'FILE_PROCESSOR', `Attachment processing failed: ${error}`)
+        // Non-fatal - continue without attachment context
       }
     }
 
@@ -421,6 +597,10 @@ export async function POST(request: NextRequest) {
       ...(fileContext ? [{
         role: 'assistant' as const,
         content: fileContext,
+      }] : []),
+      ...(attachmentContext ? [{
+        role: 'assistant' as const,
+        content: attachmentContext,
       }] : []),
       {
         role: 'user' as const,
@@ -459,9 +639,21 @@ export async function POST(request: NextRequest) {
     let systemPrompt = getMethodologyPrompt(selectedMethod.id, pageContext, legendMode)
 
     // ============================================================================
+    // INTELLIGENCE FUSION - Enhanced System Prompt
+    // ============================================================================
+    if (intelligenceFusion) {
+      const fusionEnhancement = generateEnhancedSystemPrompt(intelligenceFusion)
+      if (fusionEnhancement) {
+        systemPrompt = systemPrompt + '\n\n' + fusionEnhancement
+        log('INFO', 'INTELLIGENCE_FUSION', 'Enhanced system prompt applied')
+      }
+    }
+
+    // ============================================================================
     // INSTINCT MODE - Full Capacity Hermetic Analysis
     // ============================================================================
-    if (instinctMode) {
+    // Only apply if NOT already handled by intelligence fusion
+    if (instinctMode && !intelligenceFusion?.instinctPrompt) {
       const instinctPrompt = generateInstinctPrompt({
         ...instinctConfig,
         enabled: true
@@ -493,6 +685,17 @@ ${grimoireInstructions.trim()}
 `
       systemPrompt = systemPrompt + '\n\n' + instructionsContext
       log('INFO', 'GRIMOIRE', 'Grimoire custom instructions applied')
+    }
+
+    // ============================================================================
+    // TOPIC CONTEXT - MindMap Topic Scoping
+    // ============================================================================
+    if (topicContext && topicContext.topicId) {
+      const topicPrompt = formatTopicContextForPrompt(topicContext as TopicContext)
+      if (topicPrompt) {
+        systemPrompt = systemPrompt + topicPrompt
+        log('INFO', 'TOPIC_CONTEXT', `Topic "${topicContext.topicName}" scoped: ${topicContext.relatedTopics?.length || 0} connections, ${topicContext.insights?.length || 0} insights`)
+      }
     }
 
     // #region agent log
@@ -556,7 +759,7 @@ ${grimoireInstructions.trim()}
     // GNOSTIC POST-PROCESSING: Analyze and Purify Response
     // ============================================================================
     let processedContent = content
-    let qliphothRisk, sephirothAnalysis, sovereigntyFooter, gnosticMetadata
+    let qliphothRisk, sephirothAnalysis, sovereigntyFooter, gnosticMetadata, qliphothCritique
 
     try {
       // ANTI-QLIPHOTH SHIELD - Detect and purify hollow knowledge
@@ -565,7 +768,56 @@ ${grimoireInstructions.trim()}
       if (qliphothRisk.risk !== 'none') {
         log('WARN', 'QLIPHOTH', `Detected: ${qliphothRisk.risk} (severity: ${(qliphothRisk.severity * 100).toFixed(0)}%)`)
         log('INFO', 'QLIPHOTH', `Purifying response...`)
+
+        // Store original content for before/after comparison
+        const originalContent = processedContent
         processedContent = purifyResponse(processedContent, qliphothRisk)
+
+        // Generate comprehensive audit if severity is significant
+        if (qliphothRisk.severity > 0.2) {
+          try {
+            const treeConfig = treeConfigOverride || await getActiveTreeConfiguration(userId)
+            const audit = generateQliphothAudit(
+              qliphothRisk,
+              sefirotResult?.activations,
+              treeConfig || undefined
+            )
+
+            // Build qliphothCritique metadata
+            qliphothCritique = {
+              severity: qliphothRisk.severity,
+              triggers: {
+                patterns: qliphothRisk.triggers,
+                count: qliphothRisk.triggers.length
+              },
+              audit: {
+                sefirotAdjustments: audit.sefirotAdjustments.map(adj => ({
+                  sefirah: SEPHIROTH_METADATA[adj.sefirah as Sefirah]?.name || String(adj.sefirah),
+                  currentWeight: adj.currentWeight,
+                  suggestedWeight: adj.suggestedWeight,
+                  rationale: adj.rationale,
+                  impact: adj.impact
+                })),
+                pillarRebalance: audit.pillarRebalance,
+                explanation: audit.explanation,
+                confidence: audit.confidence,
+                priority: audit.priority
+              },
+              purificationActions: qliphothRisk.severity > 0.5 ? {
+                before: extractSnippet(originalContent, qliphothRisk.triggers[0] || '', 150),
+                after: extractSnippet(processedContent, qliphothRisk.triggers[0] || '', 150),
+                transformations: audit.purificationComparison?.transformations || []
+              } : null,
+              qliphothEducation: audit.qliphothEducation
+            }
+
+            log('INFO', 'QLIPHOTH_AUDIT', `Generated audit with ${audit.sefirotAdjustments.length} Sefirot adjustments`)
+            log('INFO', 'QLIPHOTH_AUDIT', `Priority: ${audit.priority}, Confidence: ${(audit.confidence * 100).toFixed(0)}%`)
+          } catch (auditError) {
+            log('WARN', 'QLIPHOTH_AUDIT', `Audit generation failed: ${auditError}`)
+            qliphothCritique = null
+          }
+        }
       } else {
         log('INFO', 'QLIPHOTH', `✓ Response is Sephirothic (aligned with light)`)
       }
@@ -625,7 +877,27 @@ ${grimoireInstructions.trim()}
         },
         qliphothPurified: qliphothRisk.risk !== 'none',
         qliphothType: qliphothRisk.risk,
+        qliphothCritique: qliphothCritique || null,
         sovereigntyFooter,
+        // Sefirot Layer 1 Processing (if enabled)
+        sefirotProcessing: sefirotResult ? {
+          perspectives: sefirotResult.perspectives.map(p => ({
+            sefirah: SEPHIROTH_METADATA[p.sefirah].name,
+            aiComputation: p.aiComputation,
+            weight: p.weight,
+            activation: p.activation,
+            confidence: p.confidence,
+          })),
+          activations: sefirotResult.activations,
+          blendedActivations: sefirotResult.blendedActivations,
+          dominant: SEPHIROTH_METADATA[sefirotResult.dominantSefirah].name,
+          methodologySuggestion: sefirotResult.methodologySuggestion,
+          processingMode: sefirotResult.mode,
+          cost: sefirotResult.totalCost,
+          latency: sefirotResult.totalLatency,
+          perspectiveCount: sefirotResult.perspectiveCount,
+          weightInfluenceRatio: sefirotResult.weightInfluenceRatio,
+        } : null,
       }
 
       log('INFO', 'GNOSTIC', `✓ All protocols completed successfully`)
@@ -740,6 +1012,68 @@ ${grimoireInstructions.trim()}
       console.error('Side Canal error:', err)
     }
 
+    // Living Tree Analysis (Hermetic Intelligence)
+    // Only runs in Legend Mode to control Opus 4.5 costs
+    let livingTreeData: { topics: string[]; evolutionEvents: { type: string; description: string }[]; hermeticInsight: string; topicCount: number } | null = null
+    if (legendMode) {
+      try {
+        const {
+          analyzeWithOpus,
+          saveLivingTreeAnalysis,
+          getActiveTopics,
+          getRecentQueries,
+        } = await import('@/lib/living-tree-analyzer')
+
+        const conversationId = `conv_${queryId}_${Date.now()}`
+
+        log('INFO', 'LIVING_TREE', `Starting Opus 4.5 analysis for conversation: ${conversationId}`)
+
+        // Get previous topics for context
+        const previousTopics = await getActiveTopics(conversationId)
+
+        // Get recent conversation history
+        const recentHistory = await getRecentQueries(conversationId, 5)
+
+        // Analyze with Opus 4.5 (Hermetic lens)
+        const livingTreeAnalysis = await analyzeWithOpus({
+          query,
+          response: content,
+          previousTopics,
+          conversationHistory: recentHistory,
+          conversationId,
+          queryId,
+        })
+
+        // Save to database
+        await saveLivingTreeAnalysis(queryId, conversationId, livingTreeAnalysis)
+
+        // Store livingTree analysis for responseData
+        livingTreeData = {
+          topics: livingTreeAnalysis.topics.map((t) => t.name),
+          evolutionEvents: livingTreeAnalysis.evolutionEvents.map((e) => ({
+            type: e.event_type,
+            description: e.description,
+          })),
+          hermeticInsight: livingTreeAnalysis.instinctInsight,
+          topicCount: livingTreeAnalysis.topics.length,
+        }
+
+        log(
+          'INFO',
+          'LIVING_TREE',
+          `Analyzed ${livingTreeAnalysis.topics.length} topics, ${livingTreeAnalysis.evolutionEvents.length} events`
+        )
+      } catch (err) {
+        log(
+          'ERROR',
+          'LIVING_TREE',
+          `Opus 4.5 analysis failed: ${err instanceof Error ? err.message : String(err)}`
+        )
+        console.error('Living Tree analysis error:', err)
+        // Don't fail the request if Living Tree analysis fails
+      }
+    }
+
     const responseData = {
       id: queryId,
       query,
@@ -767,8 +1101,66 @@ ${grimoireInstructions.trim()}
       // GNOSTIC METADATA - Sovereignty, Ascent, Sephirothic Analysis
       // ============================================================================
       gnostic: gnosticMetadata,
+      // Living Tree Analysis (Legend Mode only)
+      livingTree: livingTreeData,
+      // ============================================================================
+      // INTELLIGENCE FUSION - Unified Intelligence Analysis
+      // ============================================================================
+      intelligence: intelligenceFusion ? {
+        analysis: {
+          complexity: intelligenceFusion.analysis.complexity,
+          queryType: intelligenceFusion.analysis.queryType,
+          keywords: intelligenceFusion.analysis.keywords.slice(0, 5),
+        },
+        sefirotActivations: intelligenceFusion.sefirotActivations
+          .filter(s => s.effectiveWeight > 0.1)
+          .map(s => ({
+            name: s.name,
+            activation: s.activation,
+            weight: s.weight,
+            effectiveWeight: s.effectiveWeight,
+          })),
+        dominantSefirot: intelligenceFusion.dominantSefirot.map(s =>
+          intelligenceFusion.sefirotActivations.find(a => a.sefirah === s)?.name || 'Unknown'
+        ),
+        pathActivations: intelligenceFusion.pathActivations.slice(0, 5).map(p => ({
+          description: p.description,
+          weight: p.weight,
+        })),
+        methodologySelection: {
+          selected: intelligenceFusion.selectedMethodology,
+          confidence: intelligenceFusion.confidence,
+          alternatives: intelligenceFusion.methodologyScores.slice(1, 3).map(m => ({
+            methodology: m.methodology,
+            score: m.score,
+          })),
+        },
+        guard: {
+          recommendation: intelligenceFusion.guardRecommendation,
+          reasons: intelligenceFusion.guardReasons,
+        },
+        instinct: {
+          enabled: intelligenceFusion.activeLenses.length > 0,
+          activeLenses: intelligenceFusion.activeLenses,
+        },
+        processing: {
+          mode: intelligenceFusion.processingMode,
+          extendedThinkingBudget: intelligenceFusion.extendedThinkingBudget,
+        },
+        timing: {
+          fusionMs: intelligenceFusion.processingTimeMs,
+        },
+      } : null,
     }
-    
+
+    // 🔍 DIAGNOSTIC: Log gnostic metadata being sent to frontend
+    console.log('🌳 API: Gnostic metadata in response:', {
+      hasGnostic: !!gnosticMetadata,
+      hasSephiroth: !!gnosticMetadata?.sephirothAnalysis,
+      activations: gnosticMetadata?.sephirothAnalysis?.activations,
+      dominant: gnosticMetadata?.sephirothAnalysis?.dominant,
+    })
+
     log('INFO', 'SIDE_CANAL', `Response includes ${suggestions.length} suggestions`)
 
     // Track query submission in PostHog (server-side)
@@ -1292,18 +1684,27 @@ async function runGroundingGuard(response: string, query: string) {
   // queryLower already declared above in hype detection section
   const combinedText = (query + ' ' + response).toLowerCase()
 
-  // Extreme monetary claims (> $100M in < 5 years for individuals)
+  // Detect if this is an economic/financial query where large figures are normal
+  const isEconomicQuery = /economic|economy|financial|finance|gdp|world bank|imf|world economic forum|wef|monetary|fiscal|trillion|market|trade|global|central bank/i.test(queryLower)
+
+  // Extreme monetary claims - SKIP for economic queries (trillion figures are normal in economics)
   const billionMatch = combinedText.match(/(\d+)\s*(billion|trillion)/i)
-  if (billionMatch) {
+  if (billionMatch && !isEconomicQuery) {
     const amount = parseInt(billionMatch[1])
     const unit = billionMatch[2].toLowerCase()
 
-    // Trillion dollar claims
+    // Trillion dollar claims - only flag if NOT an economic query
+    // Global GDP is ~$100T, so trillion-dollar figures are normal in economics
     if (unit === 'trillion' && amount >= 1) {
-      sanityViolations.push(`Implausible: $${amount} trillion claim`)
+      // For non-economic queries, trillion claims about individuals ARE implausible
+      // But for macroeconomic discussions, they're normal
+      if (queryLower.includes('person') || queryLower.includes('individual') || queryLower.includes('wealth')) {
+        sanityViolations.push(`Implausible: Individual $${amount} trillion claim`)
+      }
+      // Skip global/macro economic trillion claims - they're normal
     }
 
-    // Billion+ in short timeframe
+    // Billion+ in short timeframe (still applies to non-economic queries)
     const timeframeMatch = combinedText.match(/(1|one|2|two)\s*(year|month|week|day)/i)
     if (unit === 'billion' && amount >= 100 && timeframeMatch) {
       sanityViolations.push(`Implausible: $${amount}B in ${timeframeMatch[0]}`)
@@ -1316,17 +1717,19 @@ async function runGroundingGuard(response: string, query: string) {
     sanityViolations.push('Implausible: Overnight wealth claim')
   }
 
-  // Extreme timeframe compression
-  const extremeTimeframes = [
-    { pattern: /trillion.{0,30}(1|one|2|two|3|three)\s*(year|month)/i, msg: 'Trillion in < 3 years' },
-    { pattern: /billion.{0,30}(1|one|2|two)\s*(week|day)/i, msg: 'Billion in days/weeks' },
-  ]
+  // Extreme timeframe compression - also skip for economic queries
+  if (!isEconomicQuery) {
+    const extremeTimeframes = [
+      { pattern: /trillion.{0,30}(1|one|2|two|3|three)\s*(year|month)/i, msg: 'Trillion in < 3 years' },
+      { pattern: /billion.{0,30}(1|one|2|two)\s*(week|day)/i, msg: 'Billion in days/weeks' },
+    ]
 
-  extremeTimeframes.forEach(({ pattern, msg }) => {
-    if (pattern.test(combinedText)) {
-      sanityViolations.push(`Implausible: ${msg}`)
-    }
-  })
+    extremeTimeframes.forEach(({ pattern, msg }) => {
+      if (pattern.test(combinedText)) {
+        sanityViolations.push(`Implausible: ${msg}`)
+      }
+    })
+  }
 
   // Physical impossibilities
   const impossibleClaims = [
@@ -1350,9 +1753,26 @@ async function runGroundingGuard(response: string, query: string) {
   logger.guard.sanityCheck(sanityViolations, sanityTriggered)
   if (sanityTriggered) issues.push('sanity')
 
-  // 5. Factuality check (placeholder - would need external verification)
-  const factScore = 0
-  const factTriggered = false
+  // 5. Factuality check (Phase 2: AI-powered verification with Opus 4.5)
+  let factScore = 0
+  let factTriggered = false
+
+  try {
+    // Use AI-powered factuality verification
+    const factuality = await verifyFactuality(response, query, [])
+    factScore = 1 - factuality.score // Invert: 0 = good, 1 = bad for consistency
+    factTriggered = factuality.triggered
+
+    // Log unsupported claims if any
+    if (factuality.unsupportedClaims.length > 0) {
+      console.log('[Factuality] Unsupported claims:', factuality.unsupportedClaims)
+    }
+  } catch (error) {
+    console.error('[Factuality] Verification error:', error)
+    factScore = 0
+    factTriggered = false
+  }
+
   logger.guard.factCheck(factScore, factTriggered)
   if (factTriggered) issues.push('factuality')
 
@@ -1422,4 +1842,51 @@ function detectRealTimeQuery(query: string): boolean {
 
   // Trigger search if any condition met
   return hasTimeKeyword || hasRecentYear || hasRealtimeTopic
+}
+
+/**
+ * Check if tree configuration has any active Sephiroth
+ * Active = weight > 10% (0.1)
+ */
+function hasActiveSefirot(config: TreeConfiguration): boolean {
+  return Object.values(config.sephiroth_weights).some((weight: number) => weight > 0.1)
+}
+
+/**
+ * Extract a snippet of text around a trigger pattern for before/after comparison
+ * @param content - Full content to extract from
+ * @param trigger - Pattern to locate (may be empty)
+ * @param contextChars - Number of characters of context to include (default: 150)
+ * @returns Snippet with trigger highlighted, or first N chars if trigger not found
+ */
+function extractSnippet(content: string, trigger: string, contextChars: number = 150): string {
+  if (!content) return ''
+
+  // If no trigger or trigger is empty, return first N characters
+  if (!trigger || trigger.trim().length === 0) {
+    return content.slice(0, contextChars) + (content.length > contextChars ? '...' : '')
+  }
+
+  // Find trigger position (case-insensitive)
+  const triggerLower = trigger.toLowerCase()
+  const contentLower = content.toLowerCase()
+  const triggerIndex = contentLower.indexOf(triggerLower)
+
+  // If trigger not found, return first N characters
+  if (triggerIndex === -1) {
+    return content.slice(0, contextChars) + (content.length > contextChars ? '...' : '')
+  }
+
+  // Calculate start and end positions for context
+  const halfContext = Math.floor(contextChars / 2)
+  const start = Math.max(0, triggerIndex - halfContext)
+  const end = Math.min(content.length, triggerIndex + trigger.length + halfContext)
+
+  // Extract snippet with ellipses if truncated
+  let snippet = ''
+  if (start > 0) snippet += '...'
+  snippet += content.slice(start, end)
+  if (end < content.length) snippet += '...'
+
+  return snippet
 }

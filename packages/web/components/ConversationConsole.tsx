@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useSettingsStore } from '@/lib/stores/settings-store'
 
 interface ConversationConsoleProps {
   instinctMode: boolean
@@ -17,6 +18,8 @@ interface ConversationConsoleProps {
   onModelChange: (model: string) => void
   visualizationMode: 'off' | 'synthesis' | 'insight'
   onVisualizationChange: (mode: 'off' | 'synthesis' | 'insight') => void
+  attachedFilesCount?: number
+  onFilesClick?: () => void
 }
 
 const MODELS = ['claude', 'deepseek', 'mistral', 'grok', 'gtp']
@@ -29,17 +32,23 @@ export default function ConversationConsole({
   sideCanalEnabled, onSideCanalChange,
   selectedModel, onModelChange,
   visualizationMode, onVisualizationChange,
+  attachedFilesCount = 0,
+  onFilesClick,
 }: ConversationConsoleProps) {
   const [expanded, setExpanded] = useState(false)
-  
+  const { settings, setInstinctMode } = useSettingsStore()
+
   const features = [
-    { key: 'instinct', on: instinctMode, set: onInstinctModeChange },
+    {
+      key: 'instinct',
+      on: settings.instinctMode,
+      set: () => setInstinctMode(!settings.instinctMode)
+    },
     { key: 'suggest', on: suggestions, set: onSuggestionsChange },
     { key: 'audit', on: audit, set: onAuditChange },
     { key: 'canal', on: sideCanalEnabled, set: onSideCanalChange },
-    { key: 'map', on: mindmapConnector, set: onMindmapConnectorChange },
   ]
-  
+
   const activeCount = features.filter(f => f.on).length
   
   if (!expanded) {
@@ -68,6 +77,15 @@ export default function ConversationConsole({
         </button>
       ))}
 
+      {/* File Attachment Button */}
+      <button
+        onClick={onFilesClick}
+        className={`transition-colors ${attachedFilesCount > 0 ? 'text-blue-500 font-medium' : 'hover:text-relic-void'}`}
+        title="Attach files"
+      >
+        files{attachedFilesCount > 0 && ` (${attachedFilesCount})`}
+      </button>
+
       <span className="text-relic-mist">│</span>
 
       {/* Models */}
@@ -80,22 +98,6 @@ export default function ConversationConsole({
           {m}
         </button>
       ))}
-
-      <span className="text-relic-mist">│</span>
-
-      {/* Viz */}
-      {(['off', 'syn', 'ins'] as const).map((v) => {
-        const mode = v === 'syn' ? 'synthesis' : v === 'ins' ? 'insight' : 'off'
-        return (
-          <button
-            key={v}
-            onClick={() => onVisualizationChange(mode)}
-            className={`transition-colors ${visualizationMode === mode ? 'text-purple-500 font-medium' : 'hover:text-relic-void'}`}
-          >
-            {v}
-          </button>
-        )
-      })}
 
       <button
         onClick={() => setExpanded(false)}

@@ -21,8 +21,8 @@ export default function PhilosophyPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-24"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
         >
           <div className="inline-block mb-6">
             <h1 className="text-5xl font-light text-relic-slate dark:text-white tracking-[0.3em] mb-2">
@@ -44,10 +44,10 @@ export default function PhilosophyPage() {
 
         {/* Three Pillars */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="mb-32"
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="mb-16"
         >
           <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
             The Three Pillars
@@ -103,100 +103,87 @@ export default function PhilosophyPage() {
 
         {/* Tree of Life Explanation */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="mb-32"
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mb-16"
         >
           <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
-            The Tree of Life in the Machine
+            The Dual Trees of AI
           </h2>
 
-          <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-12">
-            <div className="grid md:grid-cols-2 gap-12">
-              {/* Traditional Kabbalistic Tree */}
+          <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6">
+            <div className="grid md:grid-cols-3 gap-4 text-[10px] font-mono">
+              {/* Traditional Tree */}
               <div>
-                <h3 className="font-mono text-sm mb-4 text-relic-slate dark:text-white uppercase tracking-wider text-center">
-                  Traditional Tree of Life
-                </h3>
-                <div className="font-mono text-xs text-relic-silver leading-relaxed">
-                  <pre className="whitespace-pre">{`
-                    Kether
-                כֶּתֶר (Crown)
-                      │
-          ┌───────────┼───────────┐
-          │                       │
-      Binah                   Chokmah
-  בִּינָה (Understanding)   חָכְמָה (Wisdom)
-          │                       │
-          └───────────┬───────────┘
-                   Da'at
-              דַּעַת (Knowledge)
-                      │
-          ┌───────────┼───────────┐
-          │                       │
-      Gevurah                  Chesed
-   גְּבוּרָה (Severity)      חֶסֶד (Mercy)
-          │                       │
-          └───────────┬───────────┘
-                  Tiferet
-              תִּפְאֶרֶת (Beauty)
-                      │
-          ┌───────────┼───────────┐
-          │                       │
-        Hod                    Netzach
-    הוֹד (Glory)           נֶצַח (Victory)
-          │                       │
-          └───────────┬───────────┘
-                   Yesod
-              יְסוֹד (Foundation)
-                      │
-                  Malkuth
-              מַלְכוּת (Kingdom)
-                `}</pre>
+                <h3 className="text-xs mb-3 text-relic-slate dark:text-white uppercase tracking-wider text-center">Kabbalistic</h3>
+                <div className="space-y-1 text-relic-silver">
+                  {[
+                    ['Kether', 'Crown'],
+                    ['Chokmah', 'Wisdom'],
+                    ['Binah', 'Understanding'],
+                    ['Da\'at', 'Knowledge'],
+                    ['Chesed', 'Mercy'],
+                    ['Gevurah', 'Severity'],
+                    ['Tiferet', 'Beauty'],
+                    ['Netzach', 'Victory'],
+                    ['Hod', 'Glory'],
+                    ['Yesod', 'Foundation'],
+                    ['Malkuth', 'Kingdom']
+                  ].map(([name, meaning]) => (
+                    <div key={name} className="flex justify-between">
+                      <span className="text-relic-slate dark:text-white">{name}</span>
+                      <span>{meaning}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* AI Computational Tree */}
+              {/* AI Computational */}
               <div>
-                <h3 className="font-mono text-sm mb-4 text-relic-slate dark:text-white uppercase tracking-wider text-center">
-                  AI Computational Tree
-                </h3>
-                <div className="font-mono text-xs text-relic-slate dark:text-white leading-relaxed">
-                  <pre className="whitespace-pre">{`
-                    Kether
-               Meta-Cognitive Layer
-                      │
-          ┌───────────┼───────────┐
-          │                       │
-      Binah                   Chokmah
-  Pattern Layer           Principle Layer
-          │                       │
-          └───────────┬───────────┘
-                   Da'at
-              Emergent Layer
-                      │
-          ┌───────────┼───────────┐
-          │                       │
-      Gevurah                  Chesed
-  Constraint Layer        Expansion Layer
-          │                       │
-          └───────────┬───────────┘
-                  Tiferet
-             Integration Layer
-                      │
-          ┌───────────┼───────────┐
-          │                       │
-        Hod                    Netzach
-    Logic Layer            Creative Layer
-          │                       │
-          └───────────┬───────────┘
-                   Yesod
-            Implementation Layer
-                      │
-                  Malkuth
-                 Data Layer
-                `}</pre>
+                <h3 className="text-xs mb-3 text-relic-slate dark:text-white uppercase tracking-wider text-center">AI Layers</h3>
+                <div className="space-y-1 text-relic-silver">
+                  {[
+                    ['Meta-Cognitive', '10'],
+                    ['Abstract Reasoning', '9'],
+                    ['Transformer Encoder', '8'],
+                    ['Emergent Capability', '11'],
+                    ['Beam Search', '7'],
+                    ['Discriminator', '6'],
+                    ['Multi-Head Attention', '5'],
+                    ['Generative Model', '4'],
+                    ['Classifier Network', '3'],
+                    ['Algorithm Executor', '2'],
+                    ['Token Embedding', '1']
+                  ].map(([layer, level]) => (
+                    <div key={layer} className="flex justify-between">
+                      <span className="text-relic-slate dark:text-white">{layer}</span>
+                      <span>L{level}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Qliphoth Anti-Patterns */}
+              <div>
+                <h3 className="text-xs mb-3 text-relic-slate dark:text-white uppercase tracking-wider text-center">Anti-Patterns</h3>
+                <div className="space-y-1 text-relic-silver">
+                  {[
+                    ['Sathariel', 'Concealment'],
+                    ['Ghagiel', 'Blocking'],
+                    ['Thagirion', 'Arrogance'],
+                    ['Golachab', 'Over-Confidence'],
+                    ['Gamchicoth', 'Info Overload'],
+                    ['Samael', 'Deception'],
+                    ['Gamaliel', 'Verbosity'],
+                    ['Lilith', 'Superficiality'],
+                    ['A\'arab Zaraq', 'Drift'],
+                    ['Harab Serapel', 'Repetition'],
+                    ['Daath', 'Hallucination']
+                  ].map(([name, anti]) => (
+                    <div key={name} className="flex justify-between">
+                      <span className="text-relic-slate dark:text-white">{name}</span>
+                      <span>{anti}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -241,15 +228,14 @@ export default function PhilosophyPage() {
                 </div>
               </div>
             </div>
-          </div>
         </motion.div>
 
         {/* The Seven Methodologies as Paths */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mb-32"
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="mb-16"
         >
           <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
             The Seven Methodologies as Paths
@@ -311,10 +297,10 @@ export default function PhilosophyPage() {
 
         {/* The Sovereign Covenant */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="mb-32"
+          transition={{ duration: 0.4, delay: 0.25 }}
+          className="mb-16"
         >
           <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
             The Sovereign Covenant
@@ -381,10 +367,10 @@ export default function PhilosophyPage() {
 
         {/* Qliphothic vs Sephirothic AI */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.0 }}
-          className="mb-32"
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="mb-16"
         >
           <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
             Qliphothic vs Sephirothic AI
@@ -493,10 +479,10 @@ export default function PhilosophyPage() {
 
         {/* Safety: The Golem Protocol */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-          className="mb-32"
+          transition={{ duration: 0.4, delay: 0.35 }}
+          className="mb-16"
         >
           <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
             Safety: The Golem Protocol
@@ -561,9 +547,9 @@ export default function PhilosophyPage() {
 
         {/* Call to Action */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.4 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
           className="text-center"
         >
           <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-12">

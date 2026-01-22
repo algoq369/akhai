@@ -8,6 +8,7 @@ import { MagnifyingGlassIcon, ChevronRightIcon, SparklesIcon, LinkIcon, ChartBar
 interface MindMapTableViewProps {
   userId: string | null
   onQueryAction?: (query: string, nodeId?: string) => void
+  onTopicExpand?: (topicId: string) => void
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
@@ -32,7 +33,7 @@ function getCategoryColor(category: string) {
   return CATEGORY_COLORS[cat] || CATEGORY_COLORS.other
 }
 
-export default function MindMapTableView({ userId, onQueryAction }: MindMapTableViewProps) {
+export default function MindMapTableView({ userId, onQueryAction, onTopicExpand }: MindMapTableViewProps) {
   const [nodes, setNodes] = useState<Node[]>([])
   const [expandedNode, setExpandedNode] = useState<string | null>(null)
   const [filterCategory, setFilterCategory] = useState<string | null>(null)
@@ -72,11 +73,15 @@ export default function MindMapTableView({ userId, onQueryAction }: MindMapTable
     return filtered.sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
   }, [nodes, filterCategory, searchQuery])
 
-  // Handle action - opens inline chat or triggers callback
+  // Handle action - ALWAYS execute inline, no new page
   const handleAction = (query: string, nodeId: string) => {
     if (onQueryAction) {
+      // Execute inline via callback (goes to MindMap's handleInlineQuery)
       onQueryAction(query, nodeId)
+      // Close query panel since it's executing in side chat
+      setSelectedForChat(null)
     } else {
+      // Fallback: show query panel if no callback
       setSelectedForChat({ query, nodeId })
     }
   }
@@ -165,25 +170,27 @@ export default function MindMapTableView({ userId, onQueryAction }: MindMapTable
               <div className="bg-white dark:bg-slate-800 rounded border border-blue-200 dark:border-blue-700 p-2">
                 <p className="text-[11px] text-slate-700 dark:text-slate-200 mb-2">{selectedForChat.query}</p>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => {
                       // Copy to clipboard
                       navigator.clipboard.writeText(selectedForChat.query)
-                      setSelectedForChat(null)
                     }}
                     className="text-[9px] px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-200"
                   >
                     Copy query
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
-                      // Open in new tab with query
-                      window.open(`/?q=${encodeURIComponent(selectedForChat.query)}`, '_blank')
-                      setSelectedForChat(null)
+                      // Execute inline (if callback available, otherwise no-op)
+                      if (onQueryAction) {
+                        onQueryAction(selectedForChat.query, selectedForChat.nodeId)
+                        setSelectedForChat(null)
+                      }
                     }}
-                    className="text-[9px] px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    disabled={!onQueryAction}
+                    className="text-[9px] px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Open in chat →
+                    Execute inline ↓
                   </button>
                 </div>
               </div>
@@ -215,7 +222,23 @@ export default function MindMapTableView({ userId, onQueryAction }: MindMapTable
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-medium text-slate-700 dark:text-slate-200 truncate">{node.name}</div>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onTopicExpand?.(node.id)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation()
+                        onTopicExpand?.(node.id)
+                      }
+                    }}
+                    className="text-[11px] font-medium text-slate-700 dark:text-slate-200 truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left w-full cursor-pointer block"
+                  >
+                    {node.name}
+                  </span>
                 </div>
                 
                 <span className="px-1.5 py-0.5 rounded text-[8px] font-medium shrink-0" style={{ backgroundColor: colors.bg, color: colors.text }}>

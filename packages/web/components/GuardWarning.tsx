@@ -191,8 +191,7 @@ export default function GuardWarning({
       {/* Loading state */}
       {isLoadingSuggestions && (
         <div className="py-8 text-center">
-          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-relic-mist border-t-relic-slate"></div>
-          <p className="text-xs text-relic-silver mt-3">Generating suggestions...</p>
+          <p className="font-mono text-xs text-relic-silver">→ generating suggestions...</p>
         </div>
       )}
 

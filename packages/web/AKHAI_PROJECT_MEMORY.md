@@ -54,7 +54,121 @@
 
 ## 🚀 **Latest Enhancements (January 2026)**
 
-### 📅 January 8, 2026 - Enhanced Link Discovery System with Metacognitive AI ⭐ **LATEST**
+### 📅 January 8, 2026 - Console Indicator & Minimalist Redesign ⭐ **LATEST**
+
+**Session Summary:** Added Console indicator to horizontal methodology bar and redesigned InstinctConsole with minimalist white aesthetic
+
+**Enhancement 1: Console Indicator in Horizontal Bar**
+- **Location:** Horizontal methodology bar (after "Guard Active")
+- **Visual:** Teal dot (#14B8A6) with glow when console open
+- **Separator:** Vertical grey line (1px, 24px height)
+- **Click:** Opens/closes InstinctConsole overlay
+- **State Sync:** Console dot glows teal when open
+- **Keyboard:** Cmd+K still works globally
+- **Tooltip:** "Instinct Console ⚡ Console (3)" on hover
+- **Label:** Shows "(3)" indicating 3 available commands
+
+**Enhancement 2: InstinctConsole Minimalist Redesign**
+- **Aesthetic:** White background (light mode), dark slate (dark mode)
+- **Colors:** Grey text instead of terminal green
+- **No Emojis:** Removed all ✓, →, ↑/↓ symbols
+- **Simple Text:** "Up/Down" instead of arrow symbols, ">" instead of "→"
+- **Clean Borders:** Light grey (slate-200) in light mode
+- **Professional:** Minimalist, raw text, monospace font
+- **External Control:** No floating button when controlled by horizontal bar
+
+**Files Modified:**
+1. `components/MethodologyFrame.tsx`
+   - Added `consoleOpen` and `onConsoleToggle` props
+   - Added vertical separator and Console indicator button
+   - Motion animations: hover scale 1.4x, tap scale 0.9x
+   - Updated tooltip to "Instinct Console ⚡ Console (3)"
+
+2. `components/InstinctConsole.tsx` (~100 lines changed)
+   - White/grey minimalist color scheme
+   - Removed all emojis from commands output
+   - Changed terminal symbols: → to >, ↑/↓ to "Up/Down"
+   - External control support (hides floating button)
+   - Light mode: white bg, slate text, grey borders
+   - Dark mode: slate-900 bg, lighter text
+
+3. `app/page.tsx`
+   - Added `consoleOpen` state
+   - Wired to MethodologyFrame and InstinctConsole
+   - No floating buttons (clean bottom-right)
+
+**Command Updates:**
+- `suggest` - AI suggestions (no emoji)
+- `audit` - System audit (removed ✓ checkmark)
+- `canal` - Side Canal (changed → to >)
+- `map` - MindMap generation (changed → to >)
+- `help` - Shows commands (changed ↑/↓ to "Up/Down")
+- `clear` - Clear console
+
+**Design Philosophy:**
+- Minimalist white aesthetic (matches AkhAI design)
+- No emojis or fancy symbols
+- Raw text, monospace font
+- Professional, clean appearance
+- Light/dark mode support
+
+**Result:**
+- ✅ Console indicator in horizontal bar
+- ✅ Click opens minimalist white console
+- ✅ Cmd+K keyboard shortcut works
+- ✅ Perfect state synchronization
+- ✅ No floating buttons (clean UI)
+- ✅ All emojis removed
+- ✅ Minimalist aesthetic maintained
+
+See `DAY_8_COMPONENTS_COMPLETE.md` and `Q_CHAT_IMPLEMENTATION.md` for full details.
+
+---
+
+### 📅 January 8, 2026 - Day 8 Components: ProfileMenu & InstinctConsole
+
+**Session Summary:** Implemented two core UI components with ultra-minimalist design philosophy
+
+**Components Created:**
+1. **ProfileMenu** (`components/ProfileMenu.tsx` - 277 lines)
+   - 8 menu items: Settings, Language, Profile, History, Help, Upgrade, Logout, Tournament
+   - Dark mode toggle integrated (⏻ power symbol + white dot)
+   - GitHub avatar support (fetches from `/api/auth/session`)
+   - Raw minimalist design (NO backgrounds, NO borders/cadre)
+   - Tournament greyed out with "Day 150" badge + hover tooltip
+   - Upgrade links to `/pricing`, History links to MindMapHistoryView
+
+2. **InstinctConsole** (`components/InstinctConsole.tsx` - 231 lines)
+   - Terminal-style command console with Cmd+K / Ctrl+K shortcut
+   - 6 commands: suggest, audit, canal, map, help, clear
+   - Command history with up/down arrow navigation
+   - Green terminal text on dark background
+   - Floating button when closed, full overlay when open
+
+**Integration:**
+- `app/layout.tsx` - ProfileMenu as global widget (top-right, all pages)
+- `app/page.tsx` - InstinctConsole global (Cmd+K anywhere)
+- `app/history/page.tsx` - Replaced old list view with MindMapHistoryView
+
+**Design Philosophy:**
+- Ultra-minimalist: No backgrounds, no borders
+- Raw text with monospace font throughout
+- Color-only hover states (grey → darker)
+- Matches overall AkhAI Relic aesthetic
+
+**Fixes Applied:**
+- Upgrade button: `/upgrade` → `/pricing`
+- Tournament tooltip: State-based display with `onMouseEnter`/`onMouseLeave`
+- History page: Apple-inspired mindmap clustering with topic grouping
+
+**Dependencies:**
+- `lucide-react@0.562.0` (icons)
+
+See `DAY_8_COMPONENTS_COMPLETE.md` for full documentation.
+
+---
+
+### 📅 January 8, 2026 - Enhanced Link Discovery System with Metacognitive AI
 
 **Session Summary:** Complete overhaul of link discovery system with AI-powered contextual search, metacognitive awareness, and smart curated fallbacks
 

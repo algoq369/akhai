@@ -380,6 +380,117 @@ Focus on delivering value to the user, not just summarizing advisors.`;
   setAdvisorTimeout(timeoutMs: number): void {
     this.broadcaster.setAdvisorTimeout(timeoutMs);
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // PHASE 3: ENHANCED SYNTHESIS WITH OPUS 4.5
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Build enhanced synthesis prompt for Mother Base using Opus 4.5
+   *
+   * Provides sophisticated integration with:
+   * - Detailed comparison of each advisor's perspective
+   * - Conflict resolution strategies
+   * - Unique insight extraction per advisor
+   * - Confidence-weighted synthesis
+   * - Extended thinking for complex queries
+   *
+   * @param query - Original query
+   * @param responses - Array of advisor responses
+   * @param summary - Living database summary
+   * @param state - Final living database state
+   * @param useExtendedThinking - Enable extended thinking mode
+   * @returns Enhanced synthesis prompt
+   */
+  buildEnhancedSynthesisPrompt(
+    query: string,
+    responses: AdvisorResponse[],
+    summary: string,
+    state: any,
+    useExtendedThinking: boolean = false
+  ): string {
+    // Extract individual advisor perspectives
+    const advisorAnalysis = responses
+      .filter(r => r.status === 'complete')
+      .map((r, i) => {
+        const slotLabels = ['Technical', 'Strategic', 'Creative', 'Critical'];
+        const label = slotLabels[r.slot - 1] || `Advisor ${r.slot}`;
+
+        return `### ${label} Advisor (${r.family})
+**Response:**
+"""
+${r.content.substring(0, 1000)}${r.content.length > 1000 ? '...' : ''}
+"""
+
+**Confidence:** ${state.consensusState?.confidence || 'N/A'}
+**Tokens:** ${(r.usage?.inputTokens || 0) + (r.usage?.outputTokens || 0) || 'N/A'}
+`;
+      })
+      .join('\n\n');
+
+    const prompt = `Synthesize insights from ${responses.length} different AI models to answer this query:
+
+# ORIGINAL QUERY
+"${query}"
+
+# ADVISOR RESPONSES
+
+${advisorAnalysis}
+
+# CONSENSUS STATUS
+- Agreement Level: ${((state.consensusState?.agreementLevel || 0) * 100).toFixed(0)}%
+- Confidence: ${((state.consensusState?.confidence || 0) * 100).toFixed(0)}%
+- Responses Received: ${state.metadata?.responsesReceived || 0}
+
+# YOUR TASK (Mother Base Synthesis)
+
+Provide a comprehensive synthesis that:
+
+1. **Identify Agreements** - Where do ALL advisors agree? (high confidence areas)
+2. **Highlight Disagreements** - Where do advisors differ? What are the key points of contention?
+3. **Extract Unique Insights** - What unique perspective does each advisor bring that others don't?
+4. **Synthesize Best Answer** - Integrate all perspectives into THE BEST possible answer
+5. **Acknowledge Uncertainty** - Where appropriate, indicate areas of uncertainty or multiple valid approaches
+
+## Requirements:
+- Be comprehensive yet concise
+- Weight perspectives by advisor confidence and agreement levels
+- Resolve conflicts by favoring consensus where it exists
+- Preserve unique insights even if not consensus
+- Provide actionable recommendations
+- Indicate your confidence in the final synthesis
+
+${
+  useExtendedThinking
+    ? '**NOTE:** You have access to extended thinking mode. Use it to deeply analyze conflicts and integrate perspectives.'
+    : ''
+}
+
+## Output Format:
+
+### Synthesis
+[Your integrated answer that's better than any individual response]
+
+### Key Agreements
+- [Agreement 1]
+- [Agreement 2]
+
+### Key Disagreements
+- [Disagreement 1 with resolution approach]
+- [Disagreement 2 with resolution approach]
+
+### Unique Insights
+- **Technical:** [unique insight]
+- **Strategic:** [unique insight]
+- **Creative:** [unique insight]
+- **Critical:** [unique insight]
+
+### Confidence Assessment
+Overall synthesis confidence: [0-100%]
+Uncertainty areas: [list any areas of significant uncertainty]`;
+
+    return prompt;
+  }
 }
 
 // Export all GTP components

@@ -6,6 +6,7 @@
  */
 
 import { SelfHostedProvider, CompletionRequest, CompletionResponse, StreamChunk } from './providers/self-hosted.js';
+import { AnthropicProvider } from './providers/anthropic.js';
 
 export interface MotherBaseConfig {
   primary: ModelConfig;
@@ -19,6 +20,7 @@ export interface ModelConfig {
   model: string;
   apiKey?: string;
   role: 'primary' | 'advisor' | 'specialist';
+  providerType?: 'self-hosted' | 'anthropic';
 }
 
 export interface ToolConfig {
@@ -45,33 +47,43 @@ export interface ConsensusResult {
   totalLatency: number;
 }
 
+// Union type for providers
+type Provider = SelfHostedProvider | AnthropicProvider;
+
+/**
+ * Create the appropriate provider based on config
+ */
+function createProvider(config: ModelConfig): Provider {
+  if (config.providerType === 'anthropic') {
+    return new AnthropicProvider({
+      name: config.name,
+      apiKey: config.apiKey!,
+      model: config.model,
+    });
+  }
+  return new SelfHostedProvider({
+    name: config.name,
+    baseUrl: config.baseUrl,
+    model: config.model,
+    apiKey: config.apiKey,
+  });
+}
+
 /**
  * Mother Base - Sovereign AI Core
  */
 export class MotherBase {
-  private primary: SelfHostedProvider;
-  private advisors: SelfHostedProvider[] = [];
+  private primary: Provider;
+  private advisors: Provider[] = [];
   private initialized: boolean = false;
 
   constructor(config: MotherBaseConfig) {
     // Initialize primary model
-    this.primary = new SelfHostedProvider({
-      name: config.primary.name,
-      baseUrl: config.primary.baseUrl,
-      model: config.primary.model,
-      apiKey: config.primary.apiKey,
-    });
+    this.primary = createProvider(config.primary);
 
     // Initialize advisor models
     if (config.advisors) {
-      this.advisors = config.advisors.map(advisor => 
-        new SelfHostedProvider({
-          name: advisor.name,
-          baseUrl: advisor.baseUrl,
-          model: advisor.model,
-          apiKey: advisor.apiKey,
-        })
-      );
+      this.advisors = config.advisors.map(advisor => createProvider(advisor));
     }
 
     console.log(`[Mother Base] 🏛️ Initialized with ${1 + this.advisors.length} models`);
@@ -254,6 +266,18 @@ Synthesize these responses into one clear, comprehensive answer. If they agree, 
  * Pre-configured Mother Base setups
  */
 export const MOTHER_BASE_CONFIGS = {
+  // Claude Opus 4.5 setup (default for production)
+  claude: (apiKey: string) => ({
+    primary: {
+      name: 'claude-opus',
+      baseUrl: 'https://api.anthropic.com',
+      model: 'claude-opus-4-5-20251101',
+      apiKey,
+      role: 'primary' as const,
+      providerType: 'anthropic' as const,
+    },
+  }),
+
   // Local Ollama setup
   local: {
     primary: {

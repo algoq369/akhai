@@ -8,6 +8,9 @@ const nextConfig = {
   // Fix lockfile warning by setting workspace root
   outputFileTracingRoot: require('path').join(__dirname, '../../'),
 
+  // Hide Next.js development indicator (N button in bottom left)
+  devIndicators: false,
+
   // Webpack configuration to exclude server-only packages from client bundle
   webpack: (config, { isServer }) => {
     if (!isServer) {

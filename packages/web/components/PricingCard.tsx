@@ -97,18 +97,18 @@ export function PricingCard({
         relative border rounded-sm p-4 transition-all cursor-pointer
         ${
           isSelected
-            ? 'border-relic-void border-[3px] shadow-lg ring-2 ring-relic-void/20'
+            ? 'border-relic-void dark:border-white border-[3px] shadow-lg ring-2 ring-relic-void/20 dark:ring-white/20'
             : recommended
-            ? 'border-relic-slate shadow-sm'
-            : 'border-relic-mist/20 hover:border-relic-silver/40'
+            ? 'border-relic-slate dark:border-relic-ghost shadow-sm'
+            : 'border-relic-mist/20 dark:border-relic-slate/30 hover:border-relic-silver/40 dark:hover:border-relic-ghost/40'
         }
-        ${id === 'free' ? 'bg-relic-ghost/20' : 'bg-relic-white'}
+        ${id === 'free' ? 'bg-relic-ghost/20 dark:bg-relic-slate/20' : 'bg-relic-white dark:bg-relic-void'}
       `}
     >
       {/* Recommended badge */}
       {recommended && (
         <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-          <span className="bg-relic-slate text-relic-white text-[8px] uppercase tracking-wider px-2 py-0.5 rounded-sm">
+          <span className="bg-relic-slate dark:bg-white text-relic-white dark:text-relic-void text-[8px] uppercase tracking-wider px-2 py-0.5 rounded-sm">
             Recommended
           </span>
         </div>
@@ -116,7 +116,7 @@ export function PricingCard({
 
       {/* Plan name */}
       <div className="mb-3">
-        <h3 className="text-sm font-medium text-relic-void flex items-center gap-1.5">
+        <h3 className="text-sm font-medium text-relic-void dark:text-white flex items-center gap-1.5">
           {name}
           {badge && <span className="text-base">{badge}</span>}
         </h3>
@@ -125,18 +125,18 @@ export function PricingCard({
       {/* Price */}
       <div className="mb-4">
         <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-semibold text-relic-void">
+          <span className="text-2xl font-semibold text-relic-void dark:text-white">
             {formatPrice(price)}
           </span>
           {interval && (
-            <span className="text-[10px] text-relic-slate">
+            <span className="text-[10px] text-relic-slate dark:text-relic-ghost">
               /{interval}
               {perUser && '/user'}
             </span>
           )}
         </div>
         {tokens && (
-          <p className="text-[10px] text-relic-silver mt-0.5">
+          <p className="text-[10px] text-relic-silver dark:text-relic-ghost mt-0.5">
             {(tokens / 1000).toLocaleString()}K tokens
           </p>
         )}
@@ -145,8 +145,8 @@ export function PricingCard({
       {/* Features */}
       <ul className="space-y-1.5 mb-4">
         {features.map((feature, i) => (
-          <li key={i} className="text-[11px] text-relic-slate flex items-start gap-1.5">
-            <span className="text-relic-silver text-[8px] mt-0.5">•</span>
+          <li key={i} className="text-[11px] text-relic-slate dark:text-relic-ghost flex items-start gap-1.5">
+            <span className="text-relic-silver dark:text-relic-silver/70 text-[8px] mt-0.5">•</span>
             <span>{feature}</span>
           </li>
         ))}
@@ -160,10 +160,10 @@ export function PricingCard({
           w-full py-2 px-3 rounded-sm text-[11px] font-mono uppercase tracking-wider transition-colors
           ${
             id === 'free'
-              ? 'bg-relic-ghost/50 text-relic-silver cursor-not-allowed'
+              ? 'bg-relic-ghost/50 dark:bg-relic-slate/30 text-relic-silver dark:text-relic-ghost cursor-not-allowed'
               : recommended
-              ? 'bg-relic-void text-relic-white hover:bg-relic-slate cursor-pointer'
-              : 'bg-relic-ghost text-relic-void hover:bg-relic-mist border border-relic-mist/20 cursor-pointer'
+              ? 'bg-relic-void dark:bg-white text-relic-white dark:text-relic-void hover:bg-relic-slate dark:hover:bg-relic-ghost cursor-pointer'
+              : 'bg-relic-ghost dark:bg-relic-slate/20 text-relic-void dark:text-white hover:bg-relic-mist dark:hover:bg-relic-slate/40 border border-relic-mist/20 dark:border-relic-slate/30 cursor-pointer'
           }
           ${loading ? 'opacity-50 cursor-wait' : ''}
         `}
@@ -173,7 +173,7 @@ export function PricingCard({
 
       {/* Fine print */}
       {id !== 'free' && interval && (
-        <p className="text-[9px] text-relic-silver text-center mt-2">
+        <p className="text-[9px] text-relic-silver dark:text-relic-ghost text-center mt-2">
           cancel anytime
         </p>
       )}

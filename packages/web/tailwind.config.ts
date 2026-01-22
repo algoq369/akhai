@@ -15,9 +15,9 @@ export default {
         foreground: "var(--foreground)",
         // Code Relic Design System (Light Theme)
         relic: {
-          white: '#FAFAFA',    // Background
-          ghost: '#F5F5F5',    // Subtle bg
-          mist: '#E5E5E5',     // Borders
+          white: '#FFFFFF',    // Pure white background
+          ghost: '#F7F7F7',    // Subtle bg (cool grey)
+          mist: '#E8E8E8',     // Borders (cool grey)
           silver: '#A3A3A3',   // Muted text
           slate: '#525252',    // Secondary text
           void: '#171717',     // Primary text

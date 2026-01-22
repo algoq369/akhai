@@ -9,13 +9,12 @@ export default function LegendModeIndicator({ isActive, onToggle }: LegendModeIn
   if (!isActive) return null
 
   return (
-    <div className="fixed top-4 right-80 z-50 bg-amber-50 border border-amber-400 px-3 py-1.5 rounded-md">
-      <div className="flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-        <span className="text-xs font-mono text-amber-700">INSTINCT MODE</span>
+    <div className="fixed top-4 right-80 z-50 border-b border-relic-mist px-2 py-1">
+      <div className="flex items-center gap-1.5">
+        <span className="font-mono text-xs text-relic-silver">instinct mode</span>
         <button
           onClick={onToggle}
-          className="text-xs text-amber-400 hover:text-amber-600"
+          className="text-xs text-relic-silver hover:text-relic-slate"
           title="Disable Instinct Mode"
         >
           ✕

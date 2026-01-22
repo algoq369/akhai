@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { nowPayments, IPNPayload, PaymentStatus } from '@/lib/nowpayments'
 import { trackEvent } from '@/lib/posthog'
-import { getDatabase } from '@/lib/database'
+import { db } from '@/lib/database'
 
 export const runtime = 'nodejs'
 
@@ -162,7 +162,6 @@ async function processCreditsPayment(
     const tokenAmount = parseInt(match[1]) * 1000
 
     // Store payment record
-    const db = getDatabase()
     db.prepare(
       `INSERT INTO crypto_payments (
         payment_id,
@@ -207,7 +206,6 @@ async function processSubscriptionPayment(
     const plan = planMatch[1].toLowerCase()
 
     // Store payment record
-    const db = getDatabase()
     db.prepare(
       `INSERT INTO crypto_payments (
         payment_id,
@@ -233,8 +231,6 @@ async function processSubscriptionPayment(
 
 // Create crypto_payments table if it doesn't exist
 function initializePaymentsTable() {
-  const db = getDatabase()
-
   db.exec(`
     CREATE TABLE IF NOT EXISTS crypto_payments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

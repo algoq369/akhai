@@ -4,7 +4,7 @@ import { getUserFromSession } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const limit = parseInt(searchParams.get('limit') || '100');
+  const limit = parseInt(searchParams.get('limit') || '10000'); // Increased from 100 to 200
   const offset = parseInt(searchParams.get('offset') || '0');
 
   try {
@@ -13,8 +13,11 @@ export async function GET(request: NextRequest) {
     const user = token ? getUserFromSession(token) : null
     const userId = user?.id || null
 
-    // Get queries scoped to user (with offset support)
-    const queries = getRecentQueries(limit + offset, userId).slice(offset);
+    // Get session ID for anonymous users
+    const sessionId = request.cookies.get('akhai_session')?.value || null
+
+    // Get queries scoped to user or session (with offset support)
+    const queries = getRecentQueries(limit + offset, userId, sessionId).slice(offset);
     const total = queries.length + offset; // Approximate total
 
     return NextResponse.json({ queries, total, limit, offset });

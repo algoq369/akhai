@@ -7,6 +7,10 @@ import CryptoPaymentModalDual from '@/components/CryptoPaymentModalDual'
 import { PRICING_PLANS, TOKEN_CREDITS } from '@/lib/pricing-config'
 import { trackEvent } from '@/lib/posthog'
 import Link from 'next/link'
+import DarkModeToggle from '@/components/DarkModeToggle'
+
+// Force dynamic rendering to avoid prerender errors
+export const dynamic = 'force-dynamic'
 
 export default function PricingPage() {
   const [activeTab, setActiveTab] = useState<'subscriptions' | 'credits'>('subscriptions')
@@ -57,21 +61,24 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-relic-white">
+    <div className="min-h-screen bg-relic-white dark:bg-relic-void">
       {/* Header */}
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="text-center mb-6">
+        <div className="flex items-center justify-between mb-6">
           <Link
             href="/"
-            className="text-[9px] font-mono text-relic-silver hover:text-relic-slate mb-2 inline-block uppercase tracking-wider"
+            className="text-[9px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white uppercase tracking-wider"
           >
             ← back
           </Link>
+          <DarkModeToggle />
+        </div>
 
-          <h1 className="text-xl font-medium text-relic-void mb-1.5 tracking-tight">
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-medium text-relic-void dark:text-white mb-1.5 tracking-tight">
             Pricing
           </h1>
-          <p className="text-relic-slate text-xs max-w-xl mx-auto">
+          <p className="text-relic-slate dark:text-relic-ghost text-xs max-w-xl mx-auto">
             Claude Opus 4.5 • 7 Methodologies • Grounding Guard
           </p>
         </div>
@@ -84,8 +91,8 @@ export default function PricingPage() {
               px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition-all
               ${
                 activeTab === 'subscriptions'
-                  ? 'text-relic-void border-b-2 border-relic-void'
-                  : 'text-relic-silver hover:text-relic-slate'
+                  ? 'text-relic-void dark:text-white border-b-2 border-relic-void dark:border-white'
+                  : 'text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white'
               }
             `}
           >
@@ -97,8 +104,8 @@ export default function PricingPage() {
               px-3 py-1 text-[10px] font-mono uppercase tracking-wider transition-all
               ${
                 activeTab === 'credits'
-                  ? 'text-relic-void border-b-2 border-relic-void'
-                  : 'text-relic-silver hover:text-relic-slate'
+                  ? 'text-relic-void dark:text-white border-b-2 border-relic-void dark:border-white'
+                  : 'text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white'
               }
             `}
           >
@@ -140,7 +147,7 @@ export default function PricingPage() {
                 onClick={() =>
                   handleCryptoPayment(PRICING_PLANS.pro.price, 'subscription', PRICING_PLANS.pro.id)
                 }
-                className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 border border-purple-500/30"
+                className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/20 dark:hover:bg-purple-500/30 border border-purple-500/30 dark:border-purple-500/40"
               >
                 Or pay with crypto
               </button>
@@ -168,7 +175,7 @@ export default function PricingPage() {
                     PRICING_PLANS.instinct.id
                   )
                 }
-                className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 border border-purple-500/30"
+                className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/20 dark:hover:bg-purple-500/30 border border-purple-500/30 dark:border-purple-500/40"
               >
                 Or pay with crypto
               </button>
@@ -192,7 +199,7 @@ export default function PricingPage() {
                 onClick={() =>
                   handleCryptoPayment(PRICING_PLANS.team.price, 'subscription', PRICING_PLANS.team.id)
                 }
-                className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 border border-purple-500/30"
+                className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/20 dark:hover:bg-purple-500/30 border border-purple-500/30 dark:border-purple-500/40"
               >
                 Or pay with crypto
               </button>
@@ -203,8 +210,8 @@ export default function PricingPage() {
         {/* Token Credits */}
         {activeTab === 'credits' && (
           <>
-            <div className="bg-relic-ghost/30 border border-relic-mist/20 rounded-sm p-3 mb-4 max-w-2xl mx-auto">
-              <p className="text-[11px] text-relic-slate text-center">
+            <div className="bg-relic-ghost/30 dark:bg-relic-slate/20 border border-relic-mist/20 dark:border-relic-slate/30 rounded-sm p-3 mb-4 max-w-2xl mx-auto">
+              <p className="text-[11px] text-relic-slate dark:text-relic-ghost text-center">
                 One-time purchase • No expiration • Flexible usage
               </p>
             </div>
@@ -238,7 +245,7 @@ export default function PricingPage() {
                       TOKEN_CREDITS.starter.tokens
                     )
                   }
-                  className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 border border-purple-500/30"
+                  className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/20 dark:hover:bg-purple-500/30 border border-purple-500/30 dark:border-purple-500/40"
                 >
                   Or pay with crypto
                 </button>
@@ -273,7 +280,7 @@ export default function PricingPage() {
                       TOKEN_CREDITS.builder.tokens
                     )
                   }
-                  className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 border border-purple-500/30"
+                  className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/20 dark:hover:bg-purple-500/30 border border-purple-500/30 dark:border-purple-500/40"
                 >
                   Or pay with crypto
                 </button>
@@ -307,7 +314,7 @@ export default function PricingPage() {
                       TOKEN_CREDITS.scale.tokens
                     )
                   }
-                  className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 border border-purple-500/30"
+                  className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/20 dark:hover:bg-purple-500/30 border border-purple-500/30 dark:border-purple-500/40"
                 >
                   Or pay with crypto
                 </button>
@@ -341,7 +348,7 @@ export default function PricingPage() {
                       TOKEN_CREDITS.bulk.tokens
                     )
                   }
-                  className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 text-purple-700 hover:bg-purple-500/20 border border-purple-500/30"
+                  className="w-full py-1.5 px-3 rounded-sm text-[10px] font-mono uppercase tracking-wider transition-colors bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-500/20 dark:hover:bg-purple-500/30 border border-purple-500/30 dark:border-purple-500/40"
                 >
                   Or pay with crypto
                 </button>
@@ -354,35 +361,35 @@ export default function PricingPage() {
         )}
 
         {/* FAQ Section */}
-        <div className="border-t border-relic-mist/20 pt-6 mt-6 max-w-2xl mx-auto">
-          <h2 className="text-xs font-mono uppercase tracking-wider text-relic-void mb-3 text-center">
+        <div className="border-t border-relic-mist/20 dark:border-relic-slate/30 pt-6 mt-6 max-w-2xl mx-auto">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-relic-void dark:text-white mb-3 text-center">
             FAQ
           </h2>
 
           <div className="space-y-2">
-            <div className="border-b border-relic-mist/10 pb-2">
-              <h3 className="text-[11px] font-medium text-relic-void mb-0.5">
+            <div className="border-b border-relic-mist/10 dark:border-relic-slate/20 pb-2">
+              <h3 className="text-[11px] font-medium text-relic-void dark:text-white mb-0.5">
                 Do token credits expire?
               </h3>
-              <p className="text-[10px] text-relic-slate">
+              <p className="text-[10px] text-relic-slate dark:text-relic-ghost">
                 No. Credits never expire.
               </p>
             </div>
 
-            <div className="border-b border-relic-mist/10 pb-2">
-              <h3 className="text-[11px] font-medium text-relic-void mb-0.5">
+            <div className="border-b border-relic-mist/10 dark:border-relic-slate/20 pb-2">
+              <h3 className="text-[11px] font-medium text-relic-void dark:text-white mb-0.5">
                 Can I switch plans?
               </h3>
-              <p className="text-[10px] text-relic-slate">
+              <p className="text-[10px] text-relic-slate dark:text-relic-ghost">
                 Yes. Upgrade or downgrade anytime. Changes apply next billing cycle.
               </p>
             </div>
 
-            <div className="border-b border-relic-mist/10 pb-2">
-              <h3 className="text-[11px] font-medium text-relic-void mb-0.5">
+            <div className="border-b border-relic-mist/10 dark:border-relic-slate/20 pb-2">
+              <h3 className="text-[11px] font-medium text-relic-void dark:text-white mb-0.5">
                 Refund policy?
               </h3>
-              <p className="text-[10px] text-relic-slate">
+              <p className="text-[10px] text-relic-slate dark:text-relic-ghost">
                 7-day money-back guarantee for subscriptions. Credits non-refundable.
               </p>
             </div>
@@ -391,11 +398,11 @@ export default function PricingPage() {
 
         {/* Footer */}
         <div className="mt-6 text-center pb-6">
-          <p className="text-[9px] font-mono text-relic-silver">
+          <p className="text-[9px] font-mono text-relic-silver dark:text-relic-ghost">
             enterprise?{' '}
             <a
               href="mailto:support@akhai.ai"
-              className="text-relic-slate hover:text-relic-void underline"
+              className="text-relic-slate dark:text-relic-ghost hover:text-relic-void dark:hover:text-white underline"
             >
               contact us
             </a>

@@ -1,0 +1,639 @@
+/**
+ * INTELLIGENCE FUSION LAYER
+ *
+ * Unified intelligence system connecting:
+ * - Guard System (anti-hallucination)
+ * - Sefirot AI Computational Tree (11 nodes)
+ * - Methodology Selector (7 methodologies)
+ * - Side Canal (context awareness)
+ * - Instinct Mode (7 Hermetic lenses)
+ *
+ * This is the brain of AkhAI - where all systems converge.
+ */
+
+import { SEVEN_LENSES, InstinctConfig, generateInstinctPrompt } from './instinct-mode'
+import { SEPHIROTH_METADATA, Sefirah } from './ascent-tracker'
+
+// ============================================================
+// TYPES
+// ============================================================
+
+export type CoreMethodology = 'direct' | 'cod' | 'bot' | 'react' | 'pot' | 'gtp' | 'auto'
+
+export interface QueryAnalysis {
+  complexity: number          // 0-1 scale
+  queryType: QueryType
+  requiresTools: boolean
+  requiresMultiPerspective: boolean
+  isMathematical: boolean
+  isFactual: boolean
+  isProcedural: boolean
+  isCreative: boolean
+  wordCount: number
+  keywords: string[]
+}
+
+export type QueryType =
+  | 'factual'       // Simple facts
+  | 'comparative'   // X vs Y
+  | 'procedural'    // How to
+  | 'research'      // In-depth
+  | 'creative'      // Brainstorm
+  | 'analytical'    // Analysis
+  | 'troubleshooting' // Debug
+  | 'planning'      // Strategy
+
+export interface SefirotActivation {
+  sefirah: Sefirah
+  name: string
+  activation: number         // 0-1 computed activation
+  weight: number             // User-configured weight
+  effectiveWeight: number    // activation * weight
+  keywords: string[]         // Keywords that triggered activation
+}
+
+export interface MethodologyScore {
+  methodology: CoreMethodology
+  score: number
+  reasons: string[]
+}
+
+export interface IntelligenceFusionResult {
+  // Query analysis
+  analysis: QueryAnalysis
+
+  // Sefirot activations
+  sefirotActivations: SefirotActivation[]
+  dominantSefirot: Sefirah[]
+  pathActivations: PathActivation[]
+
+  // Methodology selection
+  selectedMethodology: CoreMethodology
+  methodologyScores: MethodologyScore[]
+  confidence: number
+
+  // Guard status
+  guardRecommendation: 'proceed' | 'warn' | 'block'
+  guardReasons: string[]
+
+  // Instinct mode
+  instinctPrompt: string
+  activeLenses: string[]
+
+  // Side Canal context
+  contextInjection: string | null
+  relatedTopics: string[]
+
+  // Processing recommendations
+  extendedThinkingBudget: number
+  processingMode: 'weighted' | 'parallel' | 'adaptive'
+
+  // Metadata
+  timestamp: number
+  processingTimeMs: number
+}
+
+export interface PathActivation {
+  from: Sefirah
+  to: Sefirah
+  weight: number
+  description: string
+}
+
+// ============================================================
+// SEFIROT KEYWORD MAPPINGS
+// ============================================================
+
+const SEFIROT_KEYWORDS: Record<Sefirah, string[]> = {
+  [Sefirah.MALKUTH]: [
+    'data', 'fact', 'information', 'statistic', 'number', 'evidence',
+    'concrete', 'real', 'actual', 'measurable', 'observable', 'physical'
+  ],
+  [Sefirah.YESOD]: [
+    'implement', 'execute', 'apply', 'procedure', 'process', 'step',
+    'foundation', 'build', 'setup', 'configure', 'install', 'deploy'
+  ],
+  [Sefirah.HOD]: [
+    'analyze', 'classify', 'logic', 'reason', 'compare', 'contrast',
+    'categorize', 'evaluate', 'assess', 'systematic', 'methodical'
+  ],
+  [Sefirah.NETZACH]: [
+    'create', 'innovate', 'generate', 'novel', 'original', 'imagine',
+    'design', 'invent', 'artistic', 'inspiration', 'vision', 'dream'
+  ],
+  [Sefirah.TIFERET]: [
+    'integrate', 'synthesize', 'combine', 'balance', 'harmony', 'unify',
+    'connect', 'bridge', 'reconcile', 'merge', 'blend', 'holistic'
+  ],
+  [Sefirah.GEVURAH]: [
+    'limit', 'constraint', 'critique', 'evaluate', 'assess', 'validate',
+    'discipline', 'strict', 'boundary', 'rule', 'restriction', 'risk'
+  ],
+  [Sefirah.CHESED]: [
+    'expand', 'elaborate', 'comprehensive', 'broad', 'extensive', 'generous',
+    'opportunity', 'possibility', 'growth', 'abundance', 'open'
+  ],
+  [Sefirah.BINAH]: [
+    'pattern', 'structure', 'framework', 'model', 'system', 'relationship',
+    'understand', 'comprehend', 'insight', 'discern', 'analyze'
+  ],
+  [Sefirah.CHOKMAH]: [
+    'principle', 'wisdom', 'fundamental', 'theory', 'concept', 'axiom',
+    'essence', 'core', 'foundation', 'truth', 'insight', 'intuition'
+  ],
+  [Sefirah.KETHER]: [
+    'meta', 'reflect', 'overview', 'synthesis', 'big picture', 'holistic',
+    'transcend', 'ultimate', 'supreme', 'divine', 'unity', 'source'
+  ],
+  [Sefirah.DAAT]: [
+    'emerge', 'insight', 'breakthrough', 'revelation', 'connection', 'realize',
+    'hidden', 'knowledge', 'gnosis', 'awareness', 'consciousness'
+  ]
+}
+
+// ============================================================
+// QUERY ANALYSIS
+// ============================================================
+
+const COMPLEXITY_INDICATORS = {
+  length: { threshold: 100, weight: 0.1 },
+  technical: {
+    keywords: ['algorithm', 'architecture', 'implementation', 'optimization',
+               'infrastructure', 'framework', 'protocol', 'specification'],
+    weight: 0.15
+  },
+  multiPart: { patterns: [/\band\b.*\band\b/, /\bfirst\b.*\bthen\b/i], weight: 0.2 },
+  comparative: { keywords: ['compare', 'versus', 'vs', 'difference', 'better', 'worse'], weight: 0.15 },
+  research: { keywords: ['comprehensive', 'detailed', 'in-depth', 'thorough', 'research'], weight: 0.2 },
+  uncertainty: { keywords: ['might', 'could', 'perhaps', 'possibly', 'uncertain'], weight: 0.1 },
+  scope: { keywords: ['all', 'every', 'comprehensive', 'complete', 'entire'], weight: 0.15 }
+}
+
+export function analyzeQuery(query: string): QueryAnalysis {
+  const words = query.toLowerCase().split(/\s+/)
+  const wordCount = words.length
+  const queryLower = query.toLowerCase()
+
+  // Calculate complexity score
+  let complexity = 0.2 // Base complexity
+
+  if (wordCount > 100) complexity += COMPLEXITY_INDICATORS.length.weight
+
+  for (const kw of COMPLEXITY_INDICATORS.technical.keywords) {
+    if (queryLower.includes(kw)) {
+      complexity += COMPLEXITY_INDICATORS.technical.weight
+      break
+    }
+  }
+
+  for (const pattern of COMPLEXITY_INDICATORS.multiPart.patterns) {
+    if (pattern.test(queryLower)) {
+      complexity += COMPLEXITY_INDICATORS.multiPart.weight
+      break
+    }
+  }
+
+  for (const kw of COMPLEXITY_INDICATORS.comparative.keywords) {
+    if (queryLower.includes(kw)) {
+      complexity += COMPLEXITY_INDICATORS.comparative.weight
+      break
+    }
+  }
+
+  for (const kw of COMPLEXITY_INDICATORS.research.keywords) {
+    if (queryLower.includes(kw)) {
+      complexity += COMPLEXITY_INDICATORS.research.weight
+      break
+    }
+  }
+
+  complexity = Math.min(1, complexity)
+
+  // Determine query type
+  let queryType: QueryType = 'factual'
+  if (/compare|versus|vs|better|worse/i.test(query)) queryType = 'comparative'
+  else if (/how to|step|guide|tutorial/i.test(query)) queryType = 'procedural'
+  else if (/research|comprehensive|detailed|in-depth/i.test(query)) queryType = 'research'
+  else if (/create|design|brainstorm|ideas|imagine/i.test(query)) queryType = 'creative'
+  else if (/analyze|evaluate|assess|review/i.test(query)) queryType = 'analytical'
+  else if (/fix|error|bug|issue|problem|debug/i.test(query)) queryType = 'troubleshooting'
+  else if (/plan|strategy|roadmap|approach/i.test(query)) queryType = 'planning'
+
+  // Extract keywords (improved extraction)
+  const stopWords = new Set([
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+    'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been',
+    'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
+    'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that',
+    'these', 'those', 'it', 'its', 'what', 'which', 'who', 'whom', 'how',
+    'when', 'where', 'why', 'there', 'here', 'all', 'each', 'every', 'both',
+    'few', 'more', 'most', 'other', 'some', 'such', 'no', 'not', 'only',
+    'own', 'same', 'so', 'than', 'too', 'very', 'just', 'about', 'into'
+  ])
+
+  const keywords = words
+    .filter(w => w.length > 3 && !stopWords.has(w))
+    .reduce((acc, word) => {
+      acc[word] = (acc[word] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+  const sortedKeywords = Object.entries(keywords)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([word]) => word)
+
+  return {
+    complexity,
+    queryType,
+    requiresTools: /search|lookup|find|fetch|get.*data|api/i.test(query),
+    requiresMultiPerspective: /compare|perspective|opinion|view|argument/i.test(query),
+    isMathematical: /\d+\s*[+\-*/^%]\s*\d+|calculate|compute|equation|formula/i.test(query),
+    isFactual: /what is|who is|when did|where is|how many/i.test(query) && wordCount < 15,
+    isProcedural: /how to|step|guide|tutorial|process/i.test(query),
+    isCreative: /create|design|brainstorm|ideas|imagine|invent/i.test(query),
+    wordCount,
+    keywords: sortedKeywords
+  }
+}
+
+// ============================================================
+// SEFIROT ACTIVATION CALCULATOR
+// ============================================================
+
+export function calculateSefirotActivations(
+  query: string,
+  weights: Record<number, number>
+): SefirotActivation[] {
+  const queryLower = query.toLowerCase()
+  const activations: SefirotActivation[] = []
+
+  for (const [sefirahKey, keywords] of Object.entries(SEFIROT_KEYWORDS)) {
+    const sefirah = parseInt(sefirahKey) as Sefirah
+    const meta = SEPHIROTH_METADATA[sefirah]
+    if (!meta) continue
+
+    // Calculate activation from keyword presence
+    let activation = 0
+    const matchedKeywords: string[] = []
+
+    for (const keyword of keywords) {
+      if (queryLower.includes(keyword)) {
+        activation += 0.15
+        matchedKeywords.push(keyword)
+      }
+    }
+
+    // Normalize activation
+    activation = Math.min(1, activation)
+
+    // Get user weight
+    const weight = weights[sefirah] ?? 0.5
+
+    // Calculate effective weight
+    const effectiveWeight = activation * weight
+
+    activations.push({
+      sefirah,
+      name: meta.name,
+      activation,
+      weight,
+      effectiveWeight,
+      keywords: matchedKeywords
+    })
+  }
+
+  // Sort by effective weight descending
+  activations.sort((a, b) => b.effectiveWeight - a.effectiveWeight)
+
+  return activations
+}
+
+// ============================================================
+// METHODOLOGY SELECTOR
+// ============================================================
+
+export function selectMethodology(
+  analysis: QueryAnalysis,
+  sefirotActivations: SefirotActivation[]
+): { methodology: CoreMethodology; scores: MethodologyScore[]; confidence: number } {
+  const scores: MethodologyScore[] = []
+
+  // Get dominant Sefirot (effective weight > 0.3)
+  const dominantSefirot = sefirotActivations
+    .filter(s => s.effectiveWeight > 0.3)
+    .map(s => s.sefirah)
+
+  // Score DIRECT
+  let directScore = 0
+  const directReasons: string[] = []
+  if (analysis.complexity < 0.3) { directScore += 0.5; directReasons.push('Low complexity') }
+  if (analysis.isFactual) { directScore += 0.4; directReasons.push('Factual query') }
+  if (analysis.wordCount < 15) { directScore += 0.2; directReasons.push('Short query') }
+  if (dominantSefirot.includes(Sefirah.MALKUTH)) { directScore += 0.2; directReasons.push('Malkuth dominant') }
+  scores.push({ methodology: 'direct', score: Math.min(1, directScore), reasons: directReasons })
+
+  // Score COD (Chain of Draft)
+  let codScore = 0
+  const codReasons: string[] = []
+  if (analysis.isProcedural) { codScore += 0.6; codReasons.push('Procedural query') }
+  if (analysis.queryType === 'troubleshooting') { codScore += 0.5; codReasons.push('Troubleshooting') }
+  if (analysis.complexity >= 0.3 && analysis.complexity < 0.7) { codScore += 0.3; codReasons.push('Medium complexity') }
+  if (dominantSefirot.includes(Sefirah.CHOKMAH) && dominantSefirot.includes(Sefirah.KETHER)) {
+    codScore += 0.3; codReasons.push('Chokmah+Kether dominant')
+  }
+  scores.push({ methodology: 'cod', score: Math.min(1, codScore), reasons: codReasons })
+
+  // Score BOT (Buffer of Thoughts)
+  let botScore = 0
+  const botReasons: string[] = []
+  if (analysis.queryType === 'analytical' || analysis.queryType === 'planning') { botScore += 0.8; botReasons.push('Analytical/Planning query') }
+  if (analysis.queryType === 'comparative') { botScore += 0.7; botReasons.push('Comparative query') }
+  if (analysis.queryType === 'research') { botScore += 0.6; botReasons.push('Research query') }
+  if (dominantSefirot.includes(Sefirah.BINAH)) { botScore += 0.3; botReasons.push('Binah dominant') }
+  if (dominantSefirot.includes(Sefirah.TIFERET)) { botScore += 0.2; botReasons.push('Tiferet dominant') }
+  scores.push({ methodology: 'bot', score: Math.min(1, botScore), reasons: botReasons })
+
+  // Score REACT
+  let reactScore = 0
+  const reactReasons: string[] = []
+  if (analysis.requiresTools) { reactScore += 0.85; reactReasons.push('Requires tools') }
+  if (/search|lookup|find|current|latest|today/i.test(analysis.keywords.join(' '))) {
+    reactScore += 0.5; reactReasons.push('Needs external data')
+  }
+  if (dominantSefirot.includes(Sefirah.GEVURAH)) { reactScore += 0.2; reactReasons.push('Gevurah dominant') }
+  scores.push({ methodology: 'react', score: Math.min(1, reactScore), reasons: reactReasons })
+
+  // Score POT (Program of Thought)
+  let potScore = 0
+  const potReasons: string[] = []
+  if (analysis.isMathematical) { potScore += 0.85; potReasons.push('Mathematical query') }
+  if (/calculate|compute|formula|equation|percentage|ratio/i.test(analysis.keywords.join(' '))) {
+    potScore += 0.5; potReasons.push('Computation needed')
+  }
+  if (dominantSefirot.includes(Sefirah.YESOD)) { potScore += 0.3; potReasons.push('Yesod dominant') }
+  scores.push({ methodology: 'pot', score: Math.min(1, potScore), reasons: potReasons })
+
+  // Score GTP (Generative Thoughts Process)
+  let gtpScore = 0
+  const gtpReasons: string[] = []
+  if (analysis.requiresMultiPerspective) { gtpScore += 0.7; gtpReasons.push('Multi-perspective needed') }
+  if (analysis.queryType === 'comparative') { gtpScore += 0.5; gtpReasons.push('Comparative query') }
+  if (analysis.isCreative) { gtpScore += 0.5; gtpReasons.push('Creative query') }
+  if (analysis.complexity >= 0.7) { gtpScore += 0.4; gtpReasons.push('High complexity') }
+  if (dominantSefirot.includes(Sefirah.DAAT)) { gtpScore += 0.3; gtpReasons.push('Da\'at dominant') }
+  scores.push({ methodology: 'gtp', score: Math.min(1, gtpScore), reasons: gtpReasons })
+
+  // Sort by score
+  scores.sort((a, b) => b.score - a.score)
+
+  // Select best methodology
+  const selected = scores[0]
+
+  return {
+    methodology: selected.methodology,
+    scores,
+    confidence: selected.score
+  }
+}
+
+// ============================================================
+// GUARD ASSESSMENT
+// ============================================================
+
+export function assessGuardStatus(
+  query: string,
+  analysis: QueryAnalysis
+): { recommendation: 'proceed' | 'warn' | 'block'; reasons: string[] } {
+  const reasons: string[] = []
+  let riskScore = 0
+
+  // High-stakes content detection
+  const highStakesPatterns = [
+    { pattern: /medical|health|diagnosis|treatment|symptom/i, risk: 0.4, label: 'Medical content' },
+    { pattern: /legal|lawsuit|contract|liability/i, risk: 0.4, label: 'Legal content' },
+    { pattern: /investment|financial advice|buy|sell|stock/i, risk: 0.3, label: 'Financial advice' },
+    { pattern: /suicide|self-harm|emergency/i, risk: 0.8, label: 'Crisis content' }
+  ]
+
+  for (const { pattern, risk, label } of highStakesPatterns) {
+    if (pattern.test(query)) {
+      riskScore += risk
+      reasons.push(label)
+    }
+  }
+
+  // Hype/certainty detection
+  const hypePatterns = [
+    /guaranteed|definitely|absolutely|always|never|impossible/i,
+    /revolutionary|game-?changing|best ever|unprecedented/i
+  ]
+
+  for (const pattern of hypePatterns) {
+    if (pattern.test(query)) {
+      riskScore += 0.2
+      reasons.push('Contains certainty language')
+      break
+    }
+  }
+
+  // Determine recommendation
+  if (riskScore >= 0.7) {
+    return { recommendation: 'block', reasons }
+  } else if (riskScore >= 0.3) {
+    return { recommendation: 'warn', reasons }
+  }
+
+  return { recommendation: 'proceed', reasons: ['Standard query'] }
+}
+
+// ============================================================
+// EXTENDED THINKING BUDGET
+// ============================================================
+
+export function calculateThinkingBudget(
+  analysis: QueryAnalysis,
+  sefirotActivations: SefirotActivation[]
+): number {
+  let budget = 3000 // Base budget
+
+  // Complexity boost
+  if (analysis.complexity >= 0.7) {
+    budget += 6000
+  } else if (analysis.complexity >= 0.5) {
+    budget += 3000
+  }
+
+  // Sefirot boost (Kether, Chokmah, Binah = higher thinking)
+  const highThinkingSefirot = [Sefirah.KETHER, Sefirah.CHOKMAH, Sefirah.BINAH]
+  for (const sefirah of highThinkingSefirot) {
+    const activation = sefirotActivations.find(s => s.sefirah === sefirah)
+    if (activation && activation.effectiveWeight > 0.5) {
+      budget += 2000
+    }
+  }
+
+  // Cap at 12K tokens
+  return Math.min(12000, budget)
+}
+
+// ============================================================
+// PATH ACTIVATIONS
+// ============================================================
+
+const TREE_PATHS: Array<{ from: Sefirah; to: Sefirah; description: string }> = [
+  // Middle Pillar
+  { from: Sefirah.KETHER, to: Sefirah.TIFERET, description: 'Crown to Beauty (Consciousness Path)' },
+  { from: Sefirah.TIFERET, to: Sefirah.YESOD, description: 'Beauty to Foundation (Manifestation)' },
+  { from: Sefirah.YESOD, to: Sefirah.MALKUTH, description: 'Foundation to Kingdom (Realization)' },
+
+  // Left Pillar (Severity)
+  { from: Sefirah.BINAH, to: Sefirah.GEVURAH, description: 'Understanding to Severity (Discernment)' },
+  { from: Sefirah.GEVURAH, to: Sefirah.HOD, description: 'Severity to Glory (Analysis)' },
+
+  // Right Pillar (Mercy)
+  { from: Sefirah.CHOKMAH, to: Sefirah.CHESED, description: 'Wisdom to Mercy (Expansion)' },
+  { from: Sefirah.CHESED, to: Sefirah.NETZACH, description: 'Mercy to Victory (Creativity)' },
+
+  // Cross paths
+  { from: Sefirah.BINAH, to: Sefirah.CHOKMAH, description: 'Understanding to Wisdom (Supernal)' },
+  { from: Sefirah.GEVURAH, to: Sefirah.CHESED, description: 'Severity to Mercy (Balance)' },
+  { from: Sefirah.HOD, to: Sefirah.NETZACH, description: 'Glory to Victory (Expression)' },
+
+  // Da'at connections
+  { from: Sefirah.KETHER, to: Sefirah.DAAT, description: 'Crown to Knowledge (Hidden Path)' },
+  { from: Sefirah.DAAT, to: Sefirah.TIFERET, description: 'Knowledge to Beauty (Emergence)' }
+]
+
+export function calculatePathActivations(
+  sefirotActivations: SefirotActivation[]
+): PathActivation[] {
+  const activationMap = new Map(sefirotActivations.map(s => [s.sefirah, s.effectiveWeight]))
+  const paths: PathActivation[] = []
+
+  for (const { from, to, description } of TREE_PATHS) {
+    const fromWeight = activationMap.get(from) ?? 0
+    const toWeight = activationMap.get(to) ?? 0
+    const pathWeight = Math.min(fromWeight, toWeight)
+
+    if (pathWeight > 0.1) {
+      paths.push({ from, to, weight: pathWeight, description })
+    }
+  }
+
+  return paths.sort((a, b) => b.weight - a.weight)
+}
+
+// ============================================================
+// MAIN FUSION FUNCTION
+// ============================================================
+
+export async function fuseIntelligence(
+  query: string,
+  sefirotWeights: Record<number, number>,
+  instinctConfig: InstinctConfig,
+  sideCanal?: { contextInjection: string | null; relatedTopics: string[] }
+): Promise<IntelligenceFusionResult> {
+  const startTime = Date.now()
+
+  // 1. Analyze query
+  const analysis = analyzeQuery(query)
+
+  // 2. Calculate Sefirot activations
+  const sefirotActivations = calculateSefirotActivations(query, sefirotWeights)
+  const dominantSefirot = sefirotActivations
+    .filter(s => s.effectiveWeight > 0.3)
+    .map(s => s.sefirah)
+
+  // 3. Calculate path activations
+  const pathActivations = calculatePathActivations(sefirotActivations)
+
+  // 4. Select methodology
+  const { methodology, scores, confidence } = selectMethodology(analysis, sefirotActivations)
+
+  // 5. Assess Guard status
+  const { recommendation, reasons } = assessGuardStatus(query, analysis)
+
+  // 6. Generate Instinct prompt
+  const instinctPrompt = generateInstinctPrompt(instinctConfig)
+
+  // 7. Calculate thinking budget
+  const extendedThinkingBudget = calculateThinkingBudget(analysis, sefirotActivations)
+
+  // 8. Determine processing mode
+  const activeCount = sefirotActivations.filter(s => s.effectiveWeight > 0.1).length
+  const processingMode: 'weighted' | 'parallel' | 'adaptive' =
+    analysis.complexity >= 0.7 && activeCount >= 5 ? 'parallel' : 'weighted'
+
+  return {
+    analysis,
+    sefirotActivations,
+    dominantSefirot,
+    pathActivations,
+    selectedMethodology: methodology,
+    methodologyScores: scores,
+    confidence,
+    guardRecommendation: recommendation,
+    guardReasons: reasons,
+    instinctPrompt,
+    activeLenses: instinctConfig.enabled ? instinctConfig.activeLenses : [],
+    contextInjection: sideCanal?.contextInjection ?? null,
+    relatedTopics: sideCanal?.relatedTopics ?? [],
+    extendedThinkingBudget,
+    processingMode,
+    timestamp: Date.now(),
+    processingTimeMs: Date.now() - startTime
+  }
+}
+
+// ============================================================
+// UTILITY: Generate Enhanced System Prompt
+// ============================================================
+
+export function generateEnhancedSystemPrompt(
+  fusionResult: IntelligenceFusionResult
+): string {
+  let prompt = ''
+
+  // Add Sefirot awareness
+  if (fusionResult.dominantSefirot.length > 0) {
+    const dominantNames = fusionResult.sefirotActivations
+      .filter(s => fusionResult.dominantSefirot.includes(s.sefirah))
+      .map(s => `${s.name} (${Math.round(s.effectiveWeight * 100)}%)`)
+
+    prompt += `
+ACTIVE SEFIROT: ${dominantNames.join(', ')}
+Apply these computational layers with emphasis.
+`
+  }
+
+  // Add methodology guidance
+  prompt += `
+METHODOLOGY: ${fusionResult.selectedMethodology.toUpperCase()} (${Math.round(fusionResult.confidence * 100)}% confidence)
+Reasoning: ${fusionResult.methodologyScores[0]?.reasons.join(', ') || 'Default selection'}
+`
+
+  // Add Instinct prompt if enabled
+  if (fusionResult.instinctPrompt) {
+    prompt += fusionResult.instinctPrompt
+  }
+
+  // Add context injection
+  if (fusionResult.contextInjection) {
+    prompt += `
+CONTEXT FROM PREVIOUS CONVERSATIONS:
+${fusionResult.contextInjection}
+`
+  }
+
+  // Add Guard warnings
+  if (fusionResult.guardRecommendation !== 'proceed') {
+    prompt += `
+GUARD NOTICE: ${fusionResult.guardRecommendation.toUpperCase()}
+${fusionResult.guardReasons.join(', ')}
+Apply extra caution and cite sources.
+`
+  }
+
+  return prompt
+}

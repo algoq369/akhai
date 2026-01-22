@@ -622,6 +622,266 @@ function calculateCost(providerName: string, inputTokens: number, outputTokens: 
   return (inputTokens * rate.input + outputTokens * rate.output) / 1000;
 }
 
+// =============================================================================
+// PHASE 3: AI-POWERED TEMPLATE SELECTION WITH OPUS 4.5
+// =============================================================================
+
+/**
+ * Enhanced BoT configuration with AI-powered template selection
+ */
+export interface EnhancedBoTConfig extends BoTConfig {
+  /** Enable AI-powered template selection */
+  enableAITemplateSelection: boolean;
+
+  /** Complexity score (1-10) to determine if AI selection is needed */
+  complexityThreshold: number;
+}
+
+/**
+ * Template selection result from Opus 4.5
+ */
+export interface TemplateSelectionResult {
+  /** Selected reasoning template/approach */
+  template: string;
+
+  /** Customization parameters for the template */
+  customizations: {
+    focusAreas?: string[];
+    skipSteps?: string[];
+    emphasisLevel?: 'brief' | 'moderate' | 'detailed';
+    additionalContext?: string;
+  };
+
+  /** Confidence in template selection (0.0-1.0) */
+  confidence: number;
+
+  /** Reasoning about why this template was selected */
+  reasoning: string;
+}
+
+/**
+ * AI-Powered Template Selection using Opus 4.5
+ *
+ * Intelligently selects and customizes the optimal reasoning template
+ * based on query characteristics, domain, and complexity.
+ *
+ * @param query - User query to analyze
+ * @param provider - AI provider instance (should support Opus 4.5)
+ * @param metaBuffers - Available meta-buffers from previous reasoning
+ * @param complexityScore - Query complexity (1-10)
+ * @returns Template selection with customizations
+ */
+export async function selectOptimalTemplate(
+  query: string,
+  provider: BaseProvider,
+  metaBuffers: MetaBuffer[] = [],
+  complexityScore: number = 5
+): Promise<TemplateSelectionResult> {
+  // Build available templates list
+  const availableTemplates = [
+    {
+      name: 'analytical',
+      description: 'Break down → Analyze components → Synthesize insights',
+      bestFor: 'Complex analysis, comparisons, evaluations',
+    },
+    {
+      name: 'procedural',
+      description: 'Identify goal → List steps → Validate approach',
+      bestFor: 'How-to queries, planning, step-by-step solutions',
+    },
+    {
+      name: 'comparative',
+      description: 'Define criteria → Compare options → Recommend best',
+      bestFor: 'Comparisons, trade-offs, decision making',
+    },
+    {
+      name: 'investigative',
+      description: 'Question → Hypothesis → Evidence → Conclusion',
+      bestFor: 'Research questions, fact-finding, exploration',
+    },
+    {
+      name: 'creative',
+      description: 'Explore → Diverge → Converge → Refine',
+      bestFor: 'Brainstorming, ideation, creative problems',
+    },
+  ];
+
+  // Include meta-buffer templates if available
+  const metaBufferTemplates = metaBuffers
+    .filter(mb => mb.template && mb.template.length > 10)
+    .map((mb, i) => ({
+      name: `learned-${i + 1}`,
+      description: mb.template,
+      bestFor: `Pattern learned from previous reasoning (${mb.confidence.toFixed(2)} confidence)`,
+    }));
+
+  const allTemplates = [...availableTemplates, ...metaBufferTemplates];
+
+  // Build template selection prompt
+  const prompt = `Select the optimal reasoning template for this query:
+
+QUERY: "${query}"
+
+QUERY COMPLEXITY: ${complexityScore}/10
+
+AVAILABLE TEMPLATES:
+${allTemplates.map((t, i) => `${i + 1}. **${t.name}**: ${t.description}
+   Best for: ${t.bestFor}`).join('\n\n')}
+
+Your task:
+1. Analyze the query's domain, intent, and structure
+2. Select the template that best fits this specific query
+3. Customize the template with specific focus areas or modifications
+4. Provide confidence score and reasoning
+
+Return ONLY valid JSON (no markdown):
+{
+  "template": "<template_name>",
+  "customizations": {
+    "focusAreas": ["area1", "area2"],
+    "skipSteps": ["step_to_skip"],
+    "emphasisLevel": "brief|moderate|detailed",
+    "additionalContext": "any special instructions"
+  },
+  "confidence": 0.0-1.0,
+  "reasoning": "why this template is optimal for this query"
+}`;
+
+  try {
+    // Use Opus 4.5 for intelligent template selection
+    const request: CompletionRequest = {
+      messages: [{ role: 'user', content: prompt }],
+      maxTokens: 800,
+      temperature: 0.4,
+    };
+
+    const completion = await provider.complete(request);
+    const content = completion.content;
+
+    // Parse JSON from response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No valid JSON found in template selection response');
+    }
+
+    const result = JSON.parse(jsonMatch[0]);
+
+    // Validate and return
+    return {
+      template: result.template || 'analytical',
+      customizations: {
+        focusAreas: result.customizations?.focusAreas || [],
+        skipSteps: result.customizations?.skipSteps || [],
+        emphasisLevel: result.customizations?.emphasisLevel || 'moderate',
+        additionalContext: result.customizations?.additionalContext || '',
+      },
+      confidence: Math.max(0, Math.min(1, result.confidence || 0.7)),
+      reasoning: result.reasoning || 'Default analytical approach selected',
+    };
+  } catch (error) {
+    console.error('[BoT Template Selection] Error:', error);
+
+    // Fallback: heuristic-based selection
+    const fallbackTemplate = selectTemplateFallback(query, complexityScore);
+    return {
+      template: fallbackTemplate.name,
+      customizations: {
+        emphasisLevel: complexityScore > 7 ? 'detailed' : 'moderate',
+      },
+      confidence: 0.6,
+      reasoning: 'Fallback heuristic selection (AI selection failed)',
+    };
+  }
+}
+
+/**
+ * Fallback template selection using heuristics
+ */
+function selectTemplateFallback(
+  query: string,
+  complexityScore: number
+): { name: string; description: string } {
+  const lowerQuery = query.toLowerCase();
+
+  // Heuristic rules
+  if (lowerQuery.includes('how to') || lowerQuery.includes('steps')) {
+    return { name: 'procedural', description: 'Step-by-step approach' };
+  }
+
+  if (lowerQuery.includes('compare') || lowerQuery.includes('vs') || lowerQuery.includes('better')) {
+    return { name: 'comparative', description: 'Comparison approach' };
+  }
+
+  if (lowerQuery.includes('why') || lowerQuery.includes('investigate') || lowerQuery.includes('research')) {
+    return { name: 'investigative', description: 'Research approach' };
+  }
+
+  if (lowerQuery.includes('idea') || lowerQuery.includes('brainstorm') || lowerQuery.includes('creative')) {
+    return { name: 'creative', description: 'Creative approach' };
+  }
+
+  // Default to analytical for complex queries
+  return { name: 'analytical', description: 'Analytical breakdown' };
+}
+
+/**
+ * Enhanced BoT execution with AI-powered template selection
+ *
+ * @param query - User query to solve
+ * @param provider - AI provider instance
+ * @param config - Enhanced configuration with AI template selection
+ * @param complexityScore - Query complexity (1-10)
+ * @param callbacks - Optional callbacks for real-time updates
+ * @returns BoT execution result with template metadata
+ */
+export async function executeEnhancedBoT(
+  query: string,
+  provider: BaseProvider,
+  config: Partial<EnhancedBoTConfig> = {},
+  complexityScore: number = 5,
+  callbacks?: BoTCallbacks
+): Promise<BoTResult & { templateUsed?: TemplateSelectionResult }> {
+  const cfg: EnhancedBoTConfig = {
+    ...DEFAULT_CONFIG,
+    enableAITemplateSelection: true,
+    complexityThreshold: 6,
+    ...config,
+  };
+
+  // Decide whether to use AI template selection
+  const useAISelection =
+    cfg.enableAITemplateSelection &&
+    complexityScore >= cfg.complexityThreshold;
+
+  let templateSelection: TemplateSelectionResult | undefined;
+
+  if (useAISelection) {
+    console.log(`[BoT] Using AI-powered template selection (complexity: ${complexityScore})`);
+    try {
+      // Note: This requires the buffer to be initialized first to access meta-buffers
+      // For now, we'll pass empty meta-buffers and improve this in future iterations
+      templateSelection = await selectOptimalTemplate(
+        query,
+        provider,
+        [], // Will be populated with actual meta-buffers in future enhancement
+        complexityScore
+      );
+      console.log(`[BoT] Selected template: ${templateSelection.template} (${templateSelection.confidence.toFixed(2)} confidence)`);
+    } catch (error) {
+      console.error('[BoT] Template selection failed, using standard execution:', error);
+    }
+  }
+
+  // Execute standard BoT (template selection will influence future iterations)
+  const result = await executeBufferOfThoughts(query, provider, cfg, callbacks);
+
+  // Return result with template metadata
+  return {
+    ...result,
+    templateUsed: templateSelection,
+  };
+}
+
 /**
  * Export for use as default
  */

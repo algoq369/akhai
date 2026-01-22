@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSideCanalStore } from '@/lib/stores/side-canal-store'
+import type { Topic as StoreTopic } from '@/lib/side-canal'
 
-interface Topic {
-  id: string
-  name: string
-  description: string | null
-  category: string | null
-  created_at: number
+// Extended Topic with UI-specific fields
+interface Topic extends StoreTopic {
   query_count?: number
   color?: string
   pinned?: boolean
@@ -47,19 +45,25 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default function TopicsPanel({ isOpen, onClose, onOpenMindMap }: TopicsPanelProps) {
   const router = useRouter()
-  const [topics, setTopics] = useState<Topic[]>([])
-  const [loading, setLoading] = useState(false)
+
+  // Use Side Canal store for topics data
+  const { topics: storeTopics, loading, loadTopics } = useSideCanalStore()
+
+  // Cast to extended Topic type (API may return additional fields)
+  const topics = storeTopics as Topic[]
+
+  // Local UI state
   const [filter, setFilter] = useState<string | null>(null)
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
   const [relatedQueries, setRelatedQueries] = useState<RelatedQuery[]>([])
   const [relatedTopics, setRelatedTopics] = useState<RelatedTopic[]>([])
   const [loadingDetail, setLoadingDetail] = useState(false)
-  
+
   // Tool modes
   const [legendMode, setLegendMode] = useState(false)
   const [auditMode, setAuditMode] = useState(false)
   const [suggestionMode, setSuggestionMode] = useState(true)
-  
+
   // Load legend mode from localStorage
   useEffect(() => {
     try {
@@ -68,26 +72,12 @@ export default function TopicsPanel({ isOpen, onClose, onOpenMindMap }: TopicsPa
     } catch (e) {}
   }, [])
 
+  // Load topics from store when panel opens
   useEffect(() => {
     if (isOpen) {
-      fetchTopics()
+      loadTopics()
     }
-  }, [isOpen])
-
-  const fetchTopics = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/side-canal/topics')
-      if (res.ok) {
-        const data = await res.json()
-        setTopics(data.topics || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch topics:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [isOpen, loadTopics])
 
   const fetchTopicDetail = async (topicId: string) => {
     setLoadingDetail(true)

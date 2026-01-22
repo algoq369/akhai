@@ -58,7 +58,7 @@ export const useSideCanalStore = create<SideCanalState>()(
       enabled: true,
       contextInjectionEnabled: true,
       autoExtractEnabled: true,
-      autoSynopsisEnabled: true,
+      autoSynopsisEnabled: false, // Disabled to prevent errors (user can enable manually)
 
       // Actions
 

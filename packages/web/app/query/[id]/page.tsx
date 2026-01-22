@@ -3,6 +3,9 @@
 import { useParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
+// Force dynamic rendering to avoid prerender errors
+export const dynamic = 'force-dynamic'
+
 export default function QueryResultsPage() {
   const params = useParams()
   const queryId = params.id as string

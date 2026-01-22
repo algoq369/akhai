@@ -22,6 +22,8 @@ export async function processFiles(fileUrls: string[]): Promise<ProcessedFile[]>
       const filepath = path.join(process.cwd(), 'public', 'uploads', filename)
       const ext = path.extname(filename).toLowerCase()
 
+      console.log('📖 file-processor: Reading file:', { url, filename, filepath, ext })
+
       if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext)) {
         // For images: read as base64 for Claude vision
         const buffer = await readFile(filepath)
@@ -43,13 +45,18 @@ export async function processFiles(fileUrls: string[]): Promise<ProcessedFile[]>
         })
 
       } else if (ext === '.pdf') {
-        // For PDFs: extract text content using dynamic import
+        // For PDFs: extract text content using unpdf (Next.js compatible)
         try {
+          console.log('📄 file-processor: Starting PDF extraction for:', filename)
           const buffer = await readFile(filepath)
-          // Dynamic import to avoid Next.js build issues
-          const pdfParse = (await import('pdf-parse')).default
-          const pdfData = await pdfParse(buffer)
-          const content = pdfData.text.trim()
+          console.log('📄 file-processor: PDF buffer size:', buffer.length, 'bytes')
+          // Use unpdf - designed for Next.js
+          const { getDocumentProxy, extractText } = await import('unpdf')
+          const uint8Array = new Uint8Array(buffer)
+          const pdf = await getDocumentProxy(uint8Array)
+          const { text } = await extractText(pdf, { mergePages: true })
+          const content = text.trim()
+          console.log('✅ file-processor: PDF extracted successfully, text length:', content.length, 'chars')
 
           processedFiles.push({
             type: 'document',

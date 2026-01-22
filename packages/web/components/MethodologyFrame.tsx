@@ -8,6 +8,8 @@ interface MethodologyFrameProps {
   onMethodologyChange: (methodId: string) => void
   isSubmitting: boolean
   inputRef?: React.RefObject<HTMLInputElement>
+  consoleOpen?: boolean
+  onConsoleToggle?: () => void
 }
 
 interface Methodology {
@@ -35,8 +37,11 @@ export default function MethodologyFrame({
   currentMethodology,
   onMethodologyChange,
   isSubmitting,
+  consoleOpen = false,
+  onConsoleToggle,
 }: MethodologyFrameProps) {
   const [hoveredMethod, setHoveredMethod] = useState<string | null>(null)
+  const [hoveredConsole, setHoveredConsole] = useState(false)
   
   const currentMethod = METHODOLOGIES.find(m => m.id === currentMethodology) || METHODOLOGIES[0]
 
@@ -101,6 +106,54 @@ export default function MethodologyFrame({
         <div className="flex items-center gap-1 ml-4">
           <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-[8px] uppercase tracking-widest text-slate-400">guard active</span>
+        </div>
+
+        {/* Vertical separator */}
+        <div className="h-6 w-px bg-slate-700 dark:bg-slate-600 mx-3" />
+
+        {/* Tree of Life Console indicator */}
+        <div
+          className="relative"
+          onMouseEnter={() => setHoveredConsole(true)}
+          onMouseLeave={() => setHoveredConsole(false)}
+        >
+          <motion.button
+            onClick={onConsoleToggle}
+            className="text-[14px] transition-all duration-200"
+            style={{
+              color: consoleOpen ? '#a855f7' : '#cbd5e1',
+              filter: consoleOpen ? 'drop-shadow(0 0 4px #a855f7)' : 'none'
+            }}
+            whileHover={{ scale: 1.3 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            ✦
+          </motion.button>
+
+          {/* Tooltip on hover */}
+          <AnimatePresence>
+            {hoveredConsole && (
+              <motion.div
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none"
+              >
+                <div className="flex flex-col items-center">
+                  <span
+                    className="text-[10px] font-medium text-purple-400"
+                  >
+                    Tree of Life
+                  </span>
+                  <span
+                    className="text-[8px] font-mono opacity-60 text-purple-400"
+                  >
+                    ✦ configuration
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

@@ -6,6 +6,10 @@ import Link from 'next/link';
 import { MagicBento, BentoCard, MethodologyAnimation } from '@/components/ui/MagicBento';
 import { LiquidEther } from '@/components/ui/LiquidEther';
 import { DecryptedTitle } from '@/components/ui/DecryptedText';
+import DarkModeToggle from '@/components/DarkModeToggle';
+
+// Force dynamic rendering to avoid prerender errors
+export const dynamic = 'force-dynamic';
 
 export default function ExplorePage() {
   const router = useRouter();
@@ -142,25 +146,28 @@ export default function ExplorePage() {
   return (
     <>
       <LiquidEther />
-      <div className="min-h-screen pt-16 relative">
+      <div className="min-h-screen pt-16 relative bg-white dark:bg-relic-void">
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8 text-center">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-xs mb-4 transition-colors"
-            >
-              <span>←</span>
-              <span>Back to Home</span>
-            </Link>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-gray-400 dark:text-relic-silver hover:text-gray-600 dark:hover:text-white text-xs transition-colors"
+              >
+                <span>←</span>
+                <span>Back to Home</span>
+              </Link>
+              <DarkModeToggle />
+            </div>
 
             <DecryptedTitle
               text="Explore AkhAI Methodologies"
-              className="text-3xl md:text-4xl font-bold text-white mb-3"
+              className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3"
               speed={25}
             />
 
-            <p className="text-gray-500 text-sm max-w-2xl mx-auto font-light">
+            <p className="text-gray-500 dark:text-relic-silver text-sm max-w-2xl mx-auto font-light">
               Discover how different AI reasoning approaches solve your questions
             </p>
           </div>
@@ -170,22 +177,22 @@ export default function ExplorePage() {
 
           {/* Footer info */}
           <div className="mt-12 text-center">
-            <div className="inline-flex items-center gap-4 px-6 py-3 bg-black/50 backdrop-blur-sm rounded-full border border-gray-800 shadow-sm">
+            <div className="inline-flex items-center gap-4 px-6 py-3 bg-slate-100 dark:bg-black/50 backdrop-blur-sm rounded-full border border-slate-200 dark:border-gray-800 shadow-sm">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Powered by</span>
+                <span className="text-xs text-gray-500 dark:text-relic-silver">Powered by</span>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs font-medium text-gray-400">Anthropic</span>
-                  <span className="text-gray-600">•</span>
-                  <span className="text-xs font-medium text-gray-400">DeepSeek</span>
-                  <span className="text-gray-600">•</span>
-                  <span className="text-xs font-medium text-gray-400">Grok</span>
-                  <span className="text-gray-600">•</span>
-                  <span className="text-xs font-medium text-gray-400">Mistral</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Anthropic</span>
+                  <span className="text-gray-400 dark:text-gray-600">•</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">DeepSeek</span>
+                  <span className="text-gray-400 dark:text-gray-600">•</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Grok</span>
+                  <span className="text-gray-400 dark:text-gray-600">•</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Mistral</span>
                 </div>
               </div>
             </div>
 
-            <p className="text-xs text-gray-600 mt-4 uppercase tracking-wider">
+            <p className="text-xs text-gray-600 dark:text-relic-silver mt-4 uppercase tracking-wider">
               Click any methodology card to start a query with that approach
             </p>
           </div>

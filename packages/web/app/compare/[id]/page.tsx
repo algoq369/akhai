@@ -4,6 +4,9 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LiquidEther } from '@/components/ui/LiquidEther';
 
+// Force dynamic rendering to avoid prerender errors
+export const dynamic = 'force-dynamic'
+
 interface PageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ queries?: string }>;

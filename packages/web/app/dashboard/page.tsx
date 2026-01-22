@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useDashboardStore } from '@/lib/stores/dashboard-store'
+import DarkModeToggle from '@/components/DarkModeToggle'
+
+// Force dynamic rendering to avoid prerender errors
+export const dynamic = 'force-dynamic'
 
 export default function DashboardPage() {
   const { stats, loading, error, fetchStats } = useDashboardStore()
@@ -36,14 +40,14 @@ export default function DashboardPage() {
 
   if (loading && !stats) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+      <div className="min-h-screen bg-white dark:bg-relic-void flex items-center justify-center">
+        <div className="w-4 h-4 border-2 border-slate-200 dark:border-relic-slate/30 border-t-slate-600 dark:border-t-white rounded-full animate-spin" />
       </div>
     )
   }
 
   const providers = [
-    { key: 'anthropic', name: 'Anthropic Claude', model: 'claude-opus-4-20250514', active: stats?.providers?.anthropic?.status === 'active' },
+    { key: 'anthropic', name: 'Anthropic Claude', model: 'claude-opus-4-5-20251101', active: stats?.providers?.anthropic?.status === 'active' },
     { key: 'deepseek', name: 'DeepSeek', model: 'deepseek-chat', active: stats?.providers?.deepseek?.status === 'active' },
     { key: 'xai', name: 'Grok', model: 'grok-3', active: stats?.providers?.xai?.status === 'active' },
     { key: 'mistral', name: 'Mistral AI', model: 'mistral-small-latest', active: stats?.providers?.mistral?.status === 'active' },
@@ -68,17 +72,18 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-relic-void">
       {/* Header */}
-      <header className="border-b border-slate-100">
-        <div className="max-w-xl mx-auto px-6 py-4">
-          <a href="/" className="text-[10px] text-slate-400 hover:text-slate-600">← akhai</a>
+      <header className="border-b border-slate-100 dark:border-relic-slate/30">
+        <div className="max-w-xl mx-auto px-6 py-4 flex items-center justify-between">
+          <a href="/" className="text-[10px] text-slate-400 dark:text-relic-ghost hover:text-slate-600 dark:hover:text-white">← akhai</a>
+          <DarkModeToggle />
         </div>
       </header>
 
       <div className="max-w-xl mx-auto px-6 py-8">
         {/* Title */}
-        <h1 className="text-base font-medium text-slate-900 mb-8">Settings</h1>
+        <h1 className="text-base font-medium text-slate-900 dark:text-white mb-8">Settings</h1>
 
         {/* Stats */}
         <Section title="Usage">
@@ -137,8 +142,8 @@ export default function DashboardPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-8">
-      <h2 className="text-[10px] uppercase tracking-wider text-slate-400 mb-3">{title}</h2>
-      <div className="divide-y divide-slate-100">{children}</div>
+      <h2 className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-relic-ghost mb-3">{title}</h2>
+      <div className="divide-y divide-slate-100 dark:divide-relic-slate/30">{children}</div>
     </div>
   )
 }
@@ -146,19 +151,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Row({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex items-center justify-between py-2.5">
-      <span className="text-sm text-slate-600">{label}</span>
-      <span className="text-sm text-slate-900 font-mono">{value}</span>
+      <span className="text-sm text-slate-600 dark:text-relic-silver">{label}</span>
+      <span className="text-sm text-slate-900 dark:text-white font-mono">{value}</span>
     </div>
   )
 }
 
-function ToggleRow({ 
-  label, 
-  sublabel, 
-  active, 
-  enabled, 
-  onToggle 
-}: { 
+function ToggleRow({
+  label,
+  sublabel,
+  active,
+  enabled,
+  onToggle
+}: {
   label: string
   sublabel: string
   active: boolean
@@ -168,16 +173,16 @@ function ToggleRow({
   return (
     <div className="flex items-center justify-between py-2.5">
       <div className="flex items-center gap-2.5">
-        <span className={`w-1.5 h-1.5 rounded-full ${active && enabled ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+        <span className={`w-1.5 h-1.5 rounded-full ${active && enabled ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-relic-slate/50'}`} />
         <div>
-          <span className="text-sm text-slate-700">{label}</span>
-          <span className="text-xs text-slate-400 ml-2">{sublabel}</span>
+          <span className="text-sm text-slate-700 dark:text-relic-silver">{label}</span>
+          <span className="text-xs text-slate-400 dark:text-relic-ghost ml-2">{sublabel}</span>
         </div>
       </div>
       <button
         onClick={onToggle}
         className={`relative w-8 h-[18px] rounded-full transition-colors ${
-          enabled ? 'bg-emerald-500' : 'bg-slate-200'
+          enabled ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-relic-slate/50'
         }`}
       >
         <span className={`absolute top-0.5 w-[14px] h-[14px] bg-white rounded-full shadow-sm transition-transform ${

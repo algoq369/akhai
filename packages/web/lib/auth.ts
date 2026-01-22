@@ -4,7 +4,7 @@
  * Handles GitHub OAuth and Wallet authentication
  */
 
-import { createOrGetUser, createSession, validateSession, destroySession, User } from './database';
+import { createOrGetUser, createSession, validateSession, destroySession, User, savePKCEVerifier, getPKCEVerifier, deletePKCEVerifier, cleanupExpiredPKCEVerifiers } from './database';
 import { randomBytes } from 'crypto';
 
 const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60; // 30 days
@@ -151,3 +151,151 @@ export function logout(token: string): void {
   destroySession(token);
 }
 
+/**
+ * Twitter OAuth 2.0 with PKCE Configuration
+ */
+const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID || '';
+const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET || '';
+const TWITTER_REDIRECT_URI = process.env.TWITTER_REDIRECT_URI || `${baseUrl}/api/auth/social/x/callback`;
+
+// Clean up expired PKCE entries from database (older than 10 minutes)
+setInterval(() => {
+  const deleted = cleanupExpiredPKCEVerifiers();
+  if (deleted > 0) {
+    console.log(`[PKCE Cleanup] Deleted ${deleted} expired verifier(s)`);
+  }
+}, 5 * 60 * 1000); // Run every 5 minutes
+
+/**
+ * Generate PKCE code verifier and challenge
+ */
+function generatePKCE(): { verifier: string; challenge: string } {
+  const verifier = randomBytes(32).toString('base64url');
+  const challenge = require('crypto')
+    .createHash('sha256')
+    .update(verifier)
+    .digest('base64url');
+
+  return { verifier, challenge };
+}
+
+/**
+ * Generate Twitter OAuth authorization URL with PKCE
+ */
+export function getTwitterAuthUrl(userId: string): { authUrl: string; state: string } {
+  if (!TWITTER_CLIENT_ID) {
+    throw new Error('TWITTER_CLIENT_ID is not configured. Please add it to .env.local');
+  }
+
+  const state = randomBytes(16).toString('hex');
+  const { verifier, challenge } = generatePKCE();
+
+  // Store verifier in database for later use in callback
+  savePKCEVerifier(state, verifier, userId);
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: TWITTER_CLIENT_ID,
+    redirect_uri: TWITTER_REDIRECT_URI,
+    scope: 'tweet.read users.read offline.access',
+    state,
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+  });
+
+  const authUrl = `https://twitter.com/i/oauth2/authorize?${params.toString()}`;
+
+  console.log('[Twitter OAuth] Generated auth URL with params:', {
+    client_id: TWITTER_CLIENT_ID,
+    redirect_uri: TWITTER_REDIRECT_URI,
+    scope: 'tweet.read users.read offline.access',
+    has_state: !!state,
+    has_challenge: !!challenge
+  });
+
+  return {
+    authUrl,
+    state
+  };
+}
+
+/**
+ * Handle Twitter OAuth callback and store connection
+ */
+export async function handleTwitterCallback(
+  code: string,
+  state: string
+): Promise<{ success: boolean; username?: string; error?: string }> {
+  // Retrieve PKCE verifier from database
+  const pkceData = getPKCEVerifier(state);
+  if (!pkceData) {
+    return { success: false, error: 'Invalid or expired state parameter' };
+  }
+
+  const { verifier, userId } = pkceData;
+  deletePKCEVerifier(state); // Use once and delete
+
+  try {
+    // Exchange code for access token
+    const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${Buffer.from(`${TWITTER_CLIENT_ID}:${TWITTER_CLIENT_SECRET}`).toString('base64')}`,
+      },
+      body: new URLSearchParams({
+        code,
+        grant_type: 'authorization_code',
+        client_id: TWITTER_CLIENT_ID,
+        redirect_uri: TWITTER_REDIRECT_URI,
+        code_verifier: verifier,
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenData.access_token) {
+      return { success: false, error: 'Failed to get access token from Twitter' };
+    }
+
+    // Get user info from Twitter
+    const userResponse = await fetch('https://api.twitter.com/2/users/me', {
+      headers: {
+        'Authorization': `Bearer ${tokenData.access_token}`,
+      },
+    });
+
+    const userData = await userResponse.json();
+
+    if (!userData.data) {
+      return { success: false, error: 'Failed to get user info from Twitter' };
+    }
+
+    const twitterUser = userData.data;
+
+    // Store connection in database
+    const { saveSocialConnection } = await import('./database');
+    saveSocialConnection({
+      user_id: userId,
+      platform: 'x',
+      username: twitterUser.username,
+      user_external_id: twitterUser.id,
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token || null,
+      expires_at: tokenData.expires_in
+        ? Math.floor(Date.now() / 1000) + tokenData.expires_in
+        : null,
+    });
+
+    return {
+      success: true,
+      username: twitterUser.username
+    };
+  } catch (error) {
+    console.error('Twitter OAuth callback error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}

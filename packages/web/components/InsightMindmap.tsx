@@ -1,20 +1,15 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
+import {
   SparklesIcon,
   LightBulbIcon,
-  ArrowTrendingUpIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  BoltIcon,
-  BeakerIcon,
-  AcademicCapIcon,
-  CpuChipIcon,
-  ChartBarIcon,
-  MagnifyingGlassIcon
+  LinkIcon
 } from '@heroicons/react/24/outline'
+import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
 
 interface ConceptNode {
   id: string
@@ -26,19 +21,23 @@ interface ConceptNode {
   connections: string[]
   context: string
   insight: string
-  metrics: {
-    weight: number
-    centrality: number
-    depth: number
-    impact: number
-  }
+  sefirotMapping: Sefirah[] // Which Sephiroth this concept relates to
 }
 
 interface QueryInsight {
   intent: string
-  scope: string
-  approach: string
-  outcome: string
+  keywords: string[]
+  sefirotFocus: { sefirah: Sefirah; reason: string }[]
+}
+
+// Research link from dynamic discovery
+interface ResearchLink {
+  id: string
+  url: string
+  title: string
+  snippet?: string
+  relevance: number
+  source: string
 }
 
 interface InsightMindmapProps {
@@ -49,234 +48,174 @@ interface InsightMindmapProps {
   onOpenMindMap?: () => void
 }
 
-const CATEGORY_STYLES: Record<string, { bg: string; text: string; dot: string; gradient: string }> = {
-  core: { bg: '#EEF2FF', text: '#4F46E5', dot: '#6366F1', gradient: 'from-indigo-500 to-violet-500' },
-  definition: { bg: '#ECFDF5', text: '#059669', dot: '#10B981', gradient: 'from-emerald-500 to-teal-500' },
-  example: { bg: '#FEF3C7', text: '#D97706', dot: '#F59E0B', gradient: 'from-amber-500 to-orange-500' },
-  method: { bg: '#F0F9FF', text: '#0284C7', dot: '#0EA5E9', gradient: 'from-sky-500 to-blue-500' },
-  application: { bg: '#FDF2F8', text: '#DB2777', dot: '#EC4899', gradient: 'from-pink-500 to-rose-500' },
-  comparison: { bg: '#F5F3FF', text: '#7C3AED', dot: '#8B5CF6', gradient: 'from-violet-500 to-purple-500' },
-  insight: { bg: '#FFF7ED', text: '#EA580C', dot: '#F97316', gradient: 'from-orange-500 to-red-500' },
-  data: { bg: '#F0FDF4', text: '#16A34A', dot: '#22C55E', gradient: 'from-green-500 to-emerald-500' },
+// Map concepts to Sefirot based on content
+function mapToSefirot(text: string, category: string): Sefirah[] {
+  const textLower = text.toLowerCase()
+  const sefirot: Sefirah[] = []
+
+  // Kether (10) - Crown - Meta, integration, highest level
+  if (textLower.includes('meta') || textLower.includes('integration') || textLower.includes('holistic') || textLower.includes('overview')) {
+    sefirot.push(Sefirah.KETHER)
+  }
+  // Chokmah (9) - Wisdom - Abstract reasoning, principles
+  if (textLower.includes('principle') || textLower.includes('theory') || textLower.includes('abstract') || textLower.includes('reasoning')) {
+    sefirot.push(Sefirah.CHOKMAH)
+  }
+  // Binah (8) - Understanding - Patterns, analysis
+  if (textLower.includes('pattern') || textLower.includes('structure') || textLower.includes('analysis') || textLower.includes('understand')) {
+    sefirot.push(Sefirah.BINAH)
+  }
+  // Chesed (7) - Expansion - Growth, possibilities
+  if (textLower.includes('expand') || textLower.includes('grow') || textLower.includes('possibilit') || textLower.includes('opportunity')) {
+    sefirot.push(Sefirah.CHESED)
+  }
+  // Gevurah (6) - Constraint - Limits, rules, validation
+  if (textLower.includes('limit') || textLower.includes('constrain') || textLower.includes('valid') || textLower.includes('rule')) {
+    sefirot.push(Sefirah.GEVURAH)
+  }
+  // Tiferet (5) - Balance - Harmony, integration
+  if (textLower.includes('balance') || textLower.includes('harmony') || textLower.includes('core') || category === 'core') {
+    sefirot.push(Sefirah.TIFERET)
+  }
+  // Netzach (4) - Creativity - Generation, creation
+  if (textLower.includes('creat') || textLower.includes('generat') || textLower.includes('design') || textLower.includes('innovate')) {
+    sefirot.push(Sefirah.NETZACH)
+  }
+  // Hod (3) - Logic - Classification, logic
+  if (textLower.includes('logic') || textLower.includes('classif') || textLower.includes('categor') || category === 'definition') {
+    sefirot.push(Sefirah.HOD)
+  }
+  // Yesod (2) - Foundation - Implementation, execution
+  if (textLower.includes('implement') || textLower.includes('execut') || textLower.includes('method') || category === 'method') {
+    sefirot.push(Sefirah.YESOD)
+  }
+  // Malkuth (1) - Kingdom - Data, concrete
+  if (textLower.includes('data') || textLower.includes('result') || textLower.includes('example') || category === 'data' || category === 'example') {
+    sefirot.push(Sefirah.MALKUTH)
+  }
+  // Da'at (11) - Knowledge - Emergent insights
+  if (textLower.includes('insight') || textLower.includes('emergent') || textLower.includes('discover') || category === 'insight') {
+    sefirot.push(Sefirah.DAAT)
+  }
+
+  // Default to Tiferet (balance/core) if no match
+  return sefirot.length > 0 ? sefirot.slice(0, 2) : [Sefirah.TIFERET]
 }
 
-// Generate query-specific 4-line insight (Polymer-inspired)
+// Generate query-specific insight with Sefirot focus
 function generateQueryInsight(query: string, content: string, nodes: ConceptNode[]): QueryInsight {
   const queryLower = query.toLowerCase()
   const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3)
-  
-  // Extract key entities from query
-  const hasQuestion = query.includes('?')
-  const hasHow = queryLower.includes('how')
-  const hasWhat = queryLower.includes('what')
-  const hasWhy = queryLower.includes('why')
-  const hasCompare = queryLower.includes('compare') || queryLower.includes('versus') || queryLower.includes('vs')
-  const hasAnalyze = queryLower.includes('analyze') || queryLower.includes('analysis')
-  const hasCreate = queryLower.includes('create') || queryLower.includes('build') || queryLower.includes('make')
-  const hasExplain = queryLower.includes('explain') || queryLower.includes('describe')
-  
-  // Find key topics from query
-  const topicMatches = nodes.slice(0, 3).map(n => n.label.replace(/\.\.\.$/, ''))
-  const primaryTopic = topicMatches[0] || 'the subject'
-  const secondaryTopic = topicMatches[1] || ''
-  
-  // Line 1: INTENT - What the query is trying to achieve
+
+  // Extract key phrases (capitalized or quoted)
+  const keyPhrases = query.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g) || []
+  const keywords = [...new Set([...keyPhrases, ...queryWords.slice(0, 5)])].slice(0, 6)
+
+  // Determine intent
   let intent = ''
-  if (hasHow) {
-    intent = `Exploring methodology and implementation paths for "${primaryTopic}"`
-  } else if (hasWhat) {
-    intent = `Defining and scoping the core elements of "${primaryTopic}"`
-  } else if (hasWhy) {
-    intent = `Understanding causation and rationale behind "${primaryTopic}"`
-  } else if (hasCompare) {
-    intent = `Comparative analysis between ${primaryTopic}${secondaryTopic ? ` and ${secondaryTopic}` : ' options'}`
-  } else if (hasAnalyze) {
-    intent = `Deep analytical breakdown of "${primaryTopic}" components and patterns`
-  } else if (hasCreate) {
-    intent = `Constructive synthesis for building "${primaryTopic}" from ground up`
-  } else if (hasExplain) {
-    intent = `Comprehensive explanation unpacking "${primaryTopic}" fundamentals`
-  } else {
-    intent = `Investigating "${primaryTopic}"${secondaryTopic ? ` with focus on ${secondaryTopic}` : ''}`
+  if (queryLower.includes('how')) intent = 'Understand methodology and process'
+  else if (queryLower.includes('what')) intent = 'Define and clarify concepts'
+  else if (queryLower.includes('why')) intent = 'Explore reasoning and causation'
+  else if (queryLower.includes('compare')) intent = 'Analyze differences and trade-offs'
+  else intent = 'Explore and synthesize information'
+
+  // Determine Sefirot focus based on query type
+  const sefirotFocus: { sefirah: Sefirah; reason: string }[] = []
+
+  if (queryLower.includes('how') || queryLower.includes('implement') || queryLower.includes('build')) {
+    sefirotFocus.push({ sefirah: Sefirah.YESOD, reason: 'Implementation focus' })
   }
-  
-  // Line 2: SCOPE - What areas are covered
-  const categoryCount = new Map<string, number>()
-  nodes.forEach(n => categoryCount.set(n.category, (categoryCount.get(n.category) || 0) + 1))
-  const topCategories = Array.from(categoryCount.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3)
-  const scopeAreas = topCategories.map(([cat]) => cat).join(', ')
-  const scope = `Coverage spans ${nodes.length} concepts across ${scopeAreas} — ${topCategories[0]?.[0] || 'core'} emphasis (${Math.round((topCategories[0]?.[1] || 0) / nodes.length * 100)}%)`
-  
-  // Line 3: APPROACH - How the response tackles the query
-  const avgConfidence = nodes.reduce((a, b) => a + b.confidence, 0) / nodes.length
-  const connectionDensity = nodes.reduce((a, b) => a + b.connections.length, 0) / nodes.length
-  
-  let approach = ''
-  if (connectionDensity > 1.5 && avgConfidence > 0.9) {
-    approach = `Highly interconnected response (${connectionDensity.toFixed(1)} density) with strong extraction confidence — systems-level synthesis`
-  } else if (connectionDensity > 0.8) {
-    approach = `Balanced structure enabling both linear reading and cross-concept exploration — modular analysis`
-  } else if (avgConfidence > 0.85) {
-    approach = `High-fidelity extraction (${Math.round(avgConfidence * 100)}% avg) with discrete knowledge clusters — focused deep-dives`
-  } else {
-    approach = `Exploratory mapping across emerging concept boundaries — iterative refinement recommended`
+  if (queryLower.includes('what') || queryLower.includes('define') || queryLower.includes('explain')) {
+    sefirotFocus.push({ sefirah: Sefirah.HOD, reason: 'Classification & definition' })
   }
-  
-  // Line 4: OUTCOME - What you can expect/do with this
-  const hasActionable = nodes.some(n => n.category === 'method' || n.category === 'application')
-  const hasEvidence = nodes.some(n => n.category === 'data' || n.category === 'example')
-  
-  let outcome = ''
-  if (hasActionable && hasEvidence) {
-    outcome = `Actionable framework with supporting evidence — ready for implementation and validation`
-  } else if (hasActionable) {
-    outcome = `Clear methodology pathways identified — expand data nodes for empirical grounding`
-  } else if (hasEvidence) {
-    outcome = `Evidence-rich foundation — synthesize with method nodes for actionable next steps`
-  } else {
-    outcome = `Conceptual foundation established — click nodes to drill into specific knowledge areas`
+  if (queryLower.includes('why') || queryLower.includes('reason') || queryLower.includes('cause')) {
+    sefirotFocus.push({ sefirah: Sefirah.BINAH, reason: 'Pattern understanding' })
   }
-  
-  return { intent, scope, approach, outcome }
+  if (queryLower.includes('create') || queryLower.includes('design') || queryLower.includes('generate')) {
+    sefirotFocus.push({ sefirah: Sefirah.NETZACH, reason: 'Creative generation' })
+  }
+  if (queryLower.includes('compare') || queryLower.includes('limit') || queryLower.includes('constraint')) {
+    sefirotFocus.push({ sefirah: Sefirah.GEVURAH, reason: 'Boundaries & evaluation' })
+  }
+
+  // Default to Tiferet if no specific focus
+  if (sefirotFocus.length === 0) {
+    sefirotFocus.push({ sefirah: Sefirah.TIFERET, reason: 'Balanced integration' })
+  }
+
+  return { intent, keywords, sefirotFocus: sefirotFocus.slice(0, 2) }
 }
 
-// Generate node-specific context and insight (Prototypr KPI Explorer inspired)
-function generateNodeInsight(text: string, category: string, query: string, index: number): { context: string; insight: string } {
+// Generate node-specific context and insight
+function generateNodeInsight(text: string, category: string, query: string): { context: string; insight: string } {
   const textLower = text.toLowerCase()
   const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 3)
   const matchedWords = queryWords.filter(w => textLower.includes(w))
-  
-  const contextByCategory: Record<string, string[]> = {
-    core: [
-      'Foundation concept anchoring the response structure. High centrality in the knowledge graph.',
-      'Primary building block with multiple downstream connections. Essential for synthesis.',
-    ],
-    definition: [
-      'Establishes semantic boundaries and terminology scope. Reduces ambiguity in subsequent analysis.',
-      'Formal specification enabling precise communication. Reference point for related concepts.',
-    ],
-    example: [
-      'Concrete instantiation bridging abstract theory to tangible application. Validates feasibility.',
-      'Real-world case demonstrating practical implementation. Supports pattern recognition.',
-    ],
-    method: [
-      'Actionable procedure with defined inputs and outputs. Ready for direct implementation.',
-      'Systematic approach codifying best practices. Reduces execution uncertainty.',
-    ],
-    application: [
-      'Direct applicability to user context identified. High practical value signal.',
-      'Implementation pathway from concept to measurable outcome. Action-oriented.',
-    ],
-    comparison: [
-      'Analytical contrast surface trade-offs and decision criteria. Enables informed selection.',
-      'Multi-dimensional evaluation framework. Supports nuanced judgment.',
-    ],
-    insight: [
-      'Non-obvious observation derived from pattern synthesis. Strategic advantage potential.',
-      'Higher-order inference connecting disparate elements. Competitive intelligence value.',
-    ],
-    data: [
-      'Quantitative evidence grounding the analysis. Verifiable and measurable.',
-      'Empirical foundation supporting claims. High credibility signal.',
-    ],
-  }
-  
-  const insightByCategory: Record<string, string[]> = {
-    core: [
-      `Key driver: ${matchedWords.length > 0 ? `Directly addresses "${matchedWords[0]}"` : 'Central to query resolution'}`,
-      `Impact: Removing this concept would fragment ${Math.floor(Math.random() * 3) + 2} dependent nodes`,
-    ],
-    definition: [
-      `Clarity score: ${85 + Math.floor(Math.random() * 10)}% — well-bounded semantic scope`,
-      `Disambiguation value: Resolves ${Math.floor(Math.random() * 2) + 1} potential interpretation conflicts`,
-    ],
-    example: [
-      `Transferability: ${75 + Math.floor(Math.random() * 20)}% applicable to similar contexts`,
-      `Validation strength: Demonstrates feasibility with concrete evidence`,
-    ],
-    method: [
-      `Implementation readiness: ${80 + Math.floor(Math.random() * 15)}% — clear action steps`,
-      `Reusability: Applicable across ${Math.floor(Math.random() * 3) + 2} related scenarios`,
-    ],
-    application: [
-      `Relevance to query: ${matchedWords.length > 0 ? 'Direct match' : 'Contextual fit'} detected`,
-      `Time-to-value: Immediate applicability with minimal adaptation`,
-    ],
-    comparison: [
-      `Decision support: Surfaces ${Math.floor(Math.random() * 3) + 2} key differentiating factors`,
-      `Trade-off clarity: ${80 + Math.floor(Math.random() * 15)}% coverage of decision dimensions`,
-    ],
-    insight: [
-      `Novelty score: ${70 + Math.floor(Math.random() * 25)}% — beyond surface-level analysis`,
-      `Strategic value: Potential competitive advantage if actioned`,
-    ],
-    data: [
-      `Evidence quality: ${85 + Math.floor(Math.random() * 10)}% — verifiable metrics`,
-      `Recency: Data point supports current-state analysis`,
-    ],
-  }
-  
-  const contexts = contextByCategory[category] || contextByCategory.core
-  const insights = insightByCategory[category] || insightByCategory.core
-  
-  return {
-    context: contexts[index % contexts.length],
-    insight: insights[index % insights.length]
-  }
+
+  const context = matchedWords.length > 0
+    ? `Connects "${matchedWords.slice(0, 2).join(', ')}" from your query`
+    : `${category.charAt(0).toUpperCase() + category.slice(1)} concept extracted`
+
+  const insight = text.length > 60
+    ? text.substring(0, 57) + '...'
+    : text
+
+  return { context, insight }
 }
 
 function extractInsights(content: string, query: string): ConceptNode[] {
   const nodes: ConceptNode[] = []
   const categories = ['core', 'definition', 'example', 'method', 'application', 'comparison', 'insight', 'data']
-  
+
   const boldPattern = /\*\*([^*]+)\*\*/g
   const headerPattern = /^#+\s*(.+)$/gm
   const bulletPattern = /^[-•*]\s*(.+)$/gm
-  
+
   const allMatches: { text: string; type: string }[] = []
-  
+
   let match
   while ((match = boldPattern.exec(content)) !== null) {
     const text = match[1].trim()
     if (text.length > 3 && text.length < 100) allMatches.push({ text, type: 'bold' })
   }
-  
+
   while ((match = headerPattern.exec(content)) !== null) {
     const text = match[1].trim().replace(/[#*]/g, '')
     if (text.length > 3 && text.length < 80) allMatches.push({ text, type: 'header' })
   }
-  
+
   while ((match = bulletPattern.exec(content)) !== null) {
     const text = match[1].trim().replace(/\*\*/g, '')
     if (text.length > 10 && text.length < 120) allMatches.push({ text, type: 'bullet' })
   }
-  
+
   const seen = new Set<string>()
   allMatches.forEach((item, index) => {
     const key = item.text.toLowerCase().substring(0, 30)
     if (seen.has(key)) return
     seen.add(key)
-    
+
     let category = categories[index % categories.length]
     const textLower = item.text.toLowerCase()
-    
-    if (textLower.includes('example') || textLower.includes('such as') || textLower.includes('e.g.')) category = 'example'
-    else if (textLower.includes('define') || textLower.includes('is a') || textLower.includes('means')) category = 'definition'
-    else if (textLower.includes('method') || textLower.includes('approach') || textLower.includes('step')) category = 'method'
-    else if (textLower.includes('use') || textLower.includes('apply') || textLower.includes('implement')) category = 'application'
-    else if (textLower.includes('%') || textLower.includes('data') || textLower.includes('metric')) category = 'data'
-    else if (textLower.includes('compare') || textLower.includes('versus') || textLower.includes('differ')) category = 'comparison'
-    else if (textLower.includes('insight') || textLower.includes('key') || textLower.includes('important')) category = 'insight'
-    
+
+    if (textLower.includes('example') || textLower.includes('such as')) category = 'example'
+    else if (textLower.includes('define') || textLower.includes('is a')) category = 'definition'
+    else if (textLower.includes('method') || textLower.includes('step')) category = 'method'
+    else if (textLower.includes('use') || textLower.includes('apply')) category = 'application'
+    else if (textLower.includes('data') || textLower.includes('metric')) category = 'data'
+    else if (textLower.includes('compare') || textLower.includes('versus')) category = 'comparison'
+    else if (textLower.includes('insight') || textLower.includes('key')) category = 'insight'
+
     const baseConfidence = item.type === 'bold' ? 0.9 : item.type === 'header' ? 0.85 : 0.75
     const confidence = Math.min(0.98, baseConfidence + Math.random() * 0.08)
-    
+
     const queryWords = query.toLowerCase().split(/\s+/)
     const matchWords = queryWords.filter(w => w.length > 3 && textLower.includes(w)).length
     const relevance = Math.min(0.98, 0.6 + (matchWords / Math.max(1, queryWords.length)) * 0.4)
-    
-    const { context, insight } = generateNodeInsight(item.text, category, query, index)
-    
+
+    const { context, insight } = generateNodeInsight(item.text, category, query)
+    const sefirotMapping = mapToSefirot(item.text, category)
+
     nodes.push({
       id: `insight-${nodes.length}`,
       label: item.text.length > 32 ? item.text.substring(0, 29) + '...' : item.text,
@@ -287,15 +226,10 @@ function extractInsights(content: string, query: string): ConceptNode[] {
       connections: [],
       context,
       insight,
-      metrics: {
-        weight: Math.round((0.5 + Math.random() * 0.5) * 100),
-        centrality: Math.round((0.3 + Math.random() * 0.7) * 100),
-        depth: Math.round((0.4 + Math.random() * 0.6) * 100),
-        impact: Math.round((0.5 + Math.random() * 0.5) * 100)
-      }
+      sefirotMapping
     })
   })
-  
+
   // Build connections
   nodes.forEach((node, i) => {
     nodes.forEach((other, j) => {
@@ -307,80 +241,133 @@ function extractInsights(content: string, query: string): ConceptNode[] {
       }
     })
   })
-  
-  return nodes.slice(0, 12)
+
+  return nodes.slice(0, 10)
 }
 
-export default function InsightMindmap({ content, query, methodology = 'auto', onSwitchToSefirot, onOpenMindMap }: InsightMindmapProps) {
+/**
+ * Dynamically discover research links
+ */
+async function discoverResearchLinks(query: string, content: string): Promise<{
+  links: ResearchLink[]
+  metacognition: { confidence: number; reasoning: string } | null
+}> {
+  try {
+    const capitalizedWords = content.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/g) || []
+    const topics = [...new Set(capitalizedWords.map(w => w.toLowerCase()))].slice(0, 5)
+
+    const response = await fetch('/api/enhanced-links', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query,
+        conversationContext: content.substring(0, 1500),
+        topics
+      })
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && data.insightLinks) {
+        return {
+          links: data.insightLinks.slice(0, 2).map((link: any) => ({
+            id: link.id,
+            url: link.url,
+            title: link.title,
+            snippet: link.snippet,
+            relevance: link.relevance,
+            source: link.source
+          })),
+          metacognition: data.metacognition || null
+        }
+      }
+    }
+
+    return { links: [], metacognition: null }
+  } catch {
+    return { links: [], metacognition: null }
+  }
+}
+
+// Sefirah colors
+const SEFIRAH_COLORS: Record<number, string> = {
+  1: '#f59e0b', // Malkuth - amber
+  2: '#8b5cf6', // Yesod - violet
+  3: '#f97316', // Hod - orange
+  4: '#22c55e', // Netzach - green
+  5: '#eab308', // Tiferet - yellow
+  6: '#ef4444', // Gevurah - red
+  7: '#3b82f6', // Chesed - blue
+  8: '#6366f1', // Binah - indigo
+  9: '#64748b', // Chokmah - slate
+  10: '#ffffff', // Kether - white
+  11: '#06b6d4', // Da'at - cyan
+}
+
+export default function InsightMindmap({ content, query, onSwitchToSefirot, onOpenMindMap }: InsightMindmapProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [selectedNode, setSelectedNode] = useState<ConceptNode | null>(null)
+  const [researchLinks, setResearchLinks] = useState<ResearchLink[]>([])
 
   const nodes = useMemo(() => extractInsights(content, query), [content, query])
   const queryInsight = useMemo(() => generateQueryInsight(query, content, nodes), [query, content, nodes])
 
-  // Check if Sefirot view is available for this content
+  // Discover research links
+  useEffect(() => {
+    discoverResearchLinks(query, content).then(({ links }) => {
+      setResearchLinks(links)
+    })
+  }, [query, content])
+
+  // Check if Sefirot view is available
   const canShowSefirot = useMemo(() => {
     const headerCount = (content.match(/^#+\s*.+$/gm) || []).length
     const boldCount = (content.match(/\*\*[^*]+\*\*/g) || []).length
-    const bulletCount = (content.match(/^[-•*]\s+.+$/gm) || []).length
-    return headerCount >= 2 || (boldCount >= 3 && bulletCount >= 3)
+    return headerCount >= 2 || boldCount >= 3
   }, [content])
-  
-  const metrics = useMemo(() => {
-    const categories = new Map<string, number>()
-    nodes.forEach(n => categories.set(n.category, (categories.get(n.category) || 0) + 1))
-    
-    const avgConfidence = nodes.length > 0 ? nodes.reduce((a, b) => a + b.confidence, 0) / nodes.length : 0
-    const avgRelevance = nodes.length > 0 ? nodes.reduce((a, b) => a + b.relevance, 0) / nodes.length : 0
-    const connectionDensity = nodes.length > 0 ? nodes.reduce((a, b) => a + b.connections.length, 0) / nodes.length : 0
-    const avgWeight = nodes.length > 0 ? nodes.reduce((a, b) => a + b.metrics.weight, 0) / nodes.length : 0
-    const avgCentrality = nodes.length > 0 ? nodes.reduce((a, b) => a + b.metrics.centrality, 0) / nodes.length : 0
-    const avgImpact = nodes.length > 0 ? nodes.reduce((a, b) => a + b.metrics.impact, 0) / nodes.length : 0
-    
-    return {
-      total: nodes.length,
-      avgConfidence: Math.round(avgConfidence * 100),
-      avgRelevance: Math.round(avgRelevance * 100),
-      connectionDensity: Math.round(connectionDensity * 10) / 10,
-      avgWeight: Math.round(avgWeight),
-      avgCentrality: Math.round(avgCentrality),
-      avgImpact: Math.round(avgImpact),
-      categories: Array.from(categories.entries()).sort((a, b) => b[1] - a[1])
-    }
-  }, [nodes])
-  
+
   if (nodes.length < 3) return null
-  
+
+  // Get unique Sefirot from all nodes for the summary
+  const activeSefirot = useMemo(() => {
+    const sefirotSet = new Set<Sefirah>()
+    nodes.forEach(n => n.sefirotMapping.forEach(s => sefirotSet.add(s)))
+    return Array.from(sefirotSet).slice(0, 4)
+  }, [nodes])
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       className="mb-4"
     >
-      <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white via-slate-50/30 to-indigo-50/20 overflow-hidden shadow-sm">
-        {/* Header - Polymer inspired */}
-        <div 
-          className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100/80 cursor-pointer hover:bg-slate-50/50 transition-colors"
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+        {/* Header - Compact */}
+        <div
+          className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-sm">
-              <SparklesIcon className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-slate-800">Knowledge Graph</h3>
-              <p className="text-[10px] text-slate-500">{nodes.length} concepts extracted · {metrics.avgConfidence}% confidence</p>
-            </div>
+          <div className="flex items-center gap-2">
+            <SparklesIcon className="w-4 h-4 text-purple-500" />
+            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">Concept Insights</span>
+            <span className="text-[9px] text-slate-400 dark:text-slate-500">{nodes.length} topics</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/50">
-              <ChartBarIcon className="w-3 h-3 text-emerald-600" />
-              <span className="text-[10px] font-semibold text-emerald-700">{metrics.avgRelevance}% relevant</span>
+            {/* Active Sefirot indicators */}
+            <div className="flex items-center gap-0.5">
+              {activeSefirot.map(s => (
+                <div
+                  key={s}
+                  className="w-2 h-2 rounded-full border border-white/50"
+                  style={{ backgroundColor: SEFIRAH_COLORS[s] }}
+                  title={SEPHIROTH_METADATA[s]?.name}
+                />
+              ))}
             </div>
-            {isCollapsed ? <ChevronDownIcon className="w-4 h-4 text-slate-400" /> : <ChevronUpIcon className="w-4 h-4 text-slate-400" />}
+            {isCollapsed ? <ChevronDownIcon className="w-3.5 h-3.5 text-slate-400" /> : <ChevronUpIcon className="w-3.5 h-3.5 text-slate-400" />}
           </div>
         </div>
-        
+
         <AnimatePresence>
           {!isCollapsed && (
             <motion.div
@@ -389,283 +376,171 @@ export default function InsightMindmap({ content, query, methodology = 'auto', o
               exit={{ height: 0 }}
               className="overflow-hidden"
             >
-              {/* 4-Line Query Insight - Polymer "Insight Explanations" inspired */}
-              <div className="px-4 py-3 bg-gradient-to-r from-slate-50/80 via-indigo-50/30 to-purple-50/20 border-b border-slate-100/80">
-                <div className="flex items-center gap-2 mb-2">
-                  <MagnifyingGlassIcon className="w-3.5 h-3.5 text-indigo-500" />
-                  <span className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wide">Query Analysis</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2.5 group">
-                    <div className="w-5 h-5 rounded-md bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <AcademicCapIcon className="w-3 h-3 text-indigo-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-semibold text-indigo-600">Intent</span>
-                      <p className="text-[11px] text-slate-700 leading-relaxed">{queryInsight.intent}</p>
-                    </div>
+              {/* Query Intent & Keywords - Compact */}
+              <div className="px-3 py-2 bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Intent</div>
+                    <p className="text-[10px] text-slate-700 dark:text-slate-300">{queryInsight.intent}</p>
                   </div>
-                  <div className="flex items-start gap-2.5 group">
-                    <div className="w-5 h-5 rounded-md bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <BoltIcon className="w-3 h-3 text-amber-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-semibold text-amber-600">Scope</span>
-                      <p className="text-[11px] text-slate-700 leading-relaxed">{queryInsight.scope}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5 group">
-                    <div className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CpuChipIcon className="w-3 h-3 text-blue-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-semibold text-blue-600">Approach</span>
-                      <p className="text-[11px] text-slate-700 leading-relaxed">{queryInsight.approach}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5 group">
-                    <div className="w-5 h-5 rounded-md bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <BeakerIcon className="w-3 h-3 text-emerald-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-semibold text-emerald-600">Outcome</span>
-                      <p className="text-[11px] text-slate-700 leading-relaxed">{queryInsight.outcome}</p>
+                  <div className="flex-shrink-0">
+                    <div className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Sefirot Focus</div>
+                    <div className="flex items-center gap-1">
+                      {queryInsight.sefirotFocus.map(({ sefirah, reason }) => (
+                        <div
+                          key={sefirah}
+                          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-medium"
+                          style={{
+                            backgroundColor: SEFIRAH_COLORS[sefirah] + '20',
+                            color: sefirah === 10 ? '#64748b' : SEFIRAH_COLORS[sefirah]
+                          }}
+                          title={reason}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: SEFIRAH_COLORS[sefirah] }} />
+                          {SEPHIROTH_METADATA[sefirah]?.name}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
+
+                {/* Keywords */}
+                {queryInsight.keywords.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
+                    <div className="text-[8px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Keywords</div>
+                    <div className="flex flex-wrap gap-1">
+                      {queryInsight.keywords.map((kw, i) => (
+                        <span key={i} className="px-1.5 py-0.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[9px] text-slate-600 dark:text-slate-400">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* High-Level Metrics - TOP 3 ONLY */}
-              <div className="px-4 py-3 border-b border-slate-100/80 bg-white/50">
-                <div className="grid grid-cols-4 gap-3">
-                  <div className="bg-slate-50 rounded-lg py-2.5 px-2 text-center border border-slate-200">
-                    <div className="text-xl font-bold text-slate-700">{metrics.total}</div>
-                    <div className="text-[8px] text-slate-500 uppercase font-semibold tracking-wide">Concepts</div>
-                  </div>
-                  <div className="bg-emerald-50 rounded-lg py-2.5 px-2 text-center border border-emerald-200">
-                    <div className="text-xl font-bold text-emerald-600">{metrics.avgConfidence}%</div>
-                    <div className="text-[8px] text-emerald-600 uppercase font-semibold tracking-wide">Confidence</div>
-                  </div>
-                  <div className="bg-blue-50 rounded-lg py-2.5 px-2 text-center border border-blue-200">
-                    <div className="text-xl font-bold text-blue-600">{metrics.avgRelevance}%</div>
-                    <div className="text-[8px] text-blue-600 uppercase font-semibold tracking-wide">Relevance</div>
-                  </div>
-                  <div className="bg-purple-50 rounded-lg py-2.5 px-2 text-center border border-purple-200">
-                    <div className="text-xl font-bold text-purple-600">{metrics.connectionDensity}</div>
-                    <div className="text-[8px] text-purple-600 uppercase font-semibold tracking-wide">Density</div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Category Distribution */}
-              <div className="px-4 py-2 border-b border-slate-100/80 bg-slate-50/30">
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                  {metrics.categories.map(([cat, count]) => {
-                    const style = CATEGORY_STYLES[cat] || CATEGORY_STYLES.core
-                    const pct = Math.round((count / metrics.total) * 100)
-                    return (
-                      <div key={cat} className="flex items-center gap-1.5 px-2 py-1 rounded-full flex-shrink-0 border" style={{ backgroundColor: style.bg, borderColor: style.dot + '30' }}>
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: style.dot }} />
-                        <span className="text-[9px] font-semibold" style={{ color: style.text }}>{cat}</span>
-                        <span className="text-[8px] font-medium px-1.5 py-0.5 rounded-full bg-white/60" style={{ color: style.text }}>{pct}%</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-              
-              {/* Concept Nodes Grid - Only show % for top 3 */}
-              <div className="p-4">
-                <div className="flex flex-wrap gap-2">
-                  {nodes.map((node, i) => {
-                    const style = CATEGORY_STYLES[node.category] || CATEGORY_STYLES.core
+              {/* Concept Topics - Compact List */}
+              <div className="p-3">
+                <div className="text-[8px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Topics & Connections</div>
+                <div className="space-y-1.5">
+                  {nodes.slice(0, 6).map((node, i) => {
                     const isSelected = selectedNode?.id === node.id
-                    const showPercentage = i < 3  // Only top 3 concepts show %
+                    const primarySefirah = node.sefirotMapping[0]
 
                     return (
                       <motion.button
                         key={node.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.03 }}
                         onClick={() => setSelectedNode(isSelected ? null : node)}
-                        className={`group relative px-2.5 py-1.5 rounded-lg text-left transition-all border ${
-                          isSelected ? 'ring-2 ring-offset-1 shadow-md' : 'hover:shadow-md hover:-translate-y-0.5'
+                        className={`w-full text-left px-2 py-1.5 rounded-md border transition-all ${
+                          isSelected
+                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-300 dark:border-purple-700'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                         }`}
-                        style={{
-                          backgroundColor: style.bg,
-                          borderColor: style.dot + '40',
-                          ...(isSelected && { ringColor: style.dot })
-                        }}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: style.dot }} />
-                          <span className="text-[11px] font-medium" style={{ color: style.text }}>{node.label}</span>
-                          {showPercentage && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-white/80 font-bold border border-white/50" style={{ color: style.text }}>
-                              {Math.round(node.confidence * 100)}%
+                          {/* Sefirot indicator */}
+                          <div
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: SEFIRAH_COLORS[primarySefirah] }}
+                            title={SEPHIROTH_METADATA[primarySefirah]?.name}
+                          />
+                          {/* Label */}
+                          <span className="flex-1 text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate">
+                            {node.label}
+                          </span>
+                          {/* Connection count */}
+                          {node.connections.length > 0 && (
+                            <span className="flex items-center gap-0.5 text-[8px] text-slate-400">
+                              <LinkIcon className="w-2.5 h-2.5" />
+                              {node.connections.length}
                             </span>
                           )}
                         </div>
-                        {node.connections.length > 0 && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white shadow-sm border-2 flex items-center justify-center" style={{ borderColor: style.dot }}>
-                            <span className="text-[7px] font-bold" style={{ color: style.dot }}>{node.connections.length}</span>
-                          </div>
+                        {/* Show explanation when selected */}
+                        {isSelected && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="mt-1.5 pt-1.5 border-t border-slate-200 dark:border-slate-700"
+                          >
+                            <p className="text-[9px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                              {node.fullText}
+                            </p>
+                            <div className="mt-1 flex items-center gap-1">
+                              <span className="text-[8px] text-slate-400">Sefirot:</span>
+                              {node.sefirotMapping.map(s => (
+                                <span
+                                  key={s}
+                                  className="text-[8px] px-1 py-0.5 rounded"
+                                  style={{
+                                    backgroundColor: SEFIRAH_COLORS[s] + '20',
+                                    color: s === 10 ? '#64748b' : SEFIRAH_COLORS[s]
+                                  }}
+                                >
+                                  {SEPHIROTH_METADATA[s]?.name}
+                                </span>
+                              ))}
+                            </div>
+                          </motion.div>
                         )}
                       </motion.button>
                     )
                   })}
                 </div>
-                
-                {/* Selected Node Detail Panel - Prototypr KPI Explorer inspired */}
-                <AnimatePresence>
-                  {selectedNode && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, height: 0 }}
-                      animate={{ opacity: 1, y: 0, height: 'auto' }}
-                      exit={{ opacity: 0, y: -10, height: 0 }}
-                      className="mt-4 overflow-hidden"
-                    >
-                      <div 
-                        className="rounded-xl border-2 overflow-hidden"
-                        style={{ 
-                          backgroundColor: CATEGORY_STYLES[selectedNode.category]?.bg || '#F8FAFC',
-                          borderColor: CATEGORY_STYLES[selectedNode.category]?.dot + '40'
-                        }}
-                      >
-                        {/* Node Header */}
-                        <div 
-                          className="px-4 py-3 border-b flex items-center justify-between"
-                          style={{ borderColor: CATEGORY_STYLES[selectedNode.category]?.dot + '20', backgroundColor: 'rgba(255,255,255,0.5)' }}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div 
-                              className="w-8 h-8 rounded-lg flex items-center justify-center"
-                              style={{ backgroundColor: CATEGORY_STYLES[selectedNode.category]?.dot + '20' }}
-                            >
-                              <LightBulbIcon className="w-4 h-4" style={{ color: CATEGORY_STYLES[selectedNode.category]?.dot }} />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-semibold" style={{ color: CATEGORY_STYLES[selectedNode.category]?.text }}>
-                                {selectedNode.fullText}
-                              </h4>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/80 font-medium" style={{ color: CATEGORY_STYLES[selectedNode.category]?.text }}>
-                                {selectedNode.category}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* 2-Line Context + Insight */}
-                        <div className="px-4 py-3 bg-white/40 border-b" style={{ borderColor: CATEGORY_STYLES[selectedNode.category]?.dot + '15' }}>
-                          <div className="space-y-2">
-                            <p className="text-[11px] text-slate-600 leading-relaxed">
-                              <span className="font-semibold text-slate-700">Context:</span> {selectedNode.context}
-                            </p>
-                            <p className="text-[11px] leading-relaxed" style={{ color: CATEGORY_STYLES[selectedNode.category]?.text }}>
-                              <span className="font-semibold">Insight:</span> {selectedNode.insight}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* Node Metrics - TOP 3 ONLY */}
-                        <div className="px-4 py-3">
-                          <div className="grid grid-cols-3 gap-3 mb-3">
-                            {[
-                              { label: 'Confidence', value: Math.round(selectedNode.confidence * 100), suffix: '%', color: 'emerald' },
-                              { label: 'Relevance', value: Math.round(selectedNode.relevance * 100), suffix: '%', color: 'blue' },
-                              { label: 'Links', value: selectedNode.connections.length, suffix: '', color: 'purple' },
-                            ].map((m) => (
-                              <div key={m.label} className={`bg-${m.color}-50 rounded-lg py-2.5 px-2 text-center border border-${m.color}-200`}>
-                                <div className={`text-lg font-bold text-${m.color}-600`}>
-                                  {m.value}{m.suffix}
-                                </div>
-                                <div className={`text-[8px] text-${m.color}-600 uppercase font-semibold tracking-wide`}>{m.label}</div>
-                              </div>
-                            ))}
-                          </div>
-                          
-                          {/* Actions - Open in new tab */}
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => window.open(`/?q=${encodeURIComponent(`Deep analysis of: ${selectedNode.fullText}`)}`, '_blank')}
-                              className="flex-1 text-center px-3 py-1.5 rounded-lg text-[10px] font-medium transition-colors"
-                              style={{ 
-                                backgroundColor: CATEGORY_STYLES[selectedNode.category]?.dot + '15',
-                                color: CATEGORY_STYLES[selectedNode.category]?.text
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = CATEGORY_STYLES[selectedNode.category]?.dot + '30'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = CATEGORY_STYLES[selectedNode.category]?.dot + '15'}
-                            >
-                              → Explore ↗
-                            </button>
-                            <button 
-                              onClick={() => navigator.clipboard.writeText(`Related concepts to: ${selectedNode.fullText}`)}
-                              className="flex-1 text-center px-3 py-1.5 rounded-lg text-[10px] font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                            >
-                              → Copy query
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+
+                {/* Show more indicator */}
+                {nodes.length > 6 && (
+                  <div className="mt-2 text-center text-[9px] text-slate-400">
+                    +{nodes.length - 6} more concepts
+                  </div>
+                )}
               </div>
-              
-              {/* Footer - 3-Line Synthetic Explanation */}
-              <div className="px-4 py-3 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-t border-slate-200">
-                {/* View Navigation */}
-                {((onSwitchToSefirot && canShowSefirot) || onOpenMindMap) && (
-                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200">
-                    <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Switch View:</span>
-                    <div className="flex items-center gap-2">
-                      {onSwitchToSefirot && canShowSefirot && (
-                        <button
-                          onClick={onSwitchToSefirot}
-                          className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 transition-colors"
-                        >
-                          ◆ Sefirot Tree
-                        </button>
-                      )}
-                      <button
-                        disabled
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-purple-100 text-purple-700 border border-purple-200 cursor-not-allowed"
+
+              {/* Footer - Links & Actions */}
+              <div className="px-3 py-2 bg-slate-50/50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
+                {/* Research Links - Compact */}
+                {researchLinks.length > 0 && (
+                  <div className="mb-2">
+                    <div className="text-[8px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Related Resources</div>
+                    {researchLinks.map((link) => (
+                      <a
+                        key={link.id}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-[9px] text-blue-600 dark:text-blue-400 hover:underline truncate"
                       >
-                        ◇ Insight Graph <span className="text-[8px] opacity-60">(current)</span>
-                      </button>
-                      {onOpenMindMap && (
-                        <button
-                          onClick={onOpenMindMap}
-                          className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 transition-colors"
-                        >
-                          🗺️ Mind Map
-                        </button>
-                      )}
-                    </div>
+                        {link.url}
+                      </a>
+                    ))}
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide flex-shrink-0">Focus:</span>
-                    <p className="text-[10px] text-slate-700 leading-relaxed">
-                      Query-responsive knowledge graph extracting {metrics.total} interconnected concepts with {metrics.connectionDensity.toFixed(1)} average connection density — semantic clustering enables discovery of hidden relationships and conceptual bridges beyond surface-level analysis.
-                    </p>
+                {/* View Switch */}
+                {((onSwitchToSefirot && canShowSefirot) || onOpenMindMap) && (
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
+                    <span className="text-[8px] text-slate-400 uppercase tracking-wider">Views:</span>
+                    {onSwitchToSefirot && canShowSefirot && (
+                      <button
+                        onClick={onSwitchToSefirot}
+                        className="px-2 py-1 rounded text-[9px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+                      >
+                        ◆ Sefirot Tree
+                      </button>
+                    )}
+                    {onOpenMindMap && (
+                      <button
+                        onClick={onOpenMindMap}
+                        className="px-2 py-1 rounded text-[9px] font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+                      >
+                        Mind Map
+                      </button>
+                    )}
                   </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-emerald-600 font-semibold uppercase tracking-wide flex-shrink-0">Quality:</span>
-                    <p className="text-[10px] text-slate-700 leading-relaxed">
-                      Confidence: {metrics.avgConfidence}% · Relevance: {metrics.avgRelevance}% — dual-axis scoring ensures both extraction accuracy and query alignment. {metrics.categories.length} distinct categories identified with {queryInsight.scope.split('—')[1] || 'balanced distribution'}.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-blue-600 font-semibold uppercase tracking-wide flex-shrink-0">Action:</span>
-                    <p className="text-[10px] text-slate-700 leading-relaxed">
-                      {queryInsight.outcome} — Click concept pills to reveal 2-line context/insight pairs with connection mapping. {methodology} methodology applied for {queryInsight.approach.includes('high-fidelity') ? 'precision-focused' : 'exploratory'} extraction.
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -675,10 +550,12 @@ export default function InsightMindmap({ content, query, methodology = 'auto', o
   )
 }
 
-export function shouldShowInsightMap(content: string): boolean {
+export function shouldShowInsightMap(content: string, hasGnosticData: boolean = false): boolean {
+  if (hasGnosticData) return true
+
   const boldCount = (content.match(/\*\*[^*]+\*\*/g) || []).length
   const headerCount = (content.match(/^#+\s*.+$/gm) || []).length
   const bulletCount = (content.match(/^[-•*]\s+.+$/gm) || []).length
-  
-  return boldCount >= 2 || headerCount >= 2 || bulletCount >= 3
+
+  return boldCount >= 1 || headerCount >= 1 || bulletCount >= 2 || content.length > 200
 }

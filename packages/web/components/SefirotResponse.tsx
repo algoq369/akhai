@@ -32,48 +32,49 @@ interface SefirotResponseProps {
   onClose?: () => void
   onSwitchToInsight?: () => void
   onOpenMindMap?: () => void
+  onDeepDive?: (query: string) => void  // NEW: For Deep Dive → Mini Chat
 }
 
 // Clean category colors
 const CATEGORY_CONFIG = {
-  executive: { 
-    bg: 'bg-gradient-to-br from-indigo-50 to-purple-50', 
-    border: 'border-indigo-300',
+  executive: {
+    bg: 'bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20',
+    border: 'border-indigo-300 dark:border-indigo-600/30',
     dot: 'bg-indigo-500',
-    text: 'text-indigo-700',
-    badge: 'bg-indigo-100 text-indigo-700',
+    text: 'text-indigo-700 dark:text-indigo-300',
+    badge: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300',
     icon: '◆'
   },
-  strategy: { 
-    bg: 'bg-gradient-to-br from-purple-50 to-pink-50', 
-    border: 'border-purple-300',
+  strategy: {
+    bg: 'bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20',
+    border: 'border-purple-300 dark:border-purple-600/30',
     dot: 'bg-purple-500',
-    text: 'text-purple-700',
-    badge: 'bg-purple-100 text-purple-700',
+    text: 'text-purple-700 dark:text-purple-300',
+    badge: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
     icon: '◇'
   },
-  action: { 
-    bg: 'bg-gradient-to-br from-emerald-50 to-teal-50', 
-    border: 'border-emerald-300',
+  action: {
+    bg: 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20',
+    border: 'border-emerald-300 dark:border-emerald-600/30',
     dot: 'bg-emerald-500',
-    text: 'text-emerald-700',
-    badge: 'bg-emerald-100 text-emerald-700',
+    text: 'text-emerald-700 dark:text-emerald-300',
+    badge: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
     icon: '▸'
   },
-  insight: { 
-    bg: 'bg-gradient-to-br from-amber-50 to-orange-50', 
-    border: 'border-amber-300',
+  insight: {
+    bg: 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20',
+    border: 'border-amber-300 dark:border-amber-600/30',
     dot: 'bg-amber-500',
-    text: 'text-amber-700',
-    badge: 'bg-amber-100 text-amber-700',
+    text: 'text-amber-700 dark:text-amber-300',
+    badge: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
     icon: '✦'
   },
-  data: { 
-    bg: 'bg-gradient-to-br from-blue-50 to-cyan-50', 
-    border: 'border-blue-300',
+  data: {
+    bg: 'bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20',
+    border: 'border-blue-300 dark:border-blue-600/30',
     dot: 'bg-blue-500',
-    text: 'text-blue-700',
-    badge: 'bg-blue-100 text-blue-700',
+    text: 'text-blue-700 dark:text-blue-300',
+    badge: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
     icon: '▣'
   },
 }
@@ -307,7 +308,7 @@ function extractHighLevelInsights(content: string, query: string): CoreInsight[]
     .map((ins, i) => ({ ...ins, rank: i + 1 }))
 }
 
-export default function SefirotResponse({ content, query, methodology = 'auto', onClose, onSwitchToInsight, onOpenMindMap }: SefirotResponseProps) {
+export default function SefirotResponse({ content, query, methodology = 'auto', onClose, onSwitchToInsight, onOpenMindMap, onDeepDive }: SefirotResponseProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [viewMode, setViewMode] = useState<'tree' | 'list'>('list')
@@ -384,10 +385,10 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
       animate={{ opacity: 1, y: 0 }}
       className="mb-4"
     >
-      <div className="rounded-xl border border-slate-200/60 bg-white overflow-hidden shadow-sm">
+      <div className="rounded-xl border border-slate-200/60 dark:border-relic-slate/30 bg-white dark:bg-relic-slate/20 overflow-hidden shadow-sm">
         {/* Header */}
-        <div 
-          className="flex items-center justify-between px-4 py-3 border-b border-slate-100 cursor-pointer hover:bg-slate-50/50 transition-colors"
+        <div
+          className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-relic-slate/30 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-relic-slate/30 transition-colors"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           <div className="flex items-center gap-3">
@@ -395,19 +396,32 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
               <SparklesIcon className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-slate-800">Knowledge Synthesis</h3>
-              <p className="text-[10px] text-slate-500 font-mono">
-                {insights.length} insights · {stats.totalMetrics} data points · {stats.avgDataDensity}% factual · {stats.avgConfidence}% confidence
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
+                {(() => {
+                  // Generate query-specific title
+                  const queryWords = query.split(' ').filter(w => w.length > 3)
+                  const keyTopic = queryWords.slice(0, 3).join(' ')
+                  const topCategory = Object.entries(grouped)
+                    .filter(([, items]) => items.length > 0)
+                    .sort((a, b) => b[1].length - a[1].length)[0]?.[0] || 'insight'
+
+                  return keyTopic.length > 40
+                    ? `${keyTopic.substring(0, 37)}... — ${topCategory} synthesis`
+                    : `${keyTopic} — ${topCategory} analysis`
+                })()}
+              </h3>
+              <p className="text-[10px] text-slate-500 dark:text-relic-ghost/70 font-mono">
+                {insights.length} insights · {stats.totalMetrics} data points · {stats.avgDataDensity}% data · {stats.avgConfidence}% confidence
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {/* View Toggle */}
-            <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-100">
+            <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-100 dark:bg-relic-slate/40">
               <button
                 onClick={(e) => { e.stopPropagation(); setViewMode('list') }}
                 className={`px-2 py-1 text-[9px] rounded-md transition-all ${
-                  viewMode === 'list' ? 'bg-white shadow-sm text-slate-700' : 'text-slate-500'
+                  viewMode === 'list' ? 'bg-white dark:bg-relic-void shadow-sm text-slate-700 dark:text-white' : 'text-slate-500 dark:text-relic-ghost'
                 }`}
               >
                 ≡ List
@@ -415,13 +429,13 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
               <button
                 onClick={(e) => { e.stopPropagation(); setViewMode('tree') }}
                 className={`px-2 py-1 text-[9px] rounded-md transition-all ${
-                  viewMode === 'tree' ? 'bg-white shadow-sm text-slate-700' : 'text-slate-500'
+                  viewMode === 'tree' ? 'bg-white dark:bg-relic-void shadow-sm text-slate-700 dark:text-white' : 'text-slate-500 dark:text-relic-ghost'
                 }`}
               >
                 ◎ Tree
               </button>
             </div>
-            {isCollapsed ? <ChevronDownIcon className="w-4 h-4 text-slate-400" /> : <ChevronUpIcon className="w-4 h-4 text-slate-400" />}
+            {isCollapsed ? <ChevronDownIcon className="w-4 h-4 text-slate-400 dark:text-relic-ghost" /> : <ChevronUpIcon className="w-4 h-4 text-slate-400 dark:text-relic-ghost" />}
           </div>
         </div>
         
@@ -434,15 +448,15 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
               className="overflow-hidden"
             >
               {/* Stats Bar */}
-              <div className="px-4 py-2 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
+              <div className="px-4 py-2 bg-slate-50/50 dark:bg-relic-slate/10 border-b border-slate-100 dark:border-relic-slate/30 flex items-center gap-4">
                 <div className="flex items-center gap-3">
                   {Object.entries(grouped).filter(([, items]) => items.length > 0).map(([cat, items]) => {
                     const config = CATEGORY_CONFIG[cat as keyof typeof CATEGORY_CONFIG]
                     return (
                       <div key={cat} className="flex items-center gap-1.5">
                         <span className={`w-2 h-2 rounded-full ${config.dot}`} />
-                        <span className="text-[10px] text-slate-600 capitalize">{cat}</span>
-                        <span className="text-[10px] text-slate-400">({items.length})</span>
+                        <span className="text-[10px] text-slate-600 dark:text-relic-ghost capitalize">{cat}</span>
+                        <span className="text-[10px] text-slate-400 dark:text-relic-ghost/60">({items.length})</span>
                       </div>
                     )
                   })}
@@ -553,17 +567,17 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
                                         {insight.category}
                                       </span>
                                       <span className="text-[8px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono">
-                                        {Math.round(insight.dataDensity * 100)}% factual
+                                        {Math.round(insight.dataDensity * 100)}% data
                                       </span>
                                       {/* Actions - Open in new tab */}
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation()
-                                          window.open(`/?q=${encodeURIComponent(`Explain more about: ${insight.title}`)}`, '_blank')
+                                          onDeepDive?.(`Explain more about: ${insight.title}`)
                                         }}
                                         className="text-[8px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors font-medium"
                                       >
-                                        🔍 Deep Dive ↗
+                                        🔍 Deep Dive
                                       </button>
                                       <button
                                         onClick={(e) => {
@@ -718,7 +732,7 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
                                         <span className="text-[9px] font-mono text-blue-600 font-bold">{Math.round(insight.impact * 100)}%</span>
                                       </div>
                                       <div className="flex items-center gap-1">
-                                        <span className="text-[8px] text-slate-500">Factual:</span>
+                                        <span className="text-[8px] text-slate-500">Data:</span>
                                         <span className="text-[9px] font-mono text-indigo-600 font-bold">{Math.round(insight.dataDensity * 100)}%</span>
                                       </div>
                                       <div className="flex items-center gap-1">
@@ -1057,12 +1071,12 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
                                       initial={{ height: 0, opacity: 0 }}
                                       animate={{ height: 'auto', opacity: 1 }}
                                       exit={{ height: 0, opacity: 0 }}
-                                      className="mt-2 pt-2 border-t border-white/50"
+                                      className="mt-2 pt-2 border-t border-white/50 dark:border-relic-slate/30"
                                     >
-                                      <p className="text-[8px] text-slate-700 leading-relaxed">{insight.fullContent}</p>
+                                      <p className="text-[8px] text-slate-700 dark:text-relic-ghost/80 leading-relaxed">{insight.fullContent}</p>
                                       <div className="flex items-center gap-1.5 mt-1.5 text-[7px]">
-                                        <span className="text-emerald-600">{Math.round(insight.confidence * 100)}%</span>
-                                        <span className="text-blue-600">{Math.round(insight.impact * 100)}%</span>
+                                        <span className="text-emerald-600 dark:text-emerald-400">{Math.round(insight.confidence * 100)}%</span>
+                                        <span className="text-blue-600 dark:text-blue-400">{Math.round(insight.impact * 100)}%</span>
                                       </div>
                                     </motion.div>
                                   )}
@@ -1077,30 +1091,30 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
 
                   {/* Connection Count Indicator */}
                   {connections.length > 0 && (
-                    <div className="absolute bottom-2 right-2 text-[8px] text-slate-400">
+                    <div className="absolute bottom-2 right-2 text-[8px] text-slate-400 dark:text-relic-ghost/60">
                       {connections.length} connections
                     </div>
                   )}
                 </div>
               )}
               
-              {/* Footer - 3-Line Synthetic Explanation */}
-              <div className="px-4 py-3 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-t border-slate-200">
+              {/* Footer - Query-Specific Synthesis */}
+              <div className="px-4 py-3 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-relic-slate/10 dark:via-relic-slate/20 dark:to-relic-slate/10 border-t border-slate-200 dark:border-relic-slate/30">
                 {/* View Navigation */}
                 {((onSwitchToInsight && canShowInsight) || onOpenMindMap) && (
-                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200">
-                    <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Switch View:</span>
+                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200 dark:border-relic-slate/30">
+                    <span className="text-[9px] text-slate-500 dark:text-relic-ghost/70 font-semibold uppercase tracking-wide">Switch View:</span>
                     <div className="flex items-center gap-2">
                       <button
                         disabled
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-indigo-100 text-indigo-700 border border-indigo-200 cursor-not-allowed"
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-600/30 cursor-not-allowed"
                       >
                         ◆ Sefirot <span className="text-[8px] opacity-60">(current)</span>
                       </button>
                       {onSwitchToInsight && canShowInsight && (
                         <button
                           onClick={onSwitchToInsight}
-                          className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 transition-colors"
+                          className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-white dark:bg-relic-slate/30 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-600/30 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
                         >
                           ◇ Insight Graph
                         </button>
@@ -1108,7 +1122,7 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
                       {onOpenMindMap && (
                         <button
                           onClick={onOpenMindMap}
-                          className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 transition-colors"
+                          className="px-3 py-1.5 rounded-lg text-[10px] font-medium bg-white dark:bg-relic-slate/30 text-emerald-600 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-600/30 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
                         >
                           🗺️ Mind Map
                         </button>
@@ -1119,27 +1133,69 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
 
                 <div className="space-y-1.5">
                   <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide flex-shrink-0">Focus:</span>
-                    <p className="text-[10px] text-slate-700 leading-relaxed">
-                      {stats.totalMetrics > 0
-                        ? `Data-driven synthesis extracting ${stats.totalMetrics} quantitative metrics across ${insights.length} key insights — ${stats.avgDataDensity}% factual density emphasizing verifiable information over qualitative narratives.`
-                        : `High-level conceptual extraction across ${insights.length} insights with ${stats.avgConfidence}% average confidence — structured knowledge organization for quick comprehension.`
-                      }
+                    <span className="text-[9px] text-slate-500 dark:text-relic-ghost/70 font-semibold uppercase tracking-wide flex-shrink-0">Query:</span>
+                    <p className="text-[10px] text-slate-700 dark:text-relic-ghost leading-relaxed">
+                      {(() => {
+                        // Extract key topics from query and insights
+                        const queryLower = query.toLowerCase()
+                        const topCategories = Object.entries(grouped)
+                          .filter(([, items]) => items.length > 0)
+                          .sort((a, b) => b[1].length - a[1].length)
+                          .slice(0, 2)
+                          .map(([cat]) => cat)
+
+                        const topMetrics = insights
+                          .flatMap(i => i.metrics)
+                          .slice(0, 3)
+
+                        const metricsText = topMetrics.length > 0
+                          ? ` with ${topMetrics.length} key metrics (${topMetrics.join(', ')})`
+                          : ''
+
+                        return `"${query.length > 60 ? query.substring(0, 57) + '...' : query}" — ${insights.length} ${topCategories.join(' and ')} insights extracted${metricsText}`
+                      })()}
                     </p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-emerald-600 font-semibold uppercase tracking-wide flex-shrink-0">Quality:</span>
-                    <p className="text-[10px] text-slate-700 leading-relaxed">
-                      Extraction reliability at {stats.avgConfidence}% confidence with {stats.avgImpact}% impact weighting — {connections.length} semantic connections discovered between insights enabling lateral knowledge exploration and synergy identification.
+                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide flex-shrink-0">Data:</span>
+                    <p className="text-[10px] text-slate-700 dark:text-relic-ghost leading-relaxed">
+                      {(() => {
+                        const topDataInsights = insights
+                          .filter(i => i.dataDensity > 0.4)
+                          .slice(0, 2)
+
+                        if (topDataInsights.length > 0) {
+                          const titles = topDataInsights.map(i =>
+                            i.title.length > 40 ? i.title.substring(0, 37) + '...' : i.title
+                          ).join(' • ')
+                          return `${stats.totalMetrics} quantitative metrics found — ${stats.avgDataDensity}% data density — Top data: ${titles}`
+                        } else {
+                          const topInsights = insights.slice(0, 2).map(i =>
+                            i.title.length > 35 ? i.title.substring(0, 32) + '...' : i.title
+                          ).join(' • ')
+                          return `${stats.avgConfidence}% confidence synthesis — Key concepts: ${topInsights}`
+                        }
+                      })()}
                     </p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-blue-600 font-semibold uppercase tracking-wide flex-shrink-0">Action:</span>
-                    <p className="text-[10px] text-slate-700 leading-relaxed">
-                      {viewMode === 'tree'
-                        ? `Tree view enables hierarchical navigation — click nodes to expand full content, metrics, and related topics. Top-tier insights ranked by data density (${insights[0]?.dataDensity ? Math.round(insights[0].dataDensity * 100) : 0}% highest).`
-                        : `List view prioritizes scannable data — ${stats.totalMetrics} metrics highlighted inline. Click any insight to reveal extracted numbers, percentages, and actionable data points with deep-dive exploration links.`
-                      }
+                    <span className="text-[9px] text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide flex-shrink-0">Explore:</span>
+                    <p className="text-[10px] text-slate-700 dark:text-relic-ghost leading-relaxed">
+                      {(() => {
+                        const connectedInsights = insights.filter(i =>
+                          connections.some(c => c.from === i.id || c.to === i.id)
+                        ).slice(0, 2)
+
+                        if (connections.length > 0 && connectedInsights.length > 0) {
+                          const titles = connectedInsights.map(i =>
+                            i.title.length > 30 ? i.title.substring(0, 27) + '...' : i.title
+                          ).join(' ↔ ')
+                          return `${connections.length} semantic connections — ${viewMode === 'tree' ? 'Tree view' : 'List view'} — Click to explore: ${titles}`
+                        } else {
+                          const topInsight = insights[0]
+                          return `${viewMode === 'tree' ? 'Tree view active' : 'List view active'} — Click "${topInsight.title.substring(0, 40)}..." to ${topInsight.metrics.length > 0 ? `see ${topInsight.metrics.length} metrics` : 'explore deeper'}`
+                        }
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -1152,11 +1208,17 @@ export default function SefirotResponse({ content, query, methodology = 'auto', 
   )
 }
 
-export function shouldShowSefirot(content: string): boolean {
+export function shouldShowSefirot(content: string, hasGnosticData: boolean = false): boolean {
+  // ALWAYS show if gnostic data exists (user wants max capabilities)
+  if (hasGnosticData) {
+    return true
+  }
+
+  // For non-gnostic responses, show if there's ANY structure
   const headerCount = (content.match(/^#+\s*.+$/gm) || []).length
   const boldCount = (content.match(/\*\*[^*]+\*\*/g) || []).length
   const bulletCount = (content.match(/^[-•*]\s+.+$/gm) || []).length
-  
-  // Only show for structured content with headers
-  return headerCount >= 2 || (boldCount >= 3 && bulletCount >= 3)
+
+  // Much lower threshold - show for any structured content
+  return headerCount >= 1 || boldCount >= 2 || bulletCount >= 2 || content.length > 300
 }

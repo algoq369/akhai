@@ -274,6 +274,206 @@ function calculateCost(providerName: string, inputTokens: number, outputTokens: 
   return (inputTokens * rate.input + outputTokens * rate.output) / 1000;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// PHASE 3: ENHANCED REFLECTION WITH OPUS 4.5 (EXTENDED THINKING)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Enhanced CoD configuration with reflection capabilities
+ */
+export interface EnhancedCoDConfig extends CoDConfig {
+  /** Enable deep reflection phase */
+  enableReflection: boolean;
+
+  /** Use extended thinking for complex queries */
+  useExtendedThinking: boolean;
+
+  /** Extended thinking token budget (3000-12000) */
+  thinkingBudget: number;
+
+  /** Complexity threshold for extended thinking (1-10) */
+  complexityThreshold: number;
+}
+
+/**
+ * Enhanced CoD result with reflection metadata
+ */
+export interface EnhancedCoDResult extends CoDResult {
+  reflection?: {
+    assumptions: string[];
+    weakEvidence: string[];
+    alternatives: string[];
+    hallucinationRisk: string[];
+    improvements: string[];
+    reflectionTime: number;
+  };
+}
+
+/**
+ * Execute Chain of Draft with Enhanced Reflection using Opus 4.5
+ *
+ * Adds a reflection phase that critically analyzes the draft response:
+ * - Identifies assumptions made
+ * - Detects weak or missing evidence
+ * - Considers alternative perspectives
+ * - Assesses hallucination risk
+ * - Suggests improvements
+ *
+ * For complex queries (complexity > threshold), uses extended thinking mode.
+ *
+ * @param query - User query to solve
+ * @param provider - AI provider instance
+ * @param config - Enhanced configuration with reflection options
+ * @param complexityScore - Query complexity (1-10)
+ * @returns Enhanced CoD result with reflection metadata
+ */
+export async function executeEnhancedCoD(
+  query: string,
+  provider: BaseProvider,
+  config: Partial<EnhancedCoDConfig> = {},
+  complexityScore: number = 5
+): Promise<EnhancedCoDResult> {
+  const cfg: EnhancedCoDConfig = {
+    ...DEFAULT_CONFIG,
+    enableReflection: true,
+    useExtendedThinking: true,
+    thinkingBudget: complexityScore > 7 ? 10000 : 5000,
+    complexityThreshold: 7,
+    ...config,
+  };
+
+  // Execute standard CoD first
+  const codResult = await executeChainOfDraft(query, provider, cfg);
+
+  // If reflection disabled, return standard result
+  if (!cfg.enableReflection) {
+    return codResult;
+  }
+
+  // Phase 2: Deep Reflection with Opus 4.5
+  const reflectionStart = Date.now();
+
+  const reflectionPrompt = buildReflectionPrompt(
+    query,
+    codResult.reasoning,
+    codResult.answer
+  );
+
+  // Determine if extended thinking should be used
+  const useExtendedThinking =
+    cfg.useExtendedThinking &&
+    complexityScore > cfg.complexityThreshold;
+
+  // Create reflection request
+  const reflectionRequest: CompletionRequest = {
+    messages: [{ role: 'user', content: reflectionPrompt }],
+    maxTokens: 1500,
+    temperature: 0.4,
+  };
+
+  // Add extended thinking if enabled
+  if (useExtendedThinking && (provider as any).supportsExtendedThinking) {
+    (reflectionRequest as any).thinking = {
+      type: 'enabled',
+      budget_tokens: cfg.thinkingBudget,
+    };
+    console.log(`[CoD Reflection] Using extended thinking (${cfg.thinkingBudget} tokens)`);
+  }
+
+  const reflectionCompletion = await provider.complete(reflectionRequest);
+  const reflection = parseReflection(reflectionCompletion.content);
+
+  return {
+    ...codResult,
+    reflection: {
+      ...reflection,
+      reflectionTime: Date.now() - reflectionStart,
+    },
+  };
+}
+
+/**
+ * Build reflection prompt for critical analysis
+ */
+function buildReflectionPrompt(
+  query: string,
+  reasoning: string,
+  answer: string
+): string {
+  return `Critically analyze this draft response with brutal honesty:
+
+ORIGINAL QUERY: "${query}"
+
+DRAFT REASONING:
+"""
+${reasoning}
+"""
+
+DRAFT ANSWER: "${answer}"
+
+Provide deep reflection on these aspects:
+
+1. **Assumptions** - What assumptions did you make? List them explicitly.
+2. **Weak Evidence** - What evidence is weak, missing, or uncertain?
+3. **Alternative Perspectives** - What other viewpoints or approaches exist?
+4. **Hallucination Risk** - Where might you be hallucinating or making unsupported claims?
+5. **Improvements** - How can this answer be improved?
+
+Be brutally honest and specific. Return in this format:
+
+ASSUMPTIONS:
+- [assumption 1]
+- [assumption 2]
+
+WEAK EVIDENCE:
+- [weakness 1]
+- [weakness 2]
+
+ALTERNATIVES:
+- [alternative 1]
+- [alternative 2]
+
+HALLUCINATION RISKS:
+- [risk 1]
+- [risk 2]
+
+IMPROVEMENTS:
+- [improvement 1]
+- [improvement 2]`;
+}
+
+/**
+ * Parse reflection output into structured format
+ */
+function parseReflection(reflectionText: string): {
+  assumptions: string[];
+  weakEvidence: string[];
+  alternatives: string[];
+  hallucinationRisk: string[];
+  improvements: string[];
+} {
+  const parseSection = (sectionName: string): string[] => {
+    const regex = new RegExp(`${sectionName}:\\s*\\n([\\s\\S]*?)(?=\\n\\n[A-Z]|$)`, 'i');
+    const match = reflectionText.match(regex);
+    if (!match) return [];
+
+    return match[1]
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.startsWith('-') || line.startsWith('•'))
+      .map(line => line.replace(/^[-•]\s*/, '').trim())
+      .filter(line => line.length > 0);
+  };
+
+  return {
+    assumptions: parseSection('ASSUMPTIONS'),
+    weakEvidence: parseSection('WEAK EVIDENCE'),
+    alternatives: parseSection('ALTERNATIVES'),
+    hallucinationRisk: parseSection('HALLUCINATION RISKS?'),
+    improvements: parseSection('IMPROVEMENTS'),
+  };
+}
+
 /**
  * Export for use as default
  */

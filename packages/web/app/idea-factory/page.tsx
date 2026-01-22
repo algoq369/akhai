@@ -8,6 +8,7 @@ import TrainingEnvironment from '@/components/TrainingEnvironment'
 import TeachingInterface from '@/components/TeachingInterface'
 import IdeaGenerator from '@/components/IdeaGenerator'
 import InnovationsLab from '@/components/InnovationsLab'
+import DarkModeToggle from '@/components/DarkModeToggle'
 
 function IdeaFactoryContent() {
   const searchParams = useSearchParams()
@@ -23,48 +24,48 @@ function IdeaFactoryContent() {
   }, [tabParam])
 
   return (
-    <div className="min-h-screen bg-relic-white">
-      {/* Header */}
-      <div className="border-b border-relic-mist bg-relic-white sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+    <div className="min-h-screen bg-relic-white dark:bg-relic-void">
+      {/* Header - Minimal */}
+      <div className="bg-white dark:bg-relic-void/80 sticky top-0 z-10 border-b border-slate-200/0 dark:border-relic-slate/30">
+        <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-mono text-relic-slate mb-2">Idea Factory</h1>
-              <p className="text-sm text-relic-silver">
-                Innovate, experiment, and build with AI, blockchain, and crypto technologies
-              </p>
+              <div className="text-[9px] uppercase tracking-[0.3em] text-relic-silver dark:text-relic-ghost mb-1">SYSTEM</div>
+              <h1 className="text-sm font-mono text-relic-slate dark:text-white">idea factory</h1>
             </div>
-            <Link 
-              href="/"
-              className="text-xs text-relic-silver hover:text-relic-slate transition-colors"
-            >
-              ← back to akhai
-            </Link>
+            <div className="flex items-center gap-3">
+              <DarkModeToggle />
+              <Link
+                href="/"
+                className="text-[9px] uppercase tracking-[0.2em] text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors"
+              >
+                ← akhai
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-relic-mist">
+      {/* Tabs - Raw Text Only */}
+      <div className="bg-relic-ghost/30 dark:bg-relic-slate/10">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex gap-4 overflow-x-auto">
+          <div className="flex gap-6 overflow-x-auto">
             {[
-              { id: 'innovations', label: '🔬 Innovations Lab', highlight: true },
-              { id: 'customize', label: '🤖 Customize Agent' },
-              { id: 'train', label: '🏋️ Training' },
-              { id: 'teach', label: '📚 Teaching' },
-              { id: 'ideas', label: '💡 Ideas' },
+              { id: 'innovations', label: '◊ innovations', sigil: '◊' },
+              { id: 'customize', label: '▸ customize', sigil: '▸' },
+              { id: 'train', label: '◈ training', sigil: '◈' },
+              { id: 'teach', label: '◐ teaching', sigil: '◐' },
+              { id: 'ideas', label: '⟡ ideation', sigil: '⟡' },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`
-                  px-4 py-3 text-xs font-mono border-b-2 transition-colors whitespace-nowrap
+                  px-2 py-2 text-[10px] font-mono transition-colors whitespace-nowrap
                   ${activeTab === tab.id
-                    ? 'border-relic-slate text-relic-slate'
-                    : 'border-transparent text-relic-silver hover:text-relic-slate'
+                    ? 'text-relic-void dark:text-white'
+                    : 'text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white'
                   }
-                  ${tab.highlight && activeTab !== tab.id ? 'text-relic-slate font-medium' : ''}
                 `}
               >
                 {tab.label}
@@ -102,8 +103,8 @@ function IdeaFactoryContent() {
 export default function IdeaFactoryPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-relic-white flex items-center justify-center">
-        <p className="text-relic-silver">Loading...</p>
+      <div className="min-h-screen bg-relic-white dark:bg-relic-void flex items-center justify-center">
+        <p className="text-relic-silver dark:text-relic-ghost">Loading...</p>
       </div>
     }>
       <IdeaFactoryContent />

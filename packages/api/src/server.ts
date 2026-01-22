@@ -1,3 +1,4 @@
+import "dotenv/config";
 /**
  * AKHAI API Server
  * 
@@ -30,7 +31,7 @@ interface ServerConfig {
   port: number;
   host: string;
   apiKeys: string[];
-  motherBaseProvider: 'local' | 'together' | 'runpod' | 'custom';
+  motherBaseProvider: 'claude' | 'local' | 'together' | 'runpod' | 'custom';
   motherBaseEndpoint?: string;
   motherBaseApiKey?: string;
 }
@@ -40,9 +41,9 @@ function loadConfig(): ServerConfig {
     port: parseInt(process.env.AKHAI_API_PORT || '8080'),
     host: process.env.AKHAI_API_HOST || '0.0.0.0',
     apiKeys: (process.env.AKHAI_API_KEYS || '').split(',').filter(Boolean),
-    motherBaseProvider: (process.env.AKHAI_PROVIDER as any) || 'local',
+    motherBaseProvider: (process.env.AKHAI_PROVIDER as any) || 'claude',
     motherBaseEndpoint: process.env.AKHAI_ENDPOINT,
-    motherBaseApiKey: process.env.AKHAI_API_KEY,
+    motherBaseApiKey: process.env.AKHAI_API_KEY || process.env.ANTHROPIC_API_KEY,
   };
 }
 
@@ -56,6 +57,12 @@ const config = loadConfig();
 let motherBase: MotherBase;
 
 switch (config.motherBaseProvider) {
+  case 'claude':
+    if (!config.motherBaseApiKey) {
+      throw new Error('Claude requires AKHAI_API_KEY or ANTHROPIC_API_KEY');
+    }
+    motherBase = new MotherBase(MOTHER_BASE_CONFIGS.claude(config.motherBaseApiKey));
+    break;
   case 'local':
     motherBase = new MotherBase(MOTHER_BASE_CONFIGS.local);
     break;
@@ -72,7 +79,12 @@ switch (config.motherBaseProvider) {
     motherBase = new MotherBase(MOTHER_BASE_CONFIGS.runpod(config.motherBaseEndpoint, config.motherBaseApiKey));
     break;
   default:
-    motherBase = new MotherBase(MOTHER_BASE_CONFIGS.local);
+    // Default to Claude Opus 4.5 for production
+    if (config.motherBaseApiKey) {
+      motherBase = new MotherBase(MOTHER_BASE_CONFIGS.claude(config.motherBaseApiKey));
+    } else {
+      motherBase = new MotherBase(MOTHER_BASE_CONFIGS.local);
+    }
 }
 
 // Initialize tools

@@ -10,13 +10,15 @@ export type { MotherBaseConfig, ModelConfig, QueryOptions, ConsensusResult } fro
 
 // Providers
 export { SelfHostedProvider } from './providers/self-hosted.js';
-export type { 
-  SelfHostedConfig, 
-  CompletionRequest, 
-  CompletionResponse, 
+export { AnthropicProvider } from './providers/anthropic.js';
+export type {
+  SelfHostedConfig,
+  CompletionRequest,
+  CompletionResponse,
   StreamChunk,
-  Message 
+  Message
 } from './providers/self-hosted.js';
+export type { AnthropicConfig } from './providers/anthropic.js';
 
 // Version
 export const VERSION = '0.1.0';

@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { CustomCursor } from '@/components/CustomCursor'
 import { PostHogProvider } from './providers'
+import { QuickChatProvider } from '@/components/QuickChatProvider'
+import { DepthProvider } from '@/hooks/useDepthAnnotations'
+import ProfileMenu from '@/components/ProfileMenu'
 // import { FibonacciBackground } from '@/components/FibonacciBackground'
 
 export const metadata: Metadata = {
@@ -135,10 +138,21 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-mono antialiased bg-relic-white">
+      <body className="font-mono antialiased bg-relic-ghost dark:bg-relic-void">
         {/* <FibonacciBackground /> */}
         <CustomCursor />
-        <PostHogProvider>{children}</PostHogProvider>
+
+        {/* Global Profile Widget - Accessible on all pages */}
+        <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
+          <ProfileMenu userName="User" />
+        </div>
+
+        <PostHogProvider>
+          <DepthProvider>
+            {children}
+            <QuickChatProvider />
+          </DepthProvider>
+        </PostHogProvider>
       </body>
     </html>
   )

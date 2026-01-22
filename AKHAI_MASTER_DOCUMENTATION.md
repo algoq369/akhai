@@ -28,17 +28,37 @@
 
 ## 🎯 Project Overview
 
-**AkhAI** is the first sovereign AI research engine that combines:
-- **7 Reasoning Methodologies** for intelligent query routing
-- **Grounding Guard System** for real-time content verification
-- **Side Canal** for autonomous context tracking and topic discovery
-- **Mind Map Visualization** for research relationship mapping
-- **Legend Mode** for premium R&D with Claude Opus 4.5
-- **Idea Factory** for creative ideation and innovation
+**LAYER 1 COMPLETE:** Now running **Claude Opus 4.5** as primary engine.
 
-**Mission:** Build trustworthy, sovereign AI that eliminates hallucinations and provides transparent reasoning.
+**AkhAI** is the first sovereign AI research engine designed as an AGI-ready system using the Kabbalistic Sefirot blueprint—a configurable research engine tailored to user expectations through Hermetic Lenses and the Sefirot AI Computational Tree of Life.
 
-**Vision:** Zero external AI dependencies, full sovereignty, trained on user data.
+### Core Vision
+
+**Bringing AGI to life through sovereignty, visual intelligence, and hermetic wisdom.**
+
+**AkhAI combines:**
+- **7 Reasoning Methodologies** for intelligent query routing (Direct, CoD, BoT, ReAct, PoT, GTP, Auto)
+- **AkhAI Signature Guard** for anti-hallucination and audit
+- **Visual-First Intelligence** through Sefirot • Insights • Mindmap
+- **Side Canal System** for contextual keyword extraction and suggestions
+- **Grimoire Execution Layer** for project development and code enhancement
+- **Q Chat** for quick queries and instant answers
+
+### Intelligence Architecture
+
+**1. Visual-First Understanding:**
+- Immersive, straightforward data presentation
+- Users innovate, research, and create through visuals first
+- Tree of Life configuration for personalized AI reasoning
+
+**2. Intelligence Layers:**
+- **Q Chat:** Always available for quick queries
+- **Side Canal:** Mini frame extracting keywords, suggesting links, connected to Mindmap
+- **Grimoire Execution:** Code enhancement with objectives, deadlines, risk/reward calculations
+
+**Mission:** Build trustworthy, sovereign AI that eliminates hallucinations through transparent reasoning and visual intelligence.
+
+**Vision:** AGI-ready system with zero external dependencies, full sovereignty, and hermetic wisdom integration.
 
 ---
 

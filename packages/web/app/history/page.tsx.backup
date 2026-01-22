@@ -1,0 +1,22 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+// Force dynamic rendering to avoid prerender errors
+export const dynamic = 'force-dynamic'
+
+export default function HistoryPage() {
+  const router = useRouter()
+
+  // Redirect to home - history is now integrated into MindMap
+  useEffect(() => {
+    router.push('/?view=history')
+  }, [router])
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
+      <div className="text-sm text-slate-400">Redirecting to Mind Map...</div>
+    </div>
+  )
+}

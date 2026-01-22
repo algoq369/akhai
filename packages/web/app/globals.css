@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply bg-relic-white text-relic-slate font-mono;
+    @apply bg-relic-ghost text-relic-slate font-mono;
     @apply selection:bg-relic-void selection:text-relic-white;
   }
 
@@ -94,16 +94,32 @@
     transform: translate(-50%, -50%);
   }
 
+  /* Dark mode cursor - bright white for visibility */
+  .dark .custom-cursor {
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+  }
+
   .custom-cursor.hovering {
     width: 10px;
     height: 10px;
     border-color: rgba(23, 23, 23, 0.8);
   }
 
+  .dark .custom-cursor.hovering {
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  }
+
   .custom-cursor.clicking {
     width: 4px;
     height: 4px;
     border-color: rgba(163, 163, 163, 0.8);
+  }
+
+  .dark .custom-cursor.clicking {
+    border-color: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
   }
 
   .custom-cursor-ring {
@@ -119,10 +135,18 @@
     transform: translate(-50%, -50%);
   }
 
+  .dark .custom-cursor-ring {
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
   .custom-cursor-ring.hovering {
     width: 28px;
     height: 28px;
     border-color: rgba(163, 163, 163, 0.25);
+  }
+
+  .dark .custom-cursor-ring.hovering {
+    border-color: rgba(255, 255, 255, 0.35);
   }
 
   /* ========================================
@@ -174,4 +198,15 @@
     opacity: 1;
     transform: translateX(-50%) scale(1);
   }
+}
+
+/* Hide Next.js dev indicator completely */
+#__next-build-watcher,
+.__next-build-watcher,
+[data-nextjs-toast-wrapper],
+nextjs-portal {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

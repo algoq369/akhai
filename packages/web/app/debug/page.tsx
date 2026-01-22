@@ -1,6 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import DarkModeToggle from '@/components/DarkModeToggle'
+
+// Force dynamic rendering to avoid prerender errors
+export const dynamic = 'force-dynamic'
 
 interface LogEntry {
   timestamp: string
@@ -79,7 +83,8 @@ export default function DebugPage() {
             <h1 className="text-2xl font-bold text-white">◊ AkhAI Debug Dashboard</h1>
             <p className="text-gray-400 text-sm">Real-time system monitoring</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
+            <DarkModeToggle />
             <a
               href="/"
               className="px-4 py-2 bg-gray-700 text-white text-sm hover:bg-gray-600 rounded"

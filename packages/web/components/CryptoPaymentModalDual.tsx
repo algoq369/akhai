@@ -223,21 +223,21 @@ export default function CryptoPaymentModalDual({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/95 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/95 dark:bg-relic-void/95 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white border border-relic-slate/20 rounded-sm max-w-md w-full shadow-lg"
+          className="bg-white dark:bg-relic-void border border-relic-slate/20 dark:border-relic-slate/30 rounded-sm max-w-md w-full shadow-lg"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-relic-slate/10">
-            <h2 className="text-sm font-mono text-relic-void uppercase tracking-wider">
+          <div className="flex items-center justify-between p-4 border-b border-relic-slate/10 dark:border-relic-slate/20">
+            <h2 className="text-sm font-mono text-relic-void dark:text-white uppercase tracking-wider">
               {paymentState === 'success' ? 'Payment Complete' : 'Pay with Crypto'}
             </h2>
             <button
               onClick={handleClose}
-              className="text-relic-slate hover:text-relic-void transition-colors"
+              className="text-relic-slate dark:text-relic-ghost hover:text-relic-void dark:hover:text-white transition-colors"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -248,8 +248,8 @@ export default function CryptoPaymentModalDual({
             {/* Provider Selection */}
             {paymentState === 'provider-select' && (
               <div className="space-y-3">
-                <p className="text-xs text-relic-slate mb-4 text-center">
-                  Select payment method for <span className="text-relic-void font-mono">${amount}</span>
+                <p className="text-xs text-relic-slate dark:text-relic-ghost mb-4 text-center">
+                  Select payment method for <span className="text-relic-void dark:text-white font-mono">${amount}</span>
                 </p>
 
                 {/* Sovereign Mode - BTCPay */}
@@ -258,27 +258,27 @@ export default function CryptoPaymentModalDual({
                     setProvider('btcpay')
                     setPaymentState('currency-select')
                   }}
-                  className="w-full p-4 bg-relic-ghost border border-relic-slate/20 rounded-sm hover:border-relic-slate/40 hover:bg-relic-slate/5 transition-all group"
+                  className="w-full p-4 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-slate/20 rounded-sm hover:border-relic-slate/40 hover:bg-relic-slate/5 transition-all group"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-sm bg-relic-slate/10 flex items-center justify-center flex-shrink-0">
-                      <ShieldCheckIcon className="w-4 h-4 text-relic-slate" />
+                      <ShieldCheckIcon className="w-4 h-4 text-relic-slate dark:text-relic-ghost" />
                     </div>
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-xs font-mono text-relic-void uppercase tracking-wider">
+                        <h3 className="text-xs font-mono text-relic-void dark:text-white uppercase tracking-wider">
                           Sovereign Mode
                         </h3>
-                        <span className="text-[8px] px-1 py-0.5 bg-relic-slate/10 text-relic-slate rounded uppercase tracking-wider">
+                        <span className="text-[8px] px-1 py-0.5 bg-relic-slate/10 text-relic-slate dark:text-relic-ghost rounded uppercase tracking-wider">
                           BTCPay
                         </span>
                       </div>
-                      <p className="text-[10px] text-relic-slate mb-2">
+                      <p className="text-[10px] text-relic-slate dark:text-relic-ghost mb-2">
                         Direct to wallet • Non-custodial • 0% fees
                       </p>
                       <div className="flex gap-1.5 flex-wrap">
                         {BTCPAY_FEATURED.map((curr) => (
-                          <div key={curr.id} className="text-[9px] px-1.5 py-0.5 bg-white text-relic-slate rounded border border-relic-slate/20">
+                          <div key={curr.id} className="text-[9px] px-1.5 py-0.5 bg-white dark:bg-relic-slate/20 text-relic-slate dark:text-relic-ghost rounded border border-relic-slate/20">
                             {curr.name}
                           </div>
                         ))}
@@ -293,27 +293,27 @@ export default function CryptoPaymentModalDual({
                     setProvider('nowpayments')
                     setPaymentState('currency-select')
                   }}
-                  className="w-full p-4 bg-relic-ghost border border-relic-slate/20 rounded-sm hover:border-relic-slate/40 hover:bg-relic-slate/5 transition-all group"
+                  className="w-full p-4 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-slate/20 rounded-sm hover:border-relic-slate/40 hover:bg-relic-slate/5 transition-all group"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-sm bg-relic-slate/10 flex items-center justify-center flex-shrink-0">
-                      <BoltIcon className="w-4 h-4 text-relic-slate" />
+                      <BoltIcon className="w-4 h-4 text-relic-slate dark:text-relic-ghost" />
                     </div>
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-xs font-mono text-relic-void uppercase tracking-wider">
+                        <h3 className="text-xs font-mono text-relic-void dark:text-white uppercase tracking-wider">
                           Convenient Mode
                         </h3>
-                        <span className="text-[8px] px-1 py-0.5 bg-relic-slate/10 text-relic-slate rounded uppercase tracking-wider">
+                        <span className="text-[8px] px-1 py-0.5 bg-relic-slate/10 text-relic-slate dark:text-relic-ghost rounded uppercase tracking-wider">
                           300+ Coins
                         </span>
                       </div>
-                      <p className="text-[10px] text-relic-slate mb-2">
+                      <p className="text-[10px] text-relic-slate dark:text-relic-ghost mb-2">
                         Fast processing • Wide selection • 0.5% fee
                       </p>
                       <div className="flex gap-1.5 flex-wrap">
                         {FEATURED_CURRENCIES.slice(0, 4).map((curr) => (
-                          <div key={curr.id} className="text-[9px] px-1.5 py-0.5 bg-white text-relic-slate rounded border border-relic-slate/20">
+                          <div key={curr.id} className="text-[9px] px-1.5 py-0.5 bg-white dark:bg-relic-slate/20 text-relic-slate dark:text-relic-ghost rounded border border-relic-slate/20">
                             {curr.name}
                           </div>
                         ))}
@@ -333,13 +333,13 @@ export default function CryptoPaymentModalDual({
               <div className="space-y-3">
                 <button
                   onClick={() => setPaymentState('provider-select')}
-                  className="text-[10px] text-relic-slate hover:text-relic-void mb-2"
+                  className="text-[10px] text-relic-slate dark:text-relic-ghost hover:text-relic-void mb-2"
                 >
                   ← Back
                 </button>
 
-                <p className="text-xs text-relic-slate mb-3">
-                  Select cryptocurrency to pay <span className="text-relic-void font-mono">${amount}</span>
+                <p className="text-xs text-relic-slate dark:text-relic-ghost mb-3">
+                  Select cryptocurrency to pay <span className="text-relic-void dark:text-white font-mono">${amount}</span>
                 </p>
 
                 <div className="grid grid-cols-3 gap-2">
@@ -351,10 +351,10 @@ export default function CryptoPaymentModalDual({
                         handleCreatePayment(curr.id, provider)
                       }}
                       disabled={loading}
-                      className="p-3 bg-relic-ghost border border-relic-slate/20 rounded-sm hover:border-relic-slate/40 hover:bg-relic-slate/5 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-3 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-slate/20 rounded-sm hover:border-relic-slate/40 hover:bg-relic-slate/5 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <div className="text-[10px] font-mono text-relic-void uppercase">{curr.name}</div>
+                        <div className="text-[10px] font-mono text-relic-void dark:text-white uppercase">{curr.name}</div>
                         {curr.badge && (
                           <span className="text-[8px] text-relic-slate/60 uppercase tracking-wider">
                             {curr.badge}
@@ -366,7 +366,7 @@ export default function CryptoPaymentModalDual({
                 </div>
 
                 {error && (
-                  <div className="mt-3 p-2 bg-relic-ghost border border-relic-slate/20 rounded-sm text-[10px] text-relic-slate">
+                  <div className="mt-3 p-2 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-slate/20 rounded-sm text-[10px] text-relic-slate dark:text-relic-ghost">
                     {error}
                   </div>
                 )}
@@ -379,14 +379,14 @@ export default function CryptoPaymentModalDual({
                 {/* Timer */}
                 {timeRemaining !== null && (
                   <div className="text-center">
-                    <div className="text-[10px] text-relic-slate mb-1">Time remaining</div>
-                    <div className="text-2xl font-mono text-relic-void">{formatTime(timeRemaining)}</div>
+                    <div className="text-[10px] text-relic-slate dark:text-relic-ghost mb-1">Time remaining</div>
+                    <div className="text-2xl font-mono text-relic-void dark:text-white">{formatTime(timeRemaining)}</div>
                   </div>
                 )}
 
                 {/* QR Code */}
                 <div className="flex justify-center">
-                  <div className="p-3 bg-relic-ghost border border-relic-slate/20 rounded-sm">
+                  <div className="p-3 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-slate/20 rounded-sm">
                     <img
                       src={paymentDetails.qrCodeUrl}
                       alt="Payment QR Code"
@@ -397,17 +397,17 @@ export default function CryptoPaymentModalDual({
 
                 {/* Amount */}
                 <div className="text-center">
-                  <div className="text-[10px] text-relic-slate mb-1">Send exactly</div>
-                  <div className="text-lg font-mono text-relic-void">
+                  <div className="text-[10px] text-relic-slate dark:text-relic-ghost mb-1">Send exactly</div>
+                  <div className="text-lg font-mono text-relic-void dark:text-white">
                     {formatCryptoAmount(paymentDetails.payAmount, paymentDetails.payCurrency)} {paymentDetails.payCurrency.toUpperCase()}
                   </div>
                 </div>
 
                 {/* Address */}
                 <div>
-                  <div className="text-[10px] text-relic-slate mb-1.5">Payment Address</div>
-                  <div className="flex items-center gap-2 p-2 bg-relic-ghost border border-relic-slate/20 rounded-sm">
-                    <code className="flex-1 text-[10px] text-relic-void break-all font-mono">
+                  <div className="text-[10px] text-relic-slate dark:text-relic-ghost mb-1.5">Payment Address</div>
+                  <div className="flex items-center gap-2 p-2 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-slate/20 rounded-sm">
+                    <code className="flex-1 text-[10px] text-relic-void dark:text-white break-all font-mono">
                       {paymentDetails.payAddress}
                     </code>
                     <button
@@ -415,17 +415,17 @@ export default function CryptoPaymentModalDual({
                       className="p-1.5 hover:bg-relic-slate/10 rounded-sm transition-colors flex-shrink-0"
                     >
                       {copied ? (
-                        <ClipboardDocumentCheckIcon className="w-4 h-4 text-relic-slate" />
+                        <ClipboardDocumentCheckIcon className="w-4 h-4 text-relic-slate dark:text-relic-ghost" />
                       ) : (
-                        <ClipboardDocumentIcon className="w-4 h-4 text-relic-slate" />
+                        <ClipboardDocumentIcon className="w-4 h-4 text-relic-slate dark:text-relic-ghost" />
                       )}
                     </button>
                   </div>
                 </div>
 
                 {/* Status */}
-                <div className="text-center p-3 bg-relic-ghost border border-relic-slate/20 rounded-sm">
-                  <div className="flex items-center justify-center gap-2 text-relic-slate">
+                <div className="text-center p-3 bg-relic-ghost dark:bg-relic-slate/20 border border-relic-slate/20 rounded-sm">
+                  <div className="flex items-center justify-center gap-2 text-relic-slate dark:text-relic-ghost">
                     <div className="w-1.5 h-1.5 bg-relic-slate rounded-full animate-pulse" />
                     <span className="text-[10px] font-mono">
                       {paymentState === 'confirming' ? 'Confirming...' : 'Waiting for payment...'}
@@ -446,10 +446,10 @@ export default function CryptoPaymentModalDual({
             {paymentState === 'success' && (
               <div className="text-center space-y-3 py-6">
                 <div className="flex justify-center">
-                  <CheckCircleIcon className="w-12 h-12 text-relic-slate" />
+                  <CheckCircleIcon className="w-12 h-12 text-relic-slate dark:text-relic-ghost" />
                 </div>
-                <h3 className="text-sm font-mono text-relic-void">Payment Successful</h3>
-                <p className="text-[10px] text-relic-slate">
+                <h3 className="text-sm font-mono text-relic-void dark:text-white">Payment Successful</h3>
+                <p className="text-[10px] text-relic-slate dark:text-relic-ghost">
                   Confirmed and processed
                 </p>
                 <button
@@ -465,12 +465,12 @@ export default function CryptoPaymentModalDual({
             {(paymentState === 'failed' || paymentState === 'expired') && (
               <div className="text-center space-y-3 py-6">
                 <div className="flex justify-center">
-                  <ExclamationCircleIcon className="w-12 h-12 text-relic-slate" />
+                  <ExclamationCircleIcon className="w-12 h-12 text-relic-slate dark:text-relic-ghost" />
                 </div>
-                <h3 className="text-sm font-mono text-relic-void">
+                <h3 className="text-sm font-mono text-relic-void dark:text-white">
                   {paymentState === 'expired' ? 'Payment Expired' : 'Payment Failed'}
                 </h3>
-                <p className="text-[10px] text-relic-slate">
+                <p className="text-[10px] text-relic-slate dark:text-relic-ghost">
                   {paymentState === 'expired'
                     ? 'Payment window expired'
                     : 'Could not complete payment'}
