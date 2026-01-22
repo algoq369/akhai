@@ -2,19 +2,15 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  Squares2X2Icon, 
-  ListBulletIcon, 
-  FunnelIcon,
+import {
+  Squares2X2Icon,
+  ListBulletIcon,
   MagnifyingGlassIcon,
-  ChevronDownIcon,
   CalendarIcon,
   ClockIcon,
   CurrencyDollarIcon,
   DocumentTextIcon,
-  FolderIcon,
-  ArrowUpIcon,
-  ArrowDownIcon
+  FolderIcon
 } from '@heroicons/react/24/outline'
 
 interface QueryHistoryItem {
@@ -60,7 +56,6 @@ export default function HistoryPage() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     fetch('/api/history')
@@ -248,40 +243,6 @@ export default function HistoryPage() {
                 ))}
               </div>
 
-              {/* Sort dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-1.5 px-2 py-1.5 bg-slate-100 rounded-md text-[9px] font-medium text-slate-500 hover:bg-slate-200 transition-all"
-                >
-                  <FunnelIcon className="w-3 h-3" />
-                  {sortBy}
-                  <ChevronDownIcon className={`w-2.5 h-2.5 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {showFilters && (
-                  <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-slate-100 py-1 z-50">
-                    {(['recent', 'queries', 'cost', 'name'] as SortBy[]).map((sort) => (
-                      <button
-                        key={sort}
-                        onClick={() => {
-                          if (sortBy === sort) {
-                            setSortAsc(!sortAsc)
-                          } else {
-                            setSortBy(sort)
-                            setSortAsc(false)
-                          }
-                          setShowFilters(false)
-                        }}
-                        className="w-full flex items-center justify-between px-2.5 py-1.5 text-[10px] text-slate-600 hover:bg-slate-50"
-                      >
-                        <span className="capitalize">{sort}</span>
-                        {sortBy === sort && (sortAsc ? <ArrowUpIcon className="w-2.5 h-2.5" /> : <ArrowDownIcon className="w-2.5 h-2.5" />)}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 

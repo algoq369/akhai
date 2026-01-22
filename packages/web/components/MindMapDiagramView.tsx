@@ -94,32 +94,65 @@ export default function MindMapDiagramView({ userId, nodes: propNodes, searchQue
   // Use filtered nodes from props directly
   const displayNodes = propNodes || allNodes
 
-  // Calculate positions when nodes change
+  // Force-directed layout simulation
   useEffect(() => {
     if (displayNodes.length === 0) return
-    
+
     const positions = new Map<string, NodePosition>()
-    const cols = Math.ceil(Math.sqrt(displayNodes.length))
-    const spacingX = 150
-    const spacingY = 95
-    
-    displayNodes.forEach((node, index) => {
-      // Keep existing position if node already placed
-      const existing = nodePositions.get(node.id)
-      if (existing) {
-        positions.set(node.id, existing)
-        return
+
+    // Group nodes by category for cluster-based positioning
+    const categoryGroups = new Map<string, Node[]>()
+    displayNodes.forEach(node => {
+      const cat = node.category || 'other'
+      if (!categoryGroups.has(cat)) {
+        categoryGroups.set(cat, [])
       }
-      
-      const row = Math.floor(index / cols)
-      const col = index % cols
-      const jitterX = (Math.random() - 0.5) * 12
-      const jitterY = (Math.random() - 0.5) * 8
-      positions.set(node.id, {
-        x: 50 + col * spacingX + jitterX,
-        y: 50 + row * spacingY + jitterY
+      categoryGroups.get(cat)!.push(node)
+    })
+
+    // Calculate cluster centers in a circular arrangement
+    const categories = Array.from(categoryGroups.keys())
+    const numCategories = categories.length
+    const centerX = 400
+    const centerY = 350
+    const clusterRadius = Math.min(300, 100 + numCategories * 40)
+
+    const categoryPositions = new Map<string, { x: number; y: number }>()
+    categories.forEach((cat, i) => {
+      const angle = (i / numCategories) * Math.PI * 2 - Math.PI / 2
+      categoryPositions.set(cat, {
+        x: centerX + Math.cos(angle) * clusterRadius,
+        y: centerY + Math.sin(angle) * clusterRadius
       })
     })
+
+    // Position nodes within their category cluster
+    categoryGroups.forEach((nodes, category) => {
+      const clusterCenter = categoryPositions.get(category)!
+      const nodeCount = nodes.length
+      const innerRadius = Math.min(120, 30 + nodeCount * 8)
+
+      nodes.forEach((node, i) => {
+        // Keep existing position if node already placed (for drag stability)
+        const existing = nodePositions.get(node.id)
+        if (existing) {
+          positions.set(node.id, existing)
+          return
+        }
+
+        // Spiral layout within cluster for better distribution
+        const spiralAngle = (i / nodeCount) * Math.PI * 2
+        const spiralRadius = innerRadius * (0.3 + 0.7 * (i / Math.max(nodeCount - 1, 1)))
+        const jitterX = (Math.random() - 0.5) * 20
+        const jitterY = (Math.random() - 0.5) * 20
+
+        positions.set(node.id, {
+          x: clusterCenter.x + Math.cos(spiralAngle) * spiralRadius + jitterX,
+          y: clusterCenter.y + Math.sin(spiralAngle) * spiralRadius + jitterY
+        })
+      })
+    })
+
     setNodePositions(positions)
   }, [displayNodes])
 
@@ -317,87 +350,117 @@ export default function MindMapDiagramView({ userId, nodes: propNodes, searchQue
             position: 'absolute',
           }}
         >
-          {/* Connections */}
+          {/* Connections with distance-based opacity */}
           <svg className="absolute pointer-events-none" style={{ width: '5000px', height: '5000px', overflow: 'visible' }}>
+            <defs>
+              <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#94A3B8" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#64748B" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#94A3B8" stopOpacity="0.6" />
+              </linearGradient>
+            </defs>
             {connections.map(conn => {
               const fromPos = nodePositions.get(conn.from)
               const toPos = nodePositions.get(conn.to)
               if (!fromPos || !toPos) return null
-              
+
               const fromX = fromPos.x + 55
               const fromY = fromPos.y + 32
               const toX = toPos.x + 55
               const toY = toPos.y + 32
-              
+
+              // Calculate distance for opacity
+              const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2))
+              const opacity = Math.max(0.15, Math.min(0.6, 200 / distance))
+
+              // Bezier curve control points for smooth curves
+              const midX = (fromX + toX) / 2
+              const midY = (fromY + toY) / 2
               const dx = toX - fromX
-              const ctrl1X = fromX + dx * 0.4
-              const ctrl2X = toX - dx * 0.4
-              
+              const dy = toY - fromY
+              const perpX = -dy * 0.15
+              const perpY = dx * 0.15
+
               return (
-                <path
-                  key={conn.id}
-                  d={`M ${fromX} ${fromY} C ${ctrl1X} ${fromY}, ${ctrl2X} ${toY}, ${toX} ${toY}`}
-                  stroke="#94A3B8"
-                  strokeWidth="1"
-                  fill="none"
-                  strokeLinecap="round"
-                />
+                <g key={conn.id}>
+                  <path
+                    d={`M ${fromX} ${fromY} Q ${midX + perpX} ${midY + perpY} ${toX} ${toY}`}
+                    stroke="#64748B"
+                    strokeWidth="1.5"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeOpacity={opacity}
+                    strokeDasharray="4 2"
+                  />
+                  {/* Connection endpoint dots */}
+                  <circle cx={fromX} cy={fromY} r="2" fill="#94A3B8" opacity={opacity} />
+                  <circle cx={toX} cy={toY} r="2" fill="#94A3B8" opacity={opacity} />
+                </g>
               )
             })}
           </svg>
 
-          {/* Nodes */}
+          {/* Nodes with dynamic sizing */}
           {displayNodes.map((node) => {
             const pos = nodePositions.get(node.id)
             if (!pos) return null
-            
+
             const color = getNodeColor(node.category)
             const isSelected = selectedNode === node.id
             const isConnecting = connectingFrom === node.id
-            
+
+            // Dynamic node size based on query count (more queries = larger node)
+            const baseWidth = 100
+            const queryScale = Math.min(1.4, 1 + (node.queryCount || 0) * 0.02)
+            const nodeWidth = Math.round(baseWidth * queryScale)
+
             return (
               <div
                 key={node.id}
-                className={`absolute select-none ${
-                  isSelected ? 'ring-1 ring-blue-500' : ''
-                } ${isConnecting ? 'ring-1 ring-emerald-500' : ''}`}
+                className={`absolute select-none transition-transform duration-150 ${
+                  isSelected ? 'ring-2 ring-blue-500 scale-105' : ''
+                } ${isConnecting ? 'ring-2 ring-emerald-500' : ''}`}
                 style={{
-                  left: pos.x,
+                  left: pos.x - (nodeWidth - 110) / 2,
                   top: pos.y,
-                  width: 110,
+                  width: nodeWidth,
                   zIndex: isSelected || draggingNode === node.id ? 100 : 1,
                 }}
                 onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
                 onClick={(e) => handleNodeClick(e, node.id)}
               >
-                <div 
-                  className="rounded-md overflow-hidden cursor-grab active:cursor-grabbing shadow-sm hover:shadow transition-shadow"
-                  style={{ 
+                <div
+                  className="rounded-lg overflow-hidden cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all"
+                  style={{
                     backgroundColor: color.bg,
-                    border: `1px solid ${color.border}`
+                    border: `1.5px solid ${color.border}`,
+                    boxShadow: isSelected ? `0 0 12px ${color.border}40` : undefined
                   }}
                 >
-                  <div className="px-2 py-1.5">
-                    <h3 className="text-[8px] font-medium leading-tight line-clamp-2" style={{ color: color.text }}>
+                  <div className="px-2.5 py-2">
+                    <h3 className="text-[9px] font-semibold leading-tight line-clamp-2" style={{ color: color.text }}>
                       {node.name}
                     </h3>
-                    <span className="text-[6px] uppercase tracking-wider opacity-60" style={{ color: color.text }}>
+                    <span className="text-[7px] uppercase tracking-wider opacity-50 mt-0.5 block" style={{ color: color.text }}>
                       {node.category || 'other'}
                     </span>
                   </div>
-                  <div className="px-2 py-1 flex items-center justify-between" style={{ backgroundColor: `${color.text}08` }}>
-                    <span className="text-[6px]" style={{ color: color.text }}>
-                      {node.queryCount || 0}q
-                    </span>
+                  <div className="px-2.5 py-1.5 flex items-center justify-between" style={{ backgroundColor: `${color.text}08` }}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[7px] font-mono font-medium" style={{ color: color.text }}>
+                        {node.queryCount || 0}
+                      </span>
+                      <span className="text-[6px] opacity-50" style={{ color: color.text }}>queries</span>
+                    </div>
                     {(isSelected || isConnecting) && (
                       <button
                         onClick={(e) => handleStartConnection(e, node.id)}
-                        className={`text-[6px] px-1 py-0.5 rounded flex items-center gap-0.5 ${
-                          isConnecting ? 'bg-emerald-500 text-white' : 'bg-white/60'
+                        className={`text-[7px] px-1.5 py-0.5 rounded flex items-center gap-0.5 font-medium ${
+                          isConnecting ? 'bg-emerald-500 text-white' : 'bg-white/80'
                         }`}
                         style={{ color: isConnecting ? 'white' : color.text }}
                       >
-                        <LinkIcon className="w-2 h-2" />
+                        <LinkIcon className="w-2.5 h-2.5" />
                         Link
                       </button>
                     )}

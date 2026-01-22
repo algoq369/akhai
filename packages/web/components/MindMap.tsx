@@ -309,66 +309,138 @@ export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
           )}
         </div>
 
-        {/* Side Panel */}
+        {/* Enhanced Side Panel */}
         <AnimatePresence>
           {(showConnections || showSuggestions) && (
             <motion.div
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 240, opacity: 1 }}
+              animate={{ width: 280, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="h-full bg-white border-l border-slate-200 overflow-hidden flex-shrink-0"
+              className="h-full bg-slate-50 border-l border-slate-200 overflow-hidden flex-shrink-0"
             >
-              <div className="h-full overflow-auto p-3">
-                {/* Connections */}
-                {showConnections && (
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <LinkIcon className="w-3.5 h-3.5 text-indigo-500" />
-                      <span className="text-[10px] font-semibold text-slate-700">Connections</span>
-                      <span className="text-[8px] text-slate-400">({nodeConnections.length})</span>
-                    </div>
-                    {nodeConnections.length > 0 ? (
-                      <div className="space-y-0.5 max-h-52 overflow-auto">
-                        {nodeConnections.slice(0, 30).map((conn, i) => {
+              <div className="h-full flex flex-col">
+                {/* Panel Header */}
+                <div className="flex-none p-3 bg-white border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    {showConnections ? (
+                      <LinkIcon className="w-4 h-4 text-indigo-500" />
+                    ) : (
+                      <SparklesIcon className="w-4 h-4 text-amber-500" />
+                    )}
+                    <span className="text-xs font-semibold text-slate-700">
+                      {showConnections ? 'Connection Explorer' : 'AI Suggestions'}
+                    </span>
+                    <span className="ml-auto text-[9px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                      {showConnections ? nodeConnections.length : suggestions.length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Panel Content */}
+                <div className="flex-1 overflow-auto p-3">
+                  {/* Connections Panel */}
+                  {showConnections && (
+                    <div className="space-y-2">
+                      {nodeConnections.length > 0 ? (
+                        nodeConnections.slice(0, 50).map((conn, i) => {
                           const fromNode = nodes.find(n => n.id === conn.from)
                           const toNode = nodes.find(n => n.id === conn.to)
                           return (
-                            <div key={i} className="flex items-center gap-1 p-1 rounded hover:bg-slate-50 text-[8px]">
-                              <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: getCategoryStyle(fromNode?.category).dot }} />
-                              <span className="text-slate-600 truncate flex-1">{fromNode?.name || '?'}</span>
-                              <ChevronRightIcon className="w-2 h-2 text-slate-300 flex-shrink-0" />
-                              <span className="text-slate-600 truncate flex-1">{toNode?.name || '?'}</span>
+                            <div
+                              key={i}
+                              className="bg-white rounded-lg p-2 shadow-sm border border-slate-100 hover:border-indigo-200 transition-colors"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span
+                                      className="w-2 h-2 rounded-full flex-shrink-0"
+                                      style={{ backgroundColor: getCategoryStyle(fromNode?.category).dot }}
+                                    />
+                                    <span className="text-[10px] font-medium text-slate-700 truncate">
+                                      {fromNode?.name || '?'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <ChevronRightIcon className="w-3 h-3 text-indigo-400 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span
+                                      className="w-2 h-2 rounded-full flex-shrink-0"
+                                      style={{ backgroundColor: getCategoryStyle(toNode?.category).dot }}
+                                    />
+                                    <span className="text-[10px] font-medium text-slate-700 truncate">
+                                      {toNode?.name || '?'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           )
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-[9px] text-slate-400 text-center py-4">No connections</p>
-                    )}
-                  </div>
-                )}
+                        })
+                      ) : (
+                        <div className="text-center py-8">
+                          <LinkIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                          <p className="text-[10px] text-slate-400">No connections found</p>
+                          <p className="text-[9px] text-slate-300 mt-1">Topics will connect as you explore</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                {/* Suggestions */}
-                {showSuggestions && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <SparklesIcon className="w-3.5 h-3.5 text-amber-500" />
-                      <span className="text-[10px] font-semibold text-slate-700">Related Topics</span>
+                  {/* Suggestions Panel */}
+                  {showSuggestions && (
+                    <div className="space-y-2">
+                      {suggestions.length > 0 ? (
+                        suggestions.map(node => (
+                          <div
+                            key={node.id}
+                            className="bg-white rounded-lg p-2.5 shadow-sm border border-slate-100 hover:border-amber-200 transition-colors"
+                          >
+                            <div className="flex items-start gap-2">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5"
+                                style={{ backgroundColor: getCategoryStyle(node.category).dot }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <span className="text-[11px] font-medium text-slate-700 line-clamp-2">
+                                  {node.name}
+                                </span>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                  <span className="text-[8px] text-slate-400 uppercase tracking-wide">
+                                    {node.category || 'other'}
+                                  </span>
+                                  <span className="text-[8px] text-slate-300">•</span>
+                                  <span className="text-[8px] text-slate-400">{node.queryCount || 0} queries</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-1.5 mt-2">
+                              <button
+                                onClick={() => setSelectedNode(node)}
+                                className="flex-1 text-[9px] px-2 py-1 bg-amber-50 text-amber-700 rounded hover:bg-amber-100 transition-colors font-medium"
+                              >
+                                Select
+                              </button>
+                              <button
+                                onClick={() => window.open(`/?q=${encodeURIComponent(`Analyze ${node.name}`)}`, '_blank')}
+                                className="flex-1 text-[9px] px-2 py-1 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition-colors font-medium"
+                              >
+                                Analyze
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <SparklesIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                          <p className="text-[10px] text-slate-400">No suggestions yet</p>
+                          <p className="text-[9px] text-slate-300 mt-1">Select a topic to see related items</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-0.5">
-                      {suggestions.map(node => (
-                        <button
-                          key={node.id}
-                          onClick={() => setSelectedNode(node)}
-                          className="w-full flex items-center gap-1.5 p-1 rounded hover:bg-slate-50 text-left"
-                        >
-                          <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: getCategoryStyle(node.category).dot }} />
-                          <span className="text-[9px] text-slate-600 truncate">{node.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </motion.div>
           )}

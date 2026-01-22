@@ -17,6 +17,30 @@ const MAX_CONVERSATION_SIZE = 50 // Exclude topics from conversations with more 
 const MAX_TOPICS_DISPLAY = 5000  // Maximum topics to show in mind map (increased from 100)
 const CLUSTER_THRESHOLD = 0.3   // Similarity threshold for clustering
 
+// Invalid topic patterns (prompts, malformed data)
+const INVALID_TOPIC_PATTERNS = [
+  /^give\s+exactly/i,
+  /^return\s+only/i,
+  /^extract\s+\d/i,
+  /brief\s+insights/i,
+  /json\s+array/i,
+  /example:/i,
+  /^\{.*\}$/,     // Pure JSON
+  /^\[.*\]$/,     // Pure array
+  /^```/,         // Code blocks
+]
+
+/**
+ * Check if a topic name is valid (not a prompt or malformed data)
+ */
+function isValidTopicName(name: string): boolean {
+  if (!name || name.length < 2 || name.length > 100) return false
+  for (const pattern of INVALID_TOPIC_PATTERNS) {
+    if (pattern.test(name)) return false
+  }
+  return true
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get user from session
@@ -158,19 +182,21 @@ export async function GET(request: NextRequest) {
       relationships = []
     }
 
-    // Build nodes
-    const nodes = topics.map(t => ({
-      id: t.id,
-      name: t.name,
-      description: t.description,
-      category: t.category || 'other',
-      color: t.color || '#94a3b8',
-      pinned: t.pinned === 1,
-      archived: t.archived === 1,
-      queryCount: t.query_count,
-      ai_instructions: t.ai_instructions,
-      cluster: null as string | null, // Will be assigned by clustering
-    }))
+    // Build nodes, filtering out invalid topic names (prompts, malformed data)
+    const nodes = topics
+      .filter(t => isValidTopicName(t.name))
+      .map(t => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        category: t.category || 'other',
+        color: t.color || '#94a3b8',
+        pinned: t.pinned === 1,
+        archived: t.archived === 1,
+        queryCount: t.query_count,
+        ai_instructions: t.ai_instructions,
+        cluster: null as string | null, // Will be assigned by clustering
+      }))
 
     // Build links
     const links = relationships.map(r => ({
