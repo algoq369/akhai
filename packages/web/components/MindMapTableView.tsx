@@ -35,7 +35,6 @@ function getCategoryColor(category: string) {
 export default function MindMapTableView({ userId, onQueryAction }: MindMapTableViewProps) {
   const [nodes, setNodes] = useState<Node[]>([])
   const [expandedNode, setExpandedNode] = useState<string | null>(null)
-  const [filterCategory, setFilterCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedForChat, setSelectedForChat] = useState<{query: string, nodeId: string} | null>(null)
 
@@ -56,24 +55,14 @@ export default function MindMapTableView({ userId, onQueryAction }: MindMapTable
     fetchData()
   }, [userId])
 
-  const categories = useMemo(() => {
-    const cats = new Map<string, number>()
-    nodes.forEach(n => {
-      const cat = n.category || 'other'
-      cats.set(cat, (cats.get(cat) || 0) + 1)
-    })
-    return Array.from(cats.entries()).sort((a, b) => b[1] - a[1])
-  }, [nodes])
-
   const filteredNodes = useMemo(() => {
     let filtered = nodes
-    if (filterCategory) filtered = filtered.filter(n => (n.category || 'other') === filterCategory)
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       filtered = filtered.filter(n => n.name.toLowerCase().includes(q) || (n.category || '').toLowerCase().includes(q))
     }
     return filtered.sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
-  }, [nodes, filterCategory, searchQuery])
+  }, [nodes, searchQuery])
 
   // Handle action - opens inline chat or triggers callback
   const handleAction = (query: string, nodeId: string) => {
@@ -110,30 +99,6 @@ export default function MindMapTableView({ userId, onQueryAction }: MindMapTable
           </div>
         </div>
         
-        {/* Category pills */}
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          <button
-            onClick={() => setFilterCategory(null)}
-            className={`px-2 py-1 rounded text-[9px] font-medium ${!filterCategory ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
-          >
-            All
-          </button>
-          {categories.slice(0, 8).map(([cat, count]) => {
-            const colors = getCategoryColor(cat)
-            const isActive = filterCategory === cat
-            return (
-              <button
-                key={cat}
-                onClick={() => setFilterCategory(isActive ? null : cat)}
-                className="px-2 py-1 rounded text-[9px] font-medium flex items-center gap-1"
-                style={{ backgroundColor: isActive ? colors.dot : colors.bg, color: isActive ? 'white' : colors.text }}
-              >
-                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: isActive ? 'white' : colors.dot }} />
-                {cat} ({count})
-              </button>
-            )
-          })}
-        </div>
       </div>
 
       {/* Inline Chat Panel */}
