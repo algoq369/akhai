@@ -54,7 +54,6 @@ export default function SideCanalPage() {
 
   // Filters and search
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterCategory, setFilterCategory] = useState<string | null>(null)
   const [filterPinned, setFilterPinned] = useState(false)
 
   // Selected topic
@@ -66,7 +65,7 @@ export default function SideCanalPage() {
 
   useEffect(() => {
     applyFilters()
-  }, [searchQuery, filterCategory, filterPinned, allTopics])
+  }, [searchQuery, filterPinned, allTopics])
 
   const fetchData = async () => {
     setLoading(true)
@@ -126,11 +125,6 @@ export default function SideCanalPage() {
       )
     }
 
-    // Category filter
-    if (filterCategory) {
-      filtered = filtered.filter(t => t.category === filterCategory)
-    }
-
     // Pinned filter
     if (filterPinned) {
       filtered = filtered.filter(t => t.pinned)
@@ -163,8 +157,6 @@ export default function SideCanalPage() {
       console.error('Failed to toggle pin:', error)
     }
   }
-
-  const categories = Array.from(new Set(allTopics.map(t => t.category).filter(Boolean))) as string[]
 
   const getCategoryColor = (category: string | null): string => {
     const colors: Record<string, string> = {
@@ -275,21 +267,6 @@ export default function SideCanalPage() {
               {filterPinned ? <MapPinIconSolid className="w-3.5 h-3.5" /> : <MapPinIcon className="w-3.5 h-3.5" />}
               <span>Pinned</span>
             </button>
-
-            {categories.length > 0 && (
-              <select
-                value={filterCategory || ''}
-                onChange={(e) => setFilterCategory(e.target.value || null)}
-                className="px-3 py-2 bg-relic-ghost border border-relic-mist rounded text-xs text-relic-slate cursor-pointer focus:outline-none focus:border-relic-slate transition-colors"
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            )}
 
             <button
               onClick={fetchData}

@@ -49,7 +49,6 @@ export default function TopicsPanel({ isOpen, onClose, onOpenMindMap }: TopicsPa
   const router = useRouter()
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(false)
-  const [filter, setFilter] = useState<string | null>(null)
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
   const [relatedQueries, setRelatedQueries] = useState<RelatedQuery[]>([])
   const [relatedTopics, setRelatedTopics] = useState<RelatedTopic[]>([])
@@ -149,11 +148,7 @@ export default function TopicsPanel({ isOpen, onClose, onOpenMindMap }: TopicsPa
     onClose()
   }
 
-  const filteredTopics = filter
-    ? topics.filter(t => t.category === filter)
-    : topics
-
-  const categories = [...new Set(topics.map(t => t.category || 'other'))]
+  const filteredTopics = topics
 
   if (!isOpen) return null
 
@@ -358,35 +353,6 @@ export default function TopicsPanel({ isOpen, onClose, onOpenMindMap }: TopicsPa
         ) : (
           /* Topics List View */
           <>
-            {/* Filters */}
-            {categories.length > 1 && (
-              <div className="flex gap-2 p-4 border-b border-relic-mist/30 overflow-x-auto bg-white/30">
-                <button
-                  onClick={() => setFilter(null)}
-                  className={`px-4 py-1.5 text-xs font-medium transition-all ${
-                    filter === null
-                      ? 'bg-relic-slate text-white shadow-md'
-                      : 'bg-white/70 text-relic-slate hover:bg-white hover:shadow-sm border border-relic-mist/50'
-                  }`}
-                >
-                  All ({topics.length})
-                </button>
-                {categories.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setFilter(cat)}
-                    className={`px-4 py-1.5 text-xs font-medium transition-all ${
-                      filter === cat
-                        ? 'bg-relic-slate text-white shadow-md'
-                        : 'bg-white/70 text-relic-slate hover:bg-white hover:shadow-sm border border-relic-mist/50'
-                    }`}
-                  >
-                    {cat} ({topics.filter(t => (t.category || 'other') === cat).length})
-                  </button>
-                ))}
-              </div>
-            )}
-
             {/* Topics List */}
             <div className="p-4 overflow-y-auto max-h-[50vh]">
               {loading ? (

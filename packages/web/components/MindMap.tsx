@@ -7,7 +7,6 @@ import {
   MagnifyingGlassIcon,
   SparklesIcon,
   LinkIcon,
-  FunnelIcon,
   Squares2X2Icon,
   ListBulletIcon,
   MapIcon,
@@ -70,8 +69,6 @@ export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('graph')
   const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<string>('all')
-  const [showFilters, setShowFilters] = useState(true)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [connections, setConnections] = useState<Connection[]>([])
   const [showConnections, setShowConnections] = useState(false)
@@ -115,25 +112,21 @@ export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
 
   const filteredNodes = useMemo(() => {
     let result = [...nodes]
-    
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
-      result = result.filter(n => 
+      result = result.filter(n =>
         n.name.toLowerCase().includes(q) ||
         n.description?.toLowerCase().includes(q)
       )
     }
-    
-    if (categoryFilter !== 'all') {
-      result = result.filter(n => (n.category || 'other').toLowerCase() === categoryFilter.toLowerCase())
-    }
-    
+
     if (showPinned) {
       result = result.filter(n => n.pinned)
     }
-    
+
     return result
-  }, [nodes, searchQuery, categoryFilter, showPinned])
+  }, [nodes, searchQuery, showPinned])
 
   const nodeConnections = useMemo(() => {
     if (!selectedNode) return connections
@@ -200,16 +193,6 @@ export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
 
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                showFilters ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              <FunnelIcon className="w-3.5 h-3.5" />
-              Filters
-            </button>
-
-            <button
               onClick={() => setShowPinned(!showPinned)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 showPinned ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
@@ -246,47 +229,6 @@ export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
           </div>
         </div>
 
-        {/* Category Filter */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: 'auto' }}
-              exit={{ height: 0 }}
-              className="overflow-hidden border-t border-slate-100"
-            >
-              <div className="flex items-center gap-2 px-5 py-2 bg-slate-50/50 overflow-x-auto">
-                <span className="text-[9px] text-slate-400 uppercase tracking-wider flex-shrink-0">Category:</span>
-                <button
-                  onClick={() => setCategoryFilter('all')}
-                  className={`px-2.5 py-1 rounded text-[10px] font-medium flex-shrink-0 transition-all ${
-                    categoryFilter === 'all' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  All
-                </button>
-                {categories.map(([cat, count]) => {
-                  const style = getCategoryStyle(cat)
-                  const isActive = categoryFilter.toLowerCase() === cat.toLowerCase()
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => setCategoryFilter(isActive ? 'all' : cat)}
-                      className={`px-2.5 py-1 rounded text-[10px] font-medium flex items-center gap-1.5 flex-shrink-0 transition-all ${
-                        isActive ? 'ring-2 ring-slate-400 ring-offset-1' : ''
-                      }`}
-                      style={{ backgroundColor: style.bg }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: style.dot }} />
-                      <span style={{ color: style.dot }}>{cat}</span>
-                      <span className="text-[8px] opacity-60">({count})</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </header>
 
       {/* Main */}
@@ -304,7 +246,6 @@ export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
               userId={userId}
               nodes={filteredNodes}
               searchQuery={searchQuery}
-              categoryFilter={categoryFilter}
             />
           )}
         </div>
