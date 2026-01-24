@@ -3,32 +3,19 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Node } from './MindMap'
-import {
-  ArrowsPointingOutIcon,
-  PlusIcon,
+import { 
+  ArrowsPointingOutIcon, 
+  PlusIcon, 
   MinusIcon,
   LinkIcon,
-  SparklesIcon,
-  ArrowDownTrayIcon
+  SparklesIcon
 } from '@heroicons/react/24/outline'
-import { SEFIROT_COLORS } from '@/lib/mindmap-intelligence'
-import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
-
-// Extended Node interface with intelligence fields
-interface IntelligentNode extends Node {
-  dominantSefirah?: Sefirah | null
-  sefirotActivations?: Record<number, number>
-  size?: number
-  borderColor?: string
-}
 
 interface MindMapDiagramViewProps {
   userId: string | null
-  nodes?: IntelligentNode[]
+  nodes?: Node[]
   searchQuery?: string
   categoryFilter?: string
-  onTopicExpand?: (topicId: string) => void
-  showSefirotMode?: boolean
 }
 
 interface NodePosition {
@@ -62,31 +49,8 @@ function getNodeColor(category: string | null) {
   return NODE_COLORS[cat] || NODE_COLORS.other
 }
 
-// Get Sefirot-based color for a node
-function getSefirotNodeColor(node: IntelligentNode): { bg: string; border: string; text: string; glow?: string } {
-  if (node.dominantSefirah !== null && node.dominantSefirah !== undefined) {
-    const sefirotColor = SEFIROT_COLORS[node.dominantSefirah]
-    if (sefirotColor) {
-      return {
-        bg: `${sefirotColor.primary}20`, // 20% opacity
-        border: sefirotColor.primary,
-        text: sefirotColor.primary,
-        glow: sefirotColor.primary
-      }
-    }
-  }
-  return getNodeColor(node.category)
-}
-
-export default function MindMapDiagramView({
-  userId,
-  nodes: propNodes,
-  searchQuery = '',
-  categoryFilter = 'all',
-  onTopicExpand,
-  showSefirotMode = false
-}: MindMapDiagramViewProps) {
-  const [allNodes, setAllNodes] = useState<IntelligentNode[]>([])
+export default function MindMapDiagramView({ userId, nodes: propNodes, searchQuery = '', categoryFilter = 'all' }: MindMapDiagramViewProps) {
+  const [allNodes, setAllNodes] = useState<Node[]>([])
   const [nodePositions, setNodePositions] = useState<Map<string, NodePosition>>(new Map())
   const [connections, setConnections] = useState<ConnectionLine[]>([])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
@@ -106,11 +70,10 @@ export default function MindMapDiagramView({
       return
     }
     if (!userId) return
-
+    
     const fetchData = async () => {
       try {
-        // Fetch with intelligence data for Sefirot colors
-        const res = await fetch('/api/mindmap/data?intelligence=true')
+        const res = await fetch('/api/mindmap/data')
         if (!res.ok) return
         const data = await res.json()
         setAllNodes(data.nodes || [])
@@ -131,32 +94,65 @@ export default function MindMapDiagramView({
   // Use filtered nodes from props directly
   const displayNodes = propNodes || allNodes
 
-  // Calculate positions when nodes change
+  // Force-directed layout simulation
   useEffect(() => {
     if (displayNodes.length === 0) return
-    
+
     const positions = new Map<string, NodePosition>()
-    const cols = Math.ceil(Math.sqrt(displayNodes.length))
-    const spacingX = 240
-    const spacingY = 180
-    
-    displayNodes.forEach((node, index) => {
-      // Keep existing position if node already placed
-      const existing = nodePositions.get(node.id)
-      if (existing) {
-        positions.set(node.id, existing)
-        return
+
+    // Group nodes by category for cluster-based positioning
+    const categoryGroups = new Map<string, Node[]>()
+    displayNodes.forEach(node => {
+      const cat = node.category || 'other'
+      if (!categoryGroups.has(cat)) {
+        categoryGroups.set(cat, [])
       }
-      
-      const row = Math.floor(index / cols)
-      const col = index % cols
-      const jitterX = (Math.random() - 0.5) * 12
-      const jitterY = (Math.random() - 0.5) * 8
-      positions.set(node.id, {
-        x: 50 + col * spacingX + jitterX,
-        y: 50 + row * spacingY + jitterY
+      categoryGroups.get(cat)!.push(node)
+    })
+
+    // Calculate cluster centers in a circular arrangement
+    const categories = Array.from(categoryGroups.keys())
+    const numCategories = categories.length
+    const centerX = 400
+    const centerY = 350
+    const clusterRadius = Math.min(300, 100 + numCategories * 40)
+
+    const categoryPositions = new Map<string, { x: number; y: number }>()
+    categories.forEach((cat, i) => {
+      const angle = (i / numCategories) * Math.PI * 2 - Math.PI / 2
+      categoryPositions.set(cat, {
+        x: centerX + Math.cos(angle) * clusterRadius,
+        y: centerY + Math.sin(angle) * clusterRadius
       })
     })
+
+    // Position nodes within their category cluster
+    categoryGroups.forEach((nodes, category) => {
+      const clusterCenter = categoryPositions.get(category)!
+      const nodeCount = nodes.length
+      const innerRadius = Math.min(120, 30 + nodeCount * 8)
+
+      nodes.forEach((node, i) => {
+        // Keep existing position if node already placed (for drag stability)
+        const existing = nodePositions.get(node.id)
+        if (existing) {
+          positions.set(node.id, existing)
+          return
+        }
+
+        // Spiral layout within cluster for better distribution
+        const spiralAngle = (i / nodeCount) * Math.PI * 2
+        const spiralRadius = innerRadius * (0.3 + 0.7 * (i / Math.max(nodeCount - 1, 1)))
+        const jitterX = (Math.random() - 0.5) * 20
+        const jitterY = (Math.random() - 0.5) * 20
+
+        positions.set(node.id, {
+          x: clusterCenter.x + Math.cos(spiralAngle) * spiralRadius + jitterX,
+          y: clusterCenter.y + Math.sin(spiralAngle) * spiralRadius + jitterY
+        })
+      })
+    })
+
     setNodePositions(positions)
   }, [displayNodes])
 
@@ -237,9 +233,8 @@ export default function MindMapDiagramView({
 
   const handleNodeClick = (e: React.MouseEvent, nodeId: string) => {
     e.stopPropagation()
-
+    
     if (connectingFrom && connectingFrom !== nodeId) {
-      // Create connection (existing behavior)
       const newConn: ConnectionLine = {
         from: connectingFrom,
         to: nodeId,
@@ -250,8 +245,7 @@ export default function MindMapDiagramView({
       }
       setConnectingFrom(null)
     } else {
-      // Direct to expansion panel (single-click)
-      onTopicExpand?.(nodeId)
+      setSelectedNode(selectedNode === nodeId ? null : nodeId)
     }
   }
 
@@ -269,13 +263,13 @@ export default function MindMapDiagramView({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-relic-void">
+    <div className="w-full h-full flex flex-col bg-slate-50">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-relic-slate/20 border-b border-slate-100 dark:border-relic-slate/30">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-white border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <SparklesIcon className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
-          <span className="text-[10px] font-medium text-slate-600 dark:text-white">Freeform Canvas</span>
-          <span className="text-[9px] text-slate-400 dark:text-relic-ghost">
+          <SparklesIcon className="w-3.5 h-3.5 text-indigo-500" />
+          <span className="text-[10px] font-medium text-slate-600">Freeform Canvas</span>
+          <span className="text-[9px] text-slate-400">
             {displayNodes.length} topics · {connections.length} links
           </span>
         </div>
@@ -296,131 +290,37 @@ export default function MindMapDiagramView({
             )}
           </AnimatePresence>
 
-          <div className="flex items-center bg-white dark:bg-relic-slate/20 border border-slate-200 dark:border-relic-slate/30 rounded">
-            <button onClick={() => setZoom(z => Math.max(0.25, z - 0.1))} className="p-1 hover:bg-slate-50 dark:hover:bg-relic-slate/30">
-              <MinusIcon className="w-3 h-3 text-slate-500 dark:text-relic-ghost" />
+          <div className="flex items-center bg-white border border-slate-200 rounded">
+            <button onClick={() => setZoom(z => Math.max(0.25, z - 0.1))} className="p-1 hover:bg-slate-50">
+              <MinusIcon className="w-3 h-3 text-slate-500" />
             </button>
-            <span className="px-1.5 text-[8px] font-mono text-slate-500 dark:text-relic-ghost min-w-[28px] text-center">
+            <span className="px-1.5 text-[8px] font-mono text-slate-500 min-w-[28px] text-center">
               {Math.round(zoom * 100)}%
             </span>
-            <button onClick={() => setZoom(z => Math.min(1.5, z + 0.1))} className="p-1 hover:bg-slate-50 dark:hover:bg-relic-slate/30">
-              <PlusIcon className="w-3 h-3 text-slate-500 dark:text-relic-ghost" />
+            <button onClick={() => setZoom(z => Math.min(1.5, z + 0.1))} className="p-1 hover:bg-slate-50">
+              <PlusIcon className="w-3 h-3 text-slate-500" />
             </button>
           </div>
 
-          <button onClick={fitToScreen} className="p-1 hover:bg-slate-100 dark:hover:bg-relic-slate/30 rounded border border-slate-200 dark:border-relic-slate/30" title="Fit to screen">
-            <ArrowsPointingOutIcon className="w-3 h-3 text-slate-500 dark:text-relic-ghost" />
+          <button onClick={fitToScreen} className="p-1 hover:bg-slate-100 rounded border border-slate-200">
+            <ArrowsPointingOutIcon className="w-3 h-3 text-slate-500" />
           </button>
-
-          {/* Export dropdown */}
-          <div className="relative group">
-            <button className="p-1 hover:bg-slate-100 dark:hover:bg-relic-slate/30 rounded border border-slate-200 dark:border-relic-slate/30" title="Export">
-              <ArrowDownTrayIcon className="w-3 h-3 text-slate-500 dark:text-relic-ghost" />
-            </button>
-            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-relic-slate border border-slate-200 dark:border-relic-slate/30 rounded-lg shadow-lg p-1 hidden group-hover:block z-50 min-w-[120px]">
-              <button
-                onClick={() => {
-                  const data = {
-                    nodes: displayNodes,
-                    connections,
-                    exportedAt: new Date().toISOString()
-                  }
-                  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `akhai-mindmap-${Date.now()}.json`
-                  a.click()
-                  URL.revokeObjectURL(url)
-                }}
-                className="w-full text-left px-2 py-1 text-[9px] text-slate-600 dark:text-relic-ghost hover:bg-slate-100 dark:hover:bg-relic-slate/50 rounded"
-              >
-                Export JSON
-              </button>
-              <button
-                onClick={() => {
-                  // Generate simple text summary
-                  const summary = displayNodes.map(n => {
-                    const sefirotName = n.dominantSefirah !== null && n.dominantSefirah !== undefined
-                      ? SEFIROT_COLORS[n.dominantSefirah]?.name || ''
-                      : ''
-                    return `- ${n.name}${sefirotName ? ` (${sefirotName})` : ''}: ${n.queryCount || 0} queries`
-                  }).join('\n')
-                  const blob = new Blob([`AkhAI Mind Map Export\n${new Date().toISOString()}\n\n${summary}`], { type: 'text/plain' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `akhai-mindmap-${Date.now()}.txt`
-                  a.click()
-                  URL.revokeObjectURL(url)
-                }}
-                className="w-full text-left px-2 py-1 text-[9px] text-slate-600 dark:text-relic-ghost hover:bg-slate-100 dark:hover:bg-relic-slate/50 rounded"
-              >
-                Export Text
-              </button>
-              <button
-                onClick={() => {
-                  const shareData = {
-                    title: 'AkhAI Mind Map',
-                    text: `Mind Map with ${displayNodes.length} topics`,
-                    url: window.location.href
-                  }
-                  if (navigator.share) {
-                    navigator.share(shareData)
-                  } else {
-                    navigator.clipboard.writeText(window.location.href)
-                    alert('Link copied to clipboard!')
-                  }
-                }}
-                className="w-full text-left px-2 py-1 text-[9px] text-slate-600 dark:text-relic-ghost hover:bg-slate-100 dark:hover:bg-relic-slate/50 rounded"
-              >
-                Share Link
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Sefirot Legend (when in Sefirot mode) */}
-      {showSefirotMode && (
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100 dark:border-relic-slate/30 bg-gradient-to-r from-slate-50 to-indigo-50/50 dark:from-relic-slate/10 dark:to-indigo-950/20 overflow-x-auto">
-          <span className="text-[7px] text-slate-500 dark:text-relic-ghost font-semibold uppercase tracking-wide flex-shrink-0">Sefirot:</span>
-          {Object.entries(SEFIROT_COLORS).map(([sefirahKey, color]) => {
-            const sefirah = parseInt(sefirahKey) as Sefirah
-            const nodesWithSefirah = displayNodes.filter(n => n.dominantSefirah === sefirah).length
-            if (nodesWithSefirah === 0) return null
-            return (
-              <div key={sefirahKey} className="flex items-center gap-1 flex-shrink-0">
-                <span
-                  className="w-2.5 h-2.5 rounded-full border border-white/50"
-                  style={{
-                    backgroundColor: color.primary,
-                    boxShadow: `0 0 6px ${color.primary}60`
-                  }}
-                />
-                <span className="text-[7px] text-slate-600 dark:text-relic-ghost font-medium">{color.name}</span>
-                <span className="text-[6px] text-slate-400 dark:text-relic-silver">({nodesWithSefirah})</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Category legend (fallback when not in Sefirot mode) */}
-      {!showSefirotMode && (
-        <div className="flex items-center gap-2 px-3 py-1 border-b border-slate-100 dark:border-relic-slate/30 bg-white/50 dark:bg-relic-slate/10 overflow-x-auto">
-          {categories.slice(0, 12).map(([cat, count]) => {
-            const color = getNodeColor(cat)
-            return (
-              <div key={cat} className="flex items-center gap-1 flex-shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color.text }} />
-                <span className="text-[7px] text-slate-500 dark:text-relic-ghost">{cat}</span>
-                <span className="text-[6px] text-slate-400 dark:text-relic-silver">({count})</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {/* Category legend */}
+      <div className="flex items-center gap-2 px-3 py-1 border-b border-slate-100 bg-white/50 overflow-x-auto">
+        {categories.slice(0, 12).map(([cat, count]) => {
+          const color = getNodeColor(cat)
+          return (
+            <div key={cat} className="flex items-center gap-1 flex-shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color.text }} />
+              <span className="text-[7px] text-slate-500">{cat}</span>
+              <span className="text-[6px] text-slate-400">({count})</span>
+            </div>
+          )
+        })}
+      </div>
 
       {/* Canvas */}
       <div 
@@ -450,112 +350,178 @@ export default function MindMapDiagramView({
             position: 'absolute',
           }}
         >
-          {/* Connections */}
+          {/* Connections with distance-based opacity */}
           <svg className="absolute pointer-events-none" style={{ width: '5000px', height: '5000px', overflow: 'visible' }}>
+            <defs>
+              <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#94A3B8" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#64748B" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#94A3B8" stopOpacity="0.6" />
+              </linearGradient>
+            </defs>
             {connections.map(conn => {
               const fromPos = nodePositions.get(conn.from)
               const toPos = nodePositions.get(conn.to)
               if (!fromPos || !toPos) return null
-              
+
               const fromX = fromPos.x + 55
               const fromY = fromPos.y + 32
               const toX = toPos.x + 55
               const toY = toPos.y + 32
-              
+
+              // Calculate distance for opacity
+              const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2))
+              const opacity = Math.max(0.15, Math.min(0.6, 200 / distance))
+
+              // Bezier curve control points for smooth curves
+              const midX = (fromX + toX) / 2
+              const midY = (fromY + toY) / 2
               const dx = toX - fromX
-              const ctrl1X = fromX + dx * 0.4
-              const ctrl2X = toX - dx * 0.4
-              
+              const dy = toY - fromY
+              const perpX = -dy * 0.15
+              const perpY = dx * 0.15
+
               return (
-                <path
-                  key={conn.id}
-                  d={`M ${fromX} ${fromY} C ${ctrl1X} ${fromY}, ${ctrl2X} ${toY}, ${toX} ${toY}`}
-                  stroke="#94A3B8"
-                  strokeWidth="1"
-                  fill="none"
-                  strokeLinecap="round"
-                />
+                <g key={conn.id}>
+                  <path
+                    d={`M ${fromX} ${fromY} Q ${midX + perpX} ${midY + perpY} ${toX} ${toY}`}
+                    stroke="#64748B"
+                    strokeWidth="1.5"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeOpacity={opacity}
+                    strokeDasharray="4 2"
+                  />
+                  {/* Connection endpoint dots */}
+                  <circle cx={fromX} cy={fromY} r="2" fill="#94A3B8" opacity={opacity} />
+                  <circle cx={toX} cy={toY} r="2" fill="#94A3B8" opacity={opacity} />
+                </g>
               )
             })}
           </svg>
 
-          {/* Nodes */}
+          {/* Nodes with dynamic sizing */}
           {displayNodes.map((node) => {
             const pos = nodePositions.get(node.id)
             if (!pos) return null
 
-            // Use category-based colors
             const color = getNodeColor(node.category)
             const isSelected = selectedNode === node.id
             const isConnecting = connectingFrom === node.id
-            // Ensure minimum visible size: 60-120px (at zoom 0.5 = 30-60px visible)
-            // Scale based on queryCount for importance
-            const baseSize = 160
-            const sizeBoost = Math.min(40, (node.queryCount || 0) * 5)
-            const nodeSize = Math.max(160, Math.min(220, node.size || (baseSize + sizeBoost)))
+
+            // Dynamic node size based on query count (more queries = larger node)
+            const baseWidth = 100
+            const queryScale = Math.min(1.4, 1 + (node.queryCount || 0) * 0.02)
+            const nodeWidth = Math.round(baseWidth * queryScale)
 
             return (
-              <motion.div
+              <div
                 key={node.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className={`absolute select-none ${
-                  isSelected ? 'ring-2 ring-blue-500' : ''
+                className={`absolute select-none transition-transform duration-150 ${
+                  isSelected ? 'ring-2 ring-blue-500 scale-105' : ''
                 } ${isConnecting ? 'ring-2 ring-emerald-500' : ''}`}
                 style={{
-                  left: pos.x,
+                  left: pos.x - (nodeWidth - 110) / 2,
                   top: pos.y,
-                  width: nodeSize,
-                  height: nodeSize,
+                  width: nodeWidth,
                   zIndex: isSelected || draggingNode === node.id ? 100 : 1,
                 }}
                 onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
                 onClick={(e) => handleNodeClick(e, node.id)}
               >
                 <div
-                  className="h-full flex flex-col rounded-lg overflow-hidden cursor-grab active:cursor-grabbing shadow-sm hover:shadow-lg transition-all"
+                  className="rounded-lg overflow-hidden cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all"
                   style={{
                     backgroundColor: color.bg,
-                    border: `2px solid ${color.border}`
+                    border: `1.5px solid ${color.border}`,
+                    boxShadow: isSelected ? `0 0 12px ${color.border}40` : undefined
                   }}
                 >
-
-                  <div className="flex-1 px-3 py-2">
-                    <h3 className="text-[12px] font-semibold leading-snug" style={{ color: color.text }}>
+                  <div className="px-2.5 py-2">
+                    <h3 className="text-[9px] font-semibold leading-tight line-clamp-2" style={{ color: color.text }}>
                       {node.name}
                     </h3>
-                    <span className="text-[9px] uppercase tracking-wider opacity-60 mt-1 block" style={{ color: color.text }}>
+                    <span className="text-[7px] uppercase tracking-wider opacity-50 mt-0.5 block" style={{ color: color.text }}>
                       {node.category || 'other'}
                     </span>
                   </div>
-
-                  <div className="px-3 py-2 flex items-center justify-between" style={{ backgroundColor: `${color.text}08` }}>
-                    <span className="text-[10px] font-mono font-semibold" style={{ color: color.text }}>
-                      {node.queryCount || 0}q
-                    </span>
-                    <button
-                      onClick={(e) => handleStartConnection(e, node.id)}
-                      className={`text-[10px] px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors font-medium ${
-                        isConnecting ? 'bg-emerald-500 text-white' : 'bg-white/80 hover:bg-white border border-slate-200'
-                      }`}
-                      style={{ color: isConnecting ? 'white' : color.text }}
-                    >
-                      <LinkIcon className="w-3.5 h-3.5" />
-                      Link
-                    </button>
+                  <div className="px-2.5 py-1.5 flex items-center justify-between" style={{ backgroundColor: `${color.text}08` }}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[7px] font-mono font-medium" style={{ color: color.text }}>
+                        {node.queryCount || 0}
+                      </span>
+                      <span className="text-[6px] opacity-50" style={{ color: color.text }}>queries</span>
+                    </div>
+                    {(isSelected || isConnecting) && (
+                      <button
+                        onClick={(e) => handleStartConnection(e, node.id)}
+                        className={`text-[7px] px-1.5 py-0.5 rounded flex items-center gap-0.5 font-medium ${
+                          isConnecting ? 'bg-emerald-500 text-white' : 'bg-white/80'
+                        }`}
+                        style={{ color: isConnecting ? 'white' : color.text }}
+                      >
+                        <LinkIcon className="w-2.5 h-2.5" />
+                        Link
+                      </button>
+                    )}
                   </div>
                 </div>
-              </motion.div>
+                
+                {/* Expanded popup on selection - Compact */}
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                      className="absolute top-full left-0 mt-1 w-44 bg-white dark:bg-slate-800 rounded shadow-lg border border-slate-200 dark:border-slate-700 z-[200] overflow-hidden text-[8px]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* Header */}
+                      <div className="px-2 py-1.5 border-b border-slate-100 dark:border-slate-700" style={{ backgroundColor: color.bg }}>
+                        <h4 className="font-semibold truncate" style={{ color: color.text }}>{node.name}</h4>
+                      </div>
+                      
+                      {/* Metrics row */}
+                      <div className="px-2 py-1.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                        <span className="text-slate-500">{node.queryCount || 0} queries</span>
+                        <span className={`px-1 py-0.5 rounded ${(node.queryCount || 0) > 5 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                          {(node.queryCount || 0) > 5 ? 'Active' : 'Low'}
+                        </span>
+                      </div>
+                      
+                      {/* Quick actions - Opens in new tab */}
+                      <div className="p-1.5 space-y-1">
+                        <button 
+                          onClick={() => window.open(`/?q=${encodeURIComponent(`Analyze ${node.name}`)}`, '_blank')}
+                          className="w-full text-left px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                        >
+                          → Analyze (new tab)
+                        </button>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(`Find connections for ${node.name}`)
+                            alert('Query copied! Paste in chat.')
+                          }}
+                          className="w-full text-left px-2 py-1 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                        >
+                          → Copy query
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             )
           })}
         </div>
       </div>
 
       {/* Instructions */}
-      <div className="px-3 py-1 bg-white dark:bg-relic-slate/20 border-t border-slate-100 dark:border-relic-slate/30 flex items-center justify-between text-[7px] text-slate-400 dark:text-relic-ghost">
+      <div className="px-3 py-1 bg-white border-t border-slate-100 flex items-center justify-between text-[7px] text-slate-400">
         <div className="flex items-center gap-3">
           <span>Drag to move</span>
-          <span>Click to expand</span>
+          <span>Click to select</span>
           <span>Scroll to zoom</span>
         </div>
       </div>

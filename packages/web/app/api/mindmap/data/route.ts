@@ -1,22 +1,47 @@
 /**
  * Mind Map Data API
  * Returns topics with relationships for visualization
- * Enhanced with Intelligence Fusion data for Sefirot-colored nodes
+ *
+ * Features:
+ * - Filters out topics from large conversations (>50 messages) for performance
+ * - Intelligent clustering based on topic similarity and relationships
+ * - Category-based grouping
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/database'
 import { getUserFromSession } from '@/lib/auth'
-import {
-  SEFIROT_COLORS,
-  buildIntelligenceMindMap,
-  getSefirotColor,
-  calculateNodeSize
-} from '@/lib/mindmap-intelligence'
-import { Sefirah } from '@/lib/ascent-tracker'
+
+// Configuration
+const MAX_CONVERSATION_SIZE = 50 // Exclude topics from conversations with more than this many messages
+const MAX_TOPICS_DISPLAY = 5000  // Maximum topics to show in mind map (increased from 100)
+const CLUSTER_THRESHOLD = 0.3   // Similarity threshold for clustering
+
+// Invalid topic patterns (prompts, malformed data)
+const INVALID_TOPIC_PATTERNS = [
+  /^give\s+exactly/i,
+  /^return\s+only/i,
+  /^extract\s+\d/i,
+  /brief\s+insights/i,
+  /json\s+array/i,
+  /example:/i,
+  /^\{.*\}$/,     // Pure JSON
+  /^\[.*\]$/,     // Pure array
+  /^```/,         // Code blocks
+]
+
+/**
+ * Check if a topic name is valid (not a prompt or malformed data)
+ */
+function isValidTopicName(name: string): boolean {
+  if (!name || name.length < 2 || name.length > 100) return false
+  for (const pattern of INVALID_TOPIC_PATTERNS) {
+    if (pattern.test(name)) return false
+  }
+  return true
+}
 
 export async function GET(request: NextRequest) {
-  const includeIntelligence = request.nextUrl.searchParams.get('intelligence') === 'true'
   try {
     // Get user from session
     const token = request.cookies.get('session_token')?.value
@@ -32,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     // Check if topics table exists
     const tablesCheck = db.prepare(`
-      SELECT name FROM sqlite_master 
+      SELECT name FROM sqlite_master
       WHERE type='table' AND name='topics'
     `).all() as Array<{ name: string }>
 
@@ -41,13 +66,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         nodes: [],
         links: [],
+        clusters: [],
       })
     }
 
     // Migrate NULL user_id topics to current user (one-time migration)
     try {
       db.prepare(`
-        UPDATE topics 
+        UPDATE topics
         SET user_id = ?, updated_at = ?
         WHERE user_id IS NULL
       `).run(userId, Math.floor(Date.now() / 1000))
@@ -55,7 +81,8 @@ export async function GET(request: NextRequest) {
       console.error('Migration error (non-fatal):', migrationError)
     }
 
-    // Get all topics for user
+    // Get topics with query count, filtering out topics from large conversations
+    // This prevents performance issues with very long conversation threads
     let topics: Array<{
       id: string
       name: string
@@ -67,11 +94,29 @@ export async function GET(request: NextRequest) {
       ai_instructions: string | null
       created_at: number
       query_count: number
+      max_conversation_size: number
     }> = []
 
     try {
+      // Query that filters out topics linked to conversations with >50 messages
       topics = db.prepare(`
-        SELECT 
+        WITH topic_conversation_sizes AS (
+          SELECT
+            qt.topic_id,
+            MAX(conversation_sizes.msg_count) as max_conversation_size
+          FROM query_topics qt
+          LEFT JOIN (
+            SELECT
+              q.id as query_id,
+              COUNT(e.id) as msg_count
+            FROM queries q
+            LEFT JOIN events e ON q.id = e.query_id
+            WHERE q.user_id = ?
+            GROUP BY q.id
+          ) conversation_sizes ON qt.query_id = conversation_sizes.query_id
+          GROUP BY qt.topic_id
+        )
+        SELECT
           t.id,
           t.name,
           t.description,
@@ -81,13 +126,17 @@ export async function GET(request: NextRequest) {
           t.archived,
           t.ai_instructions,
           t.created_at,
-          COUNT(DISTINCT qt.query_id) as query_count
+          COUNT(DISTINCT qt.query_id) as query_count,
+          COALESCE(tcs.max_conversation_size, 0) as max_conversation_size
         FROM topics t
         LEFT JOIN query_topics qt ON t.id = qt.topic_id
+        LEFT JOIN topic_conversation_sizes tcs ON t.id = tcs.topic_id
         WHERE t.user_id = ?
+          AND (t.pinned = 1 OR COALESCE(tcs.max_conversation_size, 0) <= ?)
         GROUP BY t.id
-        ORDER BY t.pinned DESC, t.created_at DESC
-      `).all(userId) as Array<{
+        ORDER BY t.pinned DESC, query_count DESC, t.created_at DESC
+        LIMIT ?
+      `).all(userId, userId, MAX_CONVERSATION_SIZE, MAX_TOPICS_DISPLAY) as Array<{
         id: string
         name: string
         description: string | null
@@ -98,6 +147,7 @@ export async function GET(request: NextRequest) {
         ai_instructions: string | null
         created_at: number
         query_count: number
+        max_conversation_size: number
       }>
     } catch (topicsError) {
       console.error('Error fetching topics:', topicsError)
@@ -132,175 +182,67 @@ export async function GET(request: NextRequest) {
       relationships = []
     }
 
-    // Fetch intelligence metadata if requested
-    let intelligenceData: Array<{
-      query_id: string
-      query: string
-      intelligence: string | null
-      tokens: number
-    }> = []
-
-    if (includeIntelligence) {
-      try {
-        intelligenceData = db.prepare(`
-          SELECT
-            id as query_id,
-            query,
-            gnostic_metadata as intelligence,
-            COALESCE(tokens_used, 0) as tokens
-          FROM queries
-          WHERE user_id = ?
-          ORDER BY created_at DESC
-          LIMIT 100
-        `).all(userId) as Array<{
-          query_id: string
-          query: string
-          intelligence: string | null
-          tokens: number
-        }>
-      } catch (e) {
-        console.log('[MindMap] Intelligence data not available:', e)
-      }
-    }
-
-    // Process topics with Sefirot colors
-    const processedNodes = topics.map(t => {
-      // Try to get Sefirot color from related query intelligence
-      let sefirotColor = t.color || '#94a3b8'
-      let dominantSefirah: Sefirah | null = null
-      let sefirotActivations: Record<number, number> = {}
-
-      // Find related intelligence data for this topic
-      const relatedQuery = intelligenceData.find(q =>
-        q.query.toLowerCase().includes(t.name.toLowerCase()) ||
-        t.name.toLowerCase().split(' ').some(word =>
-          word.length > 3 && q.query.toLowerCase().includes(word)
-        )
-      )
-
-      if (relatedQuery?.intelligence) {
-        try {
-          const gnosticData = JSON.parse(relatedQuery.intelligence)
-          // Extract Sefirot activations if available
-          if (gnosticData.sefirotProcessing?.activations) {
-            sefirotActivations = gnosticData.sefirotProcessing.activations
-            const colorResult = getSefirotColor(sefirotActivations)
-            sefirotColor = colorResult.primary
-            dominantSefirah = colorResult.dominant
-          }
-        } catch {
-          // Use default color
-        }
-      }
-
-      // Calculate node size based on query count
-      const nodeSize = calculateNodeSize(
-        Math.min(1, t.query_count / 10), // Relevance based on query count
-        0,
-        15 + Math.min(20, t.query_count * 2) // Base + query boost
-      )
-
-      return {
+    // Build nodes, filtering out invalid topic names (prompts, malformed data)
+    const nodes = topics
+      .filter(t => isValidTopicName(t.name))
+      .map(t => ({
         id: t.id,
         name: t.name,
         description: t.description,
         category: t.category || 'other',
-        color: sefirotColor,
-        borderColor: dominantSefirah !== null
-          ? SEFIROT_COLORS[dominantSefirah]?.secondary || sefirotColor
-          : sefirotColor,
+        color: t.color || '#94a3b8',
         pinned: t.pinned === 1,
         archived: t.archived === 1,
         queryCount: t.query_count,
         ai_instructions: t.ai_instructions,
-        // Intelligence fields
-        dominantSefirah,
-        sefirotActivations,
-        size: nodeSize,
-      }
+        cluster: null as string | null, // Will be assigned by clustering
+      }))
+
+    // Build links
+    const links = relationships.map(r => ({
+      source: r.topic_from,
+      target: r.topic_to,
+      type: r.relationship_type,
+      strength: r.strength,
+    }))
+
+    // ============================================================================
+    // INTELLIGENT CLUSTERING
+    // Groups related topics for better visualization
+    // ============================================================================
+    const clusters = generateClusters(nodes, links, relationships)
+
+    // Assign cluster IDs to nodes
+    clusters.forEach(cluster => {
+      cluster.nodeIds.forEach(nodeId => {
+        const node = nodes.find(n => n.id === nodeId)
+        if (node) {
+          node.cluster = cluster.id
+        }
+      })
     })
 
-    // Build intelligence mind map if requested
-    let intelligenceMindMap = null
-    if (includeIntelligence && intelligenceData.length > 0) {
-      const queriesWithIntelligence = intelligenceData
-        .filter(q => q.intelligence)
-        .map(q => {
-          try {
-            const gnosticData = JSON.parse(q.intelligence!)
-            // Convert gnostic metadata to IntelligenceFusionResult format
-            return {
-              id: q.query_id,
-              query: q.query,
-              intelligence: {
-                analysis: {
-                  complexity: 0.5,
-                  queryType: 'factual' as const,
-                  requiresTools: false,
-                  requiresMultiPerspective: false,
-                  isMathematical: false,
-                  isFactual: true,
-                  isProcedural: false,
-                  isCreative: false,
-                  wordCount: q.query.split(' ').length,
-                  keywords: q.query.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3).slice(0, 5)
-                },
-                sefirotActivations: Object.entries(gnosticData.sefirotProcessing?.activations || {}).map(([k, v]) => ({
-                  sefirah: parseInt(k) as Sefirah,
-                  name: SEFIROT_COLORS[parseInt(k) as Sefirah]?.name || 'Unknown',
-                  activation: v as number,
-                  weight: 0.5,
-                  effectiveWeight: (v as number) * 0.5,
-                  keywords: []
-                })),
-                dominantSefirot: [],
-                pathActivations: [],
-                selectedMethodology: gnosticData.sefirotProcessing?.methodologySuggestion || 'direct',
-                methodologyScores: [],
-                confidence: 0.7,
-                guardRecommendation: 'proceed' as const,
-                guardReasons: [],
-                instinctPrompt: '',
-                activeLenses: [],
-                contextInjection: null,
-                relatedTopics: [],
-                extendedThinkingBudget: 3000,
-                processingMode: 'weighted' as const,
-                timestamp: Date.now(),
-                processingTimeMs: 0
-              },
-              tokens: q.tokens
-            }
-          } catch {
-            return null
-          }
-        })
-        .filter((q): q is NonNullable<typeof q> => q !== null)
-
-      if (queriesWithIntelligence.length > 0) {
-        intelligenceMindMap = buildIntelligenceMindMap(queriesWithIntelligence)
-      }
-    }
-
     const responseData = {
-      nodes: processedNodes,
-      connections: relationships.map(r => ({
-        from: r.topic_from,
-        to: r.topic_to,
-        type: r.relationship_type,
-        strength: r.strength,
-      })),
-      // Backwards compatibility
-      links: relationships.map(r => ({
-        source: r.topic_from,
-        target: r.topic_to,
-        type: r.relationship_type,
-        strength: r.strength,
-      })),
-      // Intelligence data
-      intelligence: intelligenceMindMap,
-      sefirotColors: SEFIROT_COLORS,
+      nodes,
+      links,
+      clusters,
+      meta: {
+        totalTopics: topics.length,
+        filteredByConversationSize: MAX_CONVERSATION_SIZE,
+        clusterCount: clusters.length,
+      },
     }
+
+    // Debug logging
+    console.log('[MindMap API] Returning:', {
+      topicsReturned: topics.length,
+      nodesCount: nodes.length,
+      linksCount: links.length,
+      clustersCount: clusters.length,
+      maxTopicsLimit: MAX_TOPICS_DISPLAY,
+      conversationSizeFilter: MAX_CONVERSATION_SIZE
+    })
+
     return NextResponse.json(responseData)
   } catch (error) {
     console.error('Mind map data error:', error)
@@ -309,4 +251,187 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// ============================================================================
+// CLUSTERING ALGORITHM
+// Groups related topics based on:
+// 1. Category (primary grouping)
+// 2. Relationships (connected topics)
+// 3. Name similarity (shared keywords)
+// ============================================================================
+
+interface ClusterNode {
+  id: string
+  name: string
+  category: string
+  cluster: string | null
+}
+
+interface Cluster {
+  id: string
+  name: string
+  category: string
+  nodeIds: string[]
+  size: number
+  color: string
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  business: '#10B981',
+  technology: '#6366F1',
+  finance: '#F59E0B',
+  environment: '#059669',
+  psychology: '#8B5CF6',
+  infrastructure: '#0EA5E9',
+  regulation: '#EC4899',
+  engineering: '#D97706',
+  social: '#C026D3',
+  science: '#0284C7',
+  health: '#DB2777',
+  education: '#7C3AED',
+  other: '#64748B',
+}
+
+function generateClusters(
+  nodes: ClusterNode[],
+  links: Array<{ source: string; target: string; strength: number }>,
+  relationships: Array<{ topic_from: string; topic_to: string; strength: number }>
+): Cluster[] {
+  if (nodes.length === 0) return []
+
+  // Step 1: Group by category first
+  const categoryGroups = new Map<string, string[]>()
+  nodes.forEach(node => {
+    const category = node.category || 'other'
+    if (!categoryGroups.has(category)) {
+      categoryGroups.set(category, [])
+    }
+    categoryGroups.get(category)!.push(node.id)
+  })
+
+  // Step 2: Build adjacency map from relationships
+  const adjacency = new Map<string, Set<string>>()
+  relationships.forEach(rel => {
+    if (!adjacency.has(rel.topic_from)) {
+      adjacency.set(rel.topic_from, new Set())
+    }
+    if (!adjacency.has(rel.topic_to)) {
+      adjacency.set(rel.topic_to, new Set())
+    }
+    adjacency.get(rel.topic_from)!.add(rel.topic_to)
+    adjacency.get(rel.topic_to)!.add(rel.topic_from)
+  })
+
+  // Step 3: Refine clusters by connectivity within categories
+  const clusters: Cluster[] = []
+  let clusterIndex = 0
+
+  categoryGroups.forEach((nodeIds, category) => {
+    // Find connected components within this category
+    const visited = new Set<string>()
+    const components: string[][] = []
+
+    nodeIds.forEach(nodeId => {
+      if (visited.has(nodeId)) return
+
+      // BFS to find connected component
+      const component: string[] = []
+      const queue = [nodeId]
+
+      while (queue.length > 0) {
+        const current = queue.shift()!
+        if (visited.has(current)) continue
+        visited.add(current)
+        component.push(current)
+
+        // Add connected nodes that are in the same category
+        const neighbors = adjacency.get(current) || new Set()
+        neighbors.forEach(neighbor => {
+          if (!visited.has(neighbor) && nodeIds.includes(neighbor)) {
+            queue.push(neighbor)
+          }
+        })
+      }
+
+      if (component.length > 0) {
+        components.push(component)
+      }
+    })
+
+    // Create clusters from components
+    components.forEach(component => {
+      // Skip very small clusters (1 node) unless they're pinned
+      if (component.length < 2 && components.length > 1) {
+        // Merge into largest cluster of same category
+        const largestComponent = components.reduce((a, b) =>
+          a.length > b.length ? a : b
+        )
+        if (largestComponent !== component) {
+          largestComponent.push(...component)
+          return
+        }
+      }
+
+      const clusterName = generateClusterName(
+        component,
+        nodes.filter(n => component.includes(n.id))
+      )
+
+      clusters.push({
+        id: `cluster-${clusterIndex++}`,
+        name: clusterName,
+        category,
+        nodeIds: component,
+        size: component.length,
+        color: CATEGORY_COLORS[category] || CATEGORY_COLORS.other,
+      })
+    })
+  })
+
+  // Sort clusters by size (largest first)
+  clusters.sort((a, b) => b.size - a.size)
+
+  return clusters
+}
+
+/**
+ * Generate a descriptive name for a cluster based on its nodes
+ */
+function generateClusterName(nodeIds: string[], nodes: ClusterNode[]): string {
+  if (nodes.length === 0) return 'Unnamed Cluster'
+  if (nodes.length === 1) return nodes[0].name
+
+  // Find common words in node names
+  const wordCounts = new Map<string, number>()
+  const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'])
+
+  nodes.forEach(node => {
+    const words = node.name.toLowerCase().split(/\s+/)
+    const uniqueWords = new Set(words)
+    uniqueWords.forEach(word => {
+      if (word.length > 2 && !stopWords.has(word)) {
+        wordCounts.set(word, (wordCounts.get(word) || 0) + 1)
+      }
+    })
+  })
+
+  // Find most common meaningful word
+  let bestWord = ''
+  let bestCount = 0
+  wordCounts.forEach((count, word) => {
+    if (count > bestCount) {
+      bestCount = count
+      bestWord = word
+    }
+  })
+
+  if (bestWord && bestCount > 1) {
+    // Capitalize first letter
+    return bestWord.charAt(0).toUpperCase() + bestWord.slice(1) + ' Topics'
+  }
+
+  // Fallback to category name
+  const category = nodes[0]?.category || 'other'
+  return category.charAt(0).toUpperCase() + category.slice(1) + ' Topics'
 }

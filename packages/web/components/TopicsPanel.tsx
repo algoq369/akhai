@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSideCanalStore } from '@/lib/stores/side-canal-store'
-import type { Topic as StoreTopic } from '@/lib/side-canal'
 
-// Extended Topic with UI-specific fields
-interface Topic extends StoreTopic {
+interface Topic {
+  id: string
+  name: string
+  description: string | null
+  category: string | null
+  created_at: number
   query_count?: number
   color?: string
   pinned?: boolean
@@ -45,25 +47,18 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default function TopicsPanel({ isOpen, onClose, onOpenMindMap }: TopicsPanelProps) {
   const router = useRouter()
-
-  // Use Side Canal store for topics data
-  const { topics: storeTopics, loading, loadTopics } = useSideCanalStore()
-
-  // Cast to extended Topic type (API may return additional fields)
-  const topics = storeTopics as Topic[]
-
-  // Local UI state
-  const [filter, setFilter] = useState<string | null>(null)
+  const [topics, setTopics] = useState<Topic[]>([])
+  const [loading, setLoading] = useState(false)
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
   const [relatedQueries, setRelatedQueries] = useState<RelatedQuery[]>([])
   const [relatedTopics, setRelatedTopics] = useState<RelatedTopic[]>([])
   const [loadingDetail, setLoadingDetail] = useState(false)
-
+  
   // Tool modes
   const [legendMode, setLegendMode] = useState(false)
   const [auditMode, setAuditMode] = useState(false)
   const [suggestionMode, setSuggestionMode] = useState(true)
-
+  
   // Load legend mode from localStorage
   useEffect(() => {
     try {
@@ -72,12 +67,26 @@ export default function TopicsPanel({ isOpen, onClose, onOpenMindMap }: TopicsPa
     } catch (e) {}
   }, [])
 
-  // Load topics from store when panel opens
   useEffect(() => {
     if (isOpen) {
-      loadTopics()
+      fetchTopics()
     }
-  }, [isOpen, loadTopics])
+  }, [isOpen])
+
+  const fetchTopics = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/side-canal/topics')
+      if (res.ok) {
+        const data = await res.json()
+        setTopics(data.topics || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch topics:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const fetchTopicDetail = async (topicId: string) => {
     setLoadingDetail(true)
@@ -139,11 +148,7 @@ export default function TopicsPanel({ isOpen, onClose, onOpenMindMap }: TopicsPa
     onClose()
   }
 
-  const filteredTopics = filter
-    ? topics.filter(t => t.category === filter)
-    : topics
-
-  const categories = [...new Set(topics.map(t => t.category || 'other'))]
+  const filteredTopics = topics
 
   if (!isOpen) return null
 
@@ -348,35 +353,6 @@ export default function TopicsPanel({ isOpen, onClose, onOpenMindMap }: TopicsPa
         ) : (
           /* Topics List View */
           <>
-            {/* Filters */}
-            {categories.length > 1 && (
-              <div className="flex gap-2 p-4 border-b border-relic-mist/30 overflow-x-auto bg-white/30">
-                <button
-                  onClick={() => setFilter(null)}
-                  className={`px-4 py-1.5 text-xs font-medium transition-all ${
-                    filter === null
-                      ? 'bg-relic-slate text-white shadow-md'
-                      : 'bg-white/70 text-relic-slate hover:bg-white hover:shadow-sm border border-relic-mist/50'
-                  }`}
-                >
-                  All ({topics.length})
-                </button>
-                {categories.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setFilter(cat)}
-                    className={`px-4 py-1.5 text-xs font-medium transition-all ${
-                      filter === cat
-                        ? 'bg-relic-slate text-white shadow-md'
-                        : 'bg-white/70 text-relic-slate hover:bg-white hover:shadow-sm border border-relic-mist/50'
-                    }`}
-                  >
-                    {cat} ({topics.filter(t => (t.category || 'other') === cat).length})
-                  </button>
-                ))}
-              </div>
-            )}
-
             {/* Topics List */}
             <div className="p-4 overflow-y-auto max-h-[50vh]">
               {loading ? (
