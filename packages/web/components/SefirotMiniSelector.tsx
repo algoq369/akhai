@@ -134,7 +134,7 @@ export default function SefirotMiniSelector({
 
         {/* Description Footer */}
         <div className="px-4 py-2 bg-relic-ghost/50 text-[8px] text-relic-slate border-t border-relic-slate/10 rounded-b-lg">
-          {meta.aiComputation}
+          {meta.aiRole}
         </div>
       </motion.div>
     </AnimatePresence>

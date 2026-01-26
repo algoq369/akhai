@@ -333,7 +333,7 @@ export default function SefirotMini({
 
             {/* AI Computational Correlation */}
             <div className="text-[8px] text-relic-silver mb-2 font-mono border-l-2 border-purple-500/50 pl-2">
-              {SEPHIROTH_METADATA[selectedSefirah].aiComputation}
+              {SEPHIROTH_METADATA[selectedSefirah].aiRole}
             </div>
 
             {/* Activation Percentage with visual bar */}

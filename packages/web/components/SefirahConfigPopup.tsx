@@ -70,7 +70,7 @@ export function SefirahConfigPopup({
                 {meta.name}
               </h3>
               <p className="text-sm font-mono text-slate-600 dark:text-[#999]">
-                {meta.aiComputation.split('•')[0].trim()}
+                {meta.aiRole.split('•')[0].trim()}
               </p>
             </div>
 

@@ -497,7 +497,7 @@ export function SefirotTreeFull({
                     fontWeight="500"
                     opacity="0.9"
                   >
-                    {meta.aiComputation.split('•')[0].trim()}
+                    {meta.aiRole.split('•')[0].trim()}
                   </text>
 
                   {/* Activation percentage (bottom-most) */}

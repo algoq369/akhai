@@ -137,7 +137,7 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
                           <span className="text-neutral-700">{meta.name}</span>
                           <span className="text-neutral-400 ml-1 text-[10px]">{meta.hebrewName}</span>
                           <p className="text-neutral-400 text-[10px] mt-0.5">
-                            {meta.aiComputation.split('•')[0]?.trim()}
+                            {meta.aiRole.split('•')[0]?.trim()}
                           </p>
                         </div>
                       </div>

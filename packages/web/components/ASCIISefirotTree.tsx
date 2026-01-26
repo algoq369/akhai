@@ -22,7 +22,7 @@ export function ASCIISefirotTree() {
   // Helper to render sefirah node with inline input
   const renderNode = (level: number) => {
     const meta = SEPHIROTH_METADATA[level as Sefirah]
-    const aiParts = meta.aiComputation.split('•').map((s: string) => s.trim())
+    const aiParts = meta.aiRole.split('•').map((s: string) => s.trim())
     const aiName = aiParts[0] || 'Unknown'
     const percentage = getPercentage(level)
 

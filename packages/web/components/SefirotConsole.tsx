@@ -157,7 +157,7 @@ export default function SefirotConsole({ isOpen, onToggle, onConfigChange }: Sef
                     </span>
                     <div className="flex-1 min-w-0">
                       <span className="text-[8px] text-relic-void dark:text-white truncate block">
-                        {s.aiComputation}
+                        {s.aiRole}
                       </span>
                       <span className="text-[7px] text-relic-silver">{s.name}</span>
                     </div>

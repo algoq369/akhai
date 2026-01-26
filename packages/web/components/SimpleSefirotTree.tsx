@@ -197,7 +197,7 @@ export function SimpleSefirotTree() {
             const pillarColor = getPillarColor(meta.level)
 
             // Extract AI computation name and layer description
-            const aiParts = meta.aiComputation.split('•').map(s => s.trim())
+            const aiParts = meta.aiRole.split('•').map(s => s.trim())
             const aiName = aiParts[0] || 'Unknown'
             const layerDescription = aiParts[1] || meta.meaning
 

@@ -8,13 +8,15 @@ import {
   SparklesIcon,
   LinkIcon,
   Squares2X2Icon,
-  ListBulletIcon,
-  MapIcon,
+  ClockIcon,
+  BookOpenIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline'
 import { MapPinIcon as MapPinIconSolid } from '@heroicons/react/24/solid'
 import MindMapTableView from './MindMapTableView'
 import MindMapDiagramView from './MindMapDiagramView'
+import MindMapHistoryView from './MindMapHistoryView'
+import MindMapGrimoireView from './MindMapGrimoireView'
 
 export interface Node {
   id: string
@@ -35,13 +37,14 @@ interface Connection {
   toName?: string
 }
 
+type ViewMode = 'graph' | 'history' | 'grimoire'
+
 interface MindMapProps {
   isOpen: boolean
   onClose: () => void
   userId: string | null
+  initialView?: ViewMode
 }
-
-type ViewMode = 'graph' | 'table'
 
 const CATEGORY_COLORS: Record<string, { bg: string; dot: string }> = {
   business: { bg: '#ECFDF5', dot: '#10B981' },
@@ -64,16 +67,21 @@ function getCategoryStyle(category: string | null | undefined) {
   return CATEGORY_COLORS[cat] || CATEGORY_COLORS.other
 }
 
-export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
+export default function MindMap({ isOpen, onClose, userId, initialView = 'graph' }: MindMapProps) {
   const [nodes, setNodes] = useState<Node[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('graph')
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [connections, setConnections] = useState<Connection[]>([])
   const [showConnections, setShowConnections] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showPinned, setShowPinned] = useState(false)
+
+  // Sync viewMode with initialView when it changes
+  useEffect(() => {
+    setViewMode(initialView)
+  }, [initialView])
 
   useEffect(() => {
     if (!isOpen || !userId) return
@@ -156,7 +164,8 @@ export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
           <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg">
             {[
               { id: 'graph', label: 'Graph', icon: Squares2X2Icon },
-              { id: 'table', label: 'Table', icon: ListBulletIcon },
+              { id: 'history', label: 'History', icon: ClockIcon },
+              { id: 'grimoire', label: 'Grimoire', icon: BookOpenIcon },
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -239,15 +248,17 @@ export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
             <div className="flex items-center justify-center h-full">
               <div className="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
             </div>
-          ) : viewMode === 'table' ? (
-            <MindMapTableView userId={userId} />
-          ) : (
+          ) : viewMode === 'graph' ? (
             <MindMapDiagramView
               userId={userId}
               nodes={filteredNodes}
               searchQuery={searchQuery}
             />
-          )}
+          ) : viewMode === 'history' ? (
+            <MindMapHistoryView onClose={onClose} />
+          ) : viewMode === 'grimoire' ? (
+            <MindMapGrimoireView userId={userId} selectedTopics={[]} />
+          ) : null}
         </div>
 
         {/* Enhanced Side Panel */}

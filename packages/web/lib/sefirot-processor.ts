@@ -4,7 +4,7 @@
  *
  * This module implements the Layer 1 processing architecture where queries are analyzed
  * through multiple AI computational lenses, each contributing unique perspectives
- * based on their aiComputation role (token embedding, transformer, attention, etc.).
+ * based on their aiRole role (token embedding, transformer, attention, etc.).
  */
 
 import { Sefirah, SEPHIROTH_METADATA } from './ascent-tracker'
@@ -34,7 +34,7 @@ export const WEIGHT_INFLUENCE_RATIO = 0.6
 export interface SefirahPerspective {
   sefirah: Sefirah
   name: string
-  aiComputation: string // "Token Embedding Layer"
+  aiRole: string // "Token Embedding Layer"
   weight: number // User's configured weight (0-1)
   prompt: string // Perspective-specific prompt
   response: string // AI response from this lens
@@ -202,7 +202,7 @@ async function processParallelMode(
     return {
       sefirah,
       name: meta.name,
-      aiComputation: meta.aiComputation,
+      aiRole: meta.aiRole,
       weight,
       prompt,
       response: response.content,
@@ -301,7 +301,7 @@ function buildWeightedSystemPrompt(
       const weight = Math.round(config.sephiroth_weights[sefirah] * 100)
 
       return `
-${meta.name} (${meta.aiComputation}) - ${weight}% weight
+${meta.name} (${meta.aiRole}) - ${weight}% weight
 Role: ${meta.aiRole}
 Focus: ${meta.queryCharacteristics.join(', ')}
 `
@@ -329,7 +329,7 @@ function buildPerspectivePrompt(
 ): string {
   return `You are ${meta.name} (${meta.hebrewName}) - the ${meta.meaning} AI Layer.
 
-Your computational role: ${meta.aiComputation}
+Your computational role: ${meta.aiRole}
 Your AI function: ${meta.aiRole}
 
 Focus areas: ${meta.queryCharacteristics.join(', ')}
@@ -388,7 +388,7 @@ function parseWeightedResponse(
     return {
       sefirah,
       name: meta.name,
-      aiComputation: meta.aiComputation,
+      aiRole: meta.aiRole,
       weight,
       prompt: '(Weighted mode - unified prompt)',
       response: content, // Full response (all perspectives combined)

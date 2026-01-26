@@ -23,7 +23,7 @@ describe('Ascent Tracker System', () => {
         expect(metadata.hebrew).toBeDefined()
         expect(metadata.level).toBeGreaterThanOrEqual(1)
         expect(metadata.level).toBeLessThanOrEqual(11)
-        expect(metadata.aiComputationalLayer).toBeDefined()
+        expect(metadata.aiRolealLayer).toBeDefined()
         expect(metadata.pillar).toMatch(/left|middle|right/)
       })
     })

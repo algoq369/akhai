@@ -109,7 +109,7 @@ export function WeightMatrix({ compact = false, showLabels = true, onChange }: W
                   </div>
                   {!compact && (
                     <div className="text-[8px] text-relic-silver truncate">
-                      {meta.aiComputation?.split('•')[0]?.trim() || ''}
+                      {meta.aiRole?.split('•')[0]?.trim() || ''}
                     </div>
                   )}
                 </div>

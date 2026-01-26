@@ -101,7 +101,7 @@ export function SefirahDetailModal({
                     AI Computational Layer
                   </div>
                   <div className="text-[10px] text-slate-700 bg-slate-50 px-2 py-1.5 rounded border border-slate-100">
-                    {meta.aiComputation.split('•')[0].trim()}
+                    {meta.aiRole.split('•')[0].trim()}
                   </div>
                 </div>
 

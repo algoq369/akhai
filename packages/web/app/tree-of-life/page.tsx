@@ -1147,7 +1147,7 @@ export default function TreeOfLifePage() {
                       fontWeight="600"
                       opacity="0.95"
                     >
-                      {meta.aiComputation.split('•')[0].trim()}
+                      {meta.aiRole.split('•')[0].trim()}
                     </text>
 
                     {/* English name (middle) */}
@@ -1309,7 +1309,7 @@ export default function TreeOfLifePage() {
                         ▸ AI Layer
                       </div>
                       <div className="text-[8px] text-relic-void leading-tight">
-                        {SEPHIROTH_METADATA[hoveredSefirah].aiComputation.split('•')[0].trim()}
+                        {SEPHIROTH_METADATA[hoveredSefirah].aiRole.split('•')[0].trim()}
                       </div>
                     </div>
 
@@ -2116,7 +2116,7 @@ export default function TreeOfLifePage() {
                       fontWeight="600"
                       opacity="0.95"
                     >
-                      {meta.aiComputation.split('•')[0].trim()}
+                      {meta.aiRole.split('•')[0].trim()}
                     </text>
 
                     {/* English name (middle) */}
@@ -2553,7 +2553,7 @@ export default function TreeOfLifePage() {
                         {/* Column 2: AI Role */}
                         <div>
                           <div className="text-[7px] uppercase text-relic-silver tracking-wider mb-0.5">▸ AI Layer</div>
-                          <div className="text-[8px] text-relic-void leading-snug">{meta.aiComputation.split('•')[0].trim()}</div>
+                          <div className="text-[8px] text-relic-void leading-snug">{meta.aiRole.split('•')[0].trim()}</div>
                         </div>
 
                         {/* Column 3: Activation */}
