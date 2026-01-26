@@ -59,7 +59,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; dot: string }> = {
   other: { bg: '#F8FAFC', dot: '#64748B' },
 }
 
-function getCategoryStyle(category: string | null) {
+function getCategoryStyle(category: string | null | undefined) {
   const cat = category?.toLowerCase() || 'other'
   return CATEGORY_COLORS[cat] || CATEGORY_COLORS.other
 }

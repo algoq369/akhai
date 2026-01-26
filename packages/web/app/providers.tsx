@@ -6,32 +6,12 @@ import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 
 /**
- * PostHog Pageview Tracker
- * Must be wrapped in Suspense due to useSearchParams()
+ * Inner component that uses useSearchParams (must be wrapped in Suspense)
  */
-function PostHogPageView() {
+function PostHogPageTracker({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Track pageviews on route change
-  useEffect(() => {
-    if (!posthog.__loaded) return
-
-    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
-
-    posthog.capture('$pageview', {
-      $current_url: url,
-    })
-  }, [pathname, searchParams])
-
-  return null
-}
-
-/**
- * PostHog Analytics Provider
- * Wraps the app to enable client-side tracking
- */
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
   // Initialize PostHog on mount
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
@@ -62,26 +42,41 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         },
 
         loaded: (posthog) => {
-          // Disable debug mode to reduce console noise
-          // if (process.env.NODE_ENV === 'development') {
-          //   posthog.debug()
-          // }
+          if (process.env.NODE_ENV === 'development') {
+            posthog.debug()
+          }
         },
       })
     }
   }, [])
+
+  // Track pageviews on route change
+  useEffect(() => {
+    if (!posthog.__loaded) return
+
+    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
+
+    posthog.capture('$pageview', {
+      $current_url: url,
+    })
+  }, [pathname, searchParams])
 
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
     // PostHog not configured, render children without provider
     return <>{children}</>
   }
 
+  return <PHProvider client={posthog}>{children}</PHProvider>
+}
+
+/**
+ * PostHog Analytics Provider
+ * Wraps the app to enable client-side tracking
+ */
+export function PostHogProvider({ children }: { children: React.ReactNode }) {
   return (
-    <PHProvider client={posthog}>
-      <Suspense fallback={null}>
-        <PostHogPageView />
-      </Suspense>
-      {children}
-    </PHProvider>
+    <Suspense fallback={<>{children}</>}>
+      <PostHogPageTracker>{children}</PostHogPageTracker>
+    </Suspense>
   )
 }

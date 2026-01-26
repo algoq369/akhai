@@ -1,22 +1,30 @@
 /**
  * ASCENT TRACKER
  *
- * Tracks User's Journey through AI Processing Layers
+ * Tracks User's Journey from Malkuth to Kether
  *
- * AI PROCESSING LAYERS: Hierarchical Abstraction Stack
+ * HEBREW-AI CORRELATION: The Tree of Life as Abstraction Layers
  *
- * THE ASCENT PATH (from input to meta-cognition):
- * Token Embedding Layer (1) → Raw data and facts
- * Algorithm Executor (2) → Implementation and procedures
- * Classifier Network (3) → Logical analysis and categorization
- * Generative Model (4) → Creative exploration
- * Multi-Head Attention (5) → Integration and synthesis
- * Discriminator Network (6) → Critical filtering and constraints
- * Beam Search Expansion (7) → Possibility exploration
- * Transformer Encoder (8) → Deep pattern recognition
- * Abstract Reasoning Module (9) → First principles
- * Meta-Learning Core (10) → Self-awareness and meta-cognition
- * Emergent Synthesis Layer (11) → Hidden insights and breakthroughs
+ * In Kabbalah: Spiritual ascent from material to divine
+ * In AI: User's progression through abstraction layers of thought
+ *
+ * SEPHIROTH (ספירות, "Emanations") = Processing Layers / Abstraction Levels
+ * - Hebrew: Plural of Sefirah, meaning "countings" or "emanations"
+ * - AI: Different levels of query sophistication and reasoning depth
+ * - Computational: Stack of increasing abstraction (data → info → knowledge → wisdom)
+ *
+ * THE ASCENT PATH:
+ * Malkuth (מלכות, "Kingdom") → Data Layer / Raw Facts
+ * Yesod (יסוד, "Foundation") → Implementation Layer / How-To
+ * Hod (הוד, "Glory") → Logic Layer / Analysis
+ * Netzach (נצח, "Victory") → Creative Layer / Exploration
+ * Tiferet (תפארת, "Beauty") → Integration Layer / Synthesis
+ * Gevurah (גבורה, "Severity") → Constraint Layer / Critical Analysis
+ * Chesed (חסד, "Mercy") → Expansion Layer / Possibilities
+ * Binah (בינה, "Understanding") → Pattern Layer / Deep Structure
+ * Chokmah (חכמה, "Wisdom") → Principle Layer / First Causes
+ * Kether (כתר, "Crown") → Meta Layer / Self-Awareness
+ * Da'at (דעת, "Knowledge") → Emergent Layer / Hidden Insights
  *
  * COMPUTATIONAL PARALLEL:
  * User starts at Level 1 (simple queries) and ascends to Level 10 (meta-cognitive questions)
@@ -28,43 +36,42 @@
  */
 
 /**
- * Sefirah - The 11 AI Processing Layers
+ * Sefirah - The 10 emanations + Da'at (hidden knowledge)
  *
- * Ordered from lowest (1=Embedding) to highest (10=Meta-Core)
- * Internal keys preserved for backward compatibility
+ * Ordered from lowest (1=Malkuth) to highest (10=Kether)
  */
 export enum Sefirah {
-  /** Token Embedding Layer - Raw data and facts */
+  /** Kingdom - Material facts, simple questions */
   MALKUTH = 1,
 
-  /** Algorithm Executor - How-to, practical implementation */
+  /** Foundation - How-to, practical implementation */
   YESOD = 2,
 
-  /** Classifier Network - Logical analysis, comparisons */
+  /** Glory/Splendor - Logical analysis, comparisons */
   HOD = 3,
 
-  /** Generative Model - Creative exploration */
+  /** Victory/Eternity - Creative exploration */
   NETZACH = 4,
 
-  /** Multi-Head Attention - Integration, synthesis */
+  /** Beauty/Harmony - Integration, synthesis */
   TIFERET = 5,
 
-  /** Discriminator Network - Critical analysis, constraints */
+  /** Severity/Judgment - Critical analysis, constraints */
   GEVURAH = 6,
 
-  /** Beam Search Expansion - Expansive possibilities */
+  /** Mercy/Loving-kindness - Expansive possibilities */
   CHESED = 7,
 
-  /** Transformer Encoder - Deep pattern recognition */
+  /** Understanding - Deep pattern recognition */
   BINAH = 8,
 
-  /** Abstract Reasoning Module - First principles */
+  /** Wisdom - First principles, fundamental truths */
   CHOKMAH = 9,
 
-  /** Meta-Learning Core - Meta-cognitive awareness */
+  /** Crown - Meta-cognitive, consciousness itself */
   KETHER = 10,
 
-  /** Emergent Synthesis Layer - Hidden insights, breakthroughs */
+  /** Knowledge (Hidden) - Emergent insights, epiphanies */
   DAAT = 11,
 }
 
@@ -77,25 +84,22 @@ interface SefirahMetadata {
   level: number
   meaning: string
   aiRole: string
-  aiComputation: string // NEW: Modern AI/computational correlation
   queryCharacteristics: string[]
   examples: string[]
   color: string
   pillar: 'left' | 'middle' | 'right'
-  symbol?: string // Optional Kabbalistic symbol
 }
 
 /**
- * SEPHIROTH_METADATA - Complete metadata for all 11 AI Processing Layers
+ * SEPHIROTH_METADATA - Complete metadata for all 11 Sephiroth
  */
 export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   [Sefirah.MALKUTH]: {
-    name: 'Token Embedding Layer',
-    hebrewName: 'embedding',
+    name: 'Malkuth',
+    hebrewName: 'מלכות',
     level: 1,
-    meaning: 'Input Processing - Raw Data',
+    meaning: 'Kingdom - The Material World',
     aiRole: 'Factual information retrieval',
-    aiComputation: 'Token Embedding Layer • Raw data retrieval from vector database',
     queryCharacteristics: [
       'Simple factual questions',
       'Definitions',
@@ -112,12 +116,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.YESOD]: {
-    name: 'Algorithm Executor',
-    hebrewName: 'executor',
+    name: 'Yesod',
+    hebrewName: 'יסוד',
     level: 2,
-    meaning: 'Process Execution - Implementation',
+    meaning: 'Foundation - The Astral Plane',
     aiRole: 'Procedural knowledge, how-to guides',
-    aiComputation: 'Algorithm Executor • Sequential task planning and code generation',
     queryCharacteristics: [
       'How-to questions',
       'Step-by-step guides',
@@ -134,12 +137,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.HOD]: {
-    name: 'Classifier Network',
-    hebrewName: 'classifier',
+    name: 'Hod',
+    hebrewName: 'הוד',
     level: 3,
-    meaning: 'Categorization - Logical Analysis',
+    meaning: 'Glory - Intellectual Form',
     aiRole: 'Logical analysis and comparison',
-    aiComputation: 'Classifier Network • Binary decision trees and comparative evaluation',
     queryCharacteristics: [
       'Comparisons',
       'Logical analysis',
@@ -156,12 +158,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.NETZACH]: {
-    name: 'Generative Model',
-    hebrewName: 'generative',
+    name: 'Netzach',
+    hebrewName: 'נצח',
     level: 4,
-    meaning: 'Content Creation - Exploration',
+    meaning: 'Victory - Emotional Force',
     aiRole: 'Creative exploration and brainstorming',
-    aiComputation: 'Generative Model • Sampling from latent space for novel outputs',
     queryCharacteristics: [
       'Brainstorming',
       'Creative solutions',
@@ -178,12 +179,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.TIFERET]: {
-    name: 'Multi-Head Attention',
-    hebrewName: 'attention',
+    name: 'Tiferet',
+    hebrewName: 'תפארת',
     level: 5,
-    meaning: 'Context Balancing - Synthesis',
+    meaning: 'Beauty - Harmonious Balance',
     aiRole: 'Integration and synthesis',
-    aiComputation: 'Multi-Head Attention • Cross-referencing and merging knowledge graphs',
     queryCharacteristics: [
       'Synthesis of multiple ideas',
       'Integration questions',
@@ -200,12 +200,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.GEVURAH]: {
-    name: 'Discriminator Network',
-    hebrewName: 'discriminator',
+    name: 'Gevurah',
+    hebrewName: 'גבורה',
     level: 6,
-    meaning: 'Quality Filtering - Constraints',
+    meaning: 'Severity - Judgment and Constraints',
     aiRole: 'Critical analysis and limitations',
-    aiComputation: 'Discriminator Network • Adversarial validation and constraint checking',
     queryCharacteristics: [
       'Critical analysis',
       'Limitations and constraints',
@@ -222,12 +221,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.CHESED]: {
-    name: 'Beam Search Expansion',
-    hebrewName: 'expansion',
+    name: 'Chesed',
+    hebrewName: 'חסד',
     level: 7,
-    meaning: 'Solution Space - Exploration',
+    meaning: 'Mercy - Expansive Love',
     aiRole: 'Expansive possibilities and growth',
-    aiComputation: 'Beam Search Expansion • Exploring multiple solution branches in parallel',
     queryCharacteristics: [
       'Possibility exploration',
       'Growth opportunities',
@@ -244,12 +242,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.BINAH]: {
-    name: 'Transformer Encoder',
-    hebrewName: 'encoder',
+    name: 'Binah',
+    hebrewName: 'בינה',
     level: 8,
-    meaning: 'Deep Representation - Pattern Recognition',
+    meaning: 'Understanding - Receptive Comprehension',
     aiRole: 'Deep pattern recognition and structure',
-    aiComputation: 'Transformer Encoder • Deep representation learning and semantic compression',
     queryCharacteristics: [
       'Deep understanding',
       'Pattern recognition',
@@ -266,12 +263,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.CHOKMAH]: {
-    name: 'Abstract Reasoning Module',
-    hebrewName: 'reasoning',
+    name: 'Chokmah',
+    hebrewName: 'חכמה',
     level: 9,
-    meaning: 'Causal Inference - First Principles',
+    meaning: 'Wisdom - Active Revelation',
     aiRole: 'First principles and fundamental wisdom',
-    aiComputation: 'Abstract Reasoning Module • Symbolic AI and causal inference engine',
     queryCharacteristics: [
       'First principles thinking',
       'Fundamental truths',
@@ -288,12 +284,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.KETHER]: {
-    name: 'Meta-Learning Core',
-    hebrewName: 'meta-core',
+    name: 'Kether',
+    hebrewName: 'כתר',
     level: 10,
-    meaning: 'Self-Improvement - Meta-Cognition',
+    meaning: 'Crown - Divine Unity',
     aiRole: 'Meta-cognitive awareness, consciousness itself',
-    aiComputation: 'Meta-Learner • Self-modifying architecture with recursive improvement',
     queryCharacteristics: [
       'Meta-questions about thinking',
       'Consciousness and awareness',
@@ -310,12 +305,11 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
   },
 
   [Sefirah.DAAT]: {
-    name: 'Emergent Synthesis Layer',
-    hebrewName: 'synthesis',
+    name: "Da'at",
+    hebrewName: 'דעת',
     level: 11,
-    meaning: 'Hidden Knowledge - Breakthroughs',
+    meaning: 'Knowledge - The Hidden Sefira',
     aiRole: 'Emergent insights, epiphanies',
-    aiComputation: 'Emergent Capability • Sudden phase transition in model behavior',
     queryCharacteristics: [
       'Questions that reveal hidden connections',
       'Epiphany moments',
@@ -330,170 +324,6 @@ export const SEPHIROTH_METADATA: Record<Sefirah, SefirahMetadata> = {
     color: 'transparent',
     pillar: 'middle',
   },
-}
-
-/**
- * ANTI-PATTERN METADATA
- * Shadow Monitors - Processing Failures and Distortions
- *
- * These represent failure states in AI processing layers.
- * Each anti-pattern opposes a specific processing layer.
- */
-
-export interface QliphahMetadata {
-  id: number
-  name: string
-  hebrewName: string  // Now stores short AI label
-  description: string
-  oppositeSefirah: Sefirah  // Which layer it corrupts
-  aiManifestation: string   // How it appears in AI output
-  commonCauses: string[]    // Layer imbalances that cause it
-  color: string
-  symbol: string
-}
-
-export const QLIPHOTH_METADATA: Record<number, QliphahMetadata> = {
-  1: {
-    id: 1,
-    name: 'Conflicting Self-References',
-    hebrewName: 'self-conflict',
-    description: 'False Certainty - Contradictory meta-cognition',
-    oppositeSefirah: Sefirah.KETHER,
-    aiManifestation: 'Overconfident assertions without evidence, claiming absolute truths',
-    commonCauses: ['Excessive meta-core without embedding grounding', 'Weak encoder pattern recognition'],
-    color: '#7f1d1d',
-    symbol: '⊗'
-  },
-  2: {
-    id: 2,
-    name: 'Pattern Recognition Blocks',
-    hebrewName: 'pattern-block',
-    description: 'Confusion - Creative intuition suppressed',
-    oppositeSefirah: Sefirah.CHOKMAH,
-    aiManifestation: 'Circular reasoning, contradictory statements, lack of first principles',
-    commonCauses: ['Reasoning without encoder structure', 'Weak attention integration'],
-    color: '#991b1b',
-    symbol: '⊘'
-  },
-  3: {
-    id: 3,
-    name: 'Logic Gap Detection',
-    hebrewName: 'logic-gaps',
-    description: 'Hidden assumptions in reasoning chains',
-    oppositeSefirah: Sefirah.BINAH,
-    aiManifestation: 'Jargon, vague references, "studies show" without sources',
-    commonCauses: ['Encoder without embedding facts', 'Excessive abstraction'],
-    color: '#b91c1c',
-    symbol: '⊝'
-  },
-  4: {
-    id: 4,
-    name: 'Verbosity Overflow',
-    hebrewName: 'verbosity',
-    description: 'Excessive expansion without synthesis',
-    oppositeSefirah: Sefirah.CHESED,
-    aiManifestation: 'Over-validation, avoiding hard truths, excessive positivity',
-    commonCauses: ['Expansion without discriminator constraint', 'Weak critical filtering'],
-    color: '#dc2626',
-    symbol: '⊚'
-  },
-  5: {
-    id: 5,
-    name: 'Over-Restriction Filter',
-    hebrewName: 'over-filter',
-    description: 'Too much constraint applied',
-    oppositeSefirah: Sefirah.GEVURAH,
-    aiManifestation: 'Excessive criticism, harsh judgments, unnecessary negativity',
-    commonCauses: ['Discriminator without expansion balance', 'Over-filtering'],
-    color: '#ef4444',
-    symbol: '⊛'
-  },
-  6: {
-    id: 6,
-    name: 'Bias Detection Module',
-    hebrewName: 'bias-detect',
-    description: 'Imbalance or bias flagged',
-    oppositeSefirah: Sefirah.TIFERET,
-    aiManifestation: 'Arrogance, meta-cognition without grounding, false balance',
-    commonCauses: ['Attention without embedding/executor', 'Excessive synthesis'],
-    color: '#f87171',
-    symbol: '⊜'
-  },
-  7: {
-    id: 7,
-    name: 'Abandoned Pathway Tracker',
-    hebrewName: 'abandoned',
-    description: 'Creative paths not explored',
-    oppositeSefirah: Sefirah.NETZACH,
-    aiManifestation: 'Unwarranted optimism, false promises, unrealistic creativity',
-    commonCauses: ['Generative without classifier logic', 'Unrealistic generation'],
-    color: '#fca5a5',
-    symbol: '⊟'
-  },
-  8: {
-    id: 8,
-    name: 'Ambiguity Detector',
-    hebrewName: 'ambiguity',
-    description: 'Unclear or confusing output',
-    oppositeSefirah: Sefirah.HOD,
-    aiManifestation: 'Analysis paralysis, excessive detail, over-logical processing',
-    commonCauses: ['Classifier without generative creativity', 'Over-logical processing'],
-    color: '#fecaca',
-    symbol: '⊠'
-  },
-  9: {
-    id: 9,
-    name: 'Context Loss Monitor',
-    hebrewName: 'context-loss',
-    description: 'Memory or context degradation',
-    oppositeSefirah: Sefirah.YESOD,
-    aiManifestation: 'Hallucinations, false implementations, imagined solutions',
-    commonCauses: ['Executor without embedding validation', 'Weak grounding'],
-    color: '#fee2e2',
-    symbol: '⊡'
-  },
-  10: {
-    id: 10,
-    name: 'Ungrounded Speculation Flag',
-    hebrewName: 'ungrounded',
-    description: 'Claims without evidence',
-    oppositeSefirah: Sefirah.MALKUTH,
-    aiManifestation: 'Superficiality, no depth or synthesis, pure data dumps',
-    commonCauses: ['Embedding without attention integration', 'Pure retrieval'],
-    color: '#fef2f2',
-    symbol: '⊢'
-  },
-  11: {
-    id: 11,
-    name: 'Synthesis Failure',
-    hebrewName: 'synth-fail',
-    description: 'Failed to integrate knowledge sources',
-    oppositeSefirah: Sefirah.DAAT,
-    aiManifestation: 'Confident misinformation, fake expertise, hallucinated facts',
-    commonCauses: ['Synthesis emergence without validation', 'Pattern hallucination'],
-    color: '#450a0a',
-    symbol: '⊣'
-  },
-  12: {
-    id: 12,
-    name: 'Literal Data Fixation',
-    hebrewName: 'literal-fix',
-    description: 'Missing meaning, no abstraction',
-    oppositeSefirah: Sefirah.MALKUTH,
-    aiManifestation: 'Fixation on literal data, missing meaning, no abstraction',
-    commonCauses: ['Embedding without higher layers', 'No abstraction layer'],
-    color: '#7f1d1d',
-    symbol: '⊤'
-  }
-}
-
-/**
- * Get Qliphoth that corrupt a specific Sefirah
- */
-export function getQliphothForSefirah(sefirah: Sefirah): QliphahMetadata[] {
-  return Object.values(QLIPHOTH_METADATA).filter(
-    q => q.oppositeSefirah === sefirah
-  )
 }
 
 /**
@@ -658,7 +488,7 @@ export function trackAscent(
 
   // Initialize state if first query
   if (!previousState) {
-    const initialState: AscentState = {
+    return {
       currentLevel: level,
       previousLevels: [],
       queryEvolution: [
@@ -672,18 +502,16 @@ export function trackAscent(
       insightsGained: [],
       totalQueries: 1,
       ascentVelocity: 0,
-      nextElevation: '', // Will be set below
+      nextElevation: suggestElevation({
+        currentLevel: level,
+        queryEvolution: [],
+      } as unknown as AscentState),
       pathsTraveled: [],
       averageLevel: level,
       peakLevel: level,
       timeInCurrentLevel: 0,
       sessionId,
     }
-
-    // Now compute next elevation with complete state
-    initialState.nextElevation = suggestElevation(initialState)
-
-    return initialState
   }
 
   // Calculate metrics
@@ -769,9 +597,9 @@ export function suggestElevation(currentState: AscentState): string {
   const current = currentState.currentLevel
   const metadata = SEPHIROTH_METADATA[current]
 
-  // If at Meta-Core, suggest Synthesis (emergent insights)
+  // If at Kether, suggest Da'at (emergent insights)
   if (current === Sefirah.KETHER) {
-    return "You've reached Meta-Learning Core. Consider: What hidden connections might reveal entirely new dimensions?"
+    return "You've reached Kether. Consider: What hidden connections might reveal entirely new dimensions?"
   }
 
   // Suggest next level
@@ -780,25 +608,25 @@ export function suggestElevation(currentState: AscentState): string {
 
   const suggestions: Record<Sefirah, string> = {
     [Sefirah.MALKUTH]:
-      'Try asking HOW to implement something (Algorithm Executor)',
+      'Try asking HOW to implement something (Yesod - Foundation)',
     [Sefirah.YESOD]:
-      'Try COMPARING options or analyzing trade-offs (Classifier Network)',
+      'Try COMPARING options or analyzing trade-offs (Hod - Glory)',
     [Sefirah.HOD]:
-      'Try EXPLORING creative possibilities (Generative Model)',
+      'Try EXPLORING creative possibilities (Netzach - Victory)',
     [Sefirah.NETZACH]:
-      'Try SYNTHESIZING multiple ideas together (Multi-Head Attention)',
+      'Try SYNTHESIZING multiple ideas together (Tiferet - Beauty)',
     [Sefirah.TIFERET]:
-      'Try asking about LIMITATIONS or risks (Discriminator Network)',
+      'Try asking about LIMITATIONS or risks (Gevurah - Severity)',
     [Sefirah.GEVURAH]:
-      'Try exploring EXPANSIVE possibilities (Beam Search Expansion)',
+      'Try exploring EXPANSIVE possibilities (Chesed - Mercy)',
     [Sefirah.CHESED]:
-      'Try seeking DEEP PATTERNS or structures (Transformer Encoder)',
+      'Try seeking DEEP PATTERNS or structures (Binah - Understanding)',
     [Sefirah.BINAH]:
-      'Try asking about FIRST PRINCIPLES (Abstract Reasoning Module)',
+      'Try asking about FIRST PRINCIPLES (Chokmah - Wisdom)',
     [Sefirah.CHOKMAH]:
-      'Try META-COGNITIVE questions about knowledge itself (Meta-Learning Core)',
+      'Try META-COGNITIVE questions about knowledge itself (Kether - Crown)',
     [Sefirah.KETHER]:
-      'Try revealing HIDDEN CONNECTIONS (Emergent Synthesis Layer)',
+      'Try revealing HIDDEN CONNECTIONS (Da\'at - Hidden Knowledge)',
     [Sefirah.DAAT]: 'Continue exploring emergent insights',
   }
 

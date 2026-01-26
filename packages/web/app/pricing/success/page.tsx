@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-function SuccessContent() {
+function PricingSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams?.get('session_id')
   const [countdown, setCountdown] = useState(5)
@@ -112,13 +112,11 @@ function SuccessContent() {
 export default function PricingSuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-relic-white flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="animate-pulse text-relic-slate">Loading...</div>
-        </div>
+      <div className="min-h-screen bg-relic-white flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
       </div>
     }>
-      <SuccessContent />
+      <PricingSuccessContent />
     </Suspense>
   )
 }

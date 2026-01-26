@@ -515,6 +515,10 @@ console.log(`✅ Database initialized: ${dbPath}`);
 
 export { db };
 
+export function getDatabase() {
+  return db;
+}
+
 /**
  * Create a new query
  */
