@@ -39,6 +39,7 @@ interface MindMapProps {
   isOpen: boolean
   onClose: () => void
   userId: string | null
+  initialView?: ViewMode
 }
 
 type ViewMode = 'graph' | 'table'
@@ -64,16 +65,22 @@ function getCategoryStyle(category: string | null | undefined) {
   return CATEGORY_COLORS[cat] || CATEGORY_COLORS.other
 }
 
-export default function MindMap({ isOpen, onClose, userId }: MindMapProps) {
+export default function MindMap({ isOpen, onClose, userId, initialView }: MindMapProps) {
   const [nodes, setNodes] = useState<Node[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('graph')
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView || 'graph')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [connections, setConnections] = useState<Connection[]>([])
   const [showConnections, setShowConnections] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showPinned, setShowPinned] = useState(false)
+
+  useEffect(() => {
+    if (initialView && isOpen) {
+      setViewMode(initialView)
+    }
+  }, [initialView, isOpen])
 
   useEffect(() => {
     if (!isOpen || !userId) return
