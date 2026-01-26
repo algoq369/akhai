@@ -95,7 +95,6 @@ export async function GET(request: NextRequest) {
     const result = await fetchURLContent(url)
 
     return NextResponse.json({
-      success: result.success,
       ...result,
     })
   } catch (error) {

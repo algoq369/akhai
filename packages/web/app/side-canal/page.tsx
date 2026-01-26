@@ -70,22 +70,27 @@ export default function SideCanalPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
+      let fetchedTopics: Topic[] = []
+      let fetchedRels: TopicRelationship[] = []
+
       // Fetch topics
       const topicsRes = await fetch('/api/side-canal/topics')
       if (topicsRes.ok) {
         const topicsData = await topicsRes.json()
-        setAllTopics(topicsData.topics || [])
+        fetchedTopics = topicsData.topics || []
+        setAllTopics(fetchedTopics)
       }
 
       // Fetch relationships
       const relsRes = await fetch('/api/side-canal/relationships')
       if (relsRes.ok) {
         const relsData = await relsRes.json()
-        setRelationships(relsData.relationships || [])
+        fetchedRels = relsData.relationships || []
+        setRelationships(fetchedRels)
       }
 
       // Calculate stats
-      calculateStats(topicsData.topics || [], relsData.relationships || [])
+      calculateStats(fetchedTopics, fetchedRels)
     } catch (error) {
       console.error('Failed to fetch Side Canal data:', error)
     } finally {

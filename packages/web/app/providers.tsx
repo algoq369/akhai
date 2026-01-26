@@ -1,15 +1,14 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 
 /**
- * PostHog Analytics Provider
- * Wraps the app to enable client-side tracking
+ * Inner component that uses useSearchParams (must be wrapped in Suspense)
  */
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+function PostHogPageTracker({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -68,4 +67,16 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   }
 
   return <PHProvider client={posthog}>{children}</PHProvider>
+}
+
+/**
+ * PostHog Analytics Provider
+ * Wraps the app to enable client-side tracking
+ */
+export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<>{children}</>}>
+      <PostHogPageTracker>{children}</PostHogPageTracker>
+    </Suspense>
+  )
 }

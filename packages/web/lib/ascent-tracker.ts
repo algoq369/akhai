@@ -505,7 +505,7 @@ export function trackAscent(
       nextElevation: suggestElevation({
         currentLevel: level,
         queryEvolution: [],
-      } as AscentState),
+      } as unknown as AscentState),
       pathsTraveled: [],
       averageLevel: level,
       peakLevel: level,

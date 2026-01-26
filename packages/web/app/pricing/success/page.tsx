@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function PricingSuccessPage() {
+function PricingSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams?.get('session_id')
   const [countdown, setCountdown] = useState(5)
@@ -106,5 +106,17 @@ export default function PricingSuccessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PricingSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-relic-white flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <PricingSuccessContent />
+    </Suspense>
   )
 }

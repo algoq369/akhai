@@ -606,7 +606,7 @@ export function lacksVerifiableGrounding(text: string): boolean {
   ]
 
   const hasGrounding = groundingMarkers.some(marker => marker.test(text))
-  const makesFactualClaims = text.match(/\b(is|are|will be|was|were)\b/gi)?.length || 0 > 5
+  const makesFactualClaims = (text.match(/\b(is|are|will be|was|were)\b/gi)?.length || 0) > 5
 
   return !hasGrounding && makesFactualClaims
 }

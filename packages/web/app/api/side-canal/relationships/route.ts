@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/database'
 import { getUserFromSession } from '@/lib/auth'
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const user = await getUserFromSession(req)
+    const token = req.cookies.get('session_token')?.value
+    const user = token ? getUserFromSession(token) : null
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

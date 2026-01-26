@@ -241,7 +241,6 @@ export default function PhilosophyPage() {
                 </div>
               </div>
             </div>
-          </div>
         </motion.div>
 
         {/* The Seven Methodologies as Paths */}
