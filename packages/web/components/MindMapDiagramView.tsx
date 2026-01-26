@@ -15,7 +15,7 @@ interface MindMapDiagramViewProps {
   userId: string | null
   nodes?: Node[]
   searchQuery?: string
-  categoryFilter?: string
+  onNodeAction?: (query: string, nodeId: string) => void
 }
 
 interface NodePosition {
@@ -49,7 +49,7 @@ function getNodeColor(category: string | null) {
   return NODE_COLORS[cat] || NODE_COLORS.other
 }
 
-export default function MindMapDiagramView({ userId, nodes: propNodes, searchQuery = '', categoryFilter = 'all' }: MindMapDiagramViewProps) {
+export default function MindMapDiagramView({ userId, nodes: propNodes, searchQuery = '', onNodeAction }: MindMapDiagramViewProps) {
   const [allNodes, setAllNodes] = useState<Node[]>([])
   const [nodePositions, setNodePositions] = useState<Map<string, NodePosition>>(new Map())
   const [connections, setConnections] = useState<ConnectionLine[]>([])
@@ -113,9 +113,11 @@ export default function MindMapDiagramView({ userId, nodes: propNodes, searchQue
     // Calculate cluster centers in a circular arrangement
     const categories = Array.from(categoryGroups.keys())
     const numCategories = categories.length
-    const centerX = 400
-    const centerY = 350
-    const clusterRadius = Math.min(300, 100 + numCategories * 40)
+    const totalNodes = displayNodes.length
+    // Scale center and radius based on node count for better spread
+    const centerX = 500
+    const centerY = 450
+    const clusterRadius = Math.min(600, 150 + numCategories * 60 + totalNodes * 0.5)
 
     const categoryPositions = new Map<string, { x: number; y: number }>()
     categories.forEach((cat, i) => {
@@ -130,7 +132,8 @@ export default function MindMapDiagramView({ userId, nodes: propNodes, searchQue
     categoryGroups.forEach((nodes, category) => {
       const clusterCenter = categoryPositions.get(category)!
       const nodeCount = nodes.length
-      const innerRadius = Math.min(120, 30 + nodeCount * 8)
+      // Scale inner radius based on node count for better spacing
+      const innerRadius = Math.min(200, 40 + nodeCount * 12)
 
       nodes.forEach((node, i) => {
         // Keep existing position if node already placed (for drag stability)
@@ -143,8 +146,9 @@ export default function MindMapDiagramView({ userId, nodes: propNodes, searchQue
         // Spiral layout within cluster for better distribution
         const spiralAngle = (i / nodeCount) * Math.PI * 2
         const spiralRadius = innerRadius * (0.3 + 0.7 * (i / Math.max(nodeCount - 1, 1)))
-        const jitterX = (Math.random() - 0.5) * 20
-        const jitterY = (Math.random() - 0.5) * 20
+        // Minimal jitter to keep clusters tight but not perfectly overlapping
+        const jitterX = (Math.random() - 0.5) * 8
+        const jitterY = (Math.random() - 0.5) * 8
 
         positions.set(node.id, {
           x: clusterCenter.x + Math.cos(spiralAngle) * spiralRadius + jitterX,
@@ -249,18 +253,35 @@ export default function MindMapDiagramView({ userId, nodes: propNodes, searchQue
     }
   }
 
-  const fitToScreen = () => {
+  const fitToScreen = useCallback(() => {
     if (!containerRef.current || nodePositions.size === 0) return
     const container = containerRef.current
     const positions = Array.from(nodePositions.values())
-    const maxX = Math.max(...positions.map(p => p.x)) + 130
-    const maxY = Math.max(...positions.map(p => p.y)) + 75
-    
-    const scaleX = (container.clientWidth - 60) / maxX
-    const scaleY = (container.clientHeight - 60) / maxY
-    setZoom(Math.min(scaleX, scaleY, 1))
-    setPan({ x: 25, y: 25 })
-  }
+    const minX = Math.min(...positions.map(p => p.x)) - 60
+    const minY = Math.min(...positions.map(p => p.y)) - 40
+    const maxX = Math.max(...positions.map(p => p.x)) + 160
+    const maxY = Math.max(...positions.map(p => p.y)) + 100
+    const graphWidth = maxX - minX
+    const graphHeight = maxY - minY
+
+    const scaleX = (container.clientWidth - 40) / graphWidth
+    const scaleY = (container.clientHeight - 40) / graphHeight
+    const newZoom = Math.min(scaleX, scaleY, 1)
+    setZoom(newZoom)
+    setPan({ x: -minX * newZoom + 20, y: -minY * newZoom + 20 })
+  }, [nodePositions])
+
+  // Auto-fit on first layout
+  const [hasAutoFit, setHasAutoFit] = useState(false)
+  useEffect(() => {
+    if (!hasAutoFit && nodePositions.size > 0 && containerRef.current) {
+      const timer = setTimeout(() => {
+        fitToScreen()
+        setHasAutoFit(true)
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [nodePositions, hasAutoFit, fitToScreen])
 
   return (
     <div className="w-full h-full flex flex-col bg-slate-50">
@@ -490,22 +511,31 @@ export default function MindMapDiagramView({ userId, nodes: propNodes, searchQue
                         </span>
                       </div>
                       
-                      {/* Quick actions - Opens in new tab */}
+                      {/* Quick actions */}
                       <div className="p-1.5 space-y-1">
-                        <button 
-                          onClick={() => window.open(`/?q=${encodeURIComponent(`Analyze ${node.name}`)}`, '_blank')}
+                        <button
+                          onClick={() => {
+                            if (onNodeAction) {
+                              onNodeAction(`Analyze ${node.name}`, node.id)
+                            } else {
+                              window.open(`/?q=${encodeURIComponent(`Analyze ${node.name}`)}`, '_blank')
+                            }
+                          }}
                           className="w-full text-left px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
                         >
-                          → Analyze (new tab)
+                          → Analyze
                         </button>
-                        <button 
+                        <button
                           onClick={() => {
-                            navigator.clipboard.writeText(`Find connections for ${node.name}`)
-                            alert('Query copied! Paste in chat.')
+                            if (onNodeAction) {
+                              onNodeAction(`Find connections for ${node.name}`, node.id)
+                            } else {
+                              navigator.clipboard.writeText(`Find connections for ${node.name}`)
+                            }
                           }}
                           className="w-full text-left px-2 py-1 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
                         >
-                          → Copy query
+                          → Connections
                         </button>
                       </div>
                     </motion.div>

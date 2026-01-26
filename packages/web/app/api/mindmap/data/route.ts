@@ -19,15 +19,30 @@ const CLUSTER_THRESHOLD = 0.3   // Similarity threshold for clustering
 
 // Invalid topic patterns (prompts, malformed data)
 const INVALID_TOPIC_PATTERNS = [
-  /^give\s+exactly/i,
-  /^return\s+only/i,
+  /^give\s+(me\s+)?(exactly|at\s+least|up\s+to)/i,
+  /^return\s+(only|the|a\s+list)/i,
   /^extract\s+\d/i,
+  /^list\s+(exactly|the|all)\s+/i,
+  /^provide\s+(exactly|a\s+list|brief)/i,
+  /^generate\s+(a\s+list|exactly|\d)/i,
+  /^identify\s+(the|all|key)\s+/i,
+  /^summarize\s+(the|this|all)\s+/i,
+  /^analyze\s+(the|this|all)\s+/i,
   /brief\s+insights/i,
   /json\s+array/i,
+  /json\s+format/i,
   /example:/i,
-  /^\{.*\}$/,     // Pure JSON
-  /^\[.*\]$/,     // Pure array
-  /^```/,         // Code blocks
+  /^\{.*\}$/,          // Pure JSON
+  /^\[.*\]$/,          // Pure array
+  /^```/,              // Code blocks
+  /^you\s+(are|must|should|will)/i,  // System prompts
+  /^as\s+an?\s+ai/i,                // AI instructions
+  /^please\s+(provide|list|give|generate|extract)/i,
+  /^based\s+on\s+the\s+(above|following|conversation)/i,
+  /^from\s+the\s+(above|following|conversation)/i,
+  /\bdo\s+not\s+include\b/i,        // Prompt instructions
+  /\bformat\s+as\b/i,               // Format instructions
+  /\brespond\s+(only\s+)?with\b/i,  // Response instructions
 ]
 
 /**

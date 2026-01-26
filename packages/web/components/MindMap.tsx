@@ -10,7 +10,8 @@ import {
   Squares2X2Icon,
   ListBulletIcon,
   MapIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  FunnelIcon
 } from '@heroicons/react/24/outline'
 import { MapPinIcon as MapPinIconSolid } from '@heroicons/react/24/solid'
 import MindMapTableView from './MindMapTableView'
@@ -75,6 +76,8 @@ export default function MindMap({ isOpen, onClose, userId, initialView }: MindMa
   const [showConnections, setShowConnections] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showPinned, setShowPinned] = useState(false)
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [queryPanel, setQueryPanel] = useState<{ query: string; nodeId: string } | null>(null)
 
   useEffect(() => {
     if (initialView && isOpen) {
@@ -120,6 +123,10 @@ export default function MindMap({ isOpen, onClose, userId, initialView }: MindMa
   const filteredNodes = useMemo(() => {
     let result = [...nodes]
 
+    if (categoryFilter !== 'all') {
+      result = result.filter(n => (n.category || 'other').toLowerCase() === categoryFilter.toLowerCase())
+    }
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       result = result.filter(n =>
@@ -133,7 +140,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView }: MindMa
     }
 
     return result
-  }, [nodes, searchQuery, showPinned])
+  }, [nodes, searchQuery, showPinned, categoryFilter])
 
   const nodeConnections = useMemo(() => {
     if (!selectedNode) return connections
@@ -199,6 +206,30 @@ export default function MindMap({ isOpen, onClose, userId, initialView }: MindMa
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Category filter dropdown */}
+            <div className="relative">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className={`appearance-none pl-7 pr-6 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                  categoryFilter !== 'all'
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <option value="all">All ({nodes.length})</option>
+                {categories.map(([cat, count]) => (
+                  <option key={cat} value={cat}>
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)} ({count})
+                  </option>
+                ))}
+              </select>
+              <FunnelIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <svg className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
             <button
               onClick={() => setShowPinned(!showPinned)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -238,6 +269,53 @@ export default function MindMap({ isOpen, onClose, userId, initialView }: MindMa
 
       </header>
 
+      {/* Query Panel - shared between Graph and Table views */}
+      <AnimatePresence>
+        {queryPanel && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-b border-blue-200 bg-blue-50 overflow-hidden"
+          >
+            <div className="px-5 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-medium text-blue-700">Query Panel</span>
+                <button
+                  onClick={() => setQueryPanel(null)}
+                  className="text-[10px] text-blue-500 hover:text-blue-700"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="bg-white rounded-lg border border-blue-200 p-3">
+                <p className="text-xs text-slate-700 mb-2">{queryPanel.query}</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(queryPanel.query)
+                      setQueryPanel(null)
+                    }}
+                    className="text-[10px] px-3 py-1.5 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition-colors font-medium"
+                  >
+                    Copy query
+                  </button>
+                  <button
+                    onClick={() => {
+                      window.open(`/?q=${encodeURIComponent(queryPanel.query)}`, '_blank')
+                      setQueryPanel(null)
+                    }}
+                    className="text-[10px] px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-medium"
+                  >
+                    Open in chat
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main */}
       <main className="h-[calc(100vh-140px)] flex">
         {/* Content */}
@@ -247,12 +325,13 @@ export default function MindMap({ isOpen, onClose, userId, initialView }: MindMa
               <div className="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
             </div>
           ) : viewMode === 'table' ? (
-            <MindMapTableView userId={userId} />
+            <MindMapTableView userId={userId} onQueryAction={(query, nodeId) => setQueryPanel({ query, nodeId: nodeId || '' })} />
           ) : (
             <MindMapDiagramView
               userId={userId}
               nodes={filteredNodes}
               searchQuery={searchQuery}
+              onNodeAction={(query, nodeId) => setQueryPanel({ query, nodeId })}
             />
           )}
         </div>
