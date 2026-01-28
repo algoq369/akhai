@@ -10,14 +10,18 @@ import {
   Squares2X2Icon,
   ClockIcon,
   BookOpenIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  FunnelIcon,
+  ChatBubbleLeftRightIcon,
+  PaperAirplaneIcon,
+  LightBulbIcon,
+  ArrowTopRightOnSquareIcon
 } from '@heroicons/react/24/outline'
 import { MapPinIcon as MapPinIconSolid } from '@heroicons/react/24/solid'
 import MindMapTableView from './MindMapTableView'
 import MindMapDiagramView from './MindMapDiagramView'
 import MindMapHistoryView from './MindMapHistoryView'
 import MindMapGrimoireView from './MindMapGrimoireView'
-import MiniChat from './MiniChat'
 
 export interface Node {
   id: string
@@ -60,6 +64,9 @@ const CATEGORY_COLORS: Record<string, { bg: string; dot: string }> = {
   science: { bg: '#F0F9FF', dot: '#0284C7' },
   health: { bg: '#FDF2F8', dot: '#DB2777' },
   education: { bg: '#F5F3FF', dot: '#7C3AED' },
+  mathematics: { bg: '#FEF3C7', dot: '#B45309' },
+  politics: { bg: '#FEE2E2', dot: '#DC2626' },
+  philosophy: { bg: '#E0E7FF', dot: '#4338CA' },
   other: { bg: '#F8FAFC', dot: '#64748B' },
 }
 
@@ -78,13 +85,27 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
   const [showConnections, setShowConnections] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showPinned, setShowPinned] = useState(false)
-  const [miniChatOpen, setMiniChatOpen] = useState(false)
+  
+  // Graph-specific state
   const [selectedGraphNode, setSelectedGraphNode] = useState<{ id: string; name: string; category?: string } | null>(null)
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  
+  // Mini Chat state
+  const [miniChatOpen, setMiniChatOpen] = useState(false)
+  const [chatInput, setChatInput] = useState('')
 
   // Sync viewMode with initialView when it changes
   useEffect(() => {
     setViewMode(initialView)
   }, [initialView])
+
+  // Update chat input when node is selected
+  useEffect(() => {
+    if (selectedGraphNode) {
+      setChatInput(`Tell me more about ${selectedGraphNode.name}`)
+    }
+  }, [selectedGraphNode])
 
   useEffect(() => {
     if (!isOpen || !userId) return
@@ -112,6 +133,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
     fetchData()
   }, [isOpen, userId])
 
+  // Categories with counts
   const categories = useMemo(() => {
     const cats = new Map<string, number>()
     nodes.forEach(n => {
@@ -121,6 +143,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
     return Array.from(cats.entries()).sort((a, b) => b[1] - a[1])
   }, [nodes])
 
+  // Filtered nodes (by search, category, pinned)
   const filteredNodes = useMemo(() => {
     let result = [...nodes]
 
@@ -132,39 +155,73 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
       )
     }
 
+    if (categoryFilter !== 'all') {
+      result = result.filter(n => (n.category || 'other').toLowerCase() === categoryFilter.toLowerCase())
+    }
+
     if (showPinned) {
       result = result.filter(n => n.pinned)
     }
 
     return result
-  }, [nodes, searchQuery, showPinned])
+  }, [nodes, searchQuery, categoryFilter, showPinned])
 
+  // Connections for selected node
   const nodeConnections = useMemo(() => {
-    if (!selectedNode) return connections
-    return connections.filter(c => c.from === selectedNode.id || c.to === selectedNode.id)
-  }, [selectedNode, connections])
+    if (!selectedGraphNode) return connections
+    return connections.filter(c => c.from === selectedGraphNode.id || c.to === selectedGraphNode.id)
+  }, [selectedGraphNode, connections])
 
+  // AI Suggestions based on selected node
   const suggestions = useMemo(() => {
-    if (!selectedNode) return nodes.slice(0, 8)
+    if (!selectedGraphNode) return nodes.slice(0, 8)
     return nodes.filter(n => 
-      n.id !== selectedNode.id && 
-      (n.category || 'other').toLowerCase() === (selectedNode.category || 'other').toLowerCase()
+      n.id !== selectedGraphNode.id && 
+      (n.category || 'other').toLowerCase() === (selectedGraphNode.category || 'other').toLowerCase()
     ).slice(0, 8)
-  }, [selectedNode, nodes])
+  }, [selectedGraphNode, nodes])
+
+  // Quick actions for mini chat
+  const quickActions = useMemo(() => {
+    if (!selectedGraphNode) return [
+      { label: 'Explore topics', query: 'What topics have I explored most?' },
+      { label: 'Find patterns', query: 'Find connections between my ideas' },
+      { label: 'Suggest research', query: 'Suggest new research directions' },
+    ]
+    return [
+      { label: 'Analyze', query: `Analyze ${selectedGraphNode.name} in depth` },
+      { label: 'Connect', query: `Find connections for ${selectedGraphNode.name}` },
+      { label: 'Expand', query: `Explore related topics to ${selectedGraphNode.name}` },
+    ]
+  }, [selectedGraphNode])
+
+  const handleSendQuery = (query: string) => {
+    window.open(`/?q=${encodeURIComponent(query)}`, '_blank')
+    setChatInput('')
+  }
+
+  const handleNodeSelect = (node: { id: string; name: string; category?: string } | null) => {
+    setSelectedGraphNode(node)
+    if (node) {
+      // Auto-open suggestions when a node is selected
+      setShowSuggestions(true)
+      setShowConnections(false)
+    }
+  }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-40 bg-white">
+    <div className="fixed inset-0 z-40 bg-white dark:bg-slate-900">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200/60">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between px-5 py-3">
           <div>
-            <h1 className="text-lg font-medium text-slate-900">Mind Map</h1>
-            <p className="text-xs text-slate-400">Visualize your knowledge graph</p>
+            <h1 className="text-lg font-medium text-slate-900 dark:text-white">Mind Map</h1>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Visualize your knowledge graph</p>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 p-0.5 rounded-lg">
             {[
               { id: 'graph', label: 'Graph', icon: Squares2X2Icon },
               { id: 'history', label: 'History', icon: ClockIcon },
@@ -175,8 +232,8 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                 onClick={() => setViewMode(id as ViewMode)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                   viewMode === id
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -185,13 +242,14 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
             ))}
           </div>
 
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg">
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
             <XMarkIcon className="w-5 h-5 text-slate-400" />
           </button>
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-3 px-5 py-2 border-t border-slate-100">
+        <div className="flex items-center gap-3 px-5 py-2 border-t border-slate-100 dark:border-slate-700">
+          {/* Search */}
           <div className="relative flex-1 max-w-sm">
             <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -199,15 +257,83 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
               placeholder="Search topics..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200"
             />
           </div>
+
+          {/* Category Filter - Graph View Only */}
+          {viewMode === 'graph' && (
+            <div className="relative">
+              <button
+                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  categoryFilter !== 'all' 
+                    ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800' 
+                    : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600'
+                }`}
+              >
+                <FunnelIcon className="w-3.5 h-3.5" />
+                {categoryFilter === 'all' ? 'All Topics' : categoryFilter}
+                <span className="px-1 py-0.5 bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 text-[9px] rounded">
+                  {categoryFilter === 'all' ? filteredNodes.length : categories.find(c => c[0].toLowerCase() === categoryFilter.toLowerCase())?.[1] || 0}
+                </span>
+              </button>
+
+              {/* Category Dropdown */}
+              <AnimatePresence>
+                {showCategoryDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden"
+                  >
+                    <div className="p-2 border-b border-slate-100 dark:border-slate-700">
+                      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Filter by Category</span>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto p-1">
+                      <button
+                        onClick={() => { setCategoryFilter('all'); setShowCategoryDropdown(false) }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${
+                          categoryFilter === 'all' 
+                            ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' 
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <span className="w-2 h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500" />
+                        <span className="flex-1 text-left font-medium">All Topics</span>
+                        <span className="text-[10px] text-slate-400">{nodes.length}</span>
+                      </button>
+                      {categories.map(([cat, count]) => {
+                        const style = getCategoryStyle(cat)
+                        return (
+                          <button
+                            key={cat}
+                            onClick={() => { setCategoryFilter(cat); setShowCategoryDropdown(false) }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${
+                              categoryFilter.toLowerCase() === cat.toLowerCase()
+                                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: style.dot }} />
+                            <span className="flex-1 text-left font-medium capitalize">{cat}</span>
+                            <span className="text-[10px] text-slate-400">{count}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
 
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setShowPinned(!showPinned)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                showPinned ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                showPinned ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'
               }`}
             >
               <MapPinIconSolid className="w-3.5 h-3.5" />
@@ -217,18 +343,18 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
             <button
               onClick={() => { setShowConnections(!showConnections); if (!showConnections) setShowSuggestions(false) }}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                showConnections ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                showConnections ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'
               }`}
             >
               <LinkIcon className="w-3.5 h-3.5" />
               Connections
-              <span className="px-1 py-0.5 bg-slate-200 text-slate-600 text-[9px] rounded">{connections.length}</span>
+              <span className="px-1 py-0.5 bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 text-[9px] rounded">{connections.length}</span>
             </button>
 
             <button
               onClick={() => { setShowSuggestions(!showSuggestions); if (!showSuggestions) setShowConnections(false) }}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                showSuggestions ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                showSuggestions ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600'
               }`}
             >
               <SparklesIcon className="w-3.5 h-3.5" />
@@ -236,20 +362,19 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
             </button>
           </div>
 
-          <div className="ml-auto text-[10px] text-slate-400">
+          <div className="ml-auto text-[10px] text-slate-400 dark:text-slate-500">
             {filteredNodes.length} topics
           </div>
         </div>
-
       </header>
 
       {/* Main */}
       <main className="h-[calc(100vh-140px)] flex">
         {/* Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden relative">
           {loading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
             </div>
           ) : viewMode === 'graph' ? (
             <div className="relative w-full h-full">
@@ -257,16 +382,107 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                 userId={userId}
                 nodes={filteredNodes}
                 searchQuery={searchQuery}
-                onNodeSelect={setSelectedGraphNode}
+                onNodeSelect={handleNodeSelect}
+                onNodeAction={(query, nodeId) => handleSendQuery(query)}
               />
-              <MiniChat
-                selectedNode={selectedGraphNode}
-                onSendQuery={(query) => {
-                  window.open(`/?q=${encodeURIComponent(query)}`, '_blank')
-                }}
-                isOpen={miniChatOpen}
-                onToggle={() => setMiniChatOpen(!miniChatOpen)}
-              />
+              
+              {/* Integrated Mini Chat Panel */}
+              <div className="absolute bottom-4 left-4 z-50">
+                {/* Toggle Button */}
+                <motion.button
+                  onClick={() => setMiniChatOpen(!miniChatOpen)}
+                  className={`p-3 rounded-full shadow-lg transition-all ${
+                    miniChatOpen 
+                      ? 'bg-indigo-600 text-white' 
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {miniChatOpen ? <XMarkIcon className="w-5 h-5" /> : <ChatBubbleLeftRightIcon className="w-5 h-5" />}
+                </motion.button>
+
+                {/* Chat Panel */}
+                <AnimatePresence>
+                  {miniChatOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                      transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                      className="absolute bottom-16 left-0 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+                    >
+                      {/* Header */}
+                      <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+                        <div className="flex items-center gap-2">
+                          <LightBulbIcon className="w-4 h-4" />
+                          <h3 className="font-semibold text-sm">Quick Query</h3>
+                        </div>
+                        {selectedGraphNode && (
+                          <p className="text-xs text-white/80 mt-1 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                            Context: {selectedGraphNode.name}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Quick Actions */}
+                      <div className="p-2 border-b border-slate-200 dark:border-slate-700 flex gap-1.5">
+                        {quickActions.map((action) => (
+                          <button
+                            key={action.label}
+                            onClick={() => handleSendQuery(action.query)}
+                            className="flex-1 flex items-center justify-center gap-1 px-2 py-2 text-[10px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Selected Node Context */}
+                      {selectedGraphNode && (
+                        <div className="px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600">
+                          <div className="flex items-center gap-2">
+                            <span 
+                              className="w-2 h-2 rounded-full" 
+                              style={{ backgroundColor: getCategoryStyle(selectedGraphNode.category).dot }}
+                            />
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate flex-1">
+                              {selectedGraphNode.name}
+                            </span>
+                            <button
+                              onClick={() => window.open(`/?q=${encodeURIComponent(`Analyze ${selectedGraphNode.name}`)}`, '_blank')}
+                              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded"
+                            >
+                              <ArrowTopRightOnSquareIcon className="w-3 h-3 text-slate-400" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Input */}
+                      <form onSubmit={(e) => { e.preventDefault(); if (chatInput.trim()) handleSendQuery(chatInput) }} className="p-3">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            placeholder="Ask anything..."
+                            className="flex-1 px-3 py-2.5 text-sm bg-slate-100 dark:bg-slate-700 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200 placeholder-slate-400"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!chatInput.trim()}
+                            className="p-2.5 bg-indigo-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-600 transition-colors"
+                          >
+                            <PaperAirplaneIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </form>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           ) : viewMode === 'history' ? (
             <MindMapHistoryView onClose={onClose} />
@@ -275,31 +491,40 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
           ) : null}
         </div>
 
-        {/* Enhanced Side Panel */}
+        {/* Side Panel - Connections & Suggestions */}
         <AnimatePresence>
           {(showConnections || showSuggestions) && (
             <motion.div
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 280, opacity: 1 }}
+              animate={{ width: 300, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="h-full bg-slate-50 border-l border-slate-200 overflow-hidden flex-shrink-0"
+              className="h-full bg-slate-50 dark:bg-slate-800/50 border-l border-slate-200 dark:border-slate-700 overflow-hidden flex-shrink-0"
             >
               <div className="h-full flex flex-col">
                 {/* Panel Header */}
-                <div className="flex-none p-3 bg-white border-b border-slate-100">
+                <div className="flex-none p-3 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
                   <div className="flex items-center gap-2">
                     {showConnections ? (
                       <LinkIcon className="w-4 h-4 text-indigo-500" />
                     ) : (
                       <SparklesIcon className="w-4 h-4 text-amber-500" />
                     )}
-                    <span className="text-xs font-semibold text-slate-700">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                       {showConnections ? 'Connection Explorer' : 'AI Suggestions'}
                     </span>
-                    <span className="ml-auto text-[9px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                    <span className="ml-auto text-[9px] text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">
                       {showConnections ? nodeConnections.length : suggestions.length}
                     </span>
                   </div>
+                  {selectedGraphNode && (
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1">
+                      <span 
+                        className="w-1.5 h-1.5 rounded-full" 
+                        style={{ backgroundColor: getCategoryStyle(selectedGraphNode.category).dot }}
+                      />
+                      Showing for: {selectedGraphNode.name}
+                    </p>
+                  )}
                 </div>
 
                 {/* Panel Content */}
@@ -314,7 +539,11 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                           return (
                             <div
                               key={i}
-                              className="bg-white rounded-lg p-2 shadow-sm border border-slate-100 hover:border-indigo-200 transition-colors"
+                              className="bg-white dark:bg-slate-700 rounded-lg p-2.5 shadow-sm border border-slate-100 dark:border-slate-600 hover:border-indigo-200 dark:hover:border-indigo-500 transition-colors cursor-pointer"
+                              onClick={() => {
+                                const node = fromNode?.id === selectedGraphNode?.id ? toNode : fromNode
+                                if (node) handleNodeSelect({ id: node.id, name: node.name, category: node.category || undefined })
+                              }}
                             >
                               <div className="flex items-center gap-2">
                                 <div className="flex-1 min-w-0">
@@ -323,7 +552,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                                       className="w-2 h-2 rounded-full flex-shrink-0"
                                       style={{ backgroundColor: getCategoryStyle(fromNode?.category).dot }}
                                     />
-                                    <span className="text-[10px] font-medium text-slate-700 truncate">
+                                    <span className="text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate">
                                       {fromNode?.name || '?'}
                                     </span>
                                   </div>
@@ -335,7 +564,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                                       className="w-2 h-2 rounded-full flex-shrink-0"
                                       style={{ backgroundColor: getCategoryStyle(toNode?.category).dot }}
                                     />
-                                    <span className="text-[10px] font-medium text-slate-700 truncate">
+                                    <span className="text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate">
                                       {toNode?.name || '?'}
                                     </span>
                                   </div>
@@ -346,9 +575,9 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                         })
                       ) : (
                         <div className="text-center py-8">
-                          <LinkIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                          <p className="text-[10px] text-slate-400">No connections found</p>
-                          <p className="text-[9px] text-slate-300 mt-1">Topics will connect as you explore</p>
+                          <LinkIcon className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500">No connections found</p>
+                          <p className="text-[9px] text-slate-300 dark:text-slate-600 mt-1">Topics will connect as you explore</p>
                         </div>
                       )}
                     </div>
@@ -361,7 +590,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                         suggestions.map(node => (
                           <div
                             key={node.id}
-                            className="bg-white rounded-lg p-2.5 shadow-sm border border-slate-100 hover:border-amber-200 transition-colors"
+                            className="bg-white dark:bg-slate-700 rounded-lg p-3 shadow-sm border border-slate-100 dark:border-slate-600 hover:border-amber-200 dark:hover:border-amber-500 transition-colors"
                           >
                             <div className="flex items-start gap-2">
                               <span
@@ -369,28 +598,28 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                                 style={{ backgroundColor: getCategoryStyle(node.category).dot }}
                               />
                               <div className="flex-1 min-w-0">
-                                <span className="text-[11px] font-medium text-slate-700 line-clamp-2">
+                                <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 line-clamp-2">
                                   {node.name}
                                 </span>
                                 <div className="flex items-center gap-2 mt-1.5">
                                   <span className="text-[8px] text-slate-400 uppercase tracking-wide">
                                     {node.category || 'other'}
                                   </span>
-                                  <span className="text-[8px] text-slate-300">•</span>
+                                  <span className="text-[8px] text-slate-300 dark:text-slate-600">•</span>
                                   <span className="text-[8px] text-slate-400">{node.queryCount || 0} queries</span>
                                 </div>
                               </div>
                             </div>
-                            <div className="flex gap-1.5 mt-2">
+                            <div className="flex gap-1.5 mt-2.5">
                               <button
-                                onClick={() => setSelectedNode(node)}
-                                className="flex-1 text-[9px] px-2 py-1 bg-amber-50 text-amber-700 rounded hover:bg-amber-100 transition-colors font-medium"
+                                onClick={() => handleNodeSelect({ id: node.id, name: node.name, category: node.category || undefined })}
+                                className="flex-1 text-[9px] px-2 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors font-medium"
                               >
                                 Select
                               </button>
                               <button
-                                onClick={() => window.open(`/?q=${encodeURIComponent(`Analyze ${node.name}`)}`, '_blank')}
-                                className="flex-1 text-[9px] px-2 py-1 bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition-colors font-medium"
+                                onClick={() => handleSendQuery(`Analyze ${node.name}`)}
+                                className="flex-1 text-[9px] px-2 py-1.5 bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors font-medium"
                               >
                                 Analyze
                               </button>
@@ -399,9 +628,9 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                         ))
                       ) : (
                         <div className="text-center py-8">
-                          <SparklesIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                          <p className="text-[10px] text-slate-400">No suggestions yet</p>
-                          <p className="text-[9px] text-slate-300 mt-1">Select a topic to see related items</p>
+                          <SparklesIcon className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500">No suggestions yet</p>
+                          <p className="text-[9px] text-slate-300 dark:text-slate-600 mt-1">Select a topic to see related items</p>
                         </div>
                       )}
                     </div>
@@ -413,78 +642,62 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
         </AnimatePresence>
       </main>
 
-      {/* Footer - 3-Line Synthetic Explanation */}
+      {/* Footer Stats */}
       {!loading && nodes.length > 0 && (
-        <footer className="bg-gradient-to-r from-slate-50 via-white to-slate-50 border-t border-slate-200 px-6 py-3">
+        <footer className="bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 border-t border-slate-200 dark:border-slate-700 px-6 py-3">
           <div className="max-w-7xl mx-auto">
-            {/* High-Level Stats Row */}
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">Topics:</span>
-                  <span className="text-sm font-bold text-slate-700">{filteredNodes.length}</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Topics:</span>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{filteredNodes.length}</span>
                 </div>
-                <div className="w-px h-4 bg-slate-300" />
+                <div className="w-px h-4 bg-slate-300 dark:bg-slate-600" />
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">Links:</span>
-                  <span className="text-sm font-bold text-indigo-600">{connections.length}</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Links:</span>
+                  <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{connections.length}</span>
                 </div>
-                <div className="w-px h-4 bg-slate-300" />
+                <div className="w-px h-4 bg-slate-300 dark:bg-slate-600" />
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">Categories:</span>
-                  <span className="text-sm font-bold text-emerald-600">{categories.length}</span>
-                </div>
-                <div className="w-px h-4 bg-slate-300" />
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">Density:</span>
-                  <span className="text-sm font-bold text-blue-600">
-                    {connections.length > 0 ? (connections.length / nodes.length).toFixed(1) : '0.0'}
-                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Categories:</span>
+                  <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{categories.length}</span>
                 </div>
               </div>
 
-              {/* Dominant Category */}
-              {categories.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] text-slate-400 uppercase tracking-wide">Dominant:</span>
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={{ backgroundColor: getCategoryStyle(categories[0][0]).bg }}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getCategoryStyle(categories[0][0]).dot }} />
-                    <span className="text-[10px] font-semibold" style={{ color: getCategoryStyle(categories[0][0]).dot }}>
-                      {categories[0][0]}
-                    </span>
-                    <span className="text-[9px] text-slate-500">
-                      {Math.round((categories[0][1] / nodes.length) * 100)}%
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 3-Line Synthetic Explanation */}
-            <div className="space-y-1.5">
-              <div className="flex items-start gap-2">
-                <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide flex-shrink-0">Focus:</span>
-                <p className="text-[10px] text-slate-700 leading-relaxed">
-                  Persistent knowledge repository tracking {filteredNodes.length} topics across {categories.length} domains — {nodes.filter(n => n.pinned).length} pinned for priority access, {nodes.filter(n => !n.archived).length} actively maintained ({Math.round((nodes.filter(n => !n.archived).length / nodes.length) * 100)}% retention rate).
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-[9px] text-emerald-600 font-semibold uppercase tracking-wide flex-shrink-0">Synergy:</span>
-                <p className="text-[10px] text-slate-700 leading-relaxed">
-                  {connections.length} verified connections with {connections.length > 0 ? (connections.length / nodes.length).toFixed(1) : '0.0'} average links per topic — {categories.length > 0 ? `${categories[0][0]} category dominates (${Math.round((categories[0][1] / nodes.length) * 100)}%)` : 'balanced distribution'}, enabling cross-domain pattern recognition and strategic insight bridging.
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-[9px] text-blue-600 font-semibold uppercase tracking-wide flex-shrink-0">Action:</span>
-                <p className="text-[10px] text-slate-700 leading-relaxed">
-                  {viewMode === 'graph' ? 'Graph view visualizes topic clusters and connection density — click nodes for details, pin high-value topics, archive obsolete items. Filter by category or search to navigate large knowledge bases efficiently.' : 'Table view enables bulk management — sort by query count to identify frequently accessed topics, edit AI instructions per topic for customized responses, export for external analysis.'}
-                </p>
+              {/* Category Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto max-w-md">
+                {categories.slice(0, 6).map(([cat, count]) => {
+                  const style = getCategoryStyle(cat)
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setCategoryFilter(categoryFilter === cat ? 'all' : cat)}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-medium transition-all whitespace-nowrap ${
+                        categoryFilter === cat 
+                          ? 'ring-2 ring-indigo-500 ring-offset-1' 
+                          : 'hover:opacity-80'
+                      }`}
+                      style={{ backgroundColor: style.bg }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: style.dot }} />
+                      <span className="capitalize" style={{ color: style.dot }}>{cat}</span>
+                      <span className="text-slate-400">({count})</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
         </footer>
       )}
+
+      {/* Click outside to close dropdown */}
+      {showCategoryDropdown && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowCategoryDropdown(false)} 
+        />
+      )}
     </div>
   )
 }
-
