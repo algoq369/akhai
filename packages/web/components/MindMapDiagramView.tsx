@@ -7,7 +7,6 @@ import {
   ArrowsPointingOutIcon, 
   PlusIcon, 
   MinusIcon,
-  LinkIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline'
 
@@ -24,43 +23,38 @@ interface NodePosition {
   y: number
 }
 
-interface ConnectionLine {
-  from: string
-  to: string
-  id: string
-}
-
 interface ClusterInfo {
   center: { x: number; y: number }
   radius: number
   category: string
   nodeCount: number
+  color: string
+  labelPosition: { x: number; y: number; align: string }
 }
 
-const NODE_COLORS: Record<string, { bg: string; border: string; text: string; cluster: string }> = {
-  business: { bg: '#ECFDF5', border: '#A7F3D0', text: '#059669', cluster: '#10B98115' },
-  technology: { bg: '#EEF2FF', border: '#C7D2FE', text: '#4F46E5', cluster: '#6366F115' },
-  finance: { bg: '#FEF3C7', border: '#FDE68A', text: '#D97706', cluster: '#F59E0B15' },
-  environment: { bg: '#ECFDF5', border: '#A7F3D0', text: '#059669', cluster: '#05966915' },
-  psychology: { bg: '#F5F3FF', border: '#DDD6FE', text: '#7C3AED', cluster: '#8B5CF615' },
-  infrastructure: { bg: '#F0F9FF', border: '#BAE6FD', text: '#0284C7', cluster: '#0EA5E915' },
-  regulation: { bg: '#FDF2F8', border: '#FBCFE8', text: '#DB2777', cluster: '#EC489915' },
-  engineering: { bg: '#FEF3C7', border: '#FDE68A', text: '#D97706', cluster: '#D9770615' },
-  social: { bg: '#FDF4FF', border: '#F5D0FE', text: '#C026D3', cluster: '#C026D315' },
-  science: { bg: '#F0F9FF', border: '#BAE6FD', text: '#0284C7', cluster: '#0284C715' },
-  health: { bg: '#FDF2F8', border: '#FBCFE8', text: '#DB2777', cluster: '#DB277715' },
-  mathematics: { bg: '#FEF3C7', border: '#FDE68A', text: '#B45309', cluster: '#B4530915' },
-  politics: { bg: '#FEE2E2', border: '#FECACA', text: '#DC2626', cluster: '#DC262615' },
-  sports: { bg: '#D1FAE5', border: '#A7F3D0', text: '#047857', cluster: '#04785715' },
-  philosophy: { bg: '#E0E7FF', border: '#C7D2FE', text: '#4338CA', cluster: '#4338CA15' },
-  policy: { bg: '#FCE7F3', border: '#FBCFE8', text: '#BE185D', cluster: '#BE185D15' },
-  education: { bg: '#F5F3FF', border: '#DDD6FE', text: '#6D28D9', cluster: '#6D28D915' },
-  other: { bg: '#F8FAFC', border: '#E2E8F0', text: '#64748B', cluster: '#64748B10' },
+// Beautiful gradient colors for clusters - inspired by the medical futurist image
+const CLUSTER_COLORS: Record<string, { fill: string; stroke: string; text: string }> = {
+  technology: { fill: 'rgba(99, 102, 241, 0.15)', stroke: 'rgba(99, 102, 241, 0.4)', text: '#818CF8' },
+  business: { fill: 'rgba(16, 185, 129, 0.15)', stroke: 'rgba(16, 185, 129, 0.4)', text: '#34D399' },
+  finance: { fill: 'rgba(245, 158, 11, 0.15)', stroke: 'rgba(245, 158, 11, 0.4)', text: '#FBBF24' },
+  health: { fill: 'rgba(236, 72, 153, 0.15)', stroke: 'rgba(236, 72, 153, 0.4)', text: '#F472B6' },
+  science: { fill: 'rgba(14, 165, 233, 0.15)', stroke: 'rgba(14, 165, 233, 0.4)', text: '#38BDF8' },
+  education: { fill: 'rgba(139, 92, 246, 0.15)', stroke: 'rgba(139, 92, 246, 0.4)', text: '#A78BFA' },
+  environment: { fill: 'rgba(34, 197, 94, 0.15)', stroke: 'rgba(34, 197, 94, 0.4)', text: '#4ADE80' },
+  psychology: { fill: 'rgba(249, 115, 22, 0.15)', stroke: 'rgba(249, 115, 22, 0.4)', text: '#FB923C' },
+  infrastructure: { fill: 'rgba(100, 116, 139, 0.15)', stroke: 'rgba(100, 116, 139, 0.4)', text: '#94A3B8' },
+  regulation: { fill: 'rgba(220, 38, 38, 0.15)', stroke: 'rgba(220, 38, 38, 0.4)', text: '#F87171' },
+  social: { fill: 'rgba(192, 38, 211, 0.15)', stroke: 'rgba(192, 38, 211, 0.4)', text: '#E879F9' },
+  engineering: { fill: 'rgba(217, 119, 6, 0.15)', stroke: 'rgba(217, 119, 6, 0.4)', text: '#FCD34D' },
+  mathematics: { fill: 'rgba(180, 83, 9, 0.15)', stroke: 'rgba(180, 83, 9, 0.4)', text: '#FCA5A5' },
+  politics: { fill: 'rgba(239, 68, 68, 0.15)', stroke: 'rgba(239, 68, 68, 0.4)', text: '#FCA5A5' },
+  philosophy: { fill: 'rgba(67, 56, 202, 0.15)', stroke: 'rgba(67, 56, 202, 0.4)', text: '#A5B4FC' },
+  other: { fill: 'rgba(148, 163, 184, 0.12)', stroke: 'rgba(148, 163, 184, 0.3)', text: '#CBD5E1' },
 }
 
-function getNodeColor(category: string | null) {
+function getClusterColor(category: string) {
   const cat = category?.toLowerCase() || 'other'
-  return NODE_COLORS[cat] || NODE_COLORS.other
+  return CLUSTER_COLORS[cat] || CLUSTER_COLORS.other
 }
 
 export default function MindMapDiagramView({ 
@@ -73,14 +67,11 @@ export default function MindMapDiagramView({
   const [allNodes, setAllNodes] = useState<Node[]>([])
   const [nodePositions, setNodePositions] = useState<Map<string, NodePosition>>(new Map())
   const [clusterInfos, setClusterInfos] = useState<ClusterInfo[]>([])
-  const [connections, setConnections] = useState<ConnectionLine[]>([])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
-  const [connectingFrom, setConnectingFrom] = useState<string | null>(null)
-  const [draggingNode, setDraggingNode] = useState<string | null>(null)
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(0.5)
-  const [pan, setPan] = useState({ x: 30, y: 30 })
+  const [hoveredCluster, setHoveredCluster] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(0.45)
+  const [pan, setPan] = useState({ x: 50, y: 50 })
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
@@ -99,13 +90,6 @@ export default function MindMapDiagramView({
         if (!res.ok) return
         const data = await res.json()
         setAllNodes(data.nodes || [])
-        if (data.connections) {
-          setConnections(data.connections.map((c: any) => ({
-            from: c.from,
-            to: c.to,
-            id: `${c.from}-${c.to}`
-          })))
-        }
       } catch (error) {
         console.error('Failed to fetch:', error)
       }
@@ -113,17 +97,16 @@ export default function MindMapDiagramView({
     fetchData()
   }, [userId, propNodes])
 
-  // Use filtered nodes from props directly
   const displayNodes = propNodes || allNodes
 
-  // Force-directed layout simulation with cluster backgrounds
+  // Organic bubble layout - creates overlapping clusters like the medical futurist image
   useEffect(() => {
     if (displayNodes.length === 0) return
 
     const positions = new Map<string, NodePosition>()
     const clusters: ClusterInfo[] = []
 
-    // Group nodes by category for cluster-based positioning
+    // Group nodes by category
     const categoryGroups = new Map<string, Node[]>()
     displayNodes.forEach(node => {
       const cat = node.category || 'other'
@@ -133,74 +116,98 @@ export default function MindMapDiagramView({
       categoryGroups.get(cat)!.push(node)
     })
 
-    // Calculate cluster centers with better spacing
     const categories = Array.from(categoryGroups.keys())
     const numCategories = categories.length
-    const totalNodes = displayNodes.length
-    const centerX = 500
-    const centerY = 400
     
-    // Larger cluster radius for better separation
-    const clusterRadius = Math.min(800, 200 + numCategories * 60 + totalNodes * 0.5)
-
-    const categoryPositions = new Map<string, { x: number; y: number }>()
+    // Center of the canvas
+    const centerX = 600
+    const centerY = 500
+    
+    // Create organic cluster positions - not perfectly circular, more natural
+    const categoryPositions = new Map<string, { x: number; y: number; baseRadius: number }>()
+    
     categories.forEach((cat, i) => {
-      const angle = (i / numCategories) * Math.PI * 2 - Math.PI / 2
+      const nodeCount = categoryGroups.get(cat)!.length
+      // Larger categories get bigger radius
+      const baseRadius = Math.min(250, 80 + nodeCount * 25)
+      
+      // Organic positioning - use golden angle for natural distribution
+      const goldenAngle = Math.PI * (3 - Math.sqrt(5))
+      const angle = i * goldenAngle - Math.PI / 4
+      
+      // Vary the distance from center based on category size
+      const distanceVariation = 0.7 + (nodeCount / 20) * 0.6
+      const distance = (180 + numCategories * 35) * distanceVariation
+      
+      // Add some organic randomness
+      const jitterX = (Math.random() - 0.5) * 60
+      const jitterY = (Math.random() - 0.5) * 60
+      
       categoryPositions.set(cat, {
-        x: centerX + Math.cos(angle) * clusterRadius,
-        y: centerY + Math.sin(angle) * clusterRadius
+        x: centerX + Math.cos(angle) * distance + jitterX,
+        y: centerY + Math.sin(angle) * distance + jitterY,
+        baseRadius
       })
     })
 
-    // Position nodes within their category cluster
+    // Position nodes within clusters using organic spiral
     categoryGroups.forEach((nodes, category) => {
-      const clusterCenter = categoryPositions.get(category)!
+      const catPos = categoryPositions.get(category)!
       const nodeCount = nodes.length
+      const color = getClusterColor(category)
       
-      // Larger inner radius for better node spacing
-      const innerRadius = Math.min(200, 50 + nodeCount * 12)
-
-      let maxDistFromCenter = 0
-
+      // Calculate actual cluster radius based on nodes
+      let maxDist = 0
+      
       nodes.forEach((node, i) => {
-        // Keep existing position if node already placed (for drag stability)
-        const existing = nodePositions.get(node.id)
-        if (existing) {
-          positions.set(node.id, existing)
-          const dist = Math.sqrt(
-            Math.pow(existing.x - clusterCenter.x, 2) + 
-            Math.pow(existing.y - clusterCenter.y, 2)
-          )
-          maxDistFromCenter = Math.max(maxDistFromCenter, dist)
-          return
-        }
-
-        // Spiral layout within cluster for better distribution
-        const spiralAngle = (i / nodeCount) * Math.PI * 2
-        const spiralRadius = innerRadius * (0.3 + 0.7 * (i / Math.max(nodeCount - 1, 1)))
+        // Organic spiral placement
+        const spiralFactor = Math.sqrt(i / Math.max(nodeCount, 1))
+        const angle = i * 2.4 // Golden angle approximation
+        const radius = catPos.baseRadius * spiralFactor * 0.8
         
-        // Reduced jitter for tighter clusters
-        const jitterX = (Math.random() - 0.5) * 8
-        const jitterY = (Math.random() - 0.5) * 8
-
-        const nodeX = clusterCenter.x + Math.cos(spiralAngle) * spiralRadius + jitterX
-        const nodeY = clusterCenter.y + Math.sin(spiralAngle) * spiralRadius + jitterY
-
-        positions.set(node.id, { x: nodeX, y: nodeY })
+        // Add organic jitter
+        const jitterX = (Math.random() - 0.5) * 30
+        const jitterY = (Math.random() - 0.5) * 30
         
-        const dist = Math.sqrt(
-          Math.pow(nodeX - clusterCenter.x, 2) + 
-          Math.pow(nodeY - clusterCenter.y, 2)
-        )
-        maxDistFromCenter = Math.max(maxDistFromCenter, dist)
+        const x = catPos.x + Math.cos(angle) * radius + jitterX
+        const y = catPos.y + Math.sin(angle) * radius + jitterY
+        
+        positions.set(node.id, { x, y })
+        
+        const dist = Math.sqrt(Math.pow(x - catPos.x, 2) + Math.pow(y - catPos.y, 2))
+        maxDist = Math.max(maxDist, dist)
       })
 
-      // Store cluster info for background rendering
+      // Calculate label position - outside the cluster
+      const clusterRadius = maxDist + 60
+      const catIndex = categories.indexOf(category)
+      const labelAngle = (catIndex / numCategories) * Math.PI * 2 - Math.PI / 2
+      
+      // Position labels around the edges
+      let labelX = catPos.x
+      let labelY = catPos.y - clusterRadius - 25
+      let labelAlign = 'middle'
+      
+      // Adjust label position based on cluster location
+      if (catPos.x < centerX - 100) {
+        labelX = catPos.x - clusterRadius - 20
+        labelY = catPos.y
+        labelAlign = 'end'
+      } else if (catPos.x > centerX + 100) {
+        labelX = catPos.x + clusterRadius + 20
+        labelY = catPos.y
+        labelAlign = 'start'
+      } else if (catPos.y > centerY) {
+        labelY = catPos.y + clusterRadius + 30
+      }
+
       clusters.push({
-        center: clusterCenter,
-        radius: maxDistFromCenter + 80, // Add padding
+        center: { x: catPos.x, y: catPos.y },
+        radius: clusterRadius,
         category,
-        nodeCount
+        nodeCount,
+        color: color.fill,
+        labelPosition: { x: labelX, y: labelY, align: labelAlign }
       })
     })
 
@@ -208,67 +215,33 @@ export default function MindMapDiagramView({
     setClusterInfos(clusters)
   }, [displayNodes])
 
-  // Category counts
-  const categories = useMemo(() => {
-    const cats = new Map<string, number>()
-    displayNodes.forEach(n => {
-      const cat = n.category || 'other'
-      cats.set(cat, (cats.get(cat) || 0) + 1)
-    })
-    return Array.from(cats.entries()).sort((a, b) => b[1] - a[1])
-  }, [displayNodes])
-
-  // Drag handlers
-  const handleNodeMouseDown = (e: React.MouseEvent, nodeId: string) => {
-    e.stopPropagation()
-    const pos = nodePositions.get(nodeId)
-    if (!pos) return
-    
-    setDraggingNode(nodeId)
-    setDragOffset({
-      x: e.clientX / zoom - pos.x - pan.x / zoom,
-      y: e.clientY / zoom - pos.y - pan.y / zoom
-    })
-  }
-
+  // Mouse handlers
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (draggingNode) {
-      const newPos = {
-        x: e.clientX / zoom - dragOffset.x - pan.x / zoom,
-        y: e.clientY / zoom - dragOffset.y - pan.y / zoom
-      }
-      setNodePositions(prev => {
-        const next = new Map(prev)
-        next.set(draggingNode, newPos)
-        return next
-      })
-    } else if (isPanning) {
+    if (isPanning) {
       setPan({
         x: e.clientX - panStart.x,
         y: e.clientY - panStart.y
       })
     }
-  }, [draggingNode, dragOffset, zoom, isPanning, panStart, pan])
+  }, [isPanning, panStart])
 
   const handleMouseUp = () => {
-    setDraggingNode(null)
     setIsPanning(false)
   }
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget || (e.target as Element).tagName === 'svg') {
+    if (e.target === e.currentTarget || (e.target as Element).tagName === 'svg' || (e.target as Element).closest('svg')) {
       setIsPanning(true)
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
       setSelectedNode(null)
-      setConnectingFrom(null)
       onNodeSelect?.(null)
     }
   }
 
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault()
-    const delta = e.deltaY > 0 ? -0.05 : 0.05
-    setZoom(z => Math.min(1.5, Math.max(0.2, z + delta)))
+    const delta = e.deltaY > 0 ? -0.03 : 0.03
+    setZoom(z => Math.min(1.2, Math.max(0.2, z + delta)))
   }, [])
 
   useEffect(() => {
@@ -279,148 +252,100 @@ export default function MindMapDiagramView({
     }
   }, [handleWheel])
 
-  const handleStartConnection = (e: React.MouseEvent, nodeId: string) => {
-    e.stopPropagation()
-    setConnectingFrom(connectingFrom === nodeId ? null : nodeId)
-  }
-
   const handleNodeClick = (e: React.MouseEvent, node: Node) => {
     e.stopPropagation()
-    
-    if (connectingFrom && connectingFrom !== node.id) {
-      const newConn: ConnectionLine = {
-        from: connectingFrom,
-        to: node.id,
-        id: `${connectingFrom}-${node.id}`
-      }
-      if (!connections.find(c => c.id === newConn.id || c.id === `${node.id}-${connectingFrom}`)) {
-        setConnections(prev => [...prev, newConn])
-      }
-      setConnectingFrom(null)
-    } else {
-      const newSelected = selectedNode === node.id ? null : node.id
-      setSelectedNode(newSelected)
-      onNodeSelect?.(newSelected ? { id: node.id, name: node.name, category: node.category || undefined } : null)
-    }
+    const newSelected = selectedNode === node.id ? null : node.id
+    setSelectedNode(newSelected)
+    onNodeSelect?.(newSelected ? { id: node.id, name: node.name, category: node.category || undefined } : null)
   }
 
-  // Auto-fit on initial load
   const fitToScreen = useCallback(() => {
-    if (!containerRef.current || nodePositions.size === 0) return
+    if (!containerRef.current || clusterInfos.length === 0) return
     const container = containerRef.current
-    const positions = Array.from(nodePositions.values())
     
-    const minX = Math.min(...positions.map(p => p.x)) - 60
-    const minY = Math.min(...positions.map(p => p.y)) - 40
-    const maxX = Math.max(...positions.map(p => p.x)) + 160
-    const maxY = Math.max(...positions.map(p => p.y)) + 100
+    const allX = clusterInfos.flatMap(c => [c.center.x - c.radius, c.center.x + c.radius])
+    const allY = clusterInfos.flatMap(c => [c.center.y - c.radius, c.center.y + c.radius])
+    
+    const minX = Math.min(...allX) - 100
+    const maxX = Math.max(...allX) + 100
+    const minY = Math.min(...allY) - 80
+    const maxY = Math.max(...allY) + 80
     
     const contentWidth = maxX - minX
     const contentHeight = maxY - minY
     
-    const scaleX = (container.clientWidth - 60) / contentWidth
-    const scaleY = (container.clientHeight - 60) / contentHeight
-    const newZoom = Math.min(scaleX, scaleY, 0.8)
+    const scaleX = (container.clientWidth - 40) / contentWidth
+    const scaleY = (container.clientHeight - 40) / contentHeight
+    const newZoom = Math.min(scaleX, scaleY, 0.6)
     
     setZoom(newZoom)
     setPan({ 
       x: (container.clientWidth - contentWidth * newZoom) / 2 - minX * newZoom,
       y: (container.clientHeight - contentHeight * newZoom) / 2 - minY * newZoom
     })
-  }, [nodePositions])
+  }, [clusterInfos])
 
   // Auto-fit on first render
   useEffect(() => {
-    if (nodePositions.size > 0) {
-      const timer = setTimeout(fitToScreen, 100)
+    if (clusterInfos.length > 0) {
+      const timer = setTimeout(fitToScreen, 150)
       return () => clearTimeout(timer)
     }
-  }, [nodePositions.size > 0])
+  }, [clusterInfos.length > 0])
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      {/* Beautiful gradient background */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(135deg, #1e3a5f 0%, #2d1b4e 30%, #1a365d 60%, #312e81 100%)'
+        }}
+      />
+      
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center gap-2">
-          <SparklesIcon className="w-4 h-4 text-indigo-500" />
-          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Knowledge Graph</span>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full">
-            {displayNodes.length} topics · {connections.length} links
+      <div className="relative z-10 flex items-center justify-between px-4 py-2 bg-white/5 backdrop-blur-sm border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <SparklesIcon className="w-4 h-4 text-indigo-300" />
+          <span className="text-xs font-medium text-white/80">Knowledge Universe</span>
+          <span className="text-[10px] text-white/50 px-2 py-0.5 bg-white/10 rounded-full">
+            {displayNodes.length} topics · {clusterInfos.length} clusters
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <AnimatePresence>
-            {connectingFrom && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500 text-white rounded-full text-[10px] font-medium"
-              >
-                <LinkIcon className="w-3 h-3" />
-                Click target node
-                <button onClick={() => setConnectingFrom(null)} className="ml-1 hover:bg-white/20 rounded-full p-0.5">✕</button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="flex items-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden">
-            <button onClick={() => setZoom(z => Math.max(0.2, z - 0.1))} className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
-              <MinusIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+          <div className="flex items-center bg-white/10 rounded-lg overflow-hidden">
+            <button onClick={() => setZoom(z => Math.max(0.2, z - 0.1))} className="p-1.5 hover:bg-white/10 transition-colors">
+              <MinusIcon className="w-3.5 h-3.5 text-white/70" />
             </button>
-            <span className="px-2 text-[10px] font-mono text-slate-600 dark:text-slate-300 min-w-[36px] text-center border-x border-slate-200 dark:border-slate-600">
+            <span className="px-2 text-[10px] font-mono text-white/60 min-w-[40px] text-center">
               {Math.round(zoom * 100)}%
             </span>
-            <button onClick={() => setZoom(z => Math.min(1.5, z + 0.1))} className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
-              <PlusIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            <button onClick={() => setZoom(z => Math.min(1.2, z + 0.1))} className="p-1.5 hover:bg-white/10 transition-colors">
+              <PlusIcon className="w-3.5 h-3.5 text-white/70" />
             </button>
           </div>
 
           <button 
             onClick={fitToScreen} 
-            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 transition-colors"
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
             title="Fit to screen"
           >
-            <ArrowsPointingOutIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            <ArrowsPointingOutIcon className="w-3.5 h-3.5 text-white/70" />
           </button>
         </div>
-      </div>
-
-      {/* Category legend */}
-      <div className="flex items-center gap-3 px-3 py-1.5 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 overflow-x-auto">
-        {categories.slice(0, 12).map(([cat, count]) => {
-          const color = getNodeColor(cat)
-          return (
-            <div key={cat} className="flex items-center gap-1.5 flex-shrink-0">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color.text }} />
-              <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 capitalize">{cat}</span>
-              <span className="text-[9px] text-slate-400 dark:text-slate-500">({count})</span>
-            </div>
-          )
-        })}
       </div>
 
       {/* Canvas */}
       <div 
         ref={containerRef}
-        className="flex-1 overflow-hidden relative"
-        style={{ cursor: isPanning ? 'grabbing' : draggingNode ? 'move' : 'grab' }}
+        className="relative flex-1 overflow-hidden"
+        style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
         onMouseDown={handleCanvasMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {/* Grid pattern */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          <defs>
-            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <circle cx="10" cy="10" r="0.5" fill="#94A3B8" opacity="0.2" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-
         {/* Transform container */}
         <div
           style={{
@@ -429,216 +354,206 @@ export default function MindMapDiagramView({
             position: 'absolute',
           }}
         >
-          {/* Cluster backgrounds */}
-          <svg className="absolute pointer-events-none" style={{ width: '5000px', height: '5000px', overflow: 'visible' }}>
+          {/* SVG Layer for clusters and connections */}
+          <svg 
+            className="absolute pointer-events-none" 
+            style={{ width: '2000px', height: '1500px', overflow: 'visible' }}
+          >
+            <defs>
+              {/* Gradient definitions for each cluster */}
+              {clusterInfos.map(cluster => {
+                const color = getClusterColor(cluster.category)
+                return (
+                  <radialGradient 
+                    key={`grad-${cluster.category}`} 
+                    id={`cluster-gradient-${cluster.category}`}
+                    cx="30%" cy="30%"
+                  >
+                    <stop offset="0%" stopColor={color.stroke} stopOpacity="0.3" />
+                    <stop offset="70%" stopColor={color.fill} stopOpacity="0.15" />
+                    <stop offset="100%" stopColor={color.fill} stopOpacity="0.05" />
+                  </radialGradient>
+                )
+              })}
+              
+              {/* Glow filter */}
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Cluster bubbles - overlapping translucent circles */}
             {clusterInfos.map(cluster => {
-              const color = getNodeColor(cluster.category)
+              const color = getClusterColor(cluster.category)
+              const isHovered = hoveredCluster === cluster.category
+              
               return (
                 <g key={`cluster-${cluster.category}`}>
-                  {/* Cluster background circle */}
+                  {/* Main cluster bubble */}
                   <circle
-                    cx={cluster.center.x + 55}
-                    cy={cluster.center.y + 32}
+                    cx={cluster.center.x}
+                    cy={cluster.center.y}
                     r={cluster.radius}
-                    fill={color.cluster}
-                    stroke={color.text}
+                    fill={`url(#cluster-gradient-${cluster.category})`}
+                    stroke={color.stroke}
+                    strokeWidth={isHovered ? 2 : 1}
+                    strokeOpacity={isHovered ? 0.6 : 0.3}
+                    style={{
+                      transition: 'all 0.3s ease',
+                      filter: isHovered ? 'url(#glow)' : 'none'
+                    }}
+                    className="pointer-events-auto cursor-pointer"
+                    onMouseEnter={() => setHoveredCluster(cluster.category)}
+                    onMouseLeave={() => setHoveredCluster(null)}
+                  />
+                  
+                  {/* Inner glow circle */}
+                  <circle
+                    cx={cluster.center.x}
+                    cy={cluster.center.y}
+                    r={cluster.radius * 0.7}
+                    fill="none"
+                    stroke={color.stroke}
                     strokeWidth="1"
                     strokeOpacity="0.1"
-                    strokeDasharray="8 4"
+                    strokeDasharray="4 8"
                   />
-                  {/* Cluster label */}
+                  
+                  {/* Category label */}
                   <text
-                    x={cluster.center.x + 55}
-                    y={cluster.center.y - cluster.radius + 15}
-                    textAnchor="middle"
-                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    x={cluster.labelPosition.x}
+                    y={cluster.labelPosition.y}
+                    textAnchor={cluster.labelPosition.align}
+                    className="text-sm font-bold uppercase tracking-wider"
+                    fill={color.text}
+                    style={{
+                      textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                      opacity: isHovered ? 1 : 0.8
+                    }}
+                  >
+                    {cluster.category}
+                  </text>
+                  
+                  {/* Node count badge */}
+                  <text
+                    x={cluster.labelPosition.x}
+                    y={cluster.labelPosition.y + 16}
+                    textAnchor={cluster.labelPosition.align}
+                    className="text-[10px]"
                     fill={color.text}
                     opacity="0.6"
                   >
-                    {cluster.category}
+                    {cluster.nodeCount} {cluster.nodeCount === 1 ? 'topic' : 'topics'}
                   </text>
                 </g>
               )
             })}
           </svg>
 
-          {/* Connections */}
-          <svg className="absolute pointer-events-none" style={{ width: '5000px', height: '5000px', overflow: 'visible' }}>
-            <defs>
-              <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#94A3B8" stopOpacity="0.6" />
-                <stop offset="50%" stopColor="#64748B" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#94A3B8" stopOpacity="0.6" />
-              </linearGradient>
-            </defs>
-            {connections.map(conn => {
-              const fromPos = nodePositions.get(conn.from)
-              const toPos = nodePositions.get(conn.to)
-              if (!fromPos || !toPos) return null
-
-              const fromX = fromPos.x + 55
-              const fromY = fromPos.y + 32
-              const toX = toPos.x + 55
-              const toY = toPos.y + 32
-
-              const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2))
-              const opacity = Math.max(0.15, Math.min(0.6, 200 / distance))
-
-              const midX = (fromX + toX) / 2
-              const midY = (fromY + toY) / 2
-              const dx = toX - fromX
-              const dy = toY - fromY
-              const perpX = -dy * 0.15
-              const perpY = dx * 0.15
-
-              return (
-                <g key={conn.id}>
-                  <path
-                    d={`M ${fromX} ${fromY} Q ${midX + perpX} ${midY + perpY} ${toX} ${toY}`}
-                    stroke="#6366F1"
-                    strokeWidth="2"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeOpacity={opacity}
-                  />
-                  <circle cx={fromX} cy={fromY} r="3" fill="#6366F1" opacity={opacity} />
-                  <circle cx={toX} cy={toY} r="3" fill="#6366F1" opacity={opacity} />
-                </g>
-              )
-            })}
-          </svg>
-
-          {/* Nodes */}
+          {/* Node bubbles */}
           {displayNodes.map((node) => {
             const pos = nodePositions.get(node.id)
             if (!pos) return null
 
-            const color = getNodeColor(node.category)
+            const color = getClusterColor(node.category || 'other')
             const isSelected = selectedNode === node.id
             const isHovered = hoveredNode === node.id
-            const isConnecting = connectingFrom === node.id
-
-            const baseWidth = 110
-            const queryScale = Math.min(1.3, 1 + (node.queryCount || 0) * 0.015)
-            const nodeWidth = Math.round(baseWidth * queryScale)
+            
+            // Size based on query count
+            const baseSize = 50
+            const sizeMultiplier = Math.min(1.8, 1 + (node.queryCount || 0) * 0.05)
+            const size = baseSize * sizeMultiplier
 
             return (
               <motion.div
                 key={node.id}
-                className="absolute select-none"
+                className="absolute flex items-center justify-center"
                 style={{
-                  left: pos.x - (nodeWidth - 110) / 2,
-                  top: pos.y,
-                  width: nodeWidth,
-                  zIndex: isSelected || draggingNode === node.id ? 100 : isHovered ? 50 : 1,
+                  left: pos.x - size / 2,
+                  top: pos.y - size / 2,
+                  width: size,
+                  height: size,
+                  zIndex: isSelected ? 100 : isHovered ? 50 : 1,
                 }}
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, scale: 0 }}
                 animate={{ 
                   opacity: 1, 
-                  scale: isSelected ? 1.05 : isHovered ? 1.02 : 1,
+                  scale: isSelected ? 1.2 : isHovered ? 1.1 : 1,
                 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
+                transition={{ type: 'spring', damping: 20, stiffness: 300, delay: Math.random() * 0.3 }}
                 onClick={(e) => handleNodeClick(e, node)}
                 onMouseEnter={() => setHoveredNode(node.id)}
                 onMouseLeave={() => setHoveredNode(null)}
               >
+                {/* Bubble */}
                 <div
-                  className={`rounded-xl overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 ${
-                    isSelected ? 'ring-2 ring-indigo-500 shadow-lg shadow-indigo-500/20' : 
-                    isHovered ? 'shadow-md' : 'shadow-sm'
-                  } ${isConnecting ? 'ring-2 ring-emerald-500' : ''}`}
+                  className="w-full h-full rounded-full cursor-pointer transition-all duration-200 flex items-center justify-center p-1"
                   style={{
-                    backgroundColor: color.bg,
-                    border: `2px solid ${isSelected ? color.text : color.border}`,
+                    background: `radial-gradient(circle at 30% 30%, ${color.stroke}40, ${color.fill}60)`,
+                    border: `2px solid ${isSelected ? color.text : color.stroke}`,
+                    boxShadow: isSelected 
+                      ? `0 0 20px ${color.stroke}, 0 0 40px ${color.fill}` 
+                      : isHovered 
+                        ? `0 0 15px ${color.stroke}80`
+                        : `0 4px 15px rgba(0,0,0,0.3)`,
+                    backdropFilter: 'blur(4px)',
                   }}
                 >
-                  <div className="px-3 py-2.5">
-                    <h3 
-                      className="text-[11px] font-semibold leading-tight line-clamp-2" 
-                      style={{ color: color.text }}
-                    >
-                      {node.name}
-                    </h3>
-                    <span 
-                      className="text-[8px] uppercase tracking-wider opacity-60 mt-1 block font-medium" 
-                      style={{ color: color.text }}
-                    >
-                      {node.category || 'other'}
-                    </span>
-                  </div>
-                  <div 
-                    className="px-3 py-1.5 flex items-center justify-between" 
-                    style={{ backgroundColor: `${color.text}10` }}
+                  <span 
+                    className="text-[8px] font-semibold text-center leading-tight line-clamp-3 px-1"
+                    style={{ 
+                      color: 'white',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+                    }}
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[9px] font-mono font-bold" style={{ color: color.text }}>
-                        {node.queryCount || 0}
-                      </span>
-                      <span className="text-[7px] opacity-60 font-medium" style={{ color: color.text }}>queries</span>
-                    </div>
-                    {(isSelected || isConnecting) && (
-                      <button
-                        onClick={(e) => handleStartConnection(e, node.id)}
-                        className={`text-[8px] px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold transition-colors ${
-                          isConnecting ? 'bg-emerald-500 text-white' : 'bg-white/80 hover:bg-white'
-                        }`}
-                        style={{ color: isConnecting ? 'white' : color.text }}
-                      >
-                        <LinkIcon className="w-2.5 h-2.5" />
-                        Link
-                      </button>
-                    )}
-                  </div>
+                    {node.name.length > 25 ? node.name.slice(0, 22) + '...' : node.name}
+                  </span>
                 </div>
-                
-                {/* Node popup */}
+
+                {/* Tooltip on hover */}
                 <AnimatePresence>
-                  {isSelected && (
+                  {(isHovered || isSelected) && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                      className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-[200] overflow-hidden"
-                      onClick={(e) => e.stopPropagation()}
+                      initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                      className="absolute top-full mt-2 px-3 py-2 bg-slate-900/95 backdrop-blur-sm rounded-lg shadow-xl border border-white/10 z-[200] min-w-[140px]"
+                      style={{ pointerEvents: isSelected ? 'auto' : 'none' }}
                     >
-                      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700" style={{ backgroundColor: color.bg }}>
-                        <h4 className="text-[11px] font-semibold truncate" style={{ color: color.text }}>{node.name}</h4>
+                      <p className="text-[10px] font-semibold text-white mb-1 line-clamp-2">{node.name}</p>
+                      <div className="flex items-center gap-2 text-[9px] text-white/60">
+                        <span className="capitalize">{node.category || 'other'}</span>
+                        <span>•</span>
+                        <span>{node.queryCount || 0} queries</span>
                       </div>
                       
-                      <div className="px-3 py-2 flex items-center justify-between border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                        <span className="text-[10px] text-slate-500">{node.queryCount || 0} queries</span>
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                          (node.queryCount || 0) > 5 
-                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
-                            : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
-                        }`}>
-                          {(node.queryCount || 0) > 5 ? '● Active' : '○ Low'}
-                        </span>
-                      </div>
-                      
-                      <div className="p-2 space-y-1">
-                        <button 
-                          onClick={() => {
-                            onNodeAction?.(`Analyze ${node.name} in depth`, node.id)
-                            window.open(`/?q=${encodeURIComponent(`Analyze ${node.name}`)}`, '_blank')
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 text-[10px] font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors flex items-center gap-1.5"
-                        >
-                          <SparklesIcon className="w-3 h-3" />
-                          Analyze in depth
-                        </button>
-                        <button 
-                          onClick={() => {
-                            onNodeAction?.(`Find connections for ${node.name}`, node.id)
-                            navigator.clipboard.writeText(`Find connections for ${node.name}`)
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 text-[10px] font-medium bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex items-center gap-1.5"
-                        >
-                          <LinkIcon className="w-3 h-3" />
-                          Copy query
-                        </button>
-                      </div>
+                      {isSelected && (
+                        <div className="flex gap-1 mt-2 pt-2 border-t border-white/10">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onNodeAction?.(`Analyze ${node.name}`, node.id)
+                              window.open(`/?q=${encodeURIComponent(`Analyze ${node.name}`)}`, '_blank')
+                            }}
+                            className="flex-1 text-[8px] px-2 py-1 bg-indigo-500/30 text-indigo-200 rounded hover:bg-indigo-500/50 transition-colors"
+                          >
+                            Analyze
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigator.clipboard.writeText(`Tell me about ${node.name}`)
+                            }}
+                            className="flex-1 text-[8px] px-2 py-1 bg-white/10 text-white/70 rounded hover:bg-white/20 transition-colors"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -649,13 +564,13 @@ export default function MindMapDiagramView({
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-[9px] text-slate-400 dark:text-slate-500">
+      <div className="relative z-10 px-4 py-2 bg-white/5 backdrop-blur-sm border-t border-white/10 flex items-center justify-between text-[9px] text-white/40">
         <div className="flex items-center gap-4">
-          <span>🖱️ Drag to move</span>
+          <span>🖱️ Drag to pan</span>
           <span>👆 Click to select</span>
           <span>🔍 Scroll to zoom</span>
         </div>
-        <span className="text-slate-300 dark:text-slate-600">AkhAI Mind Map</span>
+        <span className="text-white/30">AkhAI Knowledge Universe</span>
       </div>
     </div>
   )
