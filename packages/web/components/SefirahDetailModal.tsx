@@ -167,7 +167,7 @@ export function SefirahDetailModal({
               {/* Footer - Pillar info */}
               <div className="px-3 py-1.5 bg-slate-50 border-t border-slate-100 text-[8px] text-slate-400 flex items-center justify-between">
                 <span>{meta.pillar} Pillar</span>
-                <span className="text-slate-300">{meta.symbol}</span>
+                <span className="text-slate-300">{meta.hebrewName}</span>
               </div>
             </div>
           </motion.div>
