@@ -17,6 +17,7 @@ import MindMapTableView from './MindMapTableView'
 import MindMapDiagramView from './MindMapDiagramView'
 import MindMapHistoryView from './MindMapHistoryView'
 import MindMapGrimoireView from './MindMapGrimoireView'
+import MiniChat from './MiniChat'
 
 export interface Node {
   id: string
@@ -77,6 +78,8 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
   const [showConnections, setShowConnections] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showPinned, setShowPinned] = useState(false)
+  const [miniChatOpen, setMiniChatOpen] = useState(false)
+  const [selectedGraphNode, setSelectedGraphNode] = useState<{ id: string; name: string; category?: string } | null>(null)
 
   // Sync viewMode with initialView when it changes
   useEffect(() => {
@@ -249,11 +252,22 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
               <div className="w-5 h-5 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
             </div>
           ) : viewMode === 'graph' ? (
-            <MindMapDiagramView
-              userId={userId}
-              nodes={filteredNodes}
-              searchQuery={searchQuery}
-            />
+            <div className="relative w-full h-full">
+              <MindMapDiagramView
+                userId={userId}
+                nodes={filteredNodes}
+                searchQuery={searchQuery}
+                onNodeSelect={setSelectedGraphNode}
+              />
+              <MiniChat
+                selectedNode={selectedGraphNode}
+                onSendQuery={(query) => {
+                  window.open(`/?q=${encodeURIComponent(query)}`, '_blank')
+                }}
+                isOpen={miniChatOpen}
+                onToggle={() => setMiniChatOpen(!miniChatOpen)}
+              />
+            </div>
           ) : viewMode === 'history' ? (
             <MindMapHistoryView onClose={onClose} />
           ) : viewMode === 'grimoire' ? (
