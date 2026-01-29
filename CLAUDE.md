@@ -1123,6 +1123,17 @@ Open source, but currently **closed development** (solo founder project).
 
 ## 🗺️ Mind Map Enhancement Status (Day 29/150 - Jan 29, 2026)
 
+### Tree of Life Page - Fixed (Jan 29)
+
+**Issues Resolved:**
+- Removed overlapping center text ("TREE OF LIFE", "ANTI-PATTERN TREE") from dual view
+- AI computational terms now primary labels (above nodes)
+- Deep concepts/Kabbalistic names as secondary grey text (below nodes)
+
+**Both Trees Now Clean:**
+- AI Processing Layers: meta-cognition, pattern recognition, synthesis, etc.
+- Anti-Pattern Monitors: hiding sources, dual contradictions, hallucinated facts, etc.
+
 ### Current State
 
 **Files Modified:**

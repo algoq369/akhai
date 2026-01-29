@@ -4,17 +4,26 @@
  * Sefirah Detail Modal Component
  *
  * Compact centered popup that appears when clicking a Sefirah node on the /tree-of-life page.
- * Displays:
- * 1. Sefirah name and Hebrew name
- * 2. AI computational layer info
- * 3. Weight influence (number input, not slider)
- * 4. Query characteristics
- *
- * Features smooth fade-in centered animation using Framer Motion.
+ * Uses AI computational terminology instead of Kabbalistic terms.
  */
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
+
+// AI Computational Labels
+const AI_LABELS: Record<number, { primary: string; concept: string }> = {
+  [Sefirah.KETHER]: { primary: 'meta-cognition', concept: 'consciousness itself' },
+  [Sefirah.CHOKMAH]: { primary: 'first principles', concept: 'fundamental wisdom' },
+  [Sefirah.BINAH]: { primary: 'pattern recognition', concept: 'deep structure' },
+  [Sefirah.DAAT]: { primary: 'emergent insight', concept: 'hidden knowledge' },
+  [Sefirah.CHESED]: { primary: 'expansion', concept: 'growth potential' },
+  [Sefirah.GEVURAH]: { primary: 'critical analysis', concept: 'limitations' },
+  [Sefirah.TIFERET]: { primary: 'synthesis', concept: 'integration' },
+  [Sefirah.NETZACH]: { primary: 'persistence', concept: 'creative drive' },
+  [Sefirah.HOD]: { primary: 'communication', concept: 'logical clarity' },
+  [Sefirah.YESOD]: { primary: 'foundation', concept: 'procedural base' },
+  [Sefirah.MALKUTH]: { primary: 'manifestation', concept: 'factual output' },
+}
 
 interface SefirahDetailModalProps {
   sefirah: Sefirah | null
@@ -36,6 +45,7 @@ export function SefirahDetailModal({
   if (!sefirah) return null
 
   const meta = SEPHIROTH_METADATA[sefirah]
+  const aiLabel = AI_LABELS[sefirah] || { primary: 'layer', concept: '' }
   const percentage = Math.round(currentWeight * 100)
 
   const handleWeightChange = (value: string) => {
@@ -63,10 +73,10 @@ export function SefirahDetailModal({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-xs"
           >
             <div className="bg-white border border-slate-200 shadow-xl rounded-lg overflow-hidden">
-              {/* Header - Compact */}
+              {/* Header - AI Computational Term */}
               <div className="px-3 py-2 border-b border-slate-100 bg-slate-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -75,10 +85,7 @@ export function SefirahDetailModal({
                       style={{ backgroundColor: meta.color }}
                     />
                     <span className="text-[11px] font-mono font-semibold text-slate-800 uppercase tracking-wider">
-                      {meta.name}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {meta.hebrewName}
+                      {aiLabel.primary}
                     </span>
                   </div>
                   <button
@@ -89,16 +96,16 @@ export function SefirahDetailModal({
                   </button>
                 </div>
                 <div className="text-[9px] text-slate-500 mt-0.5">
-                  {meta.meaning}
+                  {aiLabel.concept}
                 </div>
               </div>
 
               {/* Content - Compact */}
               <div className="p-3 space-y-3">
-                {/* AI Computational Layer */}
+                {/* AI Role */}
                 <div>
                   <div className="text-[8px] uppercase text-slate-400 tracking-wider mb-1">
-                    AI Computational Layer
+                    Function
                   </div>
                   <div className="text-[10px] text-slate-700 bg-slate-50 px-2 py-1.5 rounded border border-slate-100">
                     {meta.aiRole.split('•')[0].trim()}
@@ -109,7 +116,7 @@ export function SefirahDetailModal({
                 {onWeightChange && (
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                     <span className="text-[8px] uppercase text-slate-400 tracking-wider">
-                      Influence
+                      Weight
                     </span>
                     <div className="flex items-center gap-1">
                       <input
@@ -125,33 +132,10 @@ export function SefirahDetailModal({
                   </div>
                 )}
 
-                {/* Latest Query Perspective */}
-                {lastQueryPerspective && (
-                  <div className="pt-2 border-t border-slate-100">
-                    <div className="text-[8px] uppercase text-slate-400 tracking-wider mb-1">
-                      Latest Query Perspective
-                    </div>
-                    <div className="text-[9px] text-slate-600 bg-purple-50 border border-purple-100 px-2 py-1.5 rounded leading-relaxed">
-                      {lastQueryPerspective}
-                    </div>
-                  </div>
-                )}
-
-                {!lastQueryPerspective && (
-                  <div className="pt-2 border-t border-slate-100">
-                    <div className="text-[8px] uppercase text-slate-400 tracking-wider mb-1">
-                      Latest Query Perspective
-                    </div>
-                    <div className="text-[9px] text-slate-400 italic bg-slate-50 border border-slate-100 px-2 py-1.5 rounded">
-                      No recent query analysis available. Submit a query with Sefirot processing enabled to see per-Sefirah perspectives here.
-                    </div>
-                  </div>
-                )}
-
                 {/* Query Characteristics - Compact */}
                 <div className="pt-2 border-t border-slate-100">
                   <div className="text-[8px] uppercase text-slate-400 tracking-wider mb-1.5">
-                    Query Characteristics
+                    Characteristics
                   </div>
                   <ul className="space-y-0.5">
                     {meta.queryCharacteristics.slice(0, 3).map((char, i) => (
@@ -164,10 +148,10 @@ export function SefirahDetailModal({
                 </div>
               </div>
 
-              {/* Footer - Pillar info */}
+              {/* Footer - Layer number */}
               <div className="px-3 py-1.5 bg-slate-50 border-t border-slate-100 text-[8px] text-slate-400 flex items-center justify-between">
-                <span>{meta.pillar} Pillar</span>
-                <span className="text-slate-300">{meta.symbol}</span>
+                <span>Layer {sefirah}</span>
+                <span className="text-slate-300">{meta.pillar} pillar</span>
               </div>
             </div>
           </motion.div>

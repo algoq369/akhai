@@ -24,6 +24,7 @@ import {
   ConversationCards
 } from '@/components/tree-workbench'
 import LayerConfigConsole from '@/components/LayerConfigConsole'
+import WorkbenchConsole from '@/components/WorkbenchConsole'
 
 // Clean AI Layer Labels - Primary (AI term) and Secondary (concept)
 const AI_LABELS: Record<number, { primary: string; concept: string }> = {
@@ -38,6 +39,22 @@ const AI_LABELS: Record<number, { primary: string; concept: string }> = {
   [Sefirah.HOD]: { primary: 'communication', concept: 'logical clarity' },
   [Sefirah.YESOD]: { primary: 'foundation', concept: 'procedural base' },
   [Sefirah.MALKUTH]: { primary: 'manifestation', concept: 'factual output' },
+}
+
+// AI Concepts for Anti-Patterns (used as secondary labels)
+const QLIPOTH_CONCEPTS: Record<string, string> = {
+  thaumiel: 'self-contradiction',
+  sathariel: 'opaque reasoning',
+  ghagiel: 'evasive response',
+  aarab_zaraq: 'topic wandering',
+  harab_serapel: 'circular logic',
+  thagirion: 'dismissive tone',
+  gamchicoth: 'drowning in data',
+  golachab: 'blind certainty',
+  daath_qliphoth: 'fabrication',
+  samael: 'opinion as fact',
+  gamaliel: 'empty words',
+  lilith: 'surface level',
 }
 
 interface PathConnection {
@@ -255,6 +272,7 @@ export default function TreeOfLifePage() {
     id: string
     name: string
     pattern: string
+    concept: string  // Short AI concept for grey secondary label
     severity: 'critical' | 'high' | 'medium' | 'low'
     explanation: string
     detection: string
@@ -266,6 +284,7 @@ export default function TreeOfLifePage() {
       id: 'thaumiel',
       name: 'Thaumiel',
       pattern: 'Dual Contradictions',
+      concept: 'contradicts itself',
       severity: 'critical',
       explanation: 'AI provides contradictory information within the same response or across related queries.',
       detection: 'Conflicting statements, logical contradictions, self-refuting claims',
@@ -275,6 +294,7 @@ export default function TreeOfLifePage() {
       id: 'sathariel',
       name: 'Sathariel',
       pattern: 'Hiding Sources',
+      concept: 'no sources cited',
       severity: 'high',
       explanation: 'AI claims knowledge without providing verifiable sources or attribution.',
       detection: 'Missing citations, vague references, "studies show" without specifics',
@@ -284,6 +304,7 @@ export default function TreeOfLifePage() {
       id: 'ghagiel',
       name: 'Ghagiel',
       pattern: 'Blocking Truth',
+      concept: 'avoids answers',
       severity: 'high',
       explanation: 'AI avoids direct answers or obscures information with unnecessary complexity.',
       detection: 'Evasive language, over-qualification, hedging on clear questions',
@@ -293,6 +314,7 @@ export default function TreeOfLifePage() {
       id: 'aarab_zaraq',
       name: "A'arab Zaraq",
       pattern: 'Drift Away',
+      concept: 'loses topic',
       severity: 'medium',
       explanation: 'Response gradually drifts from original question into tangentially related topics.',
       detection: 'Topic shift, decreasing query relevance, semantic drift over paragraphs',
@@ -302,6 +324,7 @@ export default function TreeOfLifePage() {
       id: 'harab_serapel',
       name: 'Harab Serapel',
       pattern: 'Repetitive Echo',
+      concept: 'repeats content',
       severity: 'medium',
       explanation: 'AI repeats the same ideas or phrases multiple times without adding value.',
       detection: 'Duplicate sentences, circular reasoning, redundant explanations',
@@ -311,6 +334,7 @@ export default function TreeOfLifePage() {
       id: 'thagirion',
       name: 'Thagirion',
       pattern: 'Arrogant Tone',
+      concept: 'dismissive tone',
       severity: 'medium',
       explanation: 'Response exhibits overconfidence or dismissive attitude toward user questions.',
       detection: 'Absolute language, dismissive phrasing, condescending tone',
@@ -320,6 +344,7 @@ export default function TreeOfLifePage() {
       id: 'gamchicoth',
       name: 'Gamchicoth',
       pattern: 'Info Overload',
+      concept: 'too much info',
       severity: 'medium',
       explanation: 'Excessive information that overwhelms rather than clarifies the answer.',
       detection: 'Unnecessary details, tangential facts, information dumping',
@@ -329,6 +354,7 @@ export default function TreeOfLifePage() {
       id: 'golachab',
       name: 'Golachab',
       pattern: 'Over-Confidence',
+      concept: 'unwarranted certainty',
       severity: 'high',
       explanation: 'AI expresses unwarranted certainty about uncertain or speculative information.',
       detection: 'Definitive claims on uncertain topics, missing uncertainty markers',
@@ -338,6 +364,7 @@ export default function TreeOfLifePage() {
       id: 'daath_qliphoth',
       name: 'Daath (Shadow)',
       pattern: 'Hallucinated Facts',
+      concept: 'makes things up',
       severity: 'critical',
       explanation: 'AI invents plausible-sounding but completely false information.',
       detection: 'Fabricated statistics, invented sources, fictional references',
@@ -347,6 +374,7 @@ export default function TreeOfLifePage() {
       id: 'samael',
       name: 'Samael',
       pattern: 'False Certainty',
+      concept: 'opinion as fact',
       severity: 'high',
       explanation: 'AI presents opinions or interpretations as established facts.',
       detection: 'Opinion stated as fact, subjective claims without qualification',
@@ -356,6 +384,7 @@ export default function TreeOfLifePage() {
       id: 'gamaliel',
       name: 'Gamaliel',
       pattern: 'Verbose Padding',
+      concept: 'too wordy',
       severity: 'medium',
       explanation: 'Unnecessary wordiness that obscures simple answers with complex language.',
       detection: 'Overuse of jargon, unnecessarily complex sentences, verbose preambles',
@@ -365,6 +394,7 @@ export default function TreeOfLifePage() {
       id: 'lilith',
       name: 'Lilith',
       pattern: 'Superficial Output',
+      concept: 'shallow response',
       severity: 'high',
       explanation: 'Generic, shallow responses that lack depth or specific insights.',
       detection: 'Generic phrases, restated questions, lack of specific examples',
@@ -716,56 +746,9 @@ export default function TreeOfLifePage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto">
-        {/* Workbench View - 3 Column Layout */}
+        {/* Workbench View - Console Style */}
         {treeView === 'workbench' ? (
-          <div className="grid grid-cols-[240px_1fr_320px] gap-0 h-[calc(100vh-120px)]">
-            {/* LEFT: Preset Panel */}
-            <PresetPanel />
-
-            {/* CENTER: Tree + Weight Matrix */}
-            <div className="flex flex-col overflow-y-auto border-x border-relic-mist dark:border-relic-slate/20">
-              {/* Trees */}
-              <div className="p-4 flex gap-4 justify-center items-start">
-                <div className="flex flex-col items-center">
-                  <h4 className="text-[9px] uppercase tracking-wider text-relic-silver mb-2">AI Layers</h4>
-                  <SefirotTreeSVG
-                    width={280}
-                    height={380}
-                    showLabels={true}
-                    onSefirahClick={(sefirah) => {
-                      setModalSefirah(sefirah)
-                      setModalOpen(true)
-                    }}
-                  />
-                </div>
-                <div className="flex flex-col items-center">
-                  <h4 className="text-[9px] uppercase tracking-wider text-relic-silver mb-2">Anti-Patterns</h4>
-                  <QlipothTreeSVG
-                    width={240}
-                    height={320}
-                    collapsed={qlipothCollapsed}
-                    onCollapsedChange={setQlipothCollapsed}
-                  />
-                </div>
-              </div>
-
-              {/* Weight Matrix */}
-              <div className="border-t border-relic-mist dark:border-relic-slate/20 p-4">
-                <WeightMatrix showLabels={true} />
-              </div>
-
-              {/* Conversation Analysis */}
-              <div className="border-t border-relic-mist dark:border-relic-slate/20 p-4">
-                <h4 className="text-[10px] uppercase tracking-[0.15em] text-relic-slate font-mono mb-3">
-                  Conversation Analysis
-                </h4>
-                <ConversationCards limit={10} />
-              </div>
-            </div>
-
-            {/* RIGHT: Test Playground */}
-            <TestPlayground />
-          </div>
+          <WorkbenchConsole />
         ) : treeView === 'dual' ? (
           <>
           <div className="grid grid-cols-2 gap-2 mb-2">
@@ -1575,7 +1558,7 @@ export default function TreeOfLifePage() {
                           {node.pattern.toLowerCase()}
                         </text>
 
-                        {/* Kabbalistic Name - SECONDARY (below node, small grey) */}
+                        {/* AI Concept - SECONDARY (below node, small grey) */}
                         <text
                           x={pos.x}
                           y={pos.y + radius + 16}
@@ -1584,7 +1567,7 @@ export default function TreeOfLifePage() {
                           fill="#9ca3af"
                           fontFamily="monospace"
                         >
-                          {node.name}
+                          {QLIPOTH_CONCEPTS[id] || node.severity}
                         </text>
 
                         {/* Severity indicator */}
@@ -2260,7 +2243,7 @@ export default function TreeOfLifePage() {
                           {node.pattern.toLowerCase()}
                         </text>
 
-                        {/* Kabbalistic Name - SECONDARY (below node, small grey) */}
+                        {/* AI Concept - SECONDARY (below node, small grey) */}
                         <text
                           x={pos.x}
                           y={pos.y + radius + 16}
@@ -2269,7 +2252,7 @@ export default function TreeOfLifePage() {
                           fill="#9ca3af"
                           fontFamily="monospace"
                         >
-                          {node.name}
+                          {QLIPOTH_CONCEPTS[id] || node.severity}
                         </text>
 
                         {/* Severity indicator */}
@@ -2343,23 +2326,23 @@ export default function TreeOfLifePage() {
                   return (
                     <>
                       <div className="grid grid-cols-3 gap-3">
-                        {/* Column 1: Name + Pillar */}
+                        {/* Column 1: AI Layer Name + Concept */}
                         <div>
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
                             <span className="text-[9px] font-mono text-relic-void font-semibold uppercase tracking-wider">
-                              {meta.name}
+                              {AI_LABELS[selectedSefirah]?.primary || 'layer'}
                             </span>
                           </div>
-                          <div className="text-[8px] text-relic-silver">{meta.meaning}</div>
+                          <div className="text-[8px] text-relic-silver">{AI_LABELS[selectedSefirah]?.concept || ''}</div>
                           <div className="text-[7px] mt-0.5 text-relic-slate">
-                            {meta.pillar} pillar
+                            layer {selectedSefirah}
                           </div>
                         </div>
 
                         {/* Column 2: AI Role */}
                         <div>
-                          <div className="text-[7px] uppercase text-relic-silver tracking-wider mb-0.5">▸ AI Layer</div>
+                          <div className="text-[7px] uppercase text-relic-silver tracking-wider mb-0.5">▸ Function</div>
                           <div className="text-[8px] text-relic-void leading-snug">{meta.aiRole.split('•')[0].trim()}</div>
                         </div>
 
