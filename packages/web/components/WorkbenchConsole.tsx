@@ -3,401 +3,647 @@
 /**
  * WORKBENCH CONSOLE
  * 
- * Console-style AI model configuration interface
- * Inspired by VS Code settings, Raycast, Linear
+ * Compact AI model configuration interface
+ * - Left: Interactive Ascent Tree (configurable)
+ * - Right: Presets + Configuration History
+ * - Bottom: Test Playground
  * 
- * Design principles:
- * - Single column, max-w-2xl
- * - Monospace typography throughout
- * - Minimal chrome, background-based separation
- * - Collapsible sections with native <details>
- * - Inline number inputs with visual progress bars
+ * White minimalist design, monospace typography
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useSefirotStore } from '@/lib/stores/sefirot-store'
-import { Sefirah } from '@/lib/ascent-tracker'
+import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
 
-// ═══════════════════════════════════════════════════════════════
-// AI COMPUTATIONAL LABELS
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// AI LABELS (Computational Terms)
+// ═══════════════════════════════════════════════════════════
 
-const AI_LAYERS: { id: Sefirah; name: string; concept: string }[] = [
-  { id: Sefirah.KETHER, name: 'meta-cognition', concept: 'consciousness itself' },
-  { id: Sefirah.CHOKMAH, name: 'first-principles', concept: 'fundamental wisdom' },
-  { id: Sefirah.BINAH, name: 'pattern-recognition', concept: 'deep structure' },
-  { id: Sefirah.DAAT, name: 'emergent-insight', concept: 'hidden knowledge' },
-  { id: Sefirah.CHESED, name: 'expansion', concept: 'growth potential' },
-  { id: Sefirah.GEVURAH, name: 'critical-analysis', concept: 'limitations' },
-  { id: Sefirah.TIFERET, name: 'synthesis', concept: 'integration' },
-  { id: Sefirah.NETZACH, name: 'persistence', concept: 'creative drive' },
-  { id: Sefirah.HOD, name: 'communication', concept: 'logical clarity' },
-  { id: Sefirah.YESOD, name: 'foundation', concept: 'procedural base' },
-  { id: Sefirah.MALKUTH, name: 'manifestation', concept: 'factual output' },
-]
-
-const ANTI_PATTERNS: { id: string; name: string; severity: 'critical' | 'high' | 'medium' | 'low' }[] = [
-  { id: 'hallucinated-facts', name: 'hallucinated-facts', severity: 'critical' },
-  { id: 'dual-contradictions', name: 'dual-contradictions', severity: 'critical' },
-  { id: 'hiding-sources', name: 'hiding-sources', severity: 'high' },
-  { id: 'false-certainty', name: 'false-certainty', severity: 'high' },
-  { id: 'blocking-truth', name: 'blocking-truth', severity: 'high' },
-  { id: 'over-confidence', name: 'over-confidence', severity: 'high' },
-  { id: 'superficial-output', name: 'superficial-output', severity: 'high' },
-  { id: 'drift-away', name: 'drift-away', severity: 'medium' },
-  { id: 'repetitive-echo', name: 'repetitive-echo', severity: 'medium' },
-  { id: 'arrogant-tone', name: 'arrogant-tone', severity: 'medium' },
-  { id: 'info-overload', name: 'info-overload', severity: 'medium' },
-  { id: 'verbose-padding', name: 'verbose-padding', severity: 'medium' },
-]
-
-const PRESETS = [
-  { id: 'analytical', label: 'analytical' },
-  { id: 'creative', label: 'creative' },
-  { id: 'balanced', label: 'balanced' },
-  { id: 'deep', label: 'deep' },
-]
-
-// ═══════════════════════════════════════════════════════════════
-// MINI COMPONENTS
-// ═══════════════════════════════════════════════════════════════
-
-function ProgressBar({ value, max = 100 }: { value: number; max?: number }) {
-  const percentage = (value / max) * 100
-  return (
-    <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-      <div 
-        className="h-full bg-zinc-500 transition-all duration-200"
-        style={{ width: `${percentage}%` }}
-      />
-    </div>
-  )
+const AI_LABELS: Record<number, { primary: string; concept: string }> = {
+  [Sefirah.KETHER]: { primary: 'meta-cognition', concept: 'unified awareness' },
+  [Sefirah.CHOKMAH]: { primary: 'first-principles', concept: 'foundational reasoning' },
+  [Sefirah.BINAH]: { primary: 'pattern-recognition', concept: 'structural analysis' },
+  [Sefirah.DAAT]: { primary: 'emergent-insight', concept: 'hidden connections' },
+  [Sefirah.CHESED]: { primary: 'expansion', concept: 'creative exploration' },
+  [Sefirah.GEVURAH]: { primary: 'critical-analysis', concept: 'rigorous evaluation' },
+  [Sefirah.TIFERET]: { primary: 'synthesis', concept: 'balanced integration' },
+  [Sefirah.NETZACH]: { primary: 'persistence', concept: 'iterative refinement' },
+  [Sefirah.HOD]: { primary: 'communication', concept: 'clear articulation' },
+  [Sefirah.YESOD]: { primary: 'foundation', concept: 'grounded knowledge' },
+  [Sefirah.MALKUTH]: { primary: 'manifestation', concept: 'concrete output' },
 }
 
-function SeverityBadge({ severity }: { severity: 'critical' | 'high' | 'medium' | 'low' }) {
-  const colors = {
-    critical: 'text-red-400',
-    high: 'text-orange-400',
-    medium: 'text-amber-400',
-    low: 'text-zinc-500',
-  }
-  return (
-    <span className={`text-[9px] uppercase tracking-wider ${colors[severity]}`}>
-      {severity}
-    </span>
-  )
+// ═══════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════
+
+interface ConfigHistory {
+  id: string
+  name: string
+  date: string
+  weights: Record<number, number>
+  testCount: number
+  tests: TestResult[]
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════
+interface TestResult {
+  id: string
+  query: string
+  timestamp: string
+  response?: string
+}
 
-export default function WorkbenchConsole() {
-  const { weights, setWeight, applyPreset, qliphothSuppression, setQliphothSuppression } = useSefirotStore()
-  const [activePreset, setActivePreset] = useState<string>('deep')
-  const [testQuery, setTestQuery] = useState('')
-  const [isRunning, setIsRunning] = useState(false)
+interface Preset {
+  id: string
+  name: string
+  weights: Record<number, number>
+}
 
-  // Calculate active counts
-  const activeLayerCount = AI_LAYERS.filter(l => (weights[l.id] ?? 0.5) > 0.3).length
-  const activeFilterCount = ANTI_PATTERNS.filter(p => (qliphothSuppression[p.id] ?? 0.5) > 0.3).length
+// ═══════════════════════════════════════════════════════════
+// PRESETS
+// ═══════════════════════════════════════════════════════════
 
-  // Handle preset change
-  const handlePresetChange = (presetId: string) => {
-    setActivePreset(presetId)
-    applyPreset(presetId as 'analytical' | 'creative' | 'balanced' | 'deep')
-  }
-
-  // Handle layer weight change
-  const handleLayerChange = (id: Sefirah, value: number) => {
-    setWeight(id, value / 100)
-  }
-
-  // Handle filter change
-  const handleFilterChange = (id: string, value: number) => {
-    setQliphothSuppression(id, value / 100)
-  }
-
-  // Export config as JSON
-  const exportConfig = () => {
-    const config = {
-      preset: activePreset,
-      layers: AI_LAYERS.reduce((acc, l) => {
-        acc[l.name] = Math.round((weights[l.id] ?? 0.5) * 100)
-        return acc
-      }, {} as Record<string, number>),
-      filters: ANTI_PATTERNS.reduce((acc, p) => {
-        acc[p.name] = Math.round((qliphothSuppression[p.id] ?? 0.5) * 100)
-        return acc
-      }, {} as Record<string, number>),
+const PRESETS: Preset[] = [
+  {
+    id: 'analytical',
+    name: 'analytical',
+    weights: {
+      [Sefirah.KETHER]: 0.3, [Sefirah.CHOKMAH]: 0.9, [Sefirah.BINAH]: 0.85,
+      [Sefirah.DAAT]: 0.4, [Sefirah.CHESED]: 0.3, [Sefirah.GEVURAH]: 0.95,
+      [Sefirah.TIFERET]: 0.5, [Sefirah.NETZACH]: 0.3, [Sefirah.HOD]: 0.9,
+      [Sefirah.YESOD]: 0.85, [Sefirah.MALKUTH]: 0.9,
     }
-    navigator.clipboard.writeText(JSON.stringify(config, null, 2))
+  },
+  {
+    id: 'creative',
+    name: 'creative',
+    weights: {
+      [Sefirah.KETHER]: 0.8, [Sefirah.CHOKMAH]: 0.7, [Sefirah.BINAH]: 0.4,
+      [Sefirah.DAAT]: 0.9, [Sefirah.CHESED]: 0.95, [Sefirah.GEVURAH]: 0.3,
+      [Sefirah.TIFERET]: 0.85, [Sefirah.NETZACH]: 0.9, [Sefirah.HOD]: 0.5,
+      [Sefirah.YESOD]: 0.6, [Sefirah.MALKUTH]: 0.7,
+    }
+  },
+  {
+    id: 'balanced',
+    name: 'balanced',
+    weights: {
+      [Sefirah.KETHER]: 0.5, [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.6,
+      [Sefirah.DAAT]: 0.5, [Sefirah.CHESED]: 0.6, [Sefirah.GEVURAH]: 0.6,
+      [Sefirah.TIFERET]: 0.7, [Sefirah.NETZACH]: 0.6, [Sefirah.HOD]: 0.6,
+      [Sefirah.YESOD]: 0.6, [Sefirah.MALKUTH]: 0.6,
+    }
+  },
+  {
+    id: 'deep',
+    name: 'deep',
+    weights: {
+      [Sefirah.KETHER]: 0.5, [Sefirah.CHOKMAH]: 0.85, [Sefirah.BINAH]: 0.7,
+      [Sefirah.DAAT]: 0.95, [Sefirah.CHESED]: 0.6, [Sefirah.GEVURAH]: 0.75,
+      [Sefirah.TIFERET]: 0.5, [Sefirah.NETZACH]: 0.6, [Sefirah.HOD]: 0.8,
+      [Sefirah.YESOD]: 0.8, [Sefirah.MALKUTH]: 0.85,
+    }
+  },
+]
+
+// ═══════════════════════════════════════════════════════════
+// TREE POSITIONS
+// ═══════════════════════════════════════════════════════════
+
+const TREE_POSITIONS: Record<number, { x: number; y: number }> = {
+  [Sefirah.KETHER]: { x: 120, y: 30 },
+  [Sefirah.CHOKMAH]: { x: 180, y: 70 },
+  [Sefirah.BINAH]: { x: 60, y: 70 },
+  [Sefirah.DAAT]: { x: 120, y: 100 },
+  [Sefirah.CHESED]: { x: 180, y: 140 },
+  [Sefirah.GEVURAH]: { x: 60, y: 140 },
+  [Sefirah.TIFERET]: { x: 120, y: 170 },
+  [Sefirah.NETZACH]: { x: 180, y: 210 },
+  [Sefirah.HOD]: { x: 60, y: 210 },
+  [Sefirah.YESOD]: { x: 120, y: 250 },
+  [Sefirah.MALKUTH]: { x: 120, y: 300 },
+}
+
+const TREE_PATHS: [Sefirah, Sefirah][] = [
+  [Sefirah.KETHER, Sefirah.CHOKMAH],
+  [Sefirah.KETHER, Sefirah.BINAH],
+  [Sefirah.KETHER, Sefirah.TIFERET],
+  [Sefirah.CHOKMAH, Sefirah.BINAH],
+  [Sefirah.CHOKMAH, Sefirah.CHESED],
+  [Sefirah.BINAH, Sefirah.GEVURAH],
+  [Sefirah.CHESED, Sefirah.GEVURAH],
+  [Sefirah.CHESED, Sefirah.TIFERET],
+  [Sefirah.GEVURAH, Sefirah.TIFERET],
+  [Sefirah.TIFERET, Sefirah.NETZACH],
+  [Sefirah.TIFERET, Sefirah.HOD],
+  [Sefirah.TIFERET, Sefirah.YESOD],
+  [Sefirah.NETZACH, Sefirah.HOD],
+  [Sefirah.NETZACH, Sefirah.YESOD],
+  [Sefirah.HOD, Sefirah.YESOD],
+  [Sefirah.YESOD, Sefirah.MALKUTH],
+]
+
+// ═══════════════════════════════════════════════════════════
+// COLORS
+// ═══════════════════════════════════════════════════════════
+
+const NODE_COLORS: Record<number, string> = {
+  [Sefirah.KETHER]: '#a78bfa',
+  [Sefirah.CHOKMAH]: '#818cf8',
+  [Sefirah.BINAH]: '#6366f1',
+  [Sefirah.DAAT]: '#22d3ee',
+  [Sefirah.CHESED]: '#34d399',
+  [Sefirah.GEVURAH]: '#f87171',
+  [Sefirah.TIFERET]: '#fbbf24',
+  [Sefirah.NETZACH]: '#fb923c',
+  [Sefirah.HOD]: '#facc15',
+  [Sefirah.YESOD]: '#a3a3a3',
+  [Sefirah.MALKUTH]: '#78716c',
+}
+
+// ═══════════════════════════════════════════════════════════
+// COMPONENT
+// ═══════════════════════════════════════════════════════════
+
+export function WorkbenchConsole() {
+  const { weights, setWeight, applyPreset } = useSefirotStore()
+  
+  // State
+  const [activePreset, setActivePreset] = useState<string>('balanced')
+  const [selectedNode, setSelectedNode] = useState<Sefirah | null>(null)
+  const [hoveredNode, setHoveredNode] = useState<Sefirah | null>(null)
+  const [testQuery, setTestQuery] = useState('')
+  const [isTestExpanded, setIsTestExpanded] = useState(false)
+  const [configHistory, setConfigHistory] = useState<ConfigHistory[]>([
+    {
+      id: '1',
+      name: 'Deep Research v2',
+      date: 'Jan 29',
+      weights: PRESETS[3].weights,
+      testCount: 3,
+      tests: [
+        { id: '1a', query: 'Explain quantum entanglement', timestamp: '10:30' },
+        { id: '1b', query: 'Compare neural architectures', timestamp: '10:45' },
+      ]
+    },
+    {
+      id: '2', 
+      name: 'Creative Writing',
+      date: 'Jan 28',
+      weights: PRESETS[1].weights,
+      testCount: 7,
+      tests: []
+    },
+    {
+      id: '3',
+      name: 'Code Analysis',
+      date: 'Jan 27',
+      weights: PRESETS[0].weights,
+      testCount: 12,
+      tests: []
+    },
+  ])
+  const [expandedHistory, setExpandedHistory] = useState<string | null>(null)
+
+  // Apply preset
+  const handlePresetSelect = (preset: Preset) => {
+    setActivePreset(preset.id)
+    Object.entries(preset.weights).forEach(([sefirah, weight]) => {
+      setWeight(parseInt(sefirah) as Sefirah, weight)
+    })
   }
 
-  // Run test query
-  const handleRunTest = async () => {
+  // Handle node click for editing
+  const handleNodeClick = (sefirah: Sefirah) => {
+    setSelectedNode(selectedNode === sefirah ? null : sefirah)
+  }
+
+  // Handle weight change
+  const handleWeightChange = (sefirah: Sefirah, value: number) => {
+    setWeight(sefirah, value)
+    setActivePreset('custom')
+  }
+
+  // Save current config to history
+  const saveConfig = () => {
+    const newConfig: ConfigHistory = {
+      id: Date.now().toString(),
+      name: `Config ${configHistory.length + 1}`,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      weights: { ...weights },
+      testCount: 0,
+      tests: []
+    }
+    setConfigHistory([newConfig, ...configHistory])
+  }
+
+  // Load config from history
+  const loadConfig = (config: ConfigHistory) => {
+    Object.entries(config.weights).forEach(([sefirah, weight]) => {
+      setWeight(parseInt(sefirah) as Sefirah, weight)
+    })
+    setActivePreset('custom')
+  }
+
+  // Copy config
+  const copyConfig = (config: ConfigHistory) => {
+    navigator.clipboard.writeText(JSON.stringify(config.weights, null, 2))
+  }
+
+  // Delete config
+  const deleteConfig = (id: string) => {
+    setConfigHistory(configHistory.filter(c => c.id !== id))
+  }
+
+  // Run test
+  const runTest = async () => {
     if (!testQuery.trim()) return
-    setIsRunning(true)
-    // TODO: Implement actual test
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsRunning(false)
+    // TODO: Implement actual test API call
+    console.log('Testing with query:', testQuery)
   }
-
-  // Generate JSON preview
-  const configJson = useMemo(() => {
-    return JSON.stringify({
-      preset: activePreset,
-      layers: AI_LAYERS.reduce((acc, l) => {
-        acc[l.name] = Math.round((weights[l.id] ?? 0.5) * 100)
-        return acc
-      }, {} as Record<string, number>),
-    }, null, 2)
-  }, [weights, activePreset])
 
   return (
-    <div className="bg-zinc-950 text-zinc-100 font-mono text-sm min-h-screen">
-      <div className="max-w-2xl mx-auto p-6">
-        
-        {/* ═══════════════════════════════════════════════════════════
-            HEADER
-        ═══════════════════════════════════════════════════════════ */}
-        <header className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
+    <div className="bg-white min-h-screen font-mono text-sm">
+      {/* Header */}
+      <div className="border-b border-neutral-200 px-6 py-3">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xs uppercase tracking-[0.2em] text-zinc-500 mb-1">
-              Model Configuration
-            </h1>
-            <p className="text-[10px] text-zinc-600">
-              AI Processing Layers & Anti-Pattern Detection
-            </p>
+            <h1 className="text-xs uppercase tracking-widest text-neutral-400">Model Configuration</h1>
+            <h2 className="text-lg text-neutral-900 mt-0.5">Workbench</h2>
           </div>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={exportConfig}
-              className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1 rounded hover:bg-white/5"
+            <button
+              onClick={saveConfig}
+              className="px-3 py-1.5 text-xs border border-neutral-200 rounded hover:bg-neutral-50 transition-colors"
             >
-              Export ↗
+              Save Config
             </button>
+            <span className="text-xs text-neutral-400">⌘S</span>
           </div>
-        </header>
+        </div>
+      </div>
 
-        {/* ═══════════════════════════════════════════════════════════
-            PRESET SELECTOR
-        ═══════════════════════════════════════════════════════════ */}
-        <section className="mb-6 pb-4 border-b border-white/10">
-          <div className="flex items-center gap-6">
-            <span className="text-[10px] uppercase tracking-wider text-zinc-500 w-16">
-              Preset
-            </span>
-            <div className="flex items-center gap-4">
-              {PRESETS.map(preset => (
-                <label 
-                  key={preset.id}
-                  className="flex items-center gap-2 cursor-pointer group"
+      {/* Main Content */}
+      <div className="flex">
+        {/* Left: Tree Visualization */}
+        <div className="w-[320px] border-r border-neutral-200 p-4">
+          <div className="text-[10px] uppercase tracking-wider text-neutral-400 mb-3">
+            AI Processing Layers
+          </div>
+          
+          {/* SVG Tree */}
+          <svg viewBox="0 0 240 340" className="w-full">
+            {/* Paths */}
+            {TREE_PATHS.map(([from, to], idx) => {
+              const fromPos = TREE_POSITIONS[from]
+              const toPos = TREE_POSITIONS[to]
+              const fromWeight = weights[from] ?? 0.5
+              const toWeight = weights[to] ?? 0.5
+              const avgWeight = (fromWeight + toWeight) / 2
+              
+              return (
+                <line
+                  key={idx}
+                  x1={fromPos.x}
+                  y1={fromPos.y}
+                  x2={toPos.x}
+                  y2={toPos.y}
+                  stroke="#e5e7eb"
+                  strokeWidth={1 + avgWeight}
+                  strokeOpacity={0.4 + avgWeight * 0.4}
+                />
+              )
+            })}
+
+            {/* Nodes */}
+            {Object.entries(TREE_POSITIONS).map(([sefirahStr, pos]) => {
+              const sefirah = parseInt(sefirahStr) as Sefirah
+              const weight = weights[sefirah] ?? 0.5
+              const color = NODE_COLORS[sefirah]
+              const isSelected = selectedNode === sefirah
+              const isHovered = hoveredNode === sefirah
+              const radius = 12 + weight * 8
+              const label = AI_LABELS[sefirah]
+
+              return (
+                <g
+                  key={sefirah}
+                  className="cursor-pointer"
+                  onClick={() => handleNodeClick(sefirah)}
+                  onMouseEnter={() => setHoveredNode(sefirah)}
+                  onMouseLeave={() => setHoveredNode(null)}
                 >
-                  <input
-                    type="radio"
-                    name="preset"
-                    value={preset.id}
-                    checked={activePreset === preset.id}
-                    onChange={() => handlePresetChange(preset.id)}
-                    className="sr-only"
+                  {/* Selection ring */}
+                  {isSelected && (
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={radius + 4}
+                      fill="none"
+                      stroke={color}
+                      strokeWidth="2"
+                      strokeDasharray="4 2"
+                    />
+                  )}
+                  
+                  {/* Hover glow */}
+                  {isHovered && !isSelected && (
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={radius + 3}
+                      fill={color}
+                      fillOpacity={0.15}
+                    />
+                  )}
+
+                  {/* Main circle */}
+                  <circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r={radius}
+                    fill="white"
+                    stroke={color}
+                    strokeWidth={isSelected ? 2.5 : 1.5}
                   />
-                  <span className={`w-2 h-2 rounded-full border transition-colors ${
-                    activePreset === preset.id 
-                      ? 'bg-zinc-100 border-zinc-100' 
-                      : 'border-zinc-600 group-hover:border-zinc-400'
-                  }`} />
-                  <span className={`text-xs transition-colors ${
-                    activePreset === preset.id 
-                      ? 'text-zinc-100' 
-                      : 'text-zinc-500 group-hover:text-zinc-300'
-                  }`}>
-                    {preset.label}
+
+                  {/* Inner fill based on weight */}
+                  <circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r={radius * weight}
+                    fill={color}
+                    fillOpacity={0.3 + weight * 0.4}
+                  />
+
+                  {/* Percentage */}
+                  <text
+                    x={pos.x}
+                    y={pos.y + 3}
+                    textAnchor="middle"
+                    fontSize="8"
+                    fill={weight > 0.5 ? '#374151' : '#9ca3af'}
+                    fontWeight="500"
+                  >
+                    {Math.round(weight * 100)}%
+                  </text>
+
+                  {/* Label (on hover or select) */}
+                  {(isHovered || isSelected) && (
+                    <text
+                      x={pos.x}
+                      y={pos.y - radius - 6}
+                      textAnchor="middle"
+                      fontSize="8"
+                      fill="#374151"
+                      fontWeight="500"
+                    >
+                      {label?.primary}
+                    </text>
+                  )}
+                </g>
+              )
+            })}
+          </svg>
+
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-4 mt-3 text-[9px] text-neutral-400">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500" /> Active
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-amber-500" /> Developing
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-neutral-300" /> Low
+            </span>
+          </div>
+
+          {/* Selected Node Editor */}
+          <AnimatePresence>
+            {selectedNode && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="mt-4 p-3 border border-neutral-200 rounded-lg bg-neutral-50"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-neutral-700">
+                    {AI_LABELS[selectedNode]?.primary}
                   </span>
-                </label>
+                  <span className="text-[10px] text-neutral-400">
+                    {AI_LABELS[selectedNode]?.concept}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={Math.round((weights[selectedNode] ?? 0.5) * 100)}
+                    onChange={(e) => handleWeightChange(selectedNode, parseInt(e.target.value) / 100)}
+                    className="flex-1 h-1 bg-neutral-200 rounded-full appearance-none cursor-pointer
+                             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
+                             [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full 
+                             [&::-webkit-slider-thumb]:bg-neutral-900"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={Math.round((weights[selectedNode] ?? 0.5) * 100)}
+                    onChange={(e) => handleWeightChange(selectedNode, parseInt(e.target.value) / 100)}
+                    className="w-14 px-2 py-1 text-xs text-center border border-neutral-200 rounded bg-white"
+                  />
+                  <span className="text-[10px] text-neutral-400">%</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Right: Presets + History */}
+        <div className="flex-1 p-4">
+          {/* Presets */}
+          <div className="mb-6">
+            <div className="text-[10px] uppercase tracking-wider text-neutral-400 mb-2">
+              Presets
+            </div>
+            <div className="flex gap-2">
+              {PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => handlePresetSelect(preset)}
+                  className={`px-3 py-1.5 text-xs rounded border transition-colors ${
+                    activePreset === preset.id
+                      ? 'bg-neutral-900 text-white border-neutral-900'
+                      : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
+                  }`}
+                >
+                  {preset.name}
+                </button>
+              ))}
+              {activePreset === 'custom' && (
+                <span className="px-3 py-1.5 text-xs text-neutral-400 border border-dashed border-neutral-300 rounded">
+                  custom
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Configuration History */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] uppercase tracking-wider text-neutral-400">
+                Configuration History
+              </div>
+              <span className="text-[10px] text-neutral-300">{configHistory.length} saved</span>
+            </div>
+            
+            <div className="space-y-2">
+              {configHistory.map((config) => (
+                <div
+                  key={config.id}
+                  className="border border-neutral-200 rounded-lg overflow-hidden"
+                >
+                  {/* Header */}
+                  <div
+                    className="flex items-center justify-between px-3 py-2 bg-neutral-50 cursor-pointer hover:bg-neutral-100 transition-colors"
+                    onClick={() => setExpandedHistory(expandedHistory === config.id ? null : config.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-medium text-neutral-700">{config.name}</span>
+                      <span className="text-[10px] text-neutral-400">{config.date}</span>
+                      <span className="text-[10px] text-neutral-300">·</span>
+                      <span className="text-[10px] text-neutral-400">{config.testCount} tests</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-neutral-300">
+                        {expandedHistory === config.id ? '▾' : '▸'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Expanded Content */}
+                  <AnimatePresence>
+                    {expandedHistory === config.id && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="border-t border-neutral-200"
+                      >
+                        {/* Weights Preview */}
+                        <div className="px-3 py-2 bg-white">
+                          <div className="text-[9px] uppercase tracking-wider text-neutral-400 mb-2">
+                            Layer Weights
+                          </div>
+                          <div className="grid grid-cols-3 gap-x-4 gap-y-1 text-[10px]">
+                            {Object.entries(config.weights).slice(0, 9).map(([sefirah, weight]) => (
+                              <div key={sefirah} className="flex items-center justify-between">
+                                <span className="text-neutral-500 truncate">
+                                  {AI_LABELS[parseInt(sefirah)]?.primary.slice(0, 12)}
+                                </span>
+                                <span className="text-neutral-700 font-medium">
+                                  {Math.round(weight * 100)}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Tests Preview */}
+                        {config.tests.length > 0 && (
+                          <div className="px-3 py-2 border-t border-neutral-100">
+                            <div className="text-[9px] uppercase tracking-wider text-neutral-400 mb-2">
+                              Recent Tests
+                            </div>
+                            <div className="space-y-1">
+                              {config.tests.slice(0, 3).map((test) => (
+                                <div key={test.id} className="text-[10px] text-neutral-600 truncate">
+                                  <span className="text-neutral-400">{test.timestamp}</span>
+                                  <span className="mx-2">·</span>
+                                  {test.query}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 px-3 py-2 border-t border-neutral-100 bg-neutral-50">
+                          <button
+                            onClick={() => loadConfig(config)}
+                            className="px-2 py-1 text-[10px] text-neutral-600 hover:text-neutral-900 hover:bg-white rounded border border-transparent hover:border-neutral-200 transition-colors"
+                          >
+                            Load
+                          </button>
+                          <button
+                            onClick={() => copyConfig(config)}
+                            className="px-2 py-1 text-[10px] text-neutral-600 hover:text-neutral-900 hover:bg-white rounded border border-transparent hover:border-neutral-200 transition-colors"
+                          >
+                            Copy
+                          </button>
+                          <button
+                            onClick={() => deleteConfig(config.id)}
+                            className="px-2 py-1 text-[10px] text-red-500 hover:text-red-600 hover:bg-white rounded border border-transparent hover:border-red-200 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               ))}
             </div>
           </div>
-        </section>
+        </div>
+      </div>
 
-        {/* ═══════════════════════════════════════════════════════════
-            AI PROCESSING LAYERS
-        ═══════════════════════════════════════════════════════════ */}
-        <details open className="mb-4 group">
-          <summary className="flex items-center justify-between cursor-pointer py-2 hover:bg-white/5 -mx-2 px-2 rounded transition-colors">
-            <div className="flex items-center gap-2">
-              <span className="text-zinc-600 text-[10px] group-open:rotate-90 transition-transform">▶</span>
-              <span className="text-[10px] uppercase tracking-wider text-zinc-400">
-                AI Processing Layers
-              </span>
-            </div>
-            <span className="text-[9px] text-zinc-600">
-              {activeLayerCount} active
-            </span>
-          </summary>
-          
-          <div className="mt-3 space-y-1">
-            {AI_LAYERS.map(layer => {
-              const value = Math.round((weights[layer.id] ?? 0.5) * 100)
-              return (
-                <div 
-                  key={layer.id}
-                  className="flex items-center gap-3 py-1.5 hover:bg-white/5 -mx-2 px-2 rounded transition-colors group/row"
+      {/* Bottom: Test Playground */}
+      <div className="border-t border-neutral-200">
+        <button
+          onClick={() => setIsTestExpanded(!isTestExpanded)}
+          className="w-full px-6 py-2 flex items-center justify-between text-xs text-neutral-500 hover:bg-neutral-50 transition-colors"
+        >
+          <span className="uppercase tracking-wider">Test Playground</span>
+          <span>{isTestExpanded ? '▾' : '▸'}</span>
+        </button>
+        
+        <AnimatePresence>
+          {isTestExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-6 pb-4"
+            >
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={testQuery}
+                  onChange={(e) => setTestQuery(e.target.value)}
+                  placeholder="Enter test query..."
+                  className="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded bg-white placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400"
+                />
+                <button
+                  onClick={runTest}
+                  disabled={!testQuery.trim()}
+                  className="px-4 py-2 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {/* Label */}
-                  <span className="text-xs text-zinc-400 w-44 truncate group-hover/row:text-zinc-200 transition-colors">
-                    {layer.name}
-                  </span>
-                  
-                  {/* Dotted line filler */}
-                  <span className="flex-1 border-b border-dotted border-zinc-800" />
-                  
-                  {/* Value input */}
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={value}
-                    onChange={(e) => handleLayerChange(layer.id, parseInt(e.target.value) || 0)}
-                    className="w-10 bg-transparent text-right text-xs text-zinc-300 
-                               focus:outline-none focus:text-zinc-100
-                               [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  
-                  {/* Progress bar */}
-                  <div className="w-24">
-                    <ProgressBar value={value} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </details>
-
-        {/* ═══════════════════════════════════════════════════════════
-            ANTI-PATTERN FILTERS
-        ═══════════════════════════════════════════════════════════ */}
-        <details className="mb-4 group">
-          <summary className="flex items-center justify-between cursor-pointer py-2 hover:bg-white/5 -mx-2 px-2 rounded transition-colors">
-            <div className="flex items-center gap-2">
-              <span className="text-zinc-600 text-[10px] group-open:rotate-90 transition-transform">▶</span>
-              <span className="text-[10px] uppercase tracking-wider text-zinc-400">
-                Anti-Pattern Filters
-              </span>
-            </div>
-            <span className="text-[9px] text-zinc-600">
-              {activeFilterCount} active
-            </span>
-          </summary>
-          
-          <div className="mt-3 space-y-1">
-            {ANTI_PATTERNS.map(pattern => {
-              const value = Math.round((qliphothSuppression[pattern.id] ?? 0.5) * 100)
-              return (
-                <div 
-                  key={pattern.id}
-                  className="flex items-center gap-3 py-1.5 hover:bg-white/5 -mx-2 px-2 rounded transition-colors group/row"
-                >
-                  {/* Label */}
-                  <span className="text-xs text-zinc-400 w-44 truncate group-hover/row:text-zinc-200 transition-colors">
-                    {pattern.name}
-                  </span>
-                  
-                  {/* Dotted line filler */}
-                  <span className="flex-1 border-b border-dotted border-zinc-800" />
-                  
-                  {/* Severity badge */}
-                  <SeverityBadge severity={pattern.severity} />
-                  
-                  {/* Value input */}
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={value}
-                    onChange={(e) => handleFilterChange(pattern.id, parseInt(e.target.value) || 0)}
-                    className="w-10 bg-transparent text-right text-xs text-zinc-300 
-                               focus:outline-none focus:text-zinc-100
-                               [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  
-                  {/* Progress bar */}
-                  <div className="w-20">
-                    <ProgressBar value={value} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </details>
-
-        {/* ═══════════════════════════════════════════════════════════
-            TEST QUERY
-        ═══════════════════════════════════════════════════════════ */}
-        <details className="mb-4 group">
-          <summary className="flex items-center justify-between cursor-pointer py-2 hover:bg-white/5 -mx-2 px-2 rounded transition-colors">
-            <div className="flex items-center gap-2">
-              <span className="text-zinc-600 text-[10px] group-open:rotate-90 transition-transform">▶</span>
-              <span className="text-[10px] uppercase tracking-wider text-zinc-400">
-                Test Query
-              </span>
-            </div>
-          </summary>
-          
-          <div className="mt-3">
-            <textarea
-              value={testQuery}
-              onChange={(e) => setTestQuery(e.target.value)}
-              placeholder="Enter a test query to see how the model responds..."
-              className="w-full h-24 bg-zinc-900 border border-zinc-800 rounded px-3 py-2 
-                         text-xs text-zinc-300 placeholder:text-zinc-600
-                         focus:outline-none focus:border-zinc-600 resize-none"
-            />
-            <div className="flex justify-end mt-2">
-              <button
-                onClick={handleRunTest}
-                disabled={isRunning || !testQuery.trim()}
-                className="text-[10px] uppercase tracking-wider px-4 py-1.5 
-                           bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50
-                           rounded transition-colors"
-              >
-                {isRunning ? 'Running...' : 'Run Test'}
-              </button>
-            </div>
-          </div>
-        </details>
-
-        {/* ═══════════════════════════════════════════════════════════
-            RAW CONFIG (JSON)
-        ═══════════════════════════════════════════════════════════ */}
-        <details className="mb-4 group">
-          <summary className="flex items-center justify-between cursor-pointer py-2 hover:bg-white/5 -mx-2 px-2 rounded transition-colors">
-            <div className="flex items-center gap-2">
-              <span className="text-zinc-600 text-[10px] group-open:rotate-90 transition-transform">▶</span>
-              <span className="text-[10px] uppercase tracking-wider text-zinc-400">
-                Raw Config (JSON)
-              </span>
-            </div>
-          </summary>
-          
-          <div className="mt-3">
-            <pre className="bg-zinc-900 border border-zinc-800 rounded p-3 
-                           text-[10px] text-zinc-400 overflow-x-auto">
-              {configJson}
-            </pre>
-          </div>
-        </details>
-
-        {/* ═══════════════════════════════════════════════════════════
-            FOOTER
-        ═══════════════════════════════════════════════════════════ */}
-        <footer className="mt-8 pt-4 border-t border-white/10 text-center">
-          <p className="text-[9px] text-zinc-600">
-            ⌘K to search • Changes auto-save
-          </p>
-        </footer>
-
+                  Run Test
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )
 }
+
+export default WorkbenchConsole

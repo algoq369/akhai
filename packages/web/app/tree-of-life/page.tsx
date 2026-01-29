@@ -25,6 +25,7 @@ import {
 } from '@/components/tree-workbench'
 import LayerConfigConsole from '@/components/LayerConfigConsole'
 import WorkbenchConsole from '@/components/WorkbenchConsole'
+import ConfigHistoryPanel from '@/components/ConfigHistoryPanel'
 
 // Clean AI Layer Labels - Primary (AI term) and Secondary (concept)
 const AI_LABELS: Record<number, { primary: string; concept: string }> = {
@@ -83,6 +84,7 @@ export default function TreeOfLifePage() {
   const [treeView, setTreeView] = useState<'sephiroth' | 'qliphoth' | 'dual' | 'workbench'>('dual')
   const [showPaths, setShowPaths] = useState(true)
   const [qlipothCollapsed, setQlipothCollapsed] = useState(false)
+  const [historyPanelOpen, setHistoryPanelOpen] = useState(false)
 
   // ═══════════════════════════════════════════
   // MODAL STATE
@@ -1567,7 +1569,7 @@ export default function TreeOfLifePage() {
                           fill="#9ca3af"
                           fontFamily="monospace"
                         >
-                          {QLIPOTH_CONCEPTS[id] || node.severity}
+                          {node.concept}
                         </text>
 
                         {/* Severity indicator */}
@@ -2252,7 +2254,7 @@ export default function TreeOfLifePage() {
                           fill="#9ca3af"
                           fontFamily="monospace"
                         >
-                          {QLIPOTH_CONCEPTS[id] || node.severity}
+                          {node.concept}
                         </text>
 
                         {/* Severity indicator */}
@@ -2402,6 +2404,15 @@ export default function TreeOfLifePage() {
         currentWeight={modalSefirah ? (sefirotConfig.sephiroth[modalSefirah] || 0.5) : 0.5}
         onWeightChange={handleSefirahWeightChange}
       />
+
+      {/* Config History Panel - Available on all views except workbench */}
+      {treeView !== 'workbench' && (
+        <ConfigHistoryPanel
+          collapsed={!historyPanelOpen}
+          onCollapsedChange={(collapsed) => setHistoryPanelOpen(!collapsed)}
+          position="right"
+        />
+      )}
     </div>
   )
 }
