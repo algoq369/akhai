@@ -1,163 +1,146 @@
 'use client'
 
 /**
- * Model Configuration Modal
- *
- * Clean white minimalist style matching Settings page.
- * No shadows, no glows, just clean typography.
- * Triggered by footer "layer config" button.
+ * Tree Configuration Modal - Compact Grid Style
+ * 
+ * Minimalist two-column grid layout.
+ * Monospace typography, no decorations.
+ * Triggered by footer "sefirot tree" button.
  */
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ASCIISefirotTree } from './ASCIISefirotTree'
 import { useSefirotStore } from '@/lib/stores/sefirot-store'
-import { SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
-import { SEFIROT_PRESETS, PRESET_NAMES, type PresetName } from '@/lib/sefirot-presets'
-
-// Use shared presets from lib/sefirot-presets.ts
-const PRESETS = SEFIROT_PRESETS
+import { SEFIROT_PRESETS, type PresetName } from '@/lib/sefirot-presets'
 
 interface TreeConfigurationModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
+const LAYERS = [
+  { id: 10, label: 'meta-cognition' },
+  { id: 9, label: 'first principles' },
+  { id: 8, label: 'pattern recognition' },
+  { id: 11, label: 'emergent insight' },
+  { id: 7, label: 'expansion' },
+  { id: 6, label: 'critical analysis' },
+  { id: 5, label: 'synthesis' },
+  { id: 4, label: 'persistence' },
+  { id: 3, label: 'communication' },
+  { id: 2, label: 'foundation' },
+  { id: 1, label: 'manifestation' },
+]
+
 export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigurationModalProps) {
   const router = useRouter()
-  const [showGuide, setShowGuide] = useState(false)
-  const { applyPreset } = useSefirotStore()
+  const { weights, setWeight, applyPreset, currentPreset } = useSefirotStore()
+  const [activePreset, setActivePreset] = useState<PresetName | null>(currentPreset)
+
+  const getPercentage = (level: number) => Math.round((weights[level] || 0.5) * 100)
 
   const handlePreset = (name: PresetName) => {
-    const weights = PRESETS[name]
-    if (weights) {
-      applyPreset(weights as Record<number, number>, name)
+    const presetWeights = SEFIROT_PRESETS[name]
+    if (presetWeights) {
+      applyPreset(presetWeights as Record<number, number>, name)
+      setActivePreset(name)
     }
   }
 
-  const handleAdvancedConfig = () => {
-    onClose()
-    router.push('/tree-of-life')
+  const handleValueChange = (level: number, value: string) => {
+    const val = parseInt(value)
+    if (!isNaN(val) && val >= 0 && val <= 100) {
+      setWeight(level, val / 100)
+      setActivePreset(null)
+    }
   }
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          {/* Backdrop - subtle */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/10"
+          onClick={onClose}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/20"
-            onClick={onClose}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.12 }}
+            className="w-full max-w-md bg-white border border-neutral-200"
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal - Clean white */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.15 }}
-              className="relative w-full max-w-2xl max-h-[80vh] overflow-y-auto bg-white p-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h2 className="text-sm font-normal text-neutral-600">
-                    AI Computational Tree
-                  </h2>
-                  <p className="text-xs text-neutral-400 mt-1">
-                    adjust layer weights
-                  </p>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="text-neutral-400 hover:text-neutral-600 text-lg transition-colors"
-                >
-                  ×
-                </button>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
+              <div className="font-mono text-xs text-neutral-500">
+                ai computational tree
               </div>
+              <button
+                onClick={onClose}
+                className="font-mono text-xs text-neutral-400 hover:text-neutral-600"
+              >
+                [x]
+              </button>
+            </div>
 
-              {/* Divider */}
-              <div className="h-px bg-neutral-200 mb-6" />
+            {/* Presets */}
+            <div className="flex items-center gap-4 px-4 py-2 border-b border-neutral-100 font-mono text-[10px]">
+              <span className="text-neutral-400">preset:</span>
+              {(['analytical', 'creative', 'balanced', 'deep'] as PresetName[]).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => handlePreset(p)}
+                  className={`transition-colors ${
+                    activePreset === p 
+                      ? 'text-neutral-900' 
+                      : 'text-neutral-400 hover:text-neutral-600'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
 
-              {/* Presets */}
-              <div className="flex gap-3 text-xs text-neutral-500 mb-6">
-                <button
-                  onClick={() => handlePreset('analytical')}
-                  className="hover:text-neutral-800 transition-colors"
-                >
-                  analytical
-                </button>
-                <span className="text-neutral-300">·</span>
-                <button
-                  onClick={() => handlePreset('creative')}
-                  className="hover:text-neutral-800 transition-colors"
-                >
-                  creative
-                </button>
-                <span className="text-neutral-300">·</span>
-                <button
-                  onClick={() => handlePreset('balanced')}
-                  className="hover:text-neutral-800 transition-colors"
-                >
-                  balanced
-                </button>
-                <span className="text-neutral-300">·</span>
-                <button
-                  onClick={() => handlePreset('deep')}
-                  className="hover:text-neutral-800 transition-colors"
-                >
-                  deep
-                </button>
-              </div>
-
-              {/* Tree Content */}
-              <div className="py-4">
-                <ASCIISefirotTree />
-              </div>
-
-              {/* Legend Section */}
-              <div className="mt-6 pt-4 border-t border-neutral-200">
-                <button
-                  onClick={() => setShowGuide(!showGuide)}
-                  className="text-neutral-500 text-xs flex items-center gap-1 hover:text-neutral-700 transition-colors"
-                >
-                  {showGuide ? '▾' : '▸'} layer guide
-                </button>
-
-                {showGuide && (
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                    {Object.entries(SEPHIROTH_METADATA).map(([key, meta]) => (
-                      <div key={key} className="flex gap-2">
-                        <span className="text-neutral-300">○</span>
-                        <div>
-                          <span className="text-neutral-700">{meta.name}</span>
-                          <span className="text-neutral-400 ml-1 text-[10px]">{meta.hebrewName}</span>
-                          <p className="text-neutral-400 text-[10px] mt-0.5">
-                            {meta.aiRole.split('•')[0]?.trim()}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+            {/* Grid */}
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-[11px]">
+                {LAYERS.map((layer) => (
+                  <div key={layer.id} className="flex items-center justify-between py-1">
+                    <span className="text-neutral-500 truncate pr-2">
+                      {layer.label}
+                    </span>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={getPercentage(layer.id)}
+                        onChange={(e) => handleValueChange(layer.id, e.target.value)}
+                        className="w-10 px-1 py-0.5 text-right text-neutral-700 bg-transparent border-b border-neutral-200 focus:border-neutral-400 focus:outline-none"
+                      />
+                      <span className="text-neutral-300 text-[9px]">%</span>
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
+            </div>
 
-              {/* Advanced Configuration Link */}
-              <div className="mt-6 pt-4 border-t border-neutral-200">
-                <button
-                  onClick={handleAdvancedConfig}
-                  className="text-xs text-neutral-500 hover:text-neutral-800 transition-colors flex items-center gap-1"
-                >
-                  Advanced Configuration <span className="text-neutral-300">→</span>
-                </button>
-              </div>
-            </motion.div>
+            {/* Footer */}
+            <div className="flex items-center justify-between px-4 py-2 border-t border-neutral-100 font-mono text-[10px] text-neutral-400">
+              <span>11 layers</span>
+              <button
+                onClick={() => { onClose(); router.push('/tree-of-life') }}
+                className="hover:text-neutral-600 transition-colors"
+              >
+                advanced
+              </button>
+            </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   )
