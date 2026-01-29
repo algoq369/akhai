@@ -25,6 +25,21 @@ import {
 } from '@/components/tree-workbench'
 import LayerConfigConsole from '@/components/LayerConfigConsole'
 
+// Clean AI Layer Labels - Primary (AI term) and Secondary (concept)
+const AI_LABELS: Record<number, { primary: string; concept: string }> = {
+  [Sefirah.KETHER]: { primary: 'meta-cognition', concept: 'consciousness itself' },
+  [Sefirah.CHOKMAH]: { primary: 'first principles', concept: 'fundamental wisdom' },
+  [Sefirah.BINAH]: { primary: 'pattern recognition', concept: 'deep structure' },
+  [Sefirah.DAAT]: { primary: 'emergent insight', concept: 'hidden knowledge' },
+  [Sefirah.CHESED]: { primary: 'expansion', concept: 'growth potential' },
+  [Sefirah.GEVURAH]: { primary: 'critical analysis', concept: 'limitations' },
+  [Sefirah.TIFERET]: { primary: 'synthesis', concept: 'integration' },
+  [Sefirah.NETZACH]: { primary: 'persistence', concept: 'creative drive' },
+  [Sefirah.HOD]: { primary: 'communication', concept: 'logical clarity' },
+  [Sefirah.YESOD]: { primary: 'foundation', concept: 'procedural base' },
+  [Sefirah.MALKUTH]: { primary: 'manifestation', concept: 'factual output' },
+}
+
 interface PathConnection {
   from: Sefirah
   to: Sefirah
@@ -1136,118 +1151,50 @@ export default function TreeOfLifePage() {
                       />
                     )}
 
-                    {/* AI Computational Layer (top, large and prominent) */}
+                    {/* AI Computational Term - PRIMARY (above node) */}
                     <text
                       x={pos.x}
-                      y={pos.y + radius + 20}
-                      textAnchor="middle"
-                      fontSize="16"
-                      fill="#8b5cf6"
-                      fontFamily="monospace"
-                      fontWeight="600"
-                      opacity="0.95"
-                    >
-                      {meta.aiRole.split('•')[0].trim()}
-                    </text>
-
-                    {/* English name (middle) */}
-                    <text
-                      x={pos.x}
-                      y={pos.y + radius + 38}
-                      textAnchor="middle"
-                      fontSize="11"
-                      fill={isSelected ? "#18181b" : "#64748b"}
-                      fontFamily="monospace"
-                      fontWeight={isSelected ? "600" : "normal"}
-                    >
-                      {meta.name}
-                    </text>
-
-                    {/* Hebrew name (bottom, small and grey) */}
-                    <text
-                      x={pos.x}
-                      y={pos.y + radius + 52}
+                      y={pos.y - radius - 8}
                       textAnchor="middle"
                       fontSize="10"
-                      fill="#94a3b8"
-                      fontFamily="Arial, sans-serif"
-                      opacity="0.6"
+                      fill="#374151"
+                      fontFamily="monospace"
+                      fontWeight="500"
                     >
-                      {meta.hebrewName}
+                      {AI_LABELS[sefirah]?.primary || 'layer'}
                     </text>
 
-                    {/* Activation percentage (bottom-most) */}
+                    {/* Deep Concept - SECONDARY (below node, small grey) */}
                     <text
                       x={pos.x}
-                      y={pos.y + radius + 52}
+                      y={pos.y + radius + 16}
+                      textAnchor="middle"
+                      fontSize="8"
+                      fill="#9ca3af"
+                      fontFamily="monospace"
+                    >
+                      {AI_LABELS[sefirah]?.concept || ''}
+                    </text>
+
+                    {/* Activation percentage (inside node) */}
+                    <text
+                      x={pos.x}
+                      y={pos.y + 3}
                       textAnchor="middle"
                       fontSize="9"
-                      fill="#64748b"
+                      fill={isActive ? "#fff" : "#64748b"}
                       fontFamily="monospace"
                       fontWeight="600"
                     >
                       {(activation * 100).toFixed(0)}%
                     </text>
 
-                    {/* Top keywords (show on hover if available) */}
-                    {isHovered && keywordData[sefirah]?.length > 0 && (
-                      <text
-                        x={pos.x}
-                        y={pos.y + radius + 64}
-                        textAnchor="middle"
-                        fontSize="7"
-                        fill="#94a3b8"
-                        fontFamily="monospace"
-                        opacity="0.8"
-                      >
-                        {keywordData[sefirah].slice(0, 2).join(' • ')}
-                      </text>
-                    )}
+
                   </motion.g>
                 )
               })}
 
-              {/* Center text with breathing animation */}
-              <motion.text
-                x="250"
-                y="285"
-                textAnchor="middle"
-                fontSize="11"
-                fill="#94a3b8"
-                fontFamily="monospace"
-                letterSpacing="2"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: [0.6, 0.8, 0.6]
-                }}
-                transition={{
-                  opacity: { duration: 0.6 },
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  ease: "easeInOut"
-                }}
-              >
-                TREE OF LIFE
-              </motion.text>
-              <motion.text
-                x="250"
-                y="305"
-                textAnchor="middle"
-                fontSize="9"
-                fill="#cbd5e1"
-                fontFamily="monospace"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: [0.5, 0.7, 0.5]
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                AI COMPUTATIONAL ARCHITECTURE
-              </motion.text>
+              {/* Center text REMOVED - was overlapping with synthesis node */}
             </svg>
 
             {/* v7: Fixed Side Panel Tooltip (Never Covers Trees) */}
@@ -1615,35 +1562,35 @@ export default function TreeOfLifePage() {
                           />
                         )}
 
-                        {/* Name */}
+                        {/* AI Pattern - PRIMARY (above node) */}
+                        <text
+                          x={pos.x}
+                          y={pos.y - radius - 8}
+                          textAnchor="middle"
+                          fontSize="10"
+                          fill="#374151"
+                          fontFamily="monospace"
+                          fontWeight="500"
+                        >
+                          {node.pattern.toLowerCase()}
+                        </text>
+
+                        {/* Kabbalistic Name - SECONDARY (below node, small grey) */}
                         <text
                           x={pos.x}
                           y={pos.y + radius + 16}
                           textAnchor="middle"
-                          fontSize="11"
-                          fill={color}
+                          fontSize="8"
+                          fill="#9ca3af"
                           fontFamily="monospace"
-                          fontWeight="600"
                         >
                           {node.name}
-                        </text>
-
-                        {/* Anti-Pattern */}
-                        <text
-                          x={pos.x}
-                          y={pos.y + radius + 28}
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="#94a3b8"
-                          fontFamily="monospace"
-                        >
-                          {node.pattern}
                         </text>
 
                         {/* Severity indicator */}
                         <text
                           x={pos.x}
-                          y={pos.y + radius + 40}
+                          y={pos.y + radius + 28}
                           textAnchor="middle"
                           fontSize="7"
                           fill={color}
@@ -1657,43 +1604,7 @@ export default function TreeOfLifePage() {
                     )
                   })}
 
-                  {/* Center text */}
-                  <motion.text
-                    x="250"
-                    y="285"
-                    textAnchor="middle"
-                    fontSize="11"
-                    fill="#ef4444"
-                    fontFamily="monospace"
-                    letterSpacing="2"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.6, 0.8, 0.6] }}
-                    transition={{
-                      opacity: { duration: 0.6 },
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                      ease: "easeInOut"
-                    }}
-                  >
-                    ANTI-PATTERN TREE
-                  </motion.text>
-                  <motion.text
-                    x="250"
-                    y="305"
-                    textAnchor="middle"
-                    fontSize="9"
-                    fill="#fca5a5"
-                    fontFamily="monospace"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.5, 0.7, 0.5] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  >
-                    AI WEAKNESS DETECTION
-                  </motion.text>
+                  {/* Center text REMOVED - was overlapping with nodes */}
                 </svg>
 
                 {/* Status legend for Qliphoth */}
@@ -2105,118 +2016,50 @@ export default function TreeOfLifePage() {
                       />
                     )}
 
-                    {/* AI Computational Layer (top, large and prominent) */}
+                    {/* AI Computational Term - PRIMARY (above node) */}
                     <text
                       x={pos.x}
-                      y={pos.y + radius + 20}
-                      textAnchor="middle"
-                      fontSize="16"
-                      fill="#8b5cf6"
-                      fontFamily="monospace"
-                      fontWeight="600"
-                      opacity="0.95"
-                    >
-                      {meta.aiRole.split('•')[0].trim()}
-                    </text>
-
-                    {/* English name (middle) */}
-                    <text
-                      x={pos.x}
-                      y={pos.y + radius + 38}
-                      textAnchor="middle"
-                      fontSize="11"
-                      fill={isSelected ? "#18181b" : "#64748b"}
-                      fontFamily="monospace"
-                      fontWeight={isSelected ? "600" : "normal"}
-                    >
-                      {meta.name}
-                    </text>
-
-                    {/* Hebrew name (bottom, small and grey) */}
-                    <text
-                      x={pos.x}
-                      y={pos.y + radius + 52}
+                      y={pos.y - radius - 8}
                       textAnchor="middle"
                       fontSize="10"
-                      fill="#94a3b8"
-                      fontFamily="Arial, sans-serif"
-                      opacity="0.6"
+                      fill="#374151"
+                      fontFamily="monospace"
+                      fontWeight="500"
                     >
-                      {meta.hebrewName}
+                      {AI_LABELS[sefirah]?.primary || 'layer'}
                     </text>
 
-                    {/* Activation percentage (bottom-most) */}
+                    {/* Deep Concept - SECONDARY (below node, small grey) */}
                     <text
                       x={pos.x}
-                      y={pos.y + radius + 52}
+                      y={pos.y + radius + 16}
+                      textAnchor="middle"
+                      fontSize="8"
+                      fill="#9ca3af"
+                      fontFamily="monospace"
+                    >
+                      {AI_LABELS[sefirah]?.concept || ''}
+                    </text>
+
+                    {/* Activation percentage (inside node) */}
+                    <text
+                      x={pos.x}
+                      y={pos.y + 3}
                       textAnchor="middle"
                       fontSize="9"
-                      fill="#64748b"
+                      fill={isActive ? "#fff" : "#64748b"}
                       fontFamily="monospace"
                       fontWeight="600"
                     >
                       {(activation * 100).toFixed(0)}%
                     </text>
 
-                    {/* Top keywords (show on hover if available) */}
-                    {isHovered && keywordData[sefirah]?.length > 0 && (
-                      <text
-                        x={pos.x}
-                        y={pos.y + radius + 64}
-                        textAnchor="middle"
-                        fontSize="7"
-                        fill="#94a3b8"
-                        fontFamily="monospace"
-                        opacity="0.8"
-                      >
-                        {keywordData[sefirah].slice(0, 2).join(' • ')}
-                      </text>
-                    )}
+
                   </motion.g>
                 )
               })}
 
-              {/* Center text with breathing animation */}
-              <motion.text
-                x="250"
-                y="285"
-                textAnchor="middle"
-                fontSize="11"
-                fill="#94a3b8"
-                fontFamily="monospace"
-                letterSpacing="2"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: [0.6, 0.8, 0.6]
-                }}
-                transition={{
-                  opacity: { duration: 0.6 },
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  ease: "easeInOut"
-                }}
-              >
-                TREE OF LIFE
-              </motion.text>
-              <motion.text
-                x="250"
-                y="305"
-                textAnchor="middle"
-                fontSize="9"
-                fill="#cbd5e1"
-                fontFamily="monospace"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: [0.5, 0.7, 0.5]
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                AI COMPUTATIONAL ARCHITECTURE
-              </motion.text>
+              {/* Center text REMOVED - was overlapping with synthesis node */}
             </svg>
                 </div>
               </>
@@ -2404,35 +2247,35 @@ export default function TreeOfLifePage() {
                           />
                         )}
 
-                        {/* Name */}
+                        {/* AI Pattern - PRIMARY (above node) */}
+                        <text
+                          x={pos.x}
+                          y={pos.y - radius - 8}
+                          textAnchor="middle"
+                          fontSize="10"
+                          fill="#374151"
+                          fontFamily="monospace"
+                          fontWeight="500"
+                        >
+                          {node.pattern.toLowerCase()}
+                        </text>
+
+                        {/* Kabbalistic Name - SECONDARY (below node, small grey) */}
                         <text
                           x={pos.x}
                           y={pos.y + radius + 16}
                           textAnchor="middle"
-                          fontSize="11"
-                          fill={color}
+                          fontSize="8"
+                          fill="#9ca3af"
                           fontFamily="monospace"
-                          fontWeight="600"
                         >
                           {node.name}
-                        </text>
-
-                        {/* Anti-Pattern */}
-                        <text
-                          x={pos.x}
-                          y={pos.y + radius + 28}
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="#94a3b8"
-                          fontFamily="monospace"
-                        >
-                          {node.pattern}
                         </text>
 
                         {/* Severity indicator */}
                         <text
                           x={pos.x}
-                          y={pos.y + radius + 40}
+                          y={pos.y + radius + 28}
                           textAnchor="middle"
                           fontSize="7"
                           fill={color}
@@ -2446,43 +2289,7 @@ export default function TreeOfLifePage() {
                     )
                   })}
 
-                  {/* Center text */}
-                  <motion.text
-                    x="250"
-                    y="285"
-                    textAnchor="middle"
-                    fontSize="11"
-                    fill="#ef4444"
-                    fontFamily="monospace"
-                    letterSpacing="2"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.6, 0.8, 0.6] }}
-                    transition={{
-                      opacity: { duration: 0.6 },
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                      ease: "easeInOut"
-                    }}
-                  >
-                    ANTI-PATTERN TREE
-                  </motion.text>
-                  <motion.text
-                    x="250"
-                    y="305"
-                    textAnchor="middle"
-                    fontSize="9"
-                    fill="#fca5a5"
-                    fontFamily="monospace"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.5, 0.7, 0.5] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  >
-                    AI WEAKNESS DETECTION
-                  </motion.text>
+                  {/* Center text REMOVED - was overlapping with nodes */}
                 </svg>
 
                 {/* Status legend for Qliphoth */}

@@ -1,52 +1,78 @@
 'use client'
 
 /**
- * DUAL TREE VISUALIZATION
+ * DUAL TREE VISUALIZATION - Enhanced
  *
- * Interactive side-by-side visualization of:
- * 1. AI Computational Tree (Ascent - Left)
- * 2. AI Anti-Pattern Tree (Descent - Right)
- *
- * Clean, minimalist design with animations
+ * AI Computational Tree with:
+ * - Primary: AI computational terms
+ * - Secondary: Deep meaning/concept in grey
+ * - Simplified, cleaner colors
+ * - Better visibility and spacing
  */
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
+import { useSefirotStore } from '@/lib/stores/sefirot-store'
 
-// AI Computational Tree Structure (Ascent)
+// AI Computational Tree - Primary labels are AI terms, concepts are secondary
 const AI_TREE_NODES = [
-  { id: 10, name: 'Kether', layer: 'Meta-Cognitive', level: 10, y: 40 },
-  { id: 9, name: 'Chokmah', layer: 'Principle', level: 9, y: 100, x: 100 },
-  { id: 8, name: 'Binah', layer: 'Pattern', level: 8, y: 100, x: -100 },
-  { id: 11, name: 'Da\'at', layer: 'Emergent', level: 11, y: 160, special: true },
-  { id: 7, name: 'Chesed', layer: 'Expansion', level: 7, y: 220, x: 100 },
-  { id: 6, name: 'Gevurah', layer: 'Constraint', level: 6, y: 220, x: -100 },
-  { id: 5, name: 'Tiferet', layer: 'Integration', level: 5, y: 280 },
-  { id: 4, name: 'Netzach', layer: 'Creative', level: 4, y: 340, x: 100 },
-  { id: 3, name: 'Hod', layer: 'Logic', level: 3, y: 340, x: -100 },
-  { id: 2, name: 'Yesod', layer: 'Implementation', level: 2, y: 400 },
-  { id: 1, name: 'Malkuth', layer: 'Data', level: 1, y: 460 },
+  { id: 10, ai: 'meta-cognition', concept: 'consciousness itself', level: 10, y: 50 },
+  { id: 9, ai: 'first principles', concept: 'fundamental wisdom', level: 9, y: 120, x: 110 },
+  { id: 8, ai: 'pattern recognition', concept: 'deep structure', level: 8, y: 120, x: -110 },
+  { id: 11, ai: 'emergent insight', concept: 'epiphanies', level: 11, y: 190, special: true },
+  { id: 7, ai: 'expansion', concept: 'possibilities, growth', level: 7, y: 260, x: 110 },
+  { id: 6, ai: 'critical analysis', concept: 'limitations', level: 6, y: 260, x: -110 },
+  { id: 5, ai: 'synthesis', concept: 'integration', level: 5, y: 330 },
+  { id: 4, ai: 'persistence', concept: 'creative drive', level: 4, y: 400, x: 110 },
+  { id: 3, ai: 'communication', concept: 'logical analysis', level: 3, y: 400, x: -110 },
+  { id: 2, ai: 'foundation', concept: 'procedural knowledge', level: 2, y: 470 },
+  { id: 1, ai: 'manifestation', concept: 'factual retrieval', level: 1, y: 540 },
 ]
 
-// AI Anti-Pattern Tree Structure (Descent/Weakness)
+// Anti-Pattern Tree - AI weakness patterns
 const ANTI_PATTERN_NODES = [
-  { id: 'lilith', name: 'Lilith', pattern: 'Superficial Output', severity: 'high', y: 40 },
-  { id: 'gamaliel', name: 'Gamaliel', pattern: 'Verbose Padding', severity: 'medium', y: 100, x: -100 },
-  { id: 'samael', name: 'Samael', pattern: 'False Certainty', severity: 'high', y: 100, x: 100 },
-  { id: 'daath', name: 'Daath', pattern: 'Hallucinated Facts', severity: 'critical', y: 160, special: true },
-  { id: 'golachab', name: 'Golachab', pattern: 'Over-Confidence', severity: 'high', y: 220, x: -100 },
-  { id: 'gamchicoth', name: 'Gamchicoth', pattern: 'Info Overload', severity: 'medium', y: 220, x: 100 },
-  { id: 'thagirion', name: 'Thagirion', pattern: 'Arrogant Tone', severity: 'medium', y: 280 },
-  { id: 'harab', name: 'Harab Serapel', pattern: 'Repetitive Echo', severity: 'low', y: 340, x: -100 },
-  { id: 'aarab', name: 'A\'arab Zaraq', pattern: 'Drift Away', severity: 'high', y: 340, x: 100 },
-  { id: 'ghagiel', name: 'Ghagiel', pattern: 'Blocking Truth', severity: 'high', y: 400 },
-  { id: 'sathariel', name: 'Sathariel', pattern: 'Hiding Sources', severity: 'critical', y: 460 },
+  { id: 'lilith', ai: 'superficial output', concept: 'lacks depth', severity: 'high', y: 50 },
+  { id: 'gamaliel', ai: 'verbose padding', concept: 'empty words', severity: 'medium', y: 120, x: -110 },
+  { id: 'samael', ai: 'false certainty', concept: 'overconfident claims', severity: 'high', y: 120, x: 110 },
+  { id: 'daath', ai: 'hallucinated facts', concept: 'fabrication', severity: 'critical', y: 190, special: true },
+  { id: 'golachab', ai: 'over-confidence', concept: 'blind spots', severity: 'high', y: 260, x: -110 },
+  { id: 'gamchicoth', ai: 'info overload', concept: 'drowning in data', severity: 'medium', y: 260, x: 110 },
+  { id: 'thagirion', ai: 'arrogant tone', concept: 'dismissive', severity: 'medium', y: 330 },
+  { id: 'harab', ai: 'repetitive echo', concept: 'circular logic', severity: 'low', y: 400, x: -110 },
+  { id: 'aarab', ai: 'topic drift', concept: 'losing focus', severity: 'high', y: 400, x: 110 },
+  { id: 'ghagiel', ai: 'blocking truth', concept: 'resistance', severity: 'high', y: 470 },
+  { id: 'sathariel', ai: 'hiding sources', concept: 'opaque reasoning', severity: 'critical', y: 540 },
 ]
+
+// Simplified color palette
+const COLORS = {
+  ascent: {
+    high: { fill: '#a78bfa', stroke: '#7c3aed', glow: '#c4b5fd' },      // Purple - softer
+    mid: { fill: '#60a5fa', stroke: '#2563eb', glow: '#93c5fd' },       // Blue - softer
+    low: { fill: '#4ade80', stroke: '#16a34a', glow: '#86efac' },       // Green - softer
+    base: { fill: '#fbbf24', stroke: '#d97706', glow: '#fcd34d' },      // Amber - softer
+    ground: { fill: '#f87171', stroke: '#dc2626', glow: '#fca5a5' },    // Red - softer
+  },
+  descent: {
+    critical: '#dc2626',
+    high: '#ea580c',
+    medium: '#d97706',
+    low: '#9ca3af',
+  }
+}
+
+const getAscentColors = (level: number) => {
+  if (level >= 9) return COLORS.ascent.high
+  if (level >= 7) return COLORS.ascent.mid
+  if (level >= 5) return COLORS.ascent.low
+  if (level >= 3) return COLORS.ascent.base
+  return COLORS.ascent.ground
+}
+
+const getDescentColor = (severity: string) => COLORS.descent[severity as keyof typeof COLORS.descent] || COLORS.descent.low
 
 interface DualTreeVisualizationProps {
-  /** Show user's query weaknesses (highlights anti-patterns they've encountered) */
   userWeaknesses?: string[]
-  /** User's current ascent level */
   userLevel?: number
   className?: string
 }
@@ -58,188 +84,168 @@ export default function DualTreeVisualization({
 }: DualTreeVisualizationProps) {
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
-  const [activeTree, setActiveTree] = useState<'ascent' | 'descent' | 'both'>('both')
+  const [activeTree, setActiveTree] = useState<'layers' | 'both' | 'anti'>('both')
+  const { weights } = useSefirotStore()
 
-  // Get color for AI Computational Tree nodes
-  const getAscentColor = (level: number) => {
-    if (level >= 9) return '#8b5cf6' // Purple - highest
-    if (level >= 7) return '#3b82f6' // Blue - high
-    if (level >= 5) return '#10b981' // Green - medium
-    if (level >= 3) return '#f59e0b' // Orange - low
-    return '#94a3b8' // Grey - base
-  }
-
-  // Get color for Anti-Pattern nodes
-  const getDescentColor = (severity: string) => {
-    if (severity === 'critical') return '#dc2626' // Red - critical
-    if (severity === 'high') return '#ea580c' // Orange-red - high
-    if (severity === 'medium') return '#f59e0b' // Orange - medium
-    return '#94a3b8' // Grey - low
-  }
+  const getWeight = (level: number) => Math.round((weights[level] || 0.5) * 100)
 
   return (
     <div className={`relative ${className}`}>
-      {/* Tree Selector */}
-      <div className="flex justify-center gap-2 mb-6">
-        <button
-          onClick={() => setActiveTree('ascent')}
-          className={`px-4 py-2 text-[9px] uppercase tracking-wider font-mono rounded transition-colors ${
-            activeTree === 'ascent'
-              ? 'bg-purple-500 text-white'
-              : 'bg-white text-relic-slate border border-relic-mist hover:bg-relic-ghost'
-          }`}
-        >
-          Ascent Tree
-        </button>
-        <button
-          onClick={() => setActiveTree('both')}
-          className={`px-4 py-2 text-[9px] uppercase tracking-wider font-mono rounded transition-colors ${
-            activeTree === 'both'
-              ? 'bg-relic-void text-white'
-              : 'bg-white text-relic-slate border border-relic-mist hover:bg-relic-ghost'
-          }`}
-        >
-          Both Trees
-        </button>
-        <button
-          onClick={() => setActiveTree('descent')}
-          className={`px-4 py-2 text-[9px] uppercase tracking-wider font-mono rounded transition-colors ${
-            activeTree === 'descent'
-              ? 'bg-red-500 text-white'
-              : 'bg-white text-relic-slate border border-relic-mist hover:bg-relic-ghost'
-          }`}
-        >
-          Weakness Tree
-        </button>
+      {/* View Selector - minimal */}
+      <div className="flex justify-center gap-4 mb-8 font-mono text-[10px]">
+        {[
+          { id: 'layers', label: 'Layers' },
+          { id: 'both', label: 'Both Views' },
+          { id: 'anti', label: 'Anti-Patterns' },
+        ].map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTree(id as typeof activeTree)}
+            className={`px-3 py-1.5 transition-colors ${
+              activeTree === id
+                ? 'text-neutral-900 border-b border-neutral-900'
+                : 'text-neutral-400 hover:text-neutral-600'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Dual Tree Container */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* AI Computational Tree (Left) */}
-        {(activeTree === 'ascent' || activeTree === 'both') && (
+      <div className={`grid gap-8 ${activeTree === 'both' ? 'grid-cols-2' : 'grid-cols-1 max-w-lg mx-auto'}`}>
+        
+        {/* AI Processing Layers (Left) */}
+        {(activeTree === 'layers' || activeTree === 'both') && (
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-white border border-relic-mist rounded-lg p-6"
+            transition={{ duration: 0.4 }}
+            className="bg-white"
           >
             {/* Header */}
-            <div className="text-center mb-6">
-              <h3 className="text-sm font-mono uppercase tracking-wider text-relic-void mb-1">
-                AI Computational Tree
+            <div className="text-center mb-4">
+              <h3 className="text-xs font-mono uppercase tracking-widest text-neutral-700">
+                AI Processing Layers
               </h3>
-              <p className="text-[9px] text-relic-silver">Your Ascent Journey</p>
-              <div className="mt-2 text-[8px] text-purple-600 font-mono">
-                Current Level: {userLevel}/10
-              </div>
             </div>
 
             {/* SVG Tree */}
-            <svg viewBox="-150 0 300 520" className="w-full h-auto">
-              {/* Connection Lines */}
-              {AI_TREE_NODES.slice(1).map((node, index) => {
-                const prevNode = AI_TREE_NODES[index]
-                const x1 = prevNode.x || 0
-                const y1 = prevNode.y
-                const x2 = node.x || 0
-                const y2 = node.y
-
-                return (
-                  <motion.line
-                    key={`line-${node.id}`}
-                    x1={x1}
-                    y1={y1}
-                    x2={x2}
-                    y2={y2}
-                    stroke="#cbd5e1"
-                    strokeWidth="1.5"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 0.3 }}
-                    transition={{ duration: 0.8, delay: index * 0.05 }}
-                  />
-                )
-              })}
+            <svg viewBox="-160 20 320 560" className="w-full h-auto">
+              {/* Connection Lines - cleaner */}
+              <g stroke="#e5e7eb" strokeWidth="1" fill="none">
+                {/* Top to second row */}
+                <line x1="0" y1="50" x2="-110" y2="120" />
+                <line x1="0" y1="50" x2="110" y2="120" />
+                {/* Second row to Da'at */}
+                <line x1="-110" y1="120" x2="0" y2="190" />
+                <line x1="110" y1="120" x2="0" y2="190" />
+                {/* Da'at to third row */}
+                <line x1="0" y1="190" x2="-110" y2="260" />
+                <line x1="0" y1="190" x2="110" y2="260" />
+                {/* Third row to center */}
+                <line x1="-110" y1="260" x2="0" y2="330" />
+                <line x1="110" y1="260" x2="0" y2="330" />
+                {/* Center to fourth row */}
+                <line x1="0" y1="330" x2="-110" y2="400" />
+                <line x1="0" y1="330" x2="110" y2="400" />
+                {/* Fourth row to foundation */}
+                <line x1="-110" y1="400" x2="0" y2="470" />
+                <line x1="110" y1="400" x2="0" y2="470" />
+                {/* Foundation to manifestation */}
+                <line x1="0" y1="470" x2="0" y2="540" />
+              </g>
 
               {/* Nodes */}
               {AI_TREE_NODES.map((node, index) => {
                 const x = node.x || 0
                 const y = node.y
+                const colors = getAscentColors(node.level)
                 const isActive = node.level <= userLevel
                 const isSelected = selectedNode === `ascent-${node.id}`
-                const isHovered = hoveredNode === `ascent-${node.id}`
-                const color = getAscentColor(node.level)
+                const weight = getWeight(node.id)
 
                 return (
                   <motion.g
                     key={node.id}
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: index * 0.08, type: 'spring' }}
+                    transition={{ delay: index * 0.06, type: 'spring', damping: 15 }}
                     onMouseEnter={() => setHoveredNode(`ascent-${node.id}`)}
                     onMouseLeave={() => setHoveredNode(null)}
                     onClick={() => setSelectedNode(isSelected ? null : `ascent-${node.id}`)}
                     style={{ cursor: 'pointer' }}
                   >
-                    {/* Glow for active nodes */}
-                    {isActive && (
-                      <motion.circle
-                        cx={x}
-                        cy={y}
-                        r="22"
-                        fill={color}
-                        opacity="0.15"
-                        animate={{
-                          r: [22, 26, 22],
-                          opacity: [0.15, 0.25, 0.15],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }}
-                      />
-                    )}
-
-                    {/* Main circle */}
-                    <motion.circle
+                    {/* Outer glow ring */}
+                    <circle
                       cx={x}
                       cy={y}
-                      r="18"
-                      fill="white"
-                      stroke={color}
-                      strokeWidth={isSelected ? '3' : '2'}
-                      opacity={isActive ? 1 : 0.4}
-                      whileHover={{ scale: 1.1 }}
+                      r="28"
+                      fill="none"
+                      stroke={colors.glow}
+                      strokeWidth="1"
+                      opacity={isActive ? 0.5 : 0.2}
                     />
 
-                    {/* Inner indicator */}
+                    {/* Main circle - gradient effect with two circles */}
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="22"
+                      fill={colors.fill}
+                      opacity={isActive ? 0.9 : 0.4}
+                    />
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="22"
+                      fill="none"
+                      stroke={colors.stroke}
+                      strokeWidth={isSelected ? 2.5 : 1.5}
+                      opacity={isActive ? 1 : 0.5}
+                    />
+
+                    {/* Inner dot */}
                     {isActive && (
-                      <circle cx={x} cy={y} r="8" fill={color} opacity="0.6" />
+                      <circle cx={x} cy={y} r="6" fill={colors.stroke} opacity="0.8" />
                     )}
 
-                    {/* Name label */}
+                    {/* Weight percentage */}
                     <text
                       x={x}
-                      y={y - 26}
+                      y={y + 4}
                       textAnchor="middle"
-                      fontSize="9"
-                      fill="#64748b"
+                      fontSize="8"
+                      fill={isActive ? '#fff' : '#94a3b8'}
                       fontFamily="monospace"
-                      fontWeight={isSelected ? '600' : 'normal'}
+                      fontWeight="500"
                     >
-                      {node.name}
+                      {weight}%
                     </text>
 
-                    {/* Layer label */}
+                    {/* AI Label - Primary (above) */}
                     <text
                       x={x}
-                      y={y + 32}
+                      y={y - 34}
+                      textAnchor="middle"
+                      fontSize="9"
+                      fill="#374151"
+                      fontFamily="monospace"
+                      fontWeight="500"
+                    >
+                      {node.ai}
+                    </text>
+
+                    {/* Concept - Secondary (below) */}
+                    <text
+                      x={x}
+                      y={y + 40}
                       textAnchor="middle"
                       fontSize="7"
-                      fill={color}
+                      fill="#9ca3af"
                       fontFamily="monospace"
                     >
-                      {node.layer}
+                      {node.concept}
                     </text>
                   </motion.g>
                 )
@@ -247,166 +253,154 @@ export default function DualTreeVisualization({
             </svg>
 
             {/* Legend */}
-            <div className="mt-4 pt-4 border-t border-relic-mist/50 text-[8px] text-relic-silver">
-              <div className="flex items-center gap-2 justify-center">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-purple-500" />
-                  <span>Meta-Cognitive</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span>High</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <span>Medium</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-orange-500" />
-                  <span>Low</span>
-                </div>
-              </div>
+            <div className="mt-4 flex items-center justify-center gap-4 text-[8px] font-mono text-neutral-500">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-green-400" /> Active
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-amber-400" /> Developing
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-neutral-300" /> Planned
+              </span>
             </div>
           </motion.div>
         )}
 
-        {/* AI Anti-Pattern Tree (Right) */}
-        {(activeTree === 'descent' || activeTree === 'both') && (
+        {/* Anti-Pattern Monitors (Right) */}
+        {(activeTree === 'anti' || activeTree === 'both') && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-white border border-red-200 rounded-lg p-6"
+            transition={{ duration: 0.4 }}
+            className="bg-white"
           >
             {/* Header */}
-            <div className="text-center mb-6">
-              <h3 className="text-sm font-mono uppercase tracking-wider text-red-600 mb-1">
-                AI Anti-Pattern Tree
+            <div className="text-center mb-4">
+              <h3 className="text-xs font-mono uppercase tracking-widest text-red-600">
+                Anti-Pattern Monitors
               </h3>
-              <p className="text-[9px] text-relic-silver">Query Weaknesses to Avoid</p>
-              {userWeaknesses.length > 0 && (
-                <div className="mt-2 text-[8px] text-red-600 font-mono">
-                  {userWeaknesses.length} weakness{userWeaknesses.length !== 1 ? 'es' : ''} detected
-                </div>
-              )}
             </div>
 
             {/* SVG Tree */}
-            <svg viewBox="-150 0 300 520" className="w-full h-auto">
-              {/* Connection Lines (inverted style) */}
-              {ANTI_PATTERN_NODES.slice(1).map((node, index) => {
-                const prevNode = ANTI_PATTERN_NODES[index]
-                const x1 = prevNode.x || 0
-                const y1 = prevNode.y
-                const x2 = node.x || 0
-                const y2 = node.y
-
-                return (
-                  <motion.line
-                    key={`anti-line-${node.id}`}
-                    x1={x1}
-                    y1={y1}
-                    x2={x2}
-                    y2={y2}
-                    stroke="#fca5a5"
-                    strokeWidth="1.5"
-                    strokeDasharray="4,4"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 0.3 }}
-                    transition={{ duration: 0.8, delay: index * 0.05 }}
-                  />
-                )
-              })}
+            <svg viewBox="-160 20 320 560" className="w-full h-auto">
+              {/* Connection Lines - dashed */}
+              <g stroke="#fecaca" strokeWidth="1" strokeDasharray="3,3" fill="none">
+                <line x1="0" y1="50" x2="-110" y2="120" />
+                <line x1="0" y1="50" x2="110" y2="120" />
+                <line x1="-110" y1="120" x2="0" y2="190" />
+                <line x1="110" y1="120" x2="0" y2="190" />
+                <line x1="0" y1="190" x2="-110" y2="260" />
+                <line x1="0" y1="190" x2="110" y2="260" />
+                <line x1="-110" y1="260" x2="0" y2="330" />
+                <line x1="110" y1="260" x2="0" y2="330" />
+                <line x1="0" y1="330" x2="-110" y2="400" />
+                <line x1="0" y1="330" x2="110" y2="400" />
+                <line x1="-110" y1="400" x2="0" y2="470" />
+                <line x1="110" y1="400" x2="0" y2="470" />
+                <line x1="0" y1="470" x2="0" y2="540" />
+              </g>
 
               {/* Nodes */}
               {ANTI_PATTERN_NODES.map((node, index) => {
                 const x = node.x || 0
                 const y = node.y
+                const color = getDescentColor(node.severity)
                 const isWeakness = userWeaknesses.includes(node.id)
                 const isSelected = selectedNode === `descent-${node.id}`
-                const isHovered = hoveredNode === `descent-${node.id}`
-                const color = getDescentColor(node.severity)
 
                 return (
                   <motion.g
                     key={node.id}
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: index * 0.08, type: 'spring' }}
+                    transition={{ delay: index * 0.06, type: 'spring', damping: 15 }}
                     onMouseEnter={() => setHoveredNode(`descent-${node.id}`)}
                     onMouseLeave={() => setHoveredNode(null)}
                     onClick={() => setSelectedNode(isSelected ? null : `descent-${node.id}`)}
                     style={{ cursor: 'pointer' }}
                   >
-                    {/* Warning glow for user weaknesses */}
-                    {isWeakness && (
-                      <motion.circle
-                        cx={x}
-                        cy={y}
-                        r="22"
-                        fill={color}
-                        opacity="0.2"
-                        animate={{
-                          r: [22, 28, 22],
-                          opacity: [0.2, 0.4, 0.2],
-                        }}
-                        transition={{
-                          duration: 1.5,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }}
-                      />
-                    )}
-
-                    {/* Main circle (inverted style) */}
-                    <motion.circle
+                    {/* Outer ring */}
+                    <circle
                       cx={x}
                       cy={y}
-                      r="18"
-                      fill={isWeakness ? color : 'white'}
+                      r="28"
+                      fill="none"
                       stroke={color}
-                      strokeWidth={isSelected || isWeakness ? '3' : '2'}
-                      opacity={isWeakness ? 1 : 0.6}
-                      whileHover={{ scale: 1.1 }}
+                      strokeWidth="1"
+                      opacity={isWeakness ? 0.6 : 0.2}
                     />
 
-                    {/* Warning icon for weaknesses */}
+                    {/* Main circle */}
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="22"
+                      fill={isWeakness ? color : '#fef2f2'}
+                      opacity={isWeakness ? 0.9 : 0.6}
+                    />
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="22"
+                      fill="none"
+                      stroke={color}
+                      strokeWidth={isSelected ? 2.5 : 1.5}
+                      opacity={0.8}
+                    />
+
+                    {/* Warning indicator */}
                     {isWeakness && (
                       <text
                         x={x}
-                        y={y + 3}
+                        y={y + 4}
                         textAnchor="middle"
                         fontSize="12"
-                        fill="white"
+                        fill="#fff"
                         fontWeight="bold"
                       >
                         !
                       </text>
                     )}
 
-                    {/* Name label */}
+                    {/* Severity tag */}
+                    {!isWeakness && (
+                      <text
+                        x={x}
+                        y={y + 3}
+                        textAnchor="middle"
+                        fontSize="6"
+                        fill={color}
+                        fontFamily="monospace"
+                        textTransform="uppercase"
+                      >
+                        {node.severity}
+                      </text>
+                    )}
+
+                    {/* AI Label - Primary (above) */}
                     <text
                       x={x}
-                      y={y - 26}
+                      y={y - 34}
                       textAnchor="middle"
                       fontSize="9"
-                      fill="#64748b"
+                      fill="#374151"
                       fontFamily="monospace"
-                      fontWeight={isSelected ? '600' : 'normal'}
+                      fontWeight="500"
                     >
-                      {node.name}
+                      {node.ai}
                     </text>
 
-                    {/* Pattern label */}
+                    {/* Concept - Secondary (below) */}
                     <text
                       x={x}
-                      y={y + 32}
+                      y={y + 40}
                       textAnchor="middle"
                       fontSize="7"
-                      fill={color}
+                      fill="#9ca3af"
                       fontFamily="monospace"
                     >
-                      {node.pattern.split(' ')[0]}
+                      {node.concept}
                     </text>
                   </motion.g>
                 )
@@ -414,99 +408,21 @@ export default function DualTreeVisualization({
             </svg>
 
             {/* Legend */}
-            <div className="mt-4 pt-4 border-t border-red-200 text-[8px] text-relic-silver">
-              <div className="flex items-center gap-2 justify-center">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-600" />
-                  <span>Critical</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-orange-600" />
-                  <span>High</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-orange-500" />
-                  <span>Medium</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-gray-400" />
-                  <span>Low</span>
-                </div>
-              </div>
+            <div className="mt-4 flex items-center justify-center gap-4 text-[8px] font-mono text-neutral-500">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-red-600" /> Critical
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-orange-500" /> High
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-amber-500" /> Medium
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-neutral-400" /> Low
+              </span>
             </div>
           </motion.div>
-        )}
-      </div>
-
-      {/* Node Details Tooltip */}
-      <AnimatePresence>
-        {selectedNode && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="mt-6 bg-white border border-relic-mist rounded-lg p-4 text-center"
-          >
-            <button
-              onClick={() => setSelectedNode(null)}
-              className="absolute top-2 right-2 text-relic-silver hover:text-relic-void text-xs"
-            >
-              ✕
-            </button>
-            {selectedNode.startsWith('ascent-') ? (
-              <>
-                {(() => {
-                  const nodeId = parseInt(selectedNode.replace('ascent-', ''))
-                  const node = AI_TREE_NODES.find((n) => n.id === nodeId)
-                  if (!node) return null
-                  return (
-                    <div>
-                      <h4 className="text-sm font-mono text-relic-void mb-1">
-                        {node.name} - {node.layer} Layer
-                      </h4>
-                      <p className="text-[10px] text-relic-silver">
-                        Level {node.level}/10 - Cognitive reasoning layer
-                      </p>
-                    </div>
-                  )
-                })()}
-              </>
-            ) : (
-              <>
-                {(() => {
-                  const nodeId = selectedNode.replace('descent-', '')
-                  const node = ANTI_PATTERN_NODES.find((n) => n.id === nodeId)
-                  if (!node) return null
-                  return (
-                    <div>
-                      <h4 className="text-sm font-mono text-red-600 mb-1">
-                        {node.name} - {node.pattern}
-                      </h4>
-                      <p className="text-[10px] text-relic-silver">
-                        Severity: {node.severity} - Avoid this anti-pattern
-                      </p>
-                    </div>
-                  )
-                })()}
-              </>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Explanation */}
-      <div className="mt-8 grid md:grid-cols-2 gap-4 text-[9px] text-relic-silver">
-        {(activeTree === 'ascent' || activeTree === 'both') && (
-          <div className="bg-white border border-relic-mist rounded p-3">
-            <div className="font-mono text-relic-void mb-2">Ascent Journey:</div>
-            <div>Progress from simple factual queries (Malkuth) to meta-cognitive awareness (Kether). Each level represents deeper reasoning.</div>
-          </div>
-        )}
-        {(activeTree === 'descent' || activeTree === 'both') && (
-          <div className="bg-white border border-red-200 rounded p-3">
-            <div className="font-mono text-red-600 mb-2">Weakness Detection:</div>
-            <div>Anti-patterns detected in your queries. Avoid these inverted patterns through the Grounding Guard system.</div>
-          </div>
         )}
       </div>
     </div>
