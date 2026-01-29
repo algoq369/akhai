@@ -1117,3 +1117,97 @@ Open source, but currently **closed development** (solo founder project).
 **Remember**: This is about building trustworthy, sovereign AI that augments human thinking. Every feature should serve that mission.
 
 *Built by Algoq • Sovereign AI • Zero Hallucination Tolerance*
+
+
+---
+
+## 🗺️ Mind Map Enhancement Status (Day 29/150 - Jan 29, 2026)
+
+### Current State
+
+**Files Modified:**
+- `packages/web/components/MindMap.tsx` (488 lines) - Main container with integrated mini-chat
+- `packages/web/components/MindMapDiagramView.tsx` (430 lines) - Simplified bubble cluster visualization
+
+**Completed:**
+- White background (removed cosmic gradient)
+- Pastel cluster colors with soft borders
+- Mini-chat panel integrated (bottom-left button)
+- Category filter dropdown
+- Organic spiral layout algorithm (golden angle distribution)
+- Pan/zoom controls (-, +, fit buttons)
+- Node selection with tooltip
+- Quick actions: analyze, connect, expand
+
+**Visual Design:**
+- White background throughout
+- Soft pastel cluster fills (15-50% opacity)
+- Category labels above clusters
+- Minimalist footer with raw text instructions
+- No emojis - text only UI
+
+### Next Tasks (Priority Order)
+
+**1. Fix Node Spacing (Overlap Issue)**
+```
+Problem: Topics inside clusters overlap, not fully readable
+Solution: 
+- Increase minimum node size to 50px (from 40px)
+- Add force-directed spacing within clusters
+- Set minimum distance between nodes (25px)
+- Scale cluster radius dynamically based on node count
+```
+
+**2. Mini-Chat Inline Execution**
+```
+Problem: Opens new tab for queries instead of same page
+Solution:
+- Remove window.open() calls
+- Add response area in mini-chat panel
+- Call /api/chat endpoint directly
+- Stream response with loading state
+- Show AI response inline
+```
+
+**3. Connection/Suggestion Flow**
+```
+Problem: Click flow not intuitive
+Solution:
+- Click suggestion -> auto-fill mini-chat input
+- Click connection -> navigate to node + update context
+- Add "ask about this" button on each item
+- Mini-chat responds to selected node context
+```
+
+### Algorithm Reference
+
+**Node Spacing (Current):**
+```typescript
+const spiralFactor = Math.sqrt(j / Math.max(nodeCount, 1))
+const nodeAngle = j * 2.4 // Golden angle
+const radius = baseRadius * spiralFactor * 0.7
+```
+
+**Cluster Positioning:**
+```typescript
+const angle = (i / numCategories) * Math.PI * 2 - Math.PI / 2
+const distance = 250 + numCategories * 20
+```
+
+### API Endpoints Used
+
+- `GET /api/mindmap/data` - Returns nodes, connections, clusters
+- `POST /api/chat` - Chat completion (for inline mini-chat)
+
+### Testing Checklist
+
+- [ ] Nodes readable (no overlap)
+- [ ] Mini-chat executes inline
+- [ ] Quick actions work (analyze/connect/expand)
+- [ ] Suggestions clickable and update context
+- [ ] Connections navigate to related node
+- [ ] Pan/zoom smooth
+- [ ] Category filter works
+- [ ] Search filter works
+
+---
