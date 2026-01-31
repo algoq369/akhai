@@ -24,6 +24,7 @@ import {
   ConversationCards
 } from '@/components/tree-workbench'
 import LayerConfigConsole from '@/components/LayerConfigConsole'
+import WorkbenchConsole from '@/components/WorkbenchConsole'
 
 interface PathConnection {
   from: Sefirah
@@ -671,56 +672,9 @@ export default function TreeOfLifePage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto">
-        {/* Workbench View - 3 Column Layout */}
+        {/* Workbench View - Console Style */}
         {treeView === 'workbench' ? (
-          <div className="grid grid-cols-[240px_1fr_320px] gap-0 h-[calc(100vh-120px)]">
-            {/* LEFT: Preset Panel */}
-            <PresetPanel />
-
-            {/* CENTER: Tree + Weight Matrix */}
-            <div className="flex flex-col overflow-y-auto border-x border-relic-mist dark:border-relic-slate/20">
-              {/* Trees */}
-              <div className="p-4 flex gap-4 justify-center items-start">
-                <div className="flex flex-col items-center">
-                  <h4 className="text-[9px] uppercase tracking-wider text-relic-silver mb-2">AI Layers</h4>
-                  <SefirotTreeSVG
-                    width={280}
-                    height={380}
-                    showLabels={true}
-                    onSefirahClick={(sefirah) => {
-                      setModalSefirah(sefirah)
-                      setModalOpen(true)
-                    }}
-                  />
-                </div>
-                <div className="flex flex-col items-center">
-                  <h4 className="text-[9px] uppercase tracking-wider text-relic-silver mb-2">Anti-Patterns</h4>
-                  <QlipothTreeSVG
-                    width={240}
-                    height={320}
-                    collapsed={qlipothCollapsed}
-                    onCollapsedChange={setQlipothCollapsed}
-                  />
-                </div>
-              </div>
-
-              {/* Weight Matrix */}
-              <div className="border-t border-relic-mist dark:border-relic-slate/20 p-4">
-                <WeightMatrix showLabels={true} />
-              </div>
-
-              {/* Conversation Analysis */}
-              <div className="border-t border-relic-mist dark:border-relic-slate/20 p-4">
-                <h4 className="text-[10px] uppercase tracking-[0.15em] text-relic-slate font-mono mb-3">
-                  Conversation Analysis
-                </h4>
-                <ConversationCards limit={10} />
-              </div>
-            </div>
-
-            {/* RIGHT: Test Playground */}
-            <TestPlayground />
-          </div>
+          <WorkbenchConsole />
         ) : treeView === 'dual' ? (
           <>
           <div className="grid grid-cols-2 gap-2 mb-2">
