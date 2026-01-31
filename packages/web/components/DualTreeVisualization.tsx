@@ -176,6 +176,26 @@ export default function DualTreeVisualization({
                     onClick={() => setSelectedNode(isSelected ? null : `ascent-${node.id}`)}
                     style={{ cursor: 'pointer' }}
                   >
+                    {/* Pulsing glow for active nodes */}
+                    {isActive && (
+                      <motion.circle
+                        cx={x}
+                        cy={y}
+                        r="26"
+                        fill={colors.fill}
+                        opacity="0.2"
+                        animate={{
+                          r: [26, 32, 26],
+                          opacity: [0.2, 0.35, 0.2],
+                        }}
+                        transition={{
+                          duration: 2.5,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                        }}
+                      />
+                    )}
+
                     {/* Outer glow ring */}
                     <circle
                       cx={x}
@@ -183,17 +203,18 @@ export default function DualTreeVisualization({
                       r="28"
                       fill="none"
                       stroke={colors.glow}
-                      strokeWidth="1"
-                      opacity={isActive ? 0.5 : 0.2}
+                      strokeWidth="1.5"
+                      opacity={isActive ? 0.6 : 0.2}
                     />
 
-                    {/* Main circle - gradient effect with two circles */}
-                    <circle
+                    {/* Main orb - filled with color */}
+                    <motion.circle
                       cx={x}
                       cy={y}
                       r="22"
                       fill={colors.fill}
-                      opacity={isActive ? 0.9 : 0.4}
+                      opacity={isActive ? 1 : 0.5}
+                      whileHover={{ scale: 1.1 }}
                     />
                     <circle
                       cx={x}
@@ -201,13 +222,16 @@ export default function DualTreeVisualization({
                       r="22"
                       fill="none"
                       stroke={colors.stroke}
-                      strokeWidth={isSelected ? 2.5 : 1.5}
-                      opacity={isActive ? 1 : 0.5}
+                      strokeWidth={isSelected ? 3 : 2}
+                      opacity={isActive ? 1 : 0.6}
                     />
 
-                    {/* Inner dot */}
+                    {/* Inner bright core */}
                     {isActive && (
-                      <circle cx={x} cy={y} r="6" fill={colors.stroke} opacity="0.8" />
+                      <circle cx={x} cy={y} r="8" fill="#fff" opacity="0.7" />
+                    )}
+                    {isActive && (
+                      <circle cx={x} cy={y} r="5" fill={colors.stroke} opacity="0.9" />
                     )}
 
                     {/* Weight percentage */}
@@ -320,6 +344,26 @@ export default function DualTreeVisualization({
                     onClick={() => setSelectedNode(isSelected ? null : `descent-${node.id}`)}
                     style={{ cursor: 'pointer' }}
                   >
+                    {/* Pulsing warning glow for weaknesses */}
+                    {isWeakness && (
+                      <motion.circle
+                        cx={x}
+                        cy={y}
+                        r="26"
+                        fill={color}
+                        opacity="0.25"
+                        animate={{
+                          r: [26, 34, 26],
+                          opacity: [0.25, 0.45, 0.25],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                        }}
+                      />
+                    )}
+
                     {/* Outer ring */}
                     <circle
                       cx={x}
@@ -327,17 +371,18 @@ export default function DualTreeVisualization({
                       r="28"
                       fill="none"
                       stroke={color}
-                      strokeWidth="1"
-                      opacity={isWeakness ? 0.6 : 0.2}
+                      strokeWidth="1.5"
+                      opacity={isWeakness ? 0.7 : 0.3}
                     />
 
-                    {/* Main circle */}
-                    <circle
+                    {/* Main orb */}
+                    <motion.circle
                       cx={x}
                       cy={y}
                       r="22"
                       fill={isWeakness ? color : '#fef2f2'}
-                      opacity={isWeakness ? 0.9 : 0.6}
+                      opacity={isWeakness ? 1 : 0.7}
+                      whileHover={{ scale: 1.1 }}
                     />
                     <circle
                       cx={x}
@@ -345,22 +390,25 @@ export default function DualTreeVisualization({
                       r="22"
                       fill="none"
                       stroke={color}
-                      strokeWidth={isSelected ? 2.5 : 1.5}
-                      opacity={0.8}
+                      strokeWidth={isSelected ? 3 : 2}
+                      opacity={0.9}
                     />
 
                     {/* Warning indicator */}
                     {isWeakness && (
-                      <text
-                        x={x}
-                        y={y + 4}
-                        textAnchor="middle"
-                        fontSize="12"
-                        fill="#fff"
-                        fontWeight="bold"
-                      >
-                        !
-                      </text>
+                      <>
+                        <circle cx={x} cy={y} r="8" fill="#fff" opacity="0.6" />
+                        <text
+                          x={x}
+                          y={y + 5}
+                          textAnchor="middle"
+                          fontSize="14"
+                          fill="#fff"
+                          fontWeight="bold"
+                        >
+                          !
+                        </text>
+                      </>
                     )}
 
                     {/* Severity tag */}
@@ -372,9 +420,9 @@ export default function DualTreeVisualization({
                         fontSize="6"
                         fill={color}
                         fontFamily="monospace"
-                        style={{ textTransform: 'uppercase' }}
+                        textDecoration="none"
                       >
-                        {node.severity}
+                        {node.severity.toUpperCase()}
                       </text>
                     )}
 
