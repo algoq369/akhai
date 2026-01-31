@@ -1060,12 +1060,12 @@ export default function TreeOfLifePage() {
                       />
                     )}
 
-                    {/* AI Computational Layer (top, large and prominent) */}
+                    {/* AI Computational Term (primary label) */}
                     <text
                       x={pos.x}
-                      y={pos.y + radius + 20}
+                      y={pos.y + radius + 18}
                       textAnchor="middle"
-                      fontSize="16"
+                      fontSize="11"
                       fill="#8b5cf6"
                       fontFamily="monospace"
                       fontWeight="600"
@@ -1074,41 +1074,15 @@ export default function TreeOfLifePage() {
                       {meta.aiRole.split('•')[0].trim()}
                     </text>
 
-                    {/* English name (middle) */}
+                    {/* Activation percentage */}
                     <text
                       x={pos.x}
-                      y={pos.y + radius + 38}
-                      textAnchor="middle"
-                      fontSize="11"
-                      fill={isSelected ? "#18181b" : "#64748b"}
-                      fontFamily="monospace"
-                      fontWeight={isSelected ? "600" : "normal"}
-                    >
-                      {meta.name}
-                    </text>
-
-                    {/* Hebrew name (bottom, small and grey) */}
-                    <text
-                      x={pos.x}
-                      y={pos.y + radius + 52}
-                      textAnchor="middle"
-                      fontSize="10"
-                      fill="#94a3b8"
-                      fontFamily="Arial, sans-serif"
-                      opacity="0.6"
-                    >
-                      {meta.hebrewName}
-                    </text>
-
-                    {/* Activation percentage (bottom-most) */}
-                    <text
-                      x={pos.x}
-                      y={pos.y + radius + 52}
+                      y={pos.y + radius + 32}
                       textAnchor="middle"
                       fontSize="9"
                       fill="#64748b"
                       fontFamily="monospace"
-                      fontWeight="600"
+                      fontWeight="500"
                     >
                       {(activation * 100).toFixed(0)}%
                     </text>
@@ -1131,46 +1105,24 @@ export default function TreeOfLifePage() {
                 )
               })}
 
-              {/* Center text with breathing animation */}
+              {/* Center text - AI only */}
               <motion.text
                 x="250"
-                y="285"
-                textAnchor="middle"
-                fontSize="11"
-                fill="#94a3b8"
-                fontFamily="monospace"
-                letterSpacing="2"
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: [0.6, 0.8, 0.6]
-                }}
-                transition={{
-                  opacity: { duration: 0.6 },
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  ease: "easeInOut"
-                }}
-              >
-                TREE OF LIFE
-              </motion.text>
-              <motion.text
-                x="250"
-                y="305"
+                y="295"
                 textAnchor="middle"
                 fontSize="9"
-                fill="#cbd5e1"
+                fill="#94a3b8"
                 fontFamily="monospace"
+                letterSpacing="1"
                 initial={{ opacity: 0 }}
-                animate={{
-                  opacity: [0.5, 0.7, 0.5]
-                }}
+                animate={{ opacity: [0.4, 0.6, 0.4] }}
                 transition={{
-                  duration: 3,
+                  duration: 4,
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
               >
-                AI COMPUTATIONAL ARCHITECTURE
+                AI PROCESSING LAYERS
               </motion.text>
             </svg>
 
@@ -1539,27 +1491,15 @@ export default function TreeOfLifePage() {
                           />
                         )}
 
-                        {/* Name */}
+                        {/* Anti-Pattern (primary label) */}
                         <text
                           x={pos.x}
-                          y={pos.y + radius + 16}
+                          y={pos.y + radius + 18}
                           textAnchor="middle"
-                          fontSize="11"
+                          fontSize="10"
                           fill={color}
                           fontFamily="monospace"
                           fontWeight="600"
-                        >
-                          {node.name}
-                        </text>
-
-                        {/* Anti-Pattern */}
-                        <text
-                          x={pos.x}
-                          y={pos.y + radius + 28}
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="#94a3b8"
-                          fontFamily="monospace"
                         >
                           {node.pattern}
                         </text>
@@ -1567,13 +1507,12 @@ export default function TreeOfLifePage() {
                         {/* Severity indicator */}
                         <text
                           x={pos.x}
-                          y={pos.y + radius + 40}
+                          y={pos.y + radius + 32}
                           textAnchor="middle"
-                          fontSize="7"
-                          fill={color}
+                          fontSize="8"
+                          fill="#94a3b8"
                           fontFamily="monospace"
                           fontWeight="500"
-                          opacity="0.8"
                         >
                           {node.severity.toUpperCase()}
                         </text>
@@ -1581,37 +1520,19 @@ export default function TreeOfLifePage() {
                     )
                   })}
 
-                  {/* Center text */}
+                  {/* Center text - AI only */}
                   <motion.text
                     x="250"
-                    y="285"
-                    textAnchor="middle"
-                    fontSize="11"
-                    fill="#ef4444"
-                    fontFamily="monospace"
-                    letterSpacing="2"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.6, 0.8, 0.6] }}
-                    transition={{
-                      opacity: { duration: 0.6 },
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                      ease: "easeInOut"
-                    }}
-                  >
-                    ANTI-PATTERN TREE
-                  </motion.text>
-                  <motion.text
-                    x="250"
-                    y="305"
+                    y="295"
                     textAnchor="middle"
                     fontSize="9"
                     fill="#fca5a5"
                     fontFamily="monospace"
+                    letterSpacing="1"
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: [0.5, 0.7, 0.5] }}
+                    animate={{ opacity: [0.4, 0.6, 0.4] }}
                     transition={{
-                      duration: 3,
+                      duration: 4,
                       repeat: Infinity,
                       ease: "easeInOut"
                     }}
