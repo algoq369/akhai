@@ -13,6 +13,12 @@ import { callProvider, isProviderAvailable } from '@/lib/multi-provider-api'
 import { trackServerQuerySubmitted, trackServerGuardTriggered, getAnonymousDistinctId } from '@/lib/posthog-events'
 
 // ============================================================================
+// INTELLIGENCE FUSION LAYER - Unified AI orchestration
+// ============================================================================
+import { fuseIntelligence, generateEnhancedSystemPrompt, type IntelligenceFusionResult } from '@/lib/intelligence-fusion'
+import { createAutoInstinctConfig } from '@/lib/instinct-mode'
+
+// ============================================================================
 // URL VISITOR SYSTEM - Fetch content from links shared by user
 // ============================================================================
 import { hasURLs, detectURLs } from '@/lib/url-detector'
@@ -52,7 +58,7 @@ export async function POST(request: NextRequest) {
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'Before request.json()',data:{queryId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
     // #endregion
 
-    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false } = await request.json()
+    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, sefirotWeights, instinctConfig } = await request.json()
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:33',message:'Request parsed successfully',data:{query:query?.substring(0,50)||'null',methodology,hasHistory:conversationHistory.length>0,hasPageContext:!!pageContext,legendMode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
@@ -107,8 +113,51 @@ export async function POST(request: NextRequest) {
     // Log query start
     logger.query.start(query, methodology)
 
-    // Methodology selection with logging
-    const selectedMethod = selectMethodology(query, methodology)
+    // ============================================================================
+    // INTELLIGENCE FUSION LAYER - Unified AI orchestration
+    // ============================================================================
+    let fusionResult: IntelligenceFusionResult | null = null
+    
+    // Default Sefirot weights if not provided by client
+    const defaultWeights: Record<number, number> = {
+      1: 0.5, 2: 0.5, 3: 0.5, 4: 0.5, 5: 0.5,
+      6: 0.5, 7: 0.5, 8: 0.5, 9: 0.5, 10: 0.5, 11: 0.5
+    }
+    const weights = sefirotWeights || defaultWeights
+    
+    // Get Side Canal context for fusion
+    let sideCanalContext: string | null = null
+    try {
+      sideCanalContext = getContextForQuery(query, userId)
+    } catch (error) {
+      log('WARN', 'SIDE_CANAL', `Context fetch failed: ${error}`)
+    }
+    
+    try {
+      // Create instinct config (auto-detect lenses from query)
+      const effectiveInstinctConfig = instinctConfig || createAutoInstinctConfig(query, 0.5, weights)
+      
+      // Run Intelligence Fusion
+      fusionResult = await fuseIntelligence(
+        query,
+        weights,
+        effectiveInstinctConfig,
+        { contextInjection: sideCanalContext, relatedTopics: [] }
+      )
+      
+      log('INFO', 'FUSION', `Methodology: ${fusionResult.selectedMethodology} (${Math.round(fusionResult.confidence * 100)}% confidence)`)
+      log('INFO', 'FUSION', `Dominant Sefirot: ${fusionResult.dominantSefirot.map(s => SEPHIROTH_METADATA[s]?.name).join(', ') || 'None'}`)
+      log('INFO', 'FUSION', `Guard: ${fusionResult.guardRecommendation} | Thinking Budget: ${fusionResult.extendedThinkingBudget}`)
+      log('INFO', 'FUSION', `Processing time: ${fusionResult.processingTimeMs}ms`)
+    } catch (fusionError) {
+      log('WARN', 'FUSION', `Intelligence fusion failed: ${fusionError}`)
+      fusionResult = null
+    }
+
+    // Methodology selection - use fusion result if available, fallback to legacy
+    const selectedMethod = fusionResult && methodology === 'auto'
+      ? { id: fusionResult.selectedMethodology, reason: `Fusion: ${fusionResult.methodologyScores[0]?.reasons.join(', ') || 'Auto-selected'}` }
+      : selectMethodology(query, methodology)
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:26',message:'Methodology selected',data:{selected:selectedMethod.id,reason:selectedMethod.reason},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
@@ -240,15 +289,10 @@ export async function POST(request: NextRequest) {
     log('INFO', 'PROVIDER', `Methodology: ${selectedMethod.id} → Provider: ${selectedProvider} (${providerSpec.model})`)
     log('INFO', 'PROVIDER', `Reasoning: ${providerSpec.reasoning}`)
 
-    // Get context from Side Canal (related synopses) - context injection
-    let sideCanalContext: string | null = null
-    try {
-      sideCanalContext = getContextForQuery(query, userId)
-      if (sideCanalContext) {
-        log('INFO', 'SIDE_CANAL', `Context injected: ${sideCanalContext.substring(0, 100)}...`)
-      }
-    } catch (error) {
-      log('WARN', 'SIDE_CANAL', `Context injection failed: ${error}`)
+    // Side Canal context already fetched above in fusion layer
+    // Log if context was found
+    if (sideCanalContext) {
+      log('INFO', 'SIDE_CANAL', `Context injected: ${sideCanalContext.substring(0, 100)}...`)
     }
 
     // Build messages with conversation history and context
@@ -277,8 +321,15 @@ export async function POST(request: NextRequest) {
       log('INFO', 'URL_FETCH', `URL context injected into system prompt`)
     }
 
+    // Inject Intelligence Fusion enhancement if available
+    if (fusionResult) {
+      const fusionEnhancement = generateEnhancedSystemPrompt(fusionResult)
+      systemPrompt = `${systemPrompt}\n\n${fusionEnhancement}`
+      log('INFO', 'FUSION', `Enhanced system prompt with Sefirot awareness (+${fusionEnhancement.length} chars)`)
+    }
+
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:115',message:'After getMethodologyPrompt',data:{promptLength:systemPrompt?.length||0,methodology:selectedMethod.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:115',message:'After getMethodologyPrompt',data:{promptLength:systemPrompt?.length||0,methodology:selectedMethod.id,fusionApplied:!!fusionResult},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
     // #endregion
 
     // Call Multi-Provider API
@@ -504,6 +555,24 @@ export async function POST(request: NextRequest) {
       // GNOSTIC METADATA - Sovereignty, Ascent, Sephirothic Analysis
       // ============================================================================
       gnostic: gnosticMetadata,
+      // ============================================================================
+      // INTELLIGENCE FUSION - Unified AI orchestration metadata
+      // ============================================================================
+      fusion: fusionResult ? {
+        methodology: fusionResult.selectedMethodology,
+        confidence: fusionResult.confidence,
+        sefirotActivations: fusionResult.sefirotActivations.slice(0, 5).map(s => ({
+          name: s.name,
+          effectiveWeight: s.effectiveWeight,
+          keywords: s.keywords
+        })),
+        dominantSefirot: fusionResult.dominantSefirot.map(s => SEPHIROTH_METADATA[s]?.name),
+        guardRecommendation: fusionResult.guardRecommendation,
+        extendedThinkingBudget: fusionResult.extendedThinkingBudget,
+        processingMode: fusionResult.processingMode,
+        activeLenses: fusionResult.activeLenses,
+        processingTimeMs: fusionResult.processingTimeMs
+      } : null,
     }
     
     log('INFO', 'SIDE_CANAL', `Response includes ${suggestions.length} suggestions`)

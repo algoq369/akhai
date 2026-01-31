@@ -35,8 +35,8 @@ const LAYERS = [
 
 export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigurationModalProps) {
   const router = useRouter()
-  const { weights, setWeight, applyPreset, currentPreset } = useSefirotStore()
-  const [activePreset, setActivePreset] = useState<PresetName | null>(currentPreset)
+  const { weights, setWeight, applyPreset, activePreset: storePreset } = useSefirotStore()
+  const [activePreset, setActivePreset] = useState<PresetName | null>(storePreset as PresetName | null)
 
   const getPercentage = (level: number) => Math.round((weights[level] || 0.5) * 100)
 
