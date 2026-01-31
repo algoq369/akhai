@@ -26,6 +26,7 @@ import {
 import LayerConfigConsole from '@/components/LayerConfigConsole'
 import WorkbenchConsole from '@/components/WorkbenchConsole'
 import ConfigHistoryPanel from '@/components/ConfigHistoryPanel'
+import QuickConfigBar from '@/components/QuickConfigBar'
 
 // Clean AI Layer Labels - Primary (AI term) and Secondary (concept)
 const AI_LABELS: Record<number, { primary: string; concept: string }> = {
@@ -647,7 +648,7 @@ export default function TreeOfLifePage() {
               AI REASONING ARCHITECTURE
             </h1>
             <h2 className="text-2xl font-mono text-relic-void">
-              Model Configuration
+              AI Computational Config
             </h2>
             <p className="text-[10px] text-relic-silver mt-1">
               AI Processing Layers and Anti-Pattern Detection
@@ -681,50 +682,20 @@ export default function TreeOfLifePage() {
         </div>
       </div>
 
-      {/* Compact Console - Tree View Selector (50% smaller - v5) */}
+      {/* Compact Console - Simplified 2-Tab Selector */}
       <div className="bg-white border-y border-relic-mist">
         <div className="max-w-7xl mx-auto px-3 py-1">
           <div className="flex items-center justify-center gap-6 text-[8px] font-mono uppercase tracking-wider">
             <button
-              onClick={() => setTreeView('sephiroth')}
-              className="flex items-center gap-1.5 hover:text-relic-void transition-colors"
-              title="AI Processing Layers (Ascent)"
-            >
-              <span className={`text-[10px] ${treeView === 'sephiroth' ? 'text-purple-500' : 'text-relic-mist'}`}>
-                {treeView === 'sephiroth' ? '◆' : '◇'}
-              </span>
-              <span className={treeView === 'sephiroth' ? 'text-relic-void' : 'text-relic-slate'}>
-                Layers
-              </span>
-            </button>
-
-            <span className="text-relic-mist">│</span>
-
-            <button
               onClick={() => setTreeView('dual')}
               className="flex items-center gap-1.5 hover:text-relic-void transition-colors"
-              title="Show Both Views"
+              title="AI Computational Configuration"
             >
-              <span className={`text-[10px] ${treeView === 'dual' ? 'text-purple-500' : 'text-relic-mist'}`}>
-                {treeView === 'dual' ? '◆' : '◇'}
+              <span className={`text-[10px] ${treeView !== 'workbench' ? 'text-purple-500' : 'text-relic-mist'}`}>
+                {treeView !== 'workbench' ? '◆' : '◇'}
               </span>
-              <span className={treeView === 'dual' ? 'text-relic-void' : 'text-relic-slate'}>
-                Both Views
-              </span>
-            </button>
-
-            <span className="text-relic-mist">│</span>
-
-            <button
-              onClick={() => setTreeView('qliphoth')}
-              className="flex items-center gap-1.5 hover:text-relic-void transition-colors"
-              title="Anti-Pattern Detection (Descent)"
-            >
-              <span className={`text-[10px] ${treeView === 'qliphoth' ? 'text-red-500' : 'text-relic-mist'}`}>
-                {treeView === 'qliphoth' ? '◆' : '◇'}
-              </span>
-              <span className={treeView === 'qliphoth' ? 'text-relic-void' : 'text-relic-slate'}>
-                Anti-Patterns
+              <span className={treeView !== 'workbench' ? 'text-relic-void' : 'text-relic-slate'}>
+                AI Computational Config
               </span>
             </button>
 
@@ -733,7 +704,7 @@ export default function TreeOfLifePage() {
             <button
               onClick={() => setTreeView('workbench')}
               className="flex items-center gap-1.5 hover:text-relic-void transition-colors"
-              title="Configuration Workbench"
+              title="History & Analysis Workbench"
             >
               <span className={`text-[10px] ${treeView === 'workbench' ? 'text-purple-500' : 'text-relic-mist'}`}>
                 {treeView === 'workbench' ? '◆' : '◇'}
@@ -753,6 +724,9 @@ export default function TreeOfLifePage() {
           <WorkbenchConsole />
         ) : treeView === 'dual' ? (
           <>
+          {/* Quick Config Bar - Above Trees */}
+          <QuickConfigBar className="mb-2" />
+          
           <div className="grid grid-cols-2 gap-2 mb-2">
             {/* LEFT: AI Processing Layers */}
             <div className="bg-white border border-relic-mist p-2">

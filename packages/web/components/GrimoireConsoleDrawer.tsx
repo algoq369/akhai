@@ -64,7 +64,7 @@ export function GrimoireConsoleDrawer({ grimoireId, methodology, onMethodologyCh
               : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-50 hover:border-slate-400 dark:hover:bg-slate-600'
           }`}
         >
-          ✦ Sefirot Tree
+          ✦ AI Config
         </button>
         <button
           onClick={() => setActiveTab(activeTab === 'lenses' ? 'closed' : 'lenses')}

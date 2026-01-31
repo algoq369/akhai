@@ -1,165 +1,92 @@
 'use client'
 
 /**
- * WORKBENCH CONSOLE
+ * WORKBENCH CONSOLE - AI COMPUTATIONAL CONFIG
  * 
- * Compact AI model configuration interface
- * - Left: Interactive Ascent Tree (configurable)
- * - Right: Presets + Configuration History
- * - Bottom: Test Playground
- * 
- * White minimalist design, monospace typography
+ * Features:
+ * - Left: Interconnected Tree Visualization (processing flow)
+ * - Right: Quick Config (top 3 layers) + Config History
+ * - Bottom: Presets + Expand All Layers
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSefirotStore } from '@/lib/stores/sefirot-store'
-import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
+import { Sefirah } from '@/lib/ascent-tracker'
 
 // ═══════════════════════════════════════════════════════════
-// AI LABELS (Computational Terms)
+// AI LAYERS & CONFIG
 // ═══════════════════════════════════════════════════════════
 
-const AI_LABELS: Record<number, { primary: string; concept: string }> = {
-  [Sefirah.KETHER]: { primary: 'meta-cognition', concept: 'unified awareness' },
-  [Sefirah.CHOKMAH]: { primary: 'first-principles', concept: 'foundational reasoning' },
-  [Sefirah.BINAH]: { primary: 'pattern-recognition', concept: 'structural analysis' },
-  [Sefirah.DAAT]: { primary: 'emergent-insight', concept: 'hidden connections' },
-  [Sefirah.CHESED]: { primary: 'expansion', concept: 'creative exploration' },
-  [Sefirah.GEVURAH]: { primary: 'critical-analysis', concept: 'rigorous evaluation' },
-  [Sefirah.TIFERET]: { primary: 'synthesis', concept: 'balanced integration' },
-  [Sefirah.NETZACH]: { primary: 'persistence', concept: 'iterative refinement' },
-  [Sefirah.HOD]: { primary: 'communication', concept: 'clear articulation' },
-  [Sefirah.YESOD]: { primary: 'foundation', concept: 'grounded knowledge' },
-  [Sefirah.MALKUTH]: { primary: 'manifestation', concept: 'concrete output' },
+interface AILayer {
+  id: number
+  name: string
+  description: string
+  phase: 'input' | 'understanding' | 'reasoning' | 'output'
+  extremes: { low: string; high: string }
+  critical: boolean
+  color: string
 }
 
-// ═══════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════
+const AI_LAYERS: AILayer[] = [
+  { id: Sefirah.MALKUTH, name: 'reception', description: 'input parsing', phase: 'input', extremes: { low: 'basic', high: 'detailed' }, critical: false, color: '#78716c' },
+  { id: Sefirah.YESOD, name: 'comprehension', description: 'semantic encoding', phase: 'input', extremes: { low: 'surface', high: 'deep' }, critical: false, color: '#a3a3a3' },
+  { id: Sefirah.HOD, name: 'context', description: 'relationship mapping', phase: 'understanding', extremes: { low: 'narrow', high: 'wide' }, critical: false, color: '#facc15' },
+  { id: Sefirah.BINAH, name: 'knowledge', description: 'retrieves facts and expertise', phase: 'understanding', extremes: { low: 'focused', high: 'broad' }, critical: true, color: '#6366f1' },
+  { id: Sefirah.CHOKMAH, name: 'reasoning', description: 'breaks problems into steps', phase: 'reasoning', extremes: { low: 'shallow', high: 'deep' }, critical: true, color: '#818cf8' },
+  { id: Sefirah.CHESED, name: 'expansion', description: 'explores alternatives', phase: 'reasoning', extremes: { low: 'constrained', high: 'expansive' }, critical: false, color: '#34d399' },
+  { id: Sefirah.GEVURAH, name: 'analysis', description: 'evaluates and limits', phase: 'reasoning', extremes: { low: 'lenient', high: 'strict' }, critical: false, color: '#f87171' },
+  { id: Sefirah.TIFERET, name: 'synthesis', description: 'combines insights', phase: 'reasoning', extremes: { low: 'simple', high: 'complex' }, critical: false, color: '#fbbf24' },
+  { id: Sefirah.DAAT, name: 'verification', description: 'checks for errors', phase: 'output', extremes: { low: 'minimal', high: 'thorough' }, critical: true, color: '#22d3ee' },
+  { id: Sefirah.NETZACH, name: 'articulation', description: 'crafts response', phase: 'output', extremes: { low: 'concise', high: 'verbose' }, critical: false, color: '#fb923c' },
+  { id: Sefirah.KETHER, name: 'output', description: 'final delivery', phase: 'output', extremes: { low: 'minimal', high: 'complete' }, critical: false, color: '#a78bfa' },
+]
+
+const CRITICAL_LAYERS = AI_LAYERS.filter(l => l.critical)
+
+// Tree positions for visualization (top-to-bottom flow)
+const TREE_POSITIONS: Record<number, { x: number; y: number }> = {
+  [Sefirah.MALKUTH]: { x: 100, y: 30 },   // reception (top - input)
+  [Sefirah.YESOD]: { x: 100, y: 70 },     // comprehension
+  [Sefirah.HOD]: { x: 60, y: 110 },       // context (left)
+  [Sefirah.BINAH]: { x: 140, y: 110 },    // knowledge (right) ★
+  [Sefirah.CHOKMAH]: { x: 100, y: 155 },  // reasoning (center) ★
+  [Sefirah.CHESED]: { x: 50, y: 195 },    // expansion (left)
+  [Sefirah.GEVURAH]: { x: 150, y: 195 },  // analysis (right)
+  [Sefirah.TIFERET]: { x: 100, y: 235 },  // synthesis (center)
+  [Sefirah.DAAT]: { x: 100, y: 280 },     // verification ★
+  [Sefirah.NETZACH]: { x: 100, y: 320 },  // articulation
+  [Sefirah.KETHER]: { x: 100, y: 360 },   // output (bottom)
+}
+
+// Tree connections (processing flow)
+const TREE_PATHS: [number, number][] = [
+  [Sefirah.MALKUTH, Sefirah.YESOD],      // reception → comprehension
+  [Sefirah.YESOD, Sefirah.HOD],          // comprehension → context
+  [Sefirah.YESOD, Sefirah.BINAH],        // comprehension → knowledge
+  [Sefirah.HOD, Sefirah.CHOKMAH],        // context → reasoning
+  [Sefirah.BINAH, Sefirah.CHOKMAH],      // knowledge → reasoning
+  [Sefirah.CHOKMAH, Sefirah.CHESED],     // reasoning → expansion
+  [Sefirah.CHOKMAH, Sefirah.GEVURAH],    // reasoning → analysis
+  [Sefirah.CHESED, Sefirah.TIFERET],     // expansion → synthesis
+  [Sefirah.GEVURAH, Sefirah.TIFERET],    // analysis → synthesis
+  [Sefirah.TIFERET, Sefirah.DAAT],       // synthesis → verification
+  [Sefirah.DAAT, Sefirah.NETZACH],       // verification → articulation
+  [Sefirah.NETZACH, Sefirah.KETHER],     // articulation → output
+]
+
+const PRESETS = [
+  { id: 'fast', name: 'fast', weights: { [Sefirah.CHOKMAH]: 0.4, [Sefirah.BINAH]: 0.5, [Sefirah.DAAT]: 0.4 } },
+  { id: 'balanced', name: 'balanced', weights: { [Sefirah.CHOKMAH]: 0.7, [Sefirah.BINAH]: 0.7, [Sefirah.DAAT]: 0.7 } },
+  { id: 'thorough', name: 'thorough', weights: { [Sefirah.CHOKMAH]: 0.9, [Sefirah.BINAH]: 0.85, [Sefirah.DAAT]: 0.9 } },
+  { id: 'creative', name: 'creative', weights: { [Sefirah.CHOKMAH]: 0.7, [Sefirah.BINAH]: 0.6, [Sefirah.DAAT]: 0.5 } },
+]
 
 interface ConfigHistory {
   id: string
   name: string
   date: string
-  weights: Record<number, number>
   testCount: number
-  tests: TestResult[]
-}
-
-interface TestResult {
-  id: string
-  query: string
-  timestamp: string
-  response?: string
-}
-
-interface Preset {
-  id: string
-  name: string
-  weights: Record<number, number>
-}
-
-// ═══════════════════════════════════════════════════════════
-// PRESETS
-// ═══════════════════════════════════════════════════════════
-
-const PRESETS: Preset[] = [
-  {
-    id: 'analytical',
-    name: 'analytical',
-    weights: {
-      [Sefirah.KETHER]: 0.3, [Sefirah.CHOKMAH]: 0.9, [Sefirah.BINAH]: 0.85,
-      [Sefirah.DAAT]: 0.4, [Sefirah.CHESED]: 0.3, [Sefirah.GEVURAH]: 0.95,
-      [Sefirah.TIFERET]: 0.5, [Sefirah.NETZACH]: 0.3, [Sefirah.HOD]: 0.9,
-      [Sefirah.YESOD]: 0.85, [Sefirah.MALKUTH]: 0.9,
-    }
-  },
-  {
-    id: 'creative',
-    name: 'creative',
-    weights: {
-      [Sefirah.KETHER]: 0.8, [Sefirah.CHOKMAH]: 0.7, [Sefirah.BINAH]: 0.4,
-      [Sefirah.DAAT]: 0.9, [Sefirah.CHESED]: 0.95, [Sefirah.GEVURAH]: 0.3,
-      [Sefirah.TIFERET]: 0.85, [Sefirah.NETZACH]: 0.9, [Sefirah.HOD]: 0.5,
-      [Sefirah.YESOD]: 0.6, [Sefirah.MALKUTH]: 0.7,
-    }
-  },
-  {
-    id: 'balanced',
-    name: 'balanced',
-    weights: {
-      [Sefirah.KETHER]: 0.5, [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.6,
-      [Sefirah.DAAT]: 0.5, [Sefirah.CHESED]: 0.6, [Sefirah.GEVURAH]: 0.6,
-      [Sefirah.TIFERET]: 0.7, [Sefirah.NETZACH]: 0.6, [Sefirah.HOD]: 0.6,
-      [Sefirah.YESOD]: 0.6, [Sefirah.MALKUTH]: 0.6,
-    }
-  },
-  {
-    id: 'deep',
-    name: 'deep',
-    weights: {
-      [Sefirah.KETHER]: 0.5, [Sefirah.CHOKMAH]: 0.85, [Sefirah.BINAH]: 0.7,
-      [Sefirah.DAAT]: 0.95, [Sefirah.CHESED]: 0.6, [Sefirah.GEVURAH]: 0.75,
-      [Sefirah.TIFERET]: 0.5, [Sefirah.NETZACH]: 0.6, [Sefirah.HOD]: 0.8,
-      [Sefirah.YESOD]: 0.8, [Sefirah.MALKUTH]: 0.85,
-    }
-  },
-]
-
-// ═══════════════════════════════════════════════════════════
-// TREE POSITIONS
-// ═══════════════════════════════════════════════════════════
-
-const TREE_POSITIONS: Record<number, { x: number; y: number }> = {
-  [Sefirah.KETHER]: { x: 120, y: 30 },
-  [Sefirah.CHOKMAH]: { x: 180, y: 70 },
-  [Sefirah.BINAH]: { x: 60, y: 70 },
-  [Sefirah.DAAT]: { x: 120, y: 100 },
-  [Sefirah.CHESED]: { x: 180, y: 140 },
-  [Sefirah.GEVURAH]: { x: 60, y: 140 },
-  [Sefirah.TIFERET]: { x: 120, y: 170 },
-  [Sefirah.NETZACH]: { x: 180, y: 210 },
-  [Sefirah.HOD]: { x: 60, y: 210 },
-  [Sefirah.YESOD]: { x: 120, y: 250 },
-  [Sefirah.MALKUTH]: { x: 120, y: 300 },
-}
-
-const TREE_PATHS: [Sefirah, Sefirah][] = [
-  [Sefirah.KETHER, Sefirah.CHOKMAH],
-  [Sefirah.KETHER, Sefirah.BINAH],
-  [Sefirah.KETHER, Sefirah.TIFERET],
-  [Sefirah.CHOKMAH, Sefirah.BINAH],
-  [Sefirah.CHOKMAH, Sefirah.CHESED],
-  [Sefirah.BINAH, Sefirah.GEVURAH],
-  [Sefirah.CHESED, Sefirah.GEVURAH],
-  [Sefirah.CHESED, Sefirah.TIFERET],
-  [Sefirah.GEVURAH, Sefirah.TIFERET],
-  [Sefirah.TIFERET, Sefirah.NETZACH],
-  [Sefirah.TIFERET, Sefirah.HOD],
-  [Sefirah.TIFERET, Sefirah.YESOD],
-  [Sefirah.NETZACH, Sefirah.HOD],
-  [Sefirah.NETZACH, Sefirah.YESOD],
-  [Sefirah.HOD, Sefirah.YESOD],
-  [Sefirah.YESOD, Sefirah.MALKUTH],
-]
-
-// ═══════════════════════════════════════════════════════════
-// COLORS
-// ═══════════════════════════════════════════════════════════
-
-const NODE_COLORS: Record<number, string> = {
-  [Sefirah.KETHER]: '#a78bfa',
-  [Sefirah.CHOKMAH]: '#818cf8',
-  [Sefirah.BINAH]: '#6366f1',
-  [Sefirah.DAAT]: '#22d3ee',
-  [Sefirah.CHESED]: '#34d399',
-  [Sefirah.GEVURAH]: '#f87171',
-  [Sefirah.TIFERET]: '#fbbf24',
-  [Sefirah.NETZACH]: '#fb923c',
-  [Sefirah.HOD]: '#facc15',
-  [Sefirah.YESOD]: '#a3a3a3',
-  [Sefirah.MALKUTH]: '#78716c',
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -167,139 +94,68 @@ const NODE_COLORS: Record<number, string> = {
 // ═══════════════════════════════════════════════════════════
 
 export function WorkbenchConsole() {
-  const { weights, setWeight, applyPreset } = useSefirotStore()
-  
-  // State
-  const [activePreset, setActivePreset] = useState<string>('balanced')
-  const [selectedNode, setSelectedNode] = useState<Sefirah | null>(null)
-  const [hoveredNode, setHoveredNode] = useState<Sefirah | null>(null)
+  const { weights, setWeight } = useSefirotStore()
+  const [activePreset, setActivePreset] = useState('balanced')
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const [testQuery, setTestQuery] = useState('')
-  const [isTestExpanded, setIsTestExpanded] = useState(false)
-  const [configHistory, setConfigHistory] = useState<ConfigHistory[]>([
-    {
-      id: '1',
-      name: 'Deep Research v2',
-      date: 'Jan 29',
-      weights: PRESETS[3].weights,
-      testCount: 3,
-      tests: [
-        { id: '1a', query: 'Explain quantum entanglement', timestamp: '10:30' },
-        { id: '1b', query: 'Compare neural architectures', timestamp: '10:45' },
-      ]
-    },
-    {
-      id: '2', 
-      name: 'Creative Writing',
-      date: 'Jan 28',
-      weights: PRESETS[1].weights,
-      testCount: 7,
-      tests: []
-    },
-    {
-      id: '3',
-      name: 'Code Analysis',
-      date: 'Jan 27',
-      weights: PRESETS[0].weights,
-      testCount: 12,
-      tests: []
-    },
+  const [isTestOpen, setIsTestOpen] = useState(false)
+  const [hoveredNode, setHoveredNode] = useState<number | null>(null)
+  const [selectedNode, setSelectedNode] = useState<number | null>(null)
+  
+  const [configHistory] = useState<ConfigHistory[]>([
+    { id: '1', name: 'Deep Research', date: 'Jan 29', testCount: 3 },
+    { id: '2', name: 'Creative Session', date: 'Jan 28', testCount: 7 },
   ])
-  const [expandedHistory, setExpandedHistory] = useState<string | null>(null)
 
-  // Apply preset
-  const handlePresetSelect = (preset: Preset) => {
-    setActivePreset(preset.id)
-    Object.entries(preset.weights).forEach(([sefirah, weight]) => {
-      setWeight(parseInt(sefirah) as Sefirah, weight)
-    })
-  }
-
-  // Handle node click for editing
-  const handleNodeClick = (sefirah: Sefirah) => {
-    setSelectedNode(selectedNode === sefirah ? null : sefirah)
-  }
-
-  // Handle weight change
-  const handleWeightChange = (sefirah: Sefirah, value: number) => {
-    setWeight(sefirah, value)
+  const getWeight = (id: number) => weights[id] ?? 0.5
+  const getLayer = (id: number) => AI_LAYERS.find(l => l.id === id)
+  
+  const handleWeightChange = (id: number, value: number) => {
+    setWeight(id, value)
     setActivePreset('custom')
   }
 
-  // Save current config to history
-  const saveConfig = () => {
-    const newConfig: ConfigHistory = {
-      id: Date.now().toString(),
-      name: `Config ${configHistory.length + 1}`,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      weights: { ...weights },
-      testCount: 0,
-      tests: []
+  const applyPreset = (presetId: string) => {
+    setActivePreset(presetId)
+    const preset = PRESETS.find(p => p.id === presetId)
+    if (preset) {
+      Object.entries(preset.weights).forEach(([id, weight]) => {
+        setWeight(parseInt(id), weight)
+      })
     }
-    setConfigHistory([newConfig, ...configHistory])
-  }
-
-  // Load config from history
-  const loadConfig = (config: ConfigHistory) => {
-    Object.entries(config.weights).forEach(([sefirah, weight]) => {
-      setWeight(parseInt(sefirah) as Sefirah, weight)
-    })
-    setActivePreset('custom')
-  }
-
-  // Copy config
-  const copyConfig = (config: ConfigHistory) => {
-    navigator.clipboard.writeText(JSON.stringify(config.weights, null, 2))
-  }
-
-  // Delete config
-  const deleteConfig = (id: string) => {
-    setConfigHistory(configHistory.filter(c => c.id !== id))
-  }
-
-  // Run test
-  const runTest = async () => {
-    if (!testQuery.trim()) return
-    // TODO: Implement actual test API call
-    console.log('Testing with query:', testQuery)
   }
 
   return (
-    <div className="bg-white min-h-screen font-mono text-sm">
+    <div className="bg-white font-mono text-xs">
       {/* Header */}
-      <div className="border-b border-neutral-200 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xs uppercase tracking-widest text-neutral-400">Model Configuration</h1>
-            <h2 className="text-lg text-neutral-900 mt-0.5">Workbench</h2>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={saveConfig}
-              className="px-3 py-1.5 text-xs border border-neutral-200 rounded hover:bg-neutral-50 transition-colors"
-            >
-              Save Config
-            </button>
-            <span className="text-xs text-neutral-400">⌘S</span>
-          </div>
+      <div className="border-b border-neutral-100 px-4 py-3 flex items-center justify-between">
+        <div>
+          <div className="text-[10px] uppercase tracking-widest text-neutral-400">AI Computational Config</div>
+          <div className="text-neutral-500 mt-0.5">configure processing layers for optimal responses</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="px-3 py-1.5 text-[10px] border border-neutral-200 rounded hover:bg-neutral-50">
+            Save
+          </button>
+          <span className="text-neutral-300">⌘S</span>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Two Columns */}
       <div className="flex">
         {/* Left: Tree Visualization */}
-        <div className="w-[320px] border-r border-neutral-200 p-4">
-          <div className="text-[10px] uppercase tracking-wider text-neutral-400 mb-3">
-            AI Processing Layers
+        <div className="w-[240px] border-r border-neutral-100 p-3">
+          <div className="text-[9px] uppercase tracking-wider text-neutral-400 mb-2 text-center">
+            Processing Flow
           </div>
           
-          {/* SVG Tree */}
-          <svg viewBox="0 0 240 340" className="w-full">
-            {/* Paths */}
+          <svg viewBox="0 0 200 400" className="w-full">
+            {/* Connection Paths */}
             {TREE_PATHS.map(([from, to], idx) => {
               const fromPos = TREE_POSITIONS[from]
               const toPos = TREE_POSITIONS[to]
-              const fromWeight = weights[from] ?? 0.5
-              const toWeight = weights[to] ?? 0.5
+              const fromWeight = getWeight(from)
+              const toWeight = getWeight(to)
               const avgWeight = (fromWeight + toWeight) / 2
               
               return (
@@ -310,29 +166,36 @@ export function WorkbenchConsole() {
                   x2={toPos.x}
                   y2={toPos.y}
                   stroke="#e5e7eb"
-                  strokeWidth={1 + avgWeight}
-                  strokeOpacity={0.4 + avgWeight * 0.4}
+                  strokeWidth={1 + avgWeight * 1.5}
+                  strokeOpacity={0.5 + avgWeight * 0.3}
                 />
               )
             })}
 
-            {/* Nodes */}
-            {Object.entries(TREE_POSITIONS).map(([sefirahStr, pos]) => {
-              const sefirah = parseInt(sefirahStr) as Sefirah
-              const weight = weights[sefirah] ?? 0.5
-              const color = NODE_COLORS[sefirah]
-              const isSelected = selectedNode === sefirah
-              const isHovered = hoveredNode === sefirah
-              const radius = 12 + weight * 8
-              const label = AI_LABELS[sefirah]
+            {/* Flow arrows (subtle) */}
+            <defs>
+              <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#d4d4d4" />
+              </marker>
+            </defs>
 
+            {/* Nodes */}
+            {AI_LAYERS.map((layer) => {
+              const pos = TREE_POSITIONS[layer.id]
+              if (!pos) return null
+              
+              const weight = getWeight(layer.id)
+              const isHovered = hoveredNode === layer.id
+              const isSelected = selectedNode === layer.id
+              const radius = 10 + weight * 6
+              
               return (
                 <g
-                  key={sefirah}
+                  key={layer.id}
                   className="cursor-pointer"
-                  onClick={() => handleNodeClick(sefirah)}
-                  onMouseEnter={() => setHoveredNode(sefirah)}
+                  onMouseEnter={() => setHoveredNode(layer.id)}
                   onMouseLeave={() => setHoveredNode(null)}
+                  onClick={() => setSelectedNode(selectedNode === layer.id ? null : layer.id)}
                 >
                   {/* Selection ring */}
                   {isSelected && (
@@ -341,9 +204,9 @@ export function WorkbenchConsole() {
                       cy={pos.y}
                       r={radius + 4}
                       fill="none"
-                      stroke={color}
-                      strokeWidth="2"
-                      strokeDasharray="4 2"
+                      stroke={layer.color}
+                      strokeWidth="1.5"
+                      strokeDasharray="3 2"
                     />
                   )}
                   
@@ -353,8 +216,21 @@ export function WorkbenchConsole() {
                       cx={pos.x}
                       cy={pos.y}
                       r={radius + 3}
-                      fill={color}
+                      fill={layer.color}
                       fillOpacity={0.15}
+                    />
+                  )}
+
+                  {/* Critical indicator */}
+                  {layer.critical && (
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={radius + 2}
+                      fill="none"
+                      stroke={layer.color}
+                      strokeWidth="1"
+                      strokeOpacity={0.5}
                     />
                   )}
 
@@ -364,8 +240,8 @@ export function WorkbenchConsole() {
                     cy={pos.y}
                     r={radius}
                     fill="white"
-                    stroke={color}
-                    strokeWidth={isSelected ? 2.5 : 1.5}
+                    stroke={layer.color}
+                    strokeWidth={layer.critical ? 2 : 1.5}
                   />
 
                   {/* Inner fill based on weight */}
@@ -373,7 +249,7 @@ export function WorkbenchConsole() {
                     cx={pos.x}
                     cy={pos.y}
                     r={radius * weight}
-                    fill={color}
+                    fill={layer.color}
                     fillOpacity={0.3 + weight * 0.4}
                   />
 
@@ -382,101 +258,137 @@ export function WorkbenchConsole() {
                     x={pos.x}
                     y={pos.y + 3}
                     textAnchor="middle"
-                    fontSize="8"
-                    fill={weight > 0.5 ? '#374151' : '#9ca3af'}
+                    fontSize="7"
+                    fill="#374151"
                     fontWeight="500"
                   >
                     {Math.round(weight * 100)}%
                   </text>
 
-                  {/* Label (on hover or select) */}
-                  {(isHovered || isSelected) && (
+                  {/* Label (always show for critical, on hover for others) */}
+                  {(layer.critical || isHovered || isSelected) && (
                     <text
-                      x={pos.x}
-                      y={pos.y - radius - 6}
-                      textAnchor="middle"
-                      fontSize="8"
-                      fill="#374151"
-                      fontWeight="500"
+                      x={pos.x > 100 ? pos.x + radius + 4 : pos.x - radius - 4}
+                      y={pos.y + 3}
+                      textAnchor={pos.x > 100 ? 'start' : 'end'}
+                      fontSize="7"
+                      fill={layer.critical ? '#374151' : '#9ca3af'}
+                      fontWeight={layer.critical ? '600' : '400'}
                     >
-                      {label?.primary}
+                      {layer.name}{layer.critical && ' ★'}
                     </text>
                   )}
                 </g>
               )
             })}
-          </svg>
 
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-4 mt-3 text-[9px] text-neutral-400">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-500" /> Active
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-amber-500" /> Developing
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-neutral-300" /> Low
-            </span>
-          </div>
+            {/* Phase labels */}
+            <text x="10" y="15" fontSize="6" fill="#d4d4d4" className="uppercase">input</text>
+            <text x="10" y="100" fontSize="6" fill="#d4d4d4" className="uppercase">understanding</text>
+            <text x="10" y="175" fontSize="6" fill="#d4d4d4" className="uppercase">reasoning</text>
+            <text x="10" y="300" fontSize="6" fill="#d4d4d4" className="uppercase">output</text>
+          </svg>
 
           {/* Selected Node Editor */}
           <AnimatePresence>
             {selectedNode && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="mt-4 p-3 border border-neutral-200 rounded-lg bg-neutral-50"
+                exit={{ opacity: 0, y: 5 }}
+                className="mt-2 p-2 border border-neutral-200 rounded bg-neutral-50"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-neutral-700">
-                    {AI_LABELS[selectedNode]?.primary}
-                  </span>
-                  <span className="text-[10px] text-neutral-400">
-                    {AI_LABELS[selectedNode]?.concept}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={Math.round((weights[selectedNode] ?? 0.5) * 100)}
-                    onChange={(e) => handleWeightChange(selectedNode, parseInt(e.target.value) / 100)}
-                    className="flex-1 h-1 bg-neutral-200 rounded-full appearance-none cursor-pointer
-                             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
-                             [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full 
-                             [&::-webkit-slider-thumb]:bg-neutral-900"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={Math.round((weights[selectedNode] ?? 0.5) * 100)}
-                    onChange={(e) => handleWeightChange(selectedNode, parseInt(e.target.value) / 100)}
-                    className="w-14 px-2 py-1 text-xs text-center border border-neutral-200 rounded bg-white"
-                  />
-                  <span className="text-[10px] text-neutral-400">%</span>
-                </div>
+                {(() => {
+                  const layer = getLayer(selectedNode)
+                  if (!layer) return null
+                  const weight = getWeight(selectedNode)
+                  return (
+                    <>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-medium" style={{ color: layer.color }}>
+                          {layer.name}
+                        </span>
+                        <span className="text-[9px] text-neutral-400">{Math.round(weight * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={Math.round(weight * 100)}
+                        onChange={(e) => handleWeightChange(selectedNode, parseInt(e.target.value) / 100)}
+                        className="w-full h-1 bg-neutral-200 rounded appearance-none cursor-pointer
+                                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 
+                                 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full 
+                                 [&::-webkit-slider-thumb]:bg-neutral-700"
+                      />
+                      <div className="flex justify-between text-[8px] text-neutral-400 mt-0.5">
+                        <span>{layer.extremes.low}</span>
+                        <span>{layer.extremes.high}</span>
+                      </div>
+                    </>
+                  )
+                })()}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Right: Presets + History */}
+        {/* Right: Quick Settings + History */}
         <div className="flex-1 p-4">
+          {/* Quick Settings */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[10px] uppercase tracking-wider text-neutral-400">Quick Settings</div>
+              <div className="text-[9px] text-neutral-300">top 3 impact layers</div>
+            </div>
+
+            <div className="space-y-4">
+              {CRITICAL_LAYERS.map((layer) => {
+                const weight = getWeight(layer.id)
+                return (
+                  <div key={layer.id}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-neutral-400">★</span>
+                        <span className="font-medium text-neutral-700">{layer.name}</span>
+                      </div>
+                      <span className="text-neutral-700 tabular-nums">{Math.round(weight * 100)}%</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[9px] text-neutral-400 w-16 text-right">{layer.extremes.low}</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={Math.round(weight * 100)}
+                        onChange={(e) => handleWeightChange(layer.id, parseInt(e.target.value) / 100)}
+                        className="flex-1 h-1 bg-neutral-100 rounded-full appearance-none cursor-pointer
+                                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
+                                 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full 
+                                 [&::-webkit-slider-thumb]:bg-neutral-700 [&::-webkit-slider-thumb]:border-2
+                                 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow"
+                        style={{
+                          background: `linear-gradient(to right, ${layer.color}60 0%, ${layer.color}60 ${weight * 100}%, #f5f5f5 ${weight * 100}%, #f5f5f5 100%)`,
+                        }}
+                      />
+                      <span className="text-[9px] text-neutral-400 w-16">{layer.extremes.high}</span>
+                    </div>
+                    <div className="text-[9px] text-neutral-400 mt-0.5 ml-5">{layer.description}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
           {/* Presets */}
           <div className="mb-6">
-            <div className="text-[10px] uppercase tracking-wider text-neutral-400 mb-2">
-              Presets
-            </div>
-            <div className="flex gap-2">
+            <div className="text-[10px] uppercase tracking-wider text-neutral-400 mb-2">Presets</div>
+            <div className="flex gap-1.5">
               {PRESETS.map((preset) => (
                 <button
                   key={preset.id}
-                  onClick={() => handlePresetSelect(preset)}
-                  className={`px-3 py-1.5 text-xs rounded border transition-colors ${
+                  onClick={() => applyPreset(preset.id)}
+                  className={`px-2.5 py-1 text-[10px] rounded border transition-all ${
                     activePreset === preset.id
                       ? 'bg-neutral-900 text-white border-neutral-900'
                       : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
@@ -486,117 +398,98 @@ export function WorkbenchConsole() {
                 </button>
               ))}
               {activePreset === 'custom' && (
-                <span className="px-3 py-1.5 text-xs text-neutral-400 border border-dashed border-neutral-300 rounded">
+                <span className="px-2.5 py-1 text-[10px] text-neutral-400 border border-dashed border-neutral-300 rounded">
                   custom
                 </span>
               )}
             </div>
           </div>
 
-          {/* Configuration History */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] uppercase tracking-wider text-neutral-400">
-                Configuration History
-              </div>
-              <span className="text-[10px] text-neutral-300">{configHistory.length} saved</span>
-            </div>
-            
-            <div className="space-y-2">
-              {configHistory.map((config) => (
-                <div
-                  key={config.id}
-                  className="border border-neutral-200 rounded-lg overflow-hidden"
-                >
-                  {/* Header */}
-                  <div
-                    className="flex items-center justify-between px-3 py-2 bg-neutral-50 cursor-pointer hover:bg-neutral-100 transition-colors"
-                    onClick={() => setExpandedHistory(expandedHistory === config.id ? null : config.id)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-medium text-neutral-700">{config.name}</span>
-                      <span className="text-[10px] text-neutral-400">{config.date}</span>
-                      <span className="text-[10px] text-neutral-300">·</span>
-                      <span className="text-[10px] text-neutral-400">{config.testCount} tests</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-neutral-300">
-                        {expandedHistory === config.id ? '▾' : '▸'}
-                      </span>
-                    </div>
-                  </div>
+          {/* Show All Layers Button */}
+          <button
+            onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-[10px] text-neutral-500 
+                     border border-neutral-200 rounded hover:bg-neutral-50 transition-colors mb-6"
+          >
+            <span className="uppercase tracking-wider">Show All 11 Layers</span>
+            <span className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center">
+              {isAdvancedOpen ? '−' : '+'}
+            </span>
+          </button>
 
-                  {/* Expanded Content */}
-                  <AnimatePresence>
-                    {expandedHistory === config.id && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="border-t border-neutral-200"
-                      >
-                        {/* Weights Preview */}
-                        <div className="px-3 py-2 bg-white">
-                          <div className="text-[9px] uppercase tracking-wider text-neutral-400 mb-2">
-                            Layer Weights
-                          </div>
-                          <div className="grid grid-cols-3 gap-x-4 gap-y-1 text-[10px]">
-                            {Object.entries(config.weights).slice(0, 9).map(([sefirah, weight]) => (
-                              <div key={sefirah} className="flex items-center justify-between">
-                                <span className="text-neutral-500 truncate">
-                                  {AI_LABELS[parseInt(sefirah)]?.primary.slice(0, 12)}
+          {/* Advanced: All Layers */}
+          <AnimatePresence>
+            {isAdvancedOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden mb-6"
+              >
+                <div className="border border-neutral-200 rounded p-3">
+                  {(['input', 'understanding', 'reasoning', 'output'] as const).map((phase) => {
+                    const phaseLayers = AI_LAYERS.filter(l => l.phase === phase)
+                    return (
+                      <div key={phase} className="mb-3 last:mb-0">
+                        <div className="text-[8px] uppercase tracking-wider text-neutral-300 mb-1.5">{phase}</div>
+                        <div className="space-y-1.5">
+                          {phaseLayers.map((layer) => {
+                            const weight = getWeight(layer.id)
+                            return (
+                              <div key={layer.id} className="flex items-center gap-2">
+                                <div 
+                                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: layer.color }}
+                                />
+                                <span className={`text-[10px] w-24 truncate ${layer.critical ? 'font-medium text-neutral-700' : 'text-neutral-500'}`}>
+                                  {layer.name}{layer.critical && ' ★'}
                                 </span>
-                                <span className="text-neutral-700 font-medium">
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  value={Math.round(weight * 100)}
+                                  onChange={(e) => handleWeightChange(layer.id, parseInt(e.target.value) / 100)}
+                                  className="flex-1 h-1 bg-neutral-100 rounded-full appearance-none cursor-pointer
+                                           [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2 
+                                           [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:rounded-full
+                                           [&::-webkit-slider-thumb]:bg-neutral-600"
+                                />
+                                <span className="text-[9px] text-neutral-500 tabular-nums w-8 text-right">
                                   {Math.round(weight * 100)}%
                                 </span>
                               </div>
-                            ))}
-                          </div>
+                            )
+                          })}
                         </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                        {/* Tests Preview */}
-                        {config.tests.length > 0 && (
-                          <div className="px-3 py-2 border-t border-neutral-100">
-                            <div className="text-[9px] uppercase tracking-wider text-neutral-400 mb-2">
-                              Recent Tests
-                            </div>
-                            <div className="space-y-1">
-                              {config.tests.slice(0, 3).map((test) => (
-                                <div key={test.id} className="text-[10px] text-neutral-600 truncate">
-                                  <span className="text-neutral-400">{test.timestamp}</span>
-                                  <span className="mx-2">·</span>
-                                  {test.query}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 px-3 py-2 border-t border-neutral-100 bg-neutral-50">
-                          <button
-                            onClick={() => loadConfig(config)}
-                            className="px-2 py-1 text-[10px] text-neutral-600 hover:text-neutral-900 hover:bg-white rounded border border-transparent hover:border-neutral-200 transition-colors"
-                          >
-                            Load
-                          </button>
-                          <button
-                            onClick={() => copyConfig(config)}
-                            className="px-2 py-1 text-[10px] text-neutral-600 hover:text-neutral-900 hover:bg-white rounded border border-transparent hover:border-neutral-200 transition-colors"
-                          >
-                            Copy
-                          </button>
-                          <button
-                            onClick={() => deleteConfig(config.id)}
-                            className="px-2 py-1 text-[10px] text-red-500 hover:text-red-600 hover:bg-white rounded border border-transparent hover:border-red-200 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+          {/* Config History */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] uppercase tracking-wider text-neutral-400">Configuration History</div>
+              <div className="text-[9px] text-neutral-300">{configHistory.length} saved</div>
+            </div>
+            <div className="space-y-1.5">
+              {configHistory.map((config) => (
+                <div 
+                  key={config.id}
+                  className="flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:bg-neutral-50 cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-neutral-700">{config.name}</span>
+                    <span className="text-neutral-400">{config.date}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-neutral-400">{config.testCount} tests</span>
+                    <span className="text-neutral-300">›</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -604,38 +497,33 @@ export function WorkbenchConsole() {
         </div>
       </div>
 
-      {/* Bottom: Test Playground */}
-      <div className="border-t border-neutral-200">
+      {/* Bottom: Test Query */}
+      <div className="border-t border-neutral-100">
         <button
-          onClick={() => setIsTestExpanded(!isTestExpanded)}
-          className="w-full px-6 py-2 flex items-center justify-between text-xs text-neutral-500 hover:bg-neutral-50 transition-colors"
+          onClick={() => setIsTestOpen(!isTestOpen)}
+          className="w-full px-4 py-2 flex items-center justify-between text-[10px] text-neutral-500 hover:bg-neutral-50"
         >
-          <span className="uppercase tracking-wider">Test Playground</span>
-          <span>{isTestExpanded ? '▾' : '▸'}</span>
+          <span className="uppercase tracking-wider">Test Query</span>
+          <span>{isTestOpen ? '▴' : '▾'}</span>
         </button>
-        
         <AnimatePresence>
-          {isTestExpanded && (
+          {isTestOpen && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="px-6 pb-4"
+              initial={{ height: 0 }}
+              animate={{ height: 'auto' }}
+              exit={{ height: 0 }}
+              className="overflow-hidden"
             >
-              <div className="flex gap-3">
+              <div className="px-4 pb-3 flex gap-2">
                 <input
                   type="text"
                   value={testQuery}
                   onChange={(e) => setTestQuery(e.target.value)}
                   placeholder="Enter test query..."
-                  className="flex-1 px-3 py-2 text-sm border border-neutral-200 rounded bg-white placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400"
+                  className="flex-1 px-3 py-2 text-xs border border-neutral-200 rounded bg-white placeholder:text-neutral-400"
                 />
-                <button
-                  onClick={runTest}
-                  disabled={!testQuery.trim()}
-                  className="px-4 py-2 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Run Test
+                <button className="px-4 py-2 text-[10px] bg-neutral-900 text-white rounded hover:bg-neutral-800">
+                  Run
                 </button>
               </div>
             </motion.div>

@@ -2509,7 +2509,7 @@ function HomePage() {
                   <span className={settings.instinctMode ? 'text-relic-void dark:text-white' : ''}>instinct</span>
                 </button>
 
-                {/* Sefirot Tree Console Toggle (Tree of Life Configuration) */}
+                {/* AI Config Console Toggle */}
                 <button
                   onClick={() => setShowSefirotDashboard(!showSefirotDashboard)}
                   className="flex items-center gap-2 text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
@@ -2523,7 +2523,7 @@ function HomePage() {
                   >
                     ✦
                   </span>
-                  <span className={showSefirotDashboard ? 'text-relic-void dark:text-white' : ''}>sefirot tree</span>
+                  <span className={showSefirotDashboard ? 'text-relic-void dark:text-white' : ''}>ai config</span>
                 </button>
 
                 {user ? (

@@ -528,7 +528,7 @@ export default function InsightMindmap({ content, query, onSwitchToSefirot, onOp
                         onClick={onSwitchToSefirot}
                         className="px-2 py-1 rounded text-[9px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
                       >
-                        ◆ Sefirot Tree
+                        ◆ AI Config
                       </button>
                     )}
                     {onOpenMindMap && (
