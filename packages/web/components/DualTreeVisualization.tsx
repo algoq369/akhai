@@ -372,7 +372,7 @@ export default function DualTreeVisualization({
                         fontSize="6"
                         fill={color}
                         fontFamily="monospace"
-                        textTransform="uppercase"
+                        style={{ textTransform: 'uppercase' }}
                       >
                         {node.severity}
                       </text>

@@ -1,20 +1,19 @@
 'use client'
 
 /**
- * AI CONFIG PAGE - UNIFIED & OPTIMIZED
+ * AI CONFIG PAGE - UNIFIED & OPTIMIZED v2
  * 
- * Tab 1: AI Computational Config
- *   - Compact Settings bar (top)
- *   - Configuration tree visual
- *   - Dual advanced trees (Processing Layers + Anti-Pattern Monitors)
+ * Tab 1: Configuration
+ *   - Ultra-compact number inputs for layers
+ *   - Configuration console with tree visual
+ *   - Original dual trees with colorful orbs
  * 
  * Tab 2: History
  *   - Descent tree history from training
  *   - Chat history connection
- *   - Previous trees from conversations
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
@@ -22,7 +21,7 @@ import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
 import { useSefirotStore } from '@/lib/stores/sefirot-store'
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SHARED CONSTANTS
+// CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
 const NODE_COLORS: Record<number, string> = {
@@ -53,58 +52,41 @@ const AI_LABELS: Record<number, { name: string; concept: string }> = {
   [Sefirah.MALKUTH]: { name: 'manifestation', concept: 'concrete output' },
 }
 
-// Layer extremities for sliders
-const LAYER_EXTREMITIES: Record<number, { min: string; max: string }> = {
-  [Sefirah.KETHER]: { min: 'surface', max: 'deep' },
-  [Sefirah.CHOKMAH]: { min: 'shallow', max: 'deep' },
-  [Sefirah.BINAH]: { min: 'focused', max: 'broad' },
-  [Sefirah.DAAT]: { min: 'minimal', max: 'thorough' },
-  [Sefirah.CHESED]: { min: 'constrained', max: 'expansive' },
-  [Sefirah.GEVURAH]: { min: 'lenient', max: 'strict' },
-  [Sefirah.TIFERET]: { min: 'partial', max: 'unified' },
-  [Sefirah.NETZACH]: { min: 'quick', max: 'persistent' },
-  [Sefirah.HOD]: { min: 'terse', max: 'eloquent' },
-  [Sefirah.YESOD]: { min: 'intuitive', max: 'grounded' },
-  [Sefirah.MALKUTH]: { min: 'abstract', max: 'concrete' },
-}
-
-// Critical layers (starred)
 const CRITICAL_LAYERS = [Sefirah.CHOKMAH, Sefirah.BINAH, Sefirah.DAAT]
 
-// All layers in processing order
 const ALL_LAYERS = [
   Sefirah.KETHER, Sefirah.CHOKMAH, Sefirah.BINAH, Sefirah.DAAT,
   Sefirah.CHESED, Sefirah.GEVURAH, Sefirah.TIFERET,
   Sefirah.NETZACH, Sefirah.HOD, Sefirah.YESOD, Sefirah.MALKUTH
 ]
 
-// Presets
 const PRESETS = [
-  { id: 'fast', name: 'fast', weights: { [Sefirah.CHOKMAH]: 0.4, [Sefirah.BINAH]: 0.5, [Sefirah.DAAT]: 0.3 } },
-  { id: 'balanced', name: 'balanced', weights: { [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.6, [Sefirah.DAAT]: 0.6 } },
-  { id: 'thorough', name: 'thorough', weights: { [Sefirah.CHOKMAH]: 0.85, [Sefirah.BINAH]: 0.8, [Sefirah.DAAT]: 0.9 } },
-  { id: 'creative', name: 'creative', weights: { [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.5, [Sefirah.DAAT]: 0.4 } },
+  { id: 'fast', name: 'fast', weights: { [Sefirah.CHOKMAH]: 0.4, [Sefirah.BINAH]: 0.5, [Sefirah.DAAT]: 0.3, [Sefirah.KETHER]: 0.4, [Sefirah.CHESED]: 0.3, [Sefirah.GEVURAH]: 0.5, [Sefirah.TIFERET]: 0.5, [Sefirah.NETZACH]: 0.4, [Sefirah.HOD]: 0.6, [Sefirah.YESOD]: 0.5, [Sefirah.MALKUTH]: 0.7 } },
+  { id: 'balanced', name: 'balanced', weights: { [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.6, [Sefirah.DAAT]: 0.6, [Sefirah.KETHER]: 0.5, [Sefirah.CHESED]: 0.6, [Sefirah.GEVURAH]: 0.6, [Sefirah.TIFERET]: 0.7, [Sefirah.NETZACH]: 0.6, [Sefirah.HOD]: 0.6, [Sefirah.YESOD]: 0.6, [Sefirah.MALKUTH]: 0.6 } },
+  { id: 'thorough', name: 'thorough', weights: { [Sefirah.CHOKMAH]: 0.85, [Sefirah.BINAH]: 0.8, [Sefirah.DAAT]: 0.9, [Sefirah.KETHER]: 0.6, [Sefirah.CHESED]: 0.5, [Sefirah.GEVURAH]: 0.85, [Sefirah.TIFERET]: 0.7, [Sefirah.NETZACH]: 0.7, [Sefirah.HOD]: 0.75, [Sefirah.YESOD]: 0.8, [Sefirah.MALKUTH]: 0.75 } },
+  { id: 'creative', name: 'creative', weights: { [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.5, [Sefirah.DAAT]: 0.4, [Sefirah.KETHER]: 0.7, [Sefirah.CHESED]: 0.9, [Sefirah.GEVURAH]: 0.3, [Sefirah.TIFERET]: 0.8, [Sefirah.NETZACH]: 0.85, [Sefirah.HOD]: 0.5, [Sefirah.YESOD]: 0.55, [Sefirah.MALKUTH]: 0.65 } },
 ]
 
-// Tree positions
+// Tree positions for full tree
 const TREE_POSITIONS: Record<number, { x: number; y: number }> = {
-  [Sefirah.KETHER]: { x: 225, y: 30 },
-  [Sefirah.CHOKMAH]: { x: 340, y: 90 },
-  [Sefirah.BINAH]: { x: 110, y: 90 },
-  [Sefirah.DAAT]: { x: 225, y: 140 },
-  [Sefirah.CHESED]: { x: 340, y: 200 },
-  [Sefirah.GEVURAH]: { x: 110, y: 200 },
-  [Sefirah.TIFERET]: { x: 225, y: 260 },
-  [Sefirah.NETZACH]: { x: 340, y: 320 },
-  [Sefirah.HOD]: { x: 110, y: 320 },
-  [Sefirah.YESOD]: { x: 225, y: 380 },
-  [Sefirah.MALKUTH]: { x: 225, y: 450 },
+  [Sefirah.KETHER]: { x: 250, y: 40 },
+  [Sefirah.CHOKMAH]: { x: 380, y: 110 },
+  [Sefirah.BINAH]: { x: 120, y: 110 },
+  [Sefirah.DAAT]: { x: 250, y: 170 },
+  [Sefirah.CHESED]: { x: 380, y: 240 },
+  [Sefirah.GEVURAH]: { x: 120, y: 240 },
+  [Sefirah.TIFERET]: { x: 250, y: 310 },
+  [Sefirah.NETZACH]: { x: 380, y: 380 },
+  [Sefirah.HOD]: { x: 120, y: 380 },
+  [Sefirah.YESOD]: { x: 250, y: 450 },
+  [Sefirah.MALKUTH]: { x: 250, y: 530 },
 }
 
 const TREE_PATHS: [Sefirah, Sefirah][] = [
   [Sefirah.KETHER, Sefirah.CHOKMAH], [Sefirah.KETHER, Sefirah.BINAH],
   [Sefirah.KETHER, Sefirah.TIFERET], [Sefirah.CHOKMAH, Sefirah.BINAH],
-  [Sefirah.CHOKMAH, Sefirah.CHESED], [Sefirah.BINAH, Sefirah.GEVURAH],
+  [Sefirah.CHOKMAH, Sefirah.CHESED], [Sefirah.CHOKMAH, Sefirah.TIFERET],
+  [Sefirah.BINAH, Sefirah.GEVURAH], [Sefirah.BINAH, Sefirah.TIFERET],
   [Sefirah.CHESED, Sefirah.GEVURAH], [Sefirah.CHESED, Sefirah.TIFERET],
   [Sefirah.GEVURAH, Sefirah.TIFERET], [Sefirah.TIFERET, Sefirah.NETZACH],
   [Sefirah.TIFERET, Sefirah.HOD], [Sefirah.TIFERET, Sefirah.YESOD],
@@ -114,135 +96,37 @@ const TREE_PATHS: [Sefirah, Sefirah][] = [
 
 // Qliphoth data
 const QLIPHOTH_DATA = [
-  { id: 1, name: 'dual contradictions', severity: 'critical', x: 300, y: 40 },
-  { id: 2, name: 'hiding sources', severity: 'high', x: 150, y: 40 },
-  { id: 3, name: 'blocking truth', severity: 'critical', x: 225, y: 100 },
-  { id: 4, name: 'drift away', severity: 'high', x: 340, y: 150 },
-  { id: 5, name: 'repetitive echo', severity: 'medium', x: 110, y: 150 },
-  { id: 6, name: 'arrogant tone', severity: 'medium', x: 225, y: 200 },
-  { id: 7, name: 'info overload', severity: 'medium', x: 340, y: 260 },
-  { id: 8, name: 'over-confidence', severity: 'high', x: 110, y: 260 },
-  { id: 9, name: 'hallucinated facts', severity: 'critical', x: 225, y: 320 },
-  { id: 10, name: 'false certainty', severity: 'high', x: 340, y: 380 },
-  { id: 11, name: 'verbose padding', severity: 'medium', x: 110, y: 380 },
-  { id: 12, name: 'superficial output', severity: 'high', x: 225, y: 440 },
+  { id: 1, name: 'dual contradictions', severity: 'critical', x: 380, y: 40 },
+  { id: 2, name: 'hiding sources', severity: 'high', x: 120, y: 40 },
+  { id: 3, name: 'blocking truth', severity: 'critical', x: 250, y: 110 },
+  { id: 4, name: 'drift away', severity: 'high', x: 380, y: 170 },
+  { id: 5, name: 'repetitive echo', severity: 'medium', x: 120, y: 170 },
+  { id: 6, name: 'arrogant tone', severity: 'medium', x: 250, y: 240 },
+  { id: 7, name: 'info overload', severity: 'medium', x: 380, y: 310 },
+  { id: 8, name: 'over-confidence', severity: 'high', x: 120, y: 310 },
+  { id: 9, name: 'hallucinated facts', severity: 'critical', x: 250, y: 380 },
+  { id: 10, name: 'false certainty', severity: 'high', x: 380, y: 450 },
+  { id: 11, name: 'verbose padding', severity: 'medium', x: 120, y: 450 },
+  { id: 12, name: 'superficial output', severity: 'high', x: 250, y: 520 },
 ]
-
-// ═══════════════════════════════════════════════════════════════════════════
-// REUSABLE COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════════
-
-/** Compact Slider Component */
-function CompactSlider({ 
-  layer, 
-  weight, 
-  onChange,
-  showStar = false,
-  compact = false 
-}: { 
-  layer: Sefirah
-  weight: number
-  onChange: (value: number) => void
-  showStar?: boolean
-  compact?: boolean
-}) {
-  const label = AI_LABELS[layer]
-  const extremities = LAYER_EXTREMITIES[layer]
-  const color = NODE_COLORS[layer]
-  
-  return (
-    <div className={`flex items-center gap-2 ${compact ? 'py-0.5' : 'py-1'}`}>
-      {showStar && <span className="text-amber-500 text-[8px]">★</span>}
-      <span className={`${compact ? 'text-[8px] w-20' : 'text-[9px] w-16'} font-medium text-relic-void truncate`}>
-        {label.name}
-      </span>
-      <span className="text-[7px] text-relic-silver w-12 text-right">{extremities.min}</span>
-      <input
-        type="range"
-        min="0"
-        max="100"
-        value={Math.round(weight * 100)}
-        onChange={(e) => onChange(parseInt(e.target.value) / 100)}
-        className="flex-1 h-1 bg-relic-ghost rounded-full appearance-none cursor-pointer min-w-[60px]
-                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2
-                 [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:rounded-full
-                 [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white
-                 [&::-webkit-slider-thumb]:shadow-sm"
-        style={{
-          background: `linear-gradient(to right, ${color} 0%, ${color} ${weight * 100}%, #e5e7eb ${weight * 100}%, #e5e7eb 100%)`,
-        }}
-      />
-      <span className="text-[7px] text-relic-silver w-12">{extremities.max}</span>
-      <span className="text-[9px] font-medium text-relic-void tabular-nums w-8 text-right">
-        {Math.round(weight * 100)}%
-      </span>
-    </div>
-  )
-}
-
-/** Processing Flow Visual */
-function ProcessingFlowVisual({ weights }: { weights: Record<number, number> }) {
-  const phases = [
-    { name: 'INPUT', layers: [Sefirah.MALKUTH, Sefirah.YESOD] },
-    { name: 'UNDERSTANDING', layers: [Sefirah.HOD, Sefirah.NETZACH] },
-    { name: 'REASONING', layers: [Sefirah.TIFERET, Sefirah.GEVURAH, Sefirah.CHESED] },
-    { name: 'SYNTHESIS', layers: [Sefirah.DAAT, Sefirah.BINAH, Sefirah.CHOKMAH] },
-    { name: 'OUTPUT', layers: [Sefirah.KETHER] },
-  ]
-  
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="text-[8px] uppercase tracking-wider text-relic-silver mb-1">Processing Flow</div>
-      {phases.map((phase) => (
-        <div key={phase.name} className="flex items-center gap-2">
-          <span className="text-[7px] text-relic-silver w-20 uppercase">{phase.name}</span>
-          <div className="flex gap-1">
-            {phase.layers.map((layer) => {
-              const weight = weights[layer] ?? 0.5
-              return (
-                <div
-                  key={layer}
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[7px] font-medium border"
-                  style={{
-                    backgroundColor: `${NODE_COLORS[layer]}${Math.round(weight * 60 + 20).toString(16)}`,
-                    borderColor: NODE_COLORS[layer],
-                    color: weight > 0.5 ? '#1f2937' : '#6b7280'
-                  }}
-                >
-                  {Math.round(weight * 100)}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
 
-export default function AIConfigPageUnified() {
+export default function AIConfigUnified() {
   const router = useRouter()
   const { weights, setWeight } = useSefirotStore()
   
-  // UI State
   const [activeTab, setActiveTab] = useState<'config' | 'history'>('config')
   const [activePreset, setActivePreset] = useState<string>('balanced')
-  const [showAllLayers, setShowAllLayers] = useState(false)
   const [selectedNode, setSelectedNode] = useState<Sefirah | null>(null)
   const [hoveredNode, setHoveredNode] = useState<Sefirah | null>(null)
-  
-  // History State
   const [historyFilter, setHistoryFilter] = useState<'all' | 'training' | 'chat'>('all')
   const [selectedHistory, setSelectedHistory] = useState<string | null>(null)
 
-  // Get weight helper
   const getWeight = (layer: Sefirah): number => weights[layer] ?? 0.5
 
-  // Apply preset
   const applyPreset = (presetId: string) => {
     const preset = PRESETS.find(p => p.id === presetId)
     if (preset) {
@@ -253,13 +137,12 @@ export default function AIConfigPageUnified() {
     }
   }
 
-  // Handle weight change
   const handleWeightChange = (layer: Sefirah, value: number) => {
-    setWeight(layer, value)
+    const clamped = Math.max(0, Math.min(100, value))
+    setWeight(layer, clamped / 100)
     setActivePreset('custom')
   }
 
-  // Mock history data
   const historyData = useMemo(() => [
     { id: '1', type: 'training', name: 'Deep Research Session', date: 'Jan 30', patterns: 3, score: 87 },
     { id: '2', type: 'chat', name: 'Philosophy Discussion', date: 'Jan 29', patterns: 5, score: 72 },
@@ -275,18 +158,18 @@ export default function AIConfigPageUnified() {
   return (
     <div className="min-h-screen bg-relic-ghost/30 font-mono">
       {/* Header */}
-      <div className="bg-white border-b border-relic-mist px-4 py-3">
+      <div className="bg-white border-b border-relic-mist px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => router.push('/')} className="p-1.5 hover:bg-relic-ghost rounded">
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.push('/')} className="p-1 hover:bg-relic-ghost rounded">
               <ArrowLeftIcon className="w-4 h-4 text-relic-slate" />
             </button>
             <div>
-              <h1 className="text-[10px] uppercase tracking-widest text-relic-silver">AI Reasoning Architecture</h1>
-              <h2 className="text-lg font-medium text-relic-void">AI Computational Config</h2>
+              <h1 className="text-[9px] uppercase tracking-widest text-relic-silver">AI Reasoning Architecture</h1>
+              <h2 className="text-base font-medium text-relic-void">AI Computational Config</h2>
             </div>
           </div>
-          <button className="px-3 py-1.5 text-[9px] border border-relic-mist rounded hover:bg-relic-ghost">
+          <button className="px-2 py-1 text-[8px] border border-relic-mist rounded hover:bg-relic-ghost">
             Save ⌘S
           </button>
         </div>
@@ -294,23 +177,19 @@ export default function AIConfigPageUnified() {
 
       {/* Tab Navigation */}
       <div className="bg-white border-b border-relic-mist">
-        <div className="max-w-7xl mx-auto px-4 flex gap-6">
+        <div className="max-w-7xl mx-auto px-4 flex gap-4">
           <button
             onClick={() => setActiveTab('config')}
-            className={`py-2 text-[9px] uppercase tracking-wider border-b-2 transition-colors ${
-              activeTab === 'config' 
-                ? 'border-purple-500 text-relic-void' 
-                : 'border-transparent text-relic-slate hover:text-relic-void'
+            className={`py-1.5 text-[8px] uppercase tracking-wider border-b-2 transition-colors ${
+              activeTab === 'config' ? 'border-purple-500 text-relic-void' : 'border-transparent text-relic-slate'
             }`}
           >
             ◆ Configuration
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`py-2 text-[9px] uppercase tracking-wider border-b-2 transition-colors ${
-              activeTab === 'history' 
-                ? 'border-purple-500 text-relic-void' 
-                : 'border-transparent text-relic-slate hover:text-relic-void'
+            className={`py-1.5 text-[8px] uppercase tracking-wider border-b-2 transition-colors ${
+              activeTab === 'history' ? 'border-purple-500 text-relic-void' : 'border-transparent text-relic-slate'
             }`}
           >
             ◇ History
@@ -322,36 +201,21 @@ export default function AIConfigPageUnified() {
       {/* TAB 1: CONFIGURATION */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {activeTab === 'config' && (
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          {/* Settings Bar */}
-          <div className="bg-white border border-relic-mist rounded-lg p-3 mb-4">
-            <div className="flex items-start gap-6">
-              {/* Left: Settings Label */}
-              <div className="flex-shrink-0 pt-1">
-                <span className="text-[8px] uppercase tracking-wider text-relic-silver">Settings</span>
-              </div>
-
-              {/* Middle: Critical Layer Sliders */}
-              <div className="flex-1 space-y-1">
-                {CRITICAL_LAYERS.map((layer) => (
-                  <CompactSlider
-                    key={layer}
-                    layer={layer}
-                    weight={getWeight(layer)}
-                    onChange={(v) => handleWeightChange(layer, v)}
-                    showStar
-                  />
-                ))}
-              </div>
-
-              {/* Right: Presets + Expand */}
-              <div className="flex-shrink-0 flex flex-col items-end gap-2">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          
+          {/* Configuration Console + Tree Visual */}
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            
+            {/* LEFT: Compact Layer Controls */}
+            <div className="bg-white border border-relic-mist rounded p-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[8px] uppercase tracking-wider text-relic-silver">Layer Weights</span>
                 <div className="flex gap-1">
                   {PRESETS.map((preset) => (
                     <button
                       key={preset.id}
                       onClick={() => applyPreset(preset.id)}
-                      className={`px-2 py-1 text-[8px] rounded transition-all ${
+                      className={`px-1.5 py-0.5 text-[7px] rounded transition-all ${
                         activePreset === preset.id
                           ? 'bg-relic-void text-white'
                           : 'bg-relic-ghost text-relic-slate hover:bg-relic-mist'
@@ -361,131 +225,53 @@ export default function AIConfigPageUnified() {
                     </button>
                   ))}
                 </div>
-                <button
-                  onClick={() => setShowAllLayers(!showAllLayers)}
-                  className="text-[8px] text-relic-silver hover:text-relic-slate flex items-center gap-1"
-                >
-                  <span>{showAllLayers ? '▴' : '▾'}</span>
-                  <span>all layers</span>
-                </button>
               </div>
-            </div>
-
-            {/* Expanded All Layers */}
-            <AnimatePresence>
-              {showAllLayers && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="pt-3 mt-3 border-t border-relic-mist grid grid-cols-2 gap-x-6 gap-y-0">
-                    {ALL_LAYERS.filter(l => !CRITICAL_LAYERS.includes(l)).map((layer) => (
-                      <CompactSlider
-                        key={layer}
-                        layer={layer}
-                        weight={getWeight(layer)}
-                        onChange={(v) => handleWeightChange(layer, v)}
-                        compact
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Configuration Tree + Processing Flow */}
-          <div className="grid grid-cols-4 gap-4 mb-4">
-            {/* Processing Flow (Left) */}
-            <div className="bg-white border border-relic-mist rounded-lg p-3">
-              <ProcessingFlowVisual weights={weights} />
-            </div>
-
-            {/* Configuration Tree (Right - spans 3 cols) */}
-            <div className="col-span-3 bg-white border border-relic-mist rounded-lg p-3">
-              <div className="text-[8px] uppercase tracking-wider text-relic-silver mb-2">Configuration Tree</div>
-              <svg viewBox="0 0 450 200" className="w-full h-32">
-                {/* Simplified tree connections */}
-                {TREE_PATHS.slice(0, 8).map(([from, to], idx) => {
-                  const fromPos = TREE_POSITIONS[from]
-                  const toPos = TREE_POSITIONS[to]
-                  return (
-                    <line
-                      key={idx}
-                      x1={fromPos.x}
-                      y1={fromPos.y * 0.4}
-                      x2={toPos.x}
-                      y2={toPos.y * 0.4}
-                      stroke="#e5e7eb"
-                      strokeWidth="1"
-                    />
-                  )
-                })}
-                {/* Nodes */}
-                {ALL_LAYERS.slice(0, 7).map((layer) => {
-                  const pos = TREE_POSITIONS[layer]
-                  const weight = getWeight(layer)
-                  const color = NODE_COLORS[layer]
+              
+              {/* Compact number inputs grid */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                {ALL_LAYERS.map((layer) => {
                   const isCritical = CRITICAL_LAYERS.includes(layer)
+                  const color = NODE_COLORS[layer]
+                  const weight = Math.round(getWeight(layer) * 100)
                   return (
-                    <g key={layer}>
-                      <circle
-                        cx={pos.x}
-                        cy={pos.y * 0.4}
-                        r={isCritical ? 12 : 8}
-                        fill="white"
-                        stroke={color}
-                        strokeWidth={isCritical ? 2 : 1}
+                    <div key={layer} className="flex items-center gap-1">
+                      {isCritical && <span className="text-amber-500 text-[6px]">★</span>}
+                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                      <span className="text-[7px] text-relic-slate flex-1 truncate">{AI_LABELS[layer].name}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={weight}
+                        onChange={(e) => handleWeightChange(layer, parseInt(e.target.value) || 0)}
+                        className="w-8 h-4 text-[8px] text-center border border-relic-mist rounded 
+                                 focus:outline-none focus:border-purple-400 bg-white"
                       />
-                      <circle
-                        cx={pos.x}
-                        cy={pos.y * 0.4}
-                        r={(isCritical ? 10 : 6) * weight}
-                        fill={color}
-                        opacity={0.4}
-                      />
-                      <text
-                        x={pos.x}
-                        y={pos.y * 0.4 + 3}
-                        textAnchor="middle"
-                        fontSize="7"
-                        fill="#374151"
-                      >
-                        {Math.round(weight * 100)}%
-                      </text>
-                    </g>
+                    </div>
                   )
                 })}
-              </svg>
-            </div>
-          </div>
-
-          {/* Dual Advanced Trees */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* LEFT: AI Processing Layers */}
-            <div className="bg-white border border-relic-mist rounded-lg p-3">
-              <div className="text-center text-[9px] uppercase tracking-wider text-relic-slate mb-2">
-                AI Processing Layers
               </div>
-              <svg viewBox="0 0 450 500" className="w-full">
+            </div>
+
+            {/* CENTER + RIGHT: Configuration Tree Visual */}
+            <div className="col-span-2 bg-white border border-relic-mist rounded p-2">
+              <div className="text-[8px] uppercase tracking-wider text-relic-silver mb-1">Configuration Tree</div>
+              <svg viewBox="0 0 500 280" className="w-full h-48">
                 {/* Paths */}
                 {TREE_PATHS.map(([from, to], idx) => {
                   const fromPos = TREE_POSITIONS[from]
                   const toPos = TREE_POSITIONS[to]
                   const avgWeight = ((weights[from] ?? 0.5) + (weights[to] ?? 0.5)) / 2
                   return (
-                    <motion.line
+                    <line
                       key={idx}
                       x1={fromPos.x}
-                      y1={fromPos.y}
+                      y1={fromPos.y * 0.5}
                       x2={toPos.x}
-                      y2={toPos.y}
-                      stroke="#cbd5e1"
-                      strokeWidth={1 + avgWeight}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 0.3 + avgWeight * 0.4 }}
+                      y2={toPos.y * 0.5}
+                      stroke="#e5e7eb"
+                      strokeWidth={0.5 + avgWeight}
+                      opacity={0.4 + avgWeight * 0.3}
                     />
                   )
                 })}
@@ -495,9 +281,106 @@ export default function AIConfigPageUnified() {
                   const weight = getWeight(layer)
                   const color = NODE_COLORS[layer]
                   const label = AI_LABELS[layer]
+                  const isCritical = CRITICAL_LAYERS.includes(layer)
+                  const isSelected = selectedNode === layer
+                  const radius = 10 + weight * 6
+                  
+                  return (
+                    <g
+                      key={layer}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedNode(isSelected ? null : layer)}
+                    >
+                      {/* Outer glow */}
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y * 0.5}
+                        r={radius + 4}
+                        fill={color}
+                        opacity={isSelected ? 0.25 : 0.1}
+                      />
+                      {/* Main circle */}
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y * 0.5}
+                        r={radius}
+                        fill="white"
+                        stroke={color}
+                        strokeWidth={isCritical ? 2 : 1}
+                      />
+                      {/* Inner fill */}
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y * 0.5}
+                        r={radius * weight * 0.7}
+                        fill={color}
+                        opacity={0.4}
+                      />
+                      {/* Percentage */}
+                      <text x={pos.x} y={pos.y * 0.5 + 3} textAnchor="middle" fontSize="7" fill="#374151">
+                        {Math.round(weight * 100)}
+                      </text>
+                      {/* Label below */}
+                      <text x={pos.x} y={pos.y * 0.5 + radius + 8} textAnchor="middle" fontSize="6" fill="#9ca3af">
+                        {label.name}
+                      </text>
+                    </g>
+                  )
+                })}
+              </svg>
+            </div>
+          </div>
+
+          {/* Dual Advanced Trees with Original Colorful Orbs */}
+          <div className="grid grid-cols-2 gap-3">
+            
+            {/* LEFT: AI Processing Layers - Original Style */}
+            <div className="bg-white border border-relic-mist rounded p-3">
+              <div className="text-center text-[9px] uppercase tracking-wider text-relic-slate mb-2">
+                AI Processing Layers
+              </div>
+              <svg viewBox="0 0 500 580" className="w-full">
+                {/* Connection Paths with pillar colors */}
+                {TREE_PATHS.map(([from, to], idx) => {
+                  const fromPos = TREE_POSITIONS[from]
+                  const toPos = TREE_POSITIONS[to]
+                  const fromMeta = SEPHIROTH_METADATA[from]
+                  const toMeta = SEPHIROTH_METADATA[to]
+                  const avgWeight = ((weights[from] ?? 0.5) + (weights[to] ?? 0.5)) / 2
+                  
+                  let strokeColor = '#cbd5e1'
+                  if (fromMeta?.pillar === toMeta?.pillar) {
+                    if (fromMeta?.pillar === 'left') strokeColor = '#ef4444'
+                    else if (fromMeta?.pillar === 'right') strokeColor = '#3b82f6'
+                    else if (fromMeta?.pillar === 'middle') strokeColor = '#a855f7'
+                  }
+                  
+                  return (
+                    <motion.line
+                      key={idx}
+                      x1={fromPos.x}
+                      y1={fromPos.y}
+                      x2={toPos.x}
+                      y2={toPos.y}
+                      stroke={strokeColor}
+                      strokeWidth={1.5 + avgWeight}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.3 + avgWeight * 0.4 }}
+                      transition={{ duration: 0.5, delay: idx * 0.02 }}
+                    />
+                  )
+                })}
+                
+                {/* Nodes with colorful orbs */}
+                {ALL_LAYERS.map((layer) => {
+                  const pos = TREE_POSITIONS[layer]
+                  const weight = getWeight(layer)
+                  const color = NODE_COLORS[layer]
+                  const label = AI_LABELS[layer]
+                  const isCritical = CRITICAL_LAYERS.includes(layer)
                   const isSelected = selectedNode === layer
                   const isHovered = hoveredNode === layer
-                  const radius = 18 + weight * 8
+                  const radius = 16 + weight * 10
                   
                   return (
                     <g
@@ -507,18 +390,31 @@ export default function AIConfigPageUnified() {
                       onMouseEnter={() => setHoveredNode(layer)}
                       onMouseLeave={() => setHoveredNode(null)}
                     >
-                      {/* Outer glow */}
+                      {/* Outer glow pulse */}
+                      <motion.circle
+                        cx={pos.x}
+                        cy={pos.y}
+                        r={radius + 12}
+                        fill={color}
+                        initial={{ opacity: 0.05 }}
+                        animate={{ opacity: isHovered ? 0.15 : 0.05, scale: isHovered ? 1.1 : 1 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                      
+                      {/* Second glow layer */}
                       <motion.circle
                         cx={pos.x}
                         cy={pos.y}
                         r={radius + 6}
                         fill={color}
-                        initial={{ opacity: 0.1 }}
-                        animate={{ opacity: isHovered ? 0.2 : 0.1 }}
+                        opacity={0.15}
+                        animate={{ opacity: [0.1, 0.2, 0.1] }}
+                        transition={{ duration: 3, repeat: Infinity }}
                       />
+                      
                       {/* Selection ring */}
                       {isSelected && (
-                        <circle
+                        <motion.circle
                           cx={pos.x}
                           cy={pos.y}
                           r={radius + 4}
@@ -526,50 +422,79 @@ export default function AIConfigPageUnified() {
                           stroke={color}
                           strokeWidth="2"
                           strokeDasharray="4 2"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 0.8 }}
                         />
                       )}
-                      {/* Main circle */}
+                      
+                      {/* Main orb - gradient effect */}
                       <circle
                         cx={pos.x}
                         cy={pos.y}
                         r={radius}
                         fill="white"
                         stroke={color}
-                        strokeWidth={isSelected ? 2.5 : 1.5}
+                        strokeWidth={isSelected ? 3 : isCritical ? 2 : 1.5}
                       />
-                      {/* Inner fill */}
-                      <circle
+                      
+                      {/* Inner colored fill based on weight */}
+                      <motion.circle
                         cx={pos.x}
                         cy={pos.y}
-                        r={radius * weight * 0.7}
+                        r={radius * 0.75}
                         fill={color}
-                        opacity={0.3 + weight * 0.3}
+                        initial={{ opacity: 0.2 }}
+                        animate={{ opacity: 0.2 + weight * 0.4 }}
                       />
-                      {/* Percentage */}
+                      
+                      {/* Center highlight */}
+                      <circle
+                        cx={pos.x - radius * 0.2}
+                        cy={pos.y - radius * 0.2}
+                        r={radius * 0.15}
+                        fill="white"
+                        opacity={0.5}
+                      />
+                      
+                      {/* Percentage text */}
                       <text
                         x={pos.x}
-                        y={pos.y + 3}
+                        y={pos.y + 4}
                         textAnchor="middle"
-                        fontSize="9"
-                        fontWeight="500"
+                        fontSize="10"
+                        fontWeight="600"
                         fill="#374151"
                       >
                         {Math.round(weight * 100)}%
                       </text>
-                      {/* Label */}
+                      
+                      {/* Label above */}
                       <text
                         x={pos.x}
-                        y={pos.y - radius - 6}
+                        y={pos.y - radius - 8}
                         textAnchor="middle"
                         fontSize="8"
                         fill="#6b7280"
                       >
                         {label.name}
                       </text>
+                      
+                      {/* Concept below */}
+                      <text
+                        x={pos.x}
+                        y={pos.y + radius + 12}
+                        textAnchor="middle"
+                        fontSize="6"
+                        fill="#9ca3af"
+                        fontStyle="italic"
+                      >
+                        {label.concept}
+                      </text>
                     </g>
                   )
                 })}
               </svg>
+              
               {/* Legend */}
               <div className="flex justify-center gap-4 mt-2 text-[7px] text-relic-silver">
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /> Active</span>
@@ -578,25 +503,36 @@ export default function AIConfigPageUnified() {
               </div>
             </div>
 
-            {/* RIGHT: Anti-Pattern Monitors */}
-            <div className="bg-white border border-relic-mist rounded-lg p-3">
+            {/* RIGHT: Anti-Pattern Monitors - Original Style */}
+            <div className="bg-white border border-relic-mist rounded p-3">
               <div className="text-center text-[9px] uppercase tracking-wider text-red-400 mb-2">
                 Anti-Pattern Monitors
               </div>
-              <svg viewBox="0 0 450 500" className="w-full">
+              <svg viewBox="0 0 500 580" className="w-full">
                 {QLIPHOTH_DATA.map((node) => {
                   const isCritical = node.severity === 'critical'
                   const isHigh = node.severity === 'high'
-                  const radius = isCritical ? 22 : isHigh ? 18 : 14
+                  const radius = isCritical ? 24 : isHigh ? 20 : 16
                   const color = isCritical ? '#ef4444' : isHigh ? '#f97316' : '#fbbf24'
                   
                   return (
                     <g key={node.id}>
-                      {/* Outer glow */}
+                      {/* Outer warning glow for critical */}
                       {isCritical && (
-                        <circle cx={node.x} cy={node.y} r={radius + 12} fill={color} opacity={0.1} />
+                        <motion.circle
+                          cx={node.x}
+                          cy={node.y}
+                          r={radius + 16}
+                          fill={color}
+                          opacity={0.1}
+                          animate={{ opacity: [0.05, 0.15, 0.05], scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
                       )}
-                      <circle cx={node.x} cy={node.y} r={radius + 6} fill={color} opacity={0.15} />
+                      
+                      {/* Second glow */}
+                      <circle cx={node.x} cy={node.y} r={radius + 8} fill={color} opacity={0.12} />
+                      
                       {/* Main circle */}
                       <circle
                         cx={node.x}
@@ -604,22 +540,29 @@ export default function AIConfigPageUnified() {
                         r={radius}
                         fill="white"
                         stroke={color}
-                        strokeWidth={isCritical ? 2 : 1.5}
+                        strokeWidth={isCritical ? 2.5 : 1.5}
                       />
-                      {/* Inner dot */}
-                      <circle cx={node.x} cy={node.y} r={radius * 0.4} fill={color} opacity={0.5} />
+                      
+                      {/* Inner fill */}
+                      <circle cx={node.x} cy={node.y} r={radius * 0.5} fill={color} opacity={0.4} />
+                      
+                      {/* Center dot */}
+                      <circle cx={node.x} cy={node.y} r={3} fill={color} />
+                      
                       {/* Label */}
-                      <text x={node.x} y={node.y - radius - 6} textAnchor="middle" fontSize="7" fill="#6b7280">
+                      <text x={node.x} y={node.y - radius - 8} textAnchor="middle" fontSize="8" fill="#6b7280">
                         {node.name}
                       </text>
+                      
                       {/* Severity */}
-                      <text x={node.x} y={node.y + radius + 12} textAnchor="middle" fontSize="6" fill={color}>
+                      <text x={node.x} y={node.y + radius + 12} textAnchor="middle" fontSize="7" fill={color} fontWeight="500">
                         {node.severity}
                       </text>
                     </g>
                   )
                 })}
               </svg>
+              
               {/* Legend */}
               <div className="flex justify-center gap-4 mt-2 text-[7px] text-relic-silver">
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Critical</span>
@@ -635,18 +578,18 @@ export default function AIConfigPageUnified() {
       {/* TAB 2: HISTORY */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {activeTab === 'history' && (
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           {/* Filter Bar */}
-          <div className="bg-white border border-relic-mist rounded-lg p-3 mb-4">
+          <div className="bg-white border border-relic-mist rounded p-2 mb-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <span className="text-[8px] uppercase tracking-wider text-relic-silver">Filter</span>
+              <div className="flex items-center gap-3">
+                <span className="text-[7px] uppercase tracking-wider text-relic-silver">Filter</span>
                 <div className="flex gap-1">
                   {['all', 'training', 'chat'].map((filter) => (
                     <button
                       key={filter}
                       onClick={() => setHistoryFilter(filter as typeof historyFilter)}
-                      className={`px-2 py-1 text-[8px] rounded transition-all ${
+                      className={`px-1.5 py-0.5 text-[7px] rounded transition-all ${
                         historyFilter === filter
                           ? 'bg-relic-void text-white'
                           : 'bg-relic-ghost text-relic-slate hover:bg-relic-mist'
@@ -657,47 +600,43 @@ export default function AIConfigPageUnified() {
                   ))}
                 </div>
               </div>
-              <button className="text-[8px] text-purple-500 hover:text-purple-700">
+              <button className="text-[7px] text-purple-500 hover:text-purple-700">
                 Connect Chat History →
               </button>
             </div>
           </div>
 
           {/* History Grid */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             {/* History List */}
-            <div className="col-span-1 bg-white border border-relic-mist rounded-lg p-3">
-              <div className="text-[8px] uppercase tracking-wider text-relic-silver mb-3">
-                Descent Tree History
-              </div>
-              <div className="space-y-2">
+            <div className="bg-white border border-relic-mist rounded p-2">
+              <div className="text-[7px] uppercase tracking-wider text-relic-silver mb-2">Descent Tree History</div>
+              <div className="space-y-1.5">
                 {filteredHistory.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => setSelectedHistory(item.id)}
-                    className={`w-full text-left p-2 rounded border transition-all ${
+                    className={`w-full text-left p-1.5 rounded border transition-all ${
                       selectedHistory === item.id
                         ? 'border-purple-500 bg-purple-50'
                         : 'border-relic-mist hover:border-relic-slate'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] font-medium text-relic-void">{item.name}</span>
-                      <span className={`text-[7px] px-1.5 py-0.5 rounded ${
-                        item.type === 'training' 
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-blue-100 text-blue-700'
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[8px] font-medium text-relic-void">{item.name}</span>
+                      <span className={`text-[6px] px-1 py-0.5 rounded ${
+                        item.type === 'training' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                       }`}>
                         {item.type}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-[8px] text-relic-silver">
+                    <div className="flex items-center gap-2 text-[7px] text-relic-silver">
                       <span>{item.date}</span>
                       <span>·</span>
                       <span>{item.patterns} patterns</span>
                       <span>·</span>
                       <span className={item.score >= 80 ? 'text-green-600' : item.score >= 60 ? 'text-amber-600' : 'text-red-600'}>
-                        {item.score}% quality
+                        {item.score}%
                       </span>
                     </div>
                   </button>
@@ -706,83 +645,74 @@ export default function AIConfigPageUnified() {
             </div>
 
             {/* Selected History Preview */}
-            <div className="col-span-2 bg-white border border-relic-mist rounded-lg p-3">
+            <div className="col-span-2 bg-white border border-relic-mist rounded p-2">
               {selectedHistory ? (
                 <>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-[8px] uppercase tracking-wider text-relic-silver">
-                      Tree Visualization
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="px-2 py-1 text-[8px] bg-relic-ghost text-relic-slate rounded hover:bg-relic-mist">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[7px] uppercase tracking-wider text-relic-silver">Tree Visualization</div>
+                    <div className="flex gap-1">
+                      <button className="px-1.5 py-0.5 text-[7px] bg-relic-ghost text-relic-slate rounded hover:bg-relic-mist">
                         Load Config
                       </button>
-                      <button className="px-2 py-1 text-[8px] bg-relic-ghost text-relic-slate rounded hover:bg-relic-mist">
+                      <button className="px-1.5 py-0.5 text-[7px] bg-relic-ghost text-relic-slate rounded hover:bg-relic-mist">
                         Compare
                       </button>
                     </div>
                   </div>
                   
-                  {/* Tree Preview */}
-                  <svg viewBox="0 0 450 400" className="w-full h-64 bg-relic-ghost/30 rounded">
-                    {QLIPHOTH_DATA.slice(0, 6).map((node) => {
-                      const severity = node.severity
-                      const color = severity === 'critical' ? '#ef4444' : severity === 'high' ? '#f97316' : '#fbbf24'
+                  <svg viewBox="0 0 500 250" className="w-full h-40 bg-relic-ghost/30 rounded">
+                    {QLIPHOTH_DATA.slice(0, 8).map((node) => {
+                      const color = node.severity === 'critical' ? '#ef4444' : node.severity === 'high' ? '#f97316' : '#fbbf24'
+                      const radius = node.severity === 'critical' ? 16 : node.severity === 'high' ? 14 : 12
                       return (
                         <g key={node.id}>
-                          <circle cx={node.x} cy={node.y + 50} r={16} fill="white" stroke={color} strokeWidth="1.5" />
-                          <circle cx={node.x} cy={node.y + 50} r={6} fill={color} opacity={0.5} />
-                          <text x={node.x} y={node.y + 30} textAnchor="middle" fontSize="7" fill="#6b7280">
-                            {node.name}
-                          </text>
+                          <circle cx={node.x} cy={node.y * 0.45 + 20} r={radius + 4} fill={color} opacity={0.15} />
+                          <circle cx={node.x} cy={node.y * 0.45 + 20} r={radius} fill="white" stroke={color} strokeWidth="1.5" />
+                          <circle cx={node.x} cy={node.y * 0.45 + 20} r={radius * 0.4} fill={color} opacity={0.5} />
+                          <text x={node.x} y={node.y * 0.45} textAnchor="middle" fontSize="6" fill="#6b7280">{node.name}</text>
                         </g>
                       )
                     })}
                   </svg>
 
-                  {/* Stats */}
-                  <div className="grid grid-cols-4 gap-2 mt-3">
+                  <div className="grid grid-cols-4 gap-1.5 mt-2">
                     {[
-                      { label: 'Patterns Detected', value: '5', color: 'text-red-500' },
-                      { label: 'Quality Score', value: '72%', color: 'text-amber-500' },
-                      { label: 'Messages Analyzed', value: '23', color: 'text-blue-500' },
+                      { label: 'Patterns', value: '5', color: 'text-red-500' },
+                      { label: 'Quality', value: '72%', color: 'text-amber-500' },
+                      { label: 'Messages', value: '23', color: 'text-blue-500' },
                       { label: 'Duration', value: '45m', color: 'text-green-500' },
                     ].map((stat) => (
-                      <div key={stat.label} className="text-center p-2 bg-relic-ghost/50 rounded">
+                      <div key={stat.label} className="text-center p-1.5 bg-relic-ghost/50 rounded">
                         <div className={`text-sm font-medium ${stat.color}`}>{stat.value}</div>
-                        <div className="text-[7px] text-relic-silver uppercase">{stat.label}</div>
+                        <div className="text-[6px] text-relic-silver uppercase">{stat.label}</div>
                       </div>
                     ))}
                   </div>
                 </>
               ) : (
-                <div className="h-64 flex items-center justify-center text-[9px] text-relic-silver">
+                <div className="h-48 flex items-center justify-center text-[8px] text-relic-silver">
                   Select a history item to view its descent tree
                 </div>
               )}
             </div>
           </div>
 
-          {/* Chat History Connection */}
-          <div className="mt-4 bg-white border border-relic-mist rounded-lg p-3">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-[8px] uppercase tracking-wider text-relic-silver">
-                Linked Chat Sessions
-              </div>
-              <button className="text-[8px] text-purple-500 hover:text-purple-700">
-                + Link New Session
-              </button>
+          {/* Linked Chat Sessions */}
+          <div className="mt-3 bg-white border border-relic-mist rounded p-2">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[7px] uppercase tracking-wider text-relic-silver">Linked Chat Sessions</div>
+              <button className="text-[7px] text-purple-500 hover:text-purple-700">+ Link New</button>
             </div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-2">
               {[
                 { name: 'Philosophy Deep Dive', date: 'Jan 29', trees: 3 },
                 { name: 'Code Review Session', date: 'Jan 28', trees: 2 },
                 { name: 'Research Analysis', date: 'Jan 27', trees: 5 },
                 { name: 'Creative Writing', date: 'Jan 26', trees: 1 },
               ].map((session, idx) => (
-                <div key={idx} className="p-2 border border-relic-mist rounded hover:border-purple-300 cursor-pointer">
-                  <div className="text-[9px] font-medium text-relic-void mb-1">{session.name}</div>
-                  <div className="flex items-center gap-2 text-[7px] text-relic-silver">
+                <div key={idx} className="p-1.5 border border-relic-mist rounded hover:border-purple-300 cursor-pointer">
+                  <div className="text-[8px] font-medium text-relic-void mb-0.5">{session.name}</div>
+                  <div className="flex items-center gap-1.5 text-[6px] text-relic-silver">
                     <span>{session.date}</span>
                     <span>·</span>
                     <span>{session.trees} trees</span>
@@ -802,21 +732,37 @@ export default function AIConfigPageUnified() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white border border-relic-mist 
-                       rounded-lg shadow-lg p-4 w-80 z-50"
+                       rounded shadow-lg p-3 w-64 z-50"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: NODE_COLORS[selectedNode] }} />
-                <span className="text-sm font-medium text-relic-void">{AI_LABELS[selectedNode].name}</span>
+                <span className="text-[9px] font-medium text-relic-void">{AI_LABELS[selectedNode].name}</span>
               </div>
-              <button onClick={() => setSelectedNode(null)} className="text-relic-silver hover:text-relic-slate text-xs">✕</button>
+              <button onClick={() => setSelectedNode(null)} className="text-relic-silver hover:text-relic-slate text-[10px]">✕</button>
             </div>
-            <p className="text-[9px] text-relic-silver mb-3">{AI_LABELS[selectedNode].concept}</p>
-            <CompactSlider
-              layer={selectedNode}
-              weight={getWeight(selectedNode)}
-              onChange={(v) => handleWeightChange(selectedNode, v)}
-            />
+            <p className="text-[7px] text-relic-silver mb-2 italic">{AI_LABELS[selectedNode].concept}</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={Math.round(getWeight(selectedNode) * 100)}
+                onChange={(e) => handleWeightChange(selectedNode, parseInt(e.target.value))}
+                className="flex-1 h-1 bg-relic-ghost rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, ${NODE_COLORS[selectedNode]} 0%, ${NODE_COLORS[selectedNode]} ${getWeight(selectedNode) * 100}%, #e5e7eb ${getWeight(selectedNode) * 100}%, #e5e7eb 100%)`,
+                }}
+              />
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={Math.round(getWeight(selectedNode) * 100)}
+                onChange={(e) => handleWeightChange(selectedNode, parseInt(e.target.value) || 0)}
+                className="w-10 h-5 text-[9px] text-center border border-relic-mist rounded"
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -566,7 +566,7 @@ export function AIConfigPage() {
                       textAnchor="middle"
                       fontSize="5"
                       fill={baseColor}
-                      textTransform="uppercase"
+                      style={{ textTransform: 'uppercase' }}
                     >
                       {node.severity}
                     </text>
