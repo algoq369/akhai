@@ -140,6 +140,73 @@ export function shouldUseDirect(query: string): boolean {
  * @param query - User's input question
  * @returns AIQueryClassification with methodology, confidence, reasoning
  */
+/**
+ * QueryIntent - Intent classification result (for tests compatibility)
+ */
+export interface QueryIntent {
+  type: 'factual' | 'analytical' | 'creative' | 'procedural' | 'conversational'
+  confidence: number
+  reasoning: string
+  complexity: number
+  requiresTools: boolean
+  suggestedMethodology: Methodology
+}
+
+/**
+ * classifyQueryIntent - Classify query intent (test-compatible API)
+ * 
+ * @param query - User's input question
+ * @returns QueryIntent with type, confidence, reasoning, complexity
+ */
+export function classifyQueryIntent(query: string): QueryIntent {
+  const basic = classifyQuery(query)
+  const queryLower = query.toLowerCase()
+  const wordCount = query.split(/\s+/).length
+  
+  // Determine query type
+  let type: QueryIntent['type'] = 'factual'
+  if (/write|create|generate|compose|imagine|story|poem/i.test(query)) {
+    type = 'creative'
+  } else if (/why|how does|implication|differ|analyze|evaluate/i.test(query)) {
+    type = 'analytical'
+  } else if (/how (do|to|can)|step|guide|tutorial|install/i.test(query)) {
+    type = 'procedural'
+  } else if (/hello|hi|hey|help|think|you|your/i.test(query) && wordCount < 10) {
+    type = 'conversational'
+  }
+  
+  // Calculate complexity (0-1 scale based on word count and keywords)
+  let complexity = Math.min(1, wordCount / 50)
+  if (/comprehensive|detailed|in-depth|complex|multi/i.test(query)) {
+    complexity = Math.min(1, complexity + 0.3)
+  }
+  
+  // Determine if tools required
+  const requiresTools = /calculate|compute|current|latest|price|search|find|lookup/i.test(query)
+  
+  // Calculate confidence
+  let confidence = 0.7
+  if (basic.isSimple) confidence = 0.9
+  if (wordCount < 5) confidence = 0.95
+  if (wordCount > 30) confidence = 0.6
+  
+  // Map methodology
+  let suggestedMethodology: Methodology = basic.suggestedMethodology === 'cot' 
+    ? 'cod' 
+    : basic.suggestedMethodology === 'aot' 
+      ? 'bot' 
+      : (basic.suggestedMethodology as Methodology)
+  
+  return {
+    type,
+    confidence,
+    reasoning: basic.reason,
+    complexity,
+    requiresTools,
+    suggestedMethodology,
+  }
+}
+
 export async function classifyQueryWithAI(query: string): Promise<AIQueryClassification> {
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {

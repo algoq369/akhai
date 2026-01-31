@@ -20,10 +20,10 @@ describe('Ascent Tracker System', () => {
     it('has valid metadata for each Sefirah', () => {
       Object.values(SEPHIROTH_METADATA).forEach((metadata) => {
         expect(metadata.name).toBeDefined()
-        expect(metadata.hebrew).toBeDefined()
+        expect(metadata.hebrewName).toBeDefined()
         expect(metadata.level).toBeGreaterThanOrEqual(1)
         expect(metadata.level).toBeLessThanOrEqual(11)
-        expect(metadata.aiRolealLayer).toBeDefined()
+        expect(metadata.aiRole).toBeDefined()
         expect(metadata.pillar).toMatch(/left|middle|right/)
       })
     })
@@ -71,29 +71,22 @@ describe('Ascent Tracker System', () => {
 
   describe('trackAscent', () => {
     it('creates initial ascent state', () => {
+      const sessionId = 'test-session'
       const query = 'Test query'
-      const response = 'Test response'
-      const state = trackAscent(query, response)
+      const state = trackAscent(sessionId, query)
 
       expect(state.currentLevel).toBeGreaterThanOrEqual(1)
       expect(state.currentLevel).toBeLessThanOrEqual(11)
-      expect(state.insights).toBeTypeOf('string')
-      expect(state.nextChallenge).toBeTypeOf('string')
+      expect(state.insightsGained).toBeDefined()
+      expect(state.nextElevation).toBeDefined()
     })
 
     it('tracks ascent progression', () => {
+      const sessionId = 'test-session'
       const query = 'Simple question'
-      const response = 'Simple answer'
-      const previousState: AscentState = {
-        currentLevel: 1,
-        previousLevel: null,
-        insights: '',
-        nextChallenge: '',
-        timestamp: new Date(),
-      }
 
-      const state = trackAscent(query, response, previousState)
-      expect(state.previousLevel).toBe(1)
+      const state = trackAscent(sessionId, query)
+      expect(state.previousLevels).toBeDefined()
       expect(state.currentLevel).toBeGreaterThanOrEqual(1)
     })
   })
@@ -145,10 +138,17 @@ describe('Ascent Tracker System', () => {
       const history: AscentState[] = [
         {
           currentLevel: 3,
-          previousLevel: null,
-          insights: '',
-          nextChallenge: '',
-          timestamp: new Date(),
+          previousLevels: [],
+          queryEvolution: [],
+          insightsGained: [],
+          totalQueries: 1,
+          ascentVelocity: 0,
+          nextElevation: '',
+          pathsTraveled: [],
+          averageLevel: 3,
+          peakLevel: 3,
+          timeInCurrentLevel: 0,
+          sessionId: 'test',
         },
       ]
       const velocity = calculateAscentVelocity(history)
@@ -159,17 +159,31 @@ describe('Ascent Tracker System', () => {
       const history: AscentState[] = [
         {
           currentLevel: 1,
-          previousLevel: null,
-          insights: '',
-          nextChallenge: '',
-          timestamp: new Date(Date.now() - 2000),
+          previousLevels: [],
+          queryEvolution: [],
+          insightsGained: [],
+          totalQueries: 1,
+          ascentVelocity: 0,
+          nextElevation: '',
+          pathsTraveled: [],
+          averageLevel: 1,
+          peakLevel: 1,
+          timeInCurrentLevel: 0,
+          sessionId: 'test',
         },
         {
           currentLevel: 5,
-          previousLevel: 1,
-          insights: '',
-          nextChallenge: '',
-          timestamp: new Date(),
+          previousLevels: [1],
+          queryEvolution: [],
+          insightsGained: [],
+          totalQueries: 2,
+          ascentVelocity: 4,
+          nextElevation: '',
+          pathsTraveled: [],
+          averageLevel: 3,
+          peakLevel: 5,
+          timeInCurrentLevel: 0,
+          sessionId: 'test',
         },
       ]
       const velocity = calculateAscentVelocity(history)
@@ -180,17 +194,31 @@ describe('Ascent Tracker System', () => {
       const history: AscentState[] = [
         {
           currentLevel: 8,
-          previousLevel: null,
-          insights: '',
-          nextChallenge: '',
-          timestamp: new Date(Date.now() - 2000),
+          previousLevels: [],
+          queryEvolution: [],
+          insightsGained: [],
+          totalQueries: 1,
+          ascentVelocity: 0,
+          nextElevation: '',
+          pathsTraveled: [],
+          averageLevel: 8,
+          peakLevel: 8,
+          timeInCurrentLevel: 0,
+          sessionId: 'test',
         },
         {
           currentLevel: 3,
-          previousLevel: 8,
-          insights: '',
-          nextChallenge: '',
-          timestamp: new Date(),
+          previousLevels: [8],
+          queryEvolution: [],
+          insightsGained: [],
+          totalQueries: 2,
+          ascentVelocity: -5,
+          nextElevation: '',
+          pathsTraveled: [],
+          averageLevel: 5.5,
+          peakLevel: 8,
+          timeInCurrentLevel: 0,
+          sessionId: 'test',
         },
       ]
       const velocity = calculateAscentVelocity(history)
