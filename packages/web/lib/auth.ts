@@ -14,10 +14,10 @@ const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60; // 30 days
  */
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
-// Use NEXT_PUBLIC_VERCEL_URL or default to localhost:3002 (common Next.js dev port)
-const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
+// Use NEXT_PUBLIC_VERCEL_URL or default to localhost:3000 (standard Next.js dev port)
+const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
   ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-  : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002';
+  : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || `${baseUrl}/api/auth/github/callback`;
 
 /**
