@@ -6,6 +6,16 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Topic, Suggestion } from '@/lib/side-canal'
+import type { ThoughtEvent } from '@/lib/thought-stream'
+
+export type RefinementType = 'refine' | 'enhance' | 'correct' | 'instruct'
+
+export interface LiveRefinement {
+  id: string
+  text: string
+  timestamp: Date
+  type: RefinementType
+}
 
 export interface SideCanalState {
   // Domain State
@@ -13,6 +23,12 @@ export interface SideCanalState {
   currentTopics: Topic[] // Topics from current conversation
   suggestions: Suggestion[]
   synopses: Record<string, string> // topicId -> synopsis text
+  liveRefinements: LiveRefinement[]
+
+  // Metadata Thought Stream
+  metadataHistory: ThoughtEvent[]
+  messageMetadata: Record<string, ThoughtEvent[]> // messageId → ordered pipeline events
+  currentMetadata: Record<string, ThoughtEvent> // messageId → current live stage
 
   // UI State
   loading: boolean
@@ -26,12 +42,20 @@ export interface SideCanalState {
   autoExtractEnabled: boolean
   autoSynopsisEnabled: boolean
 
+  // Metadata Actions
+  pushMetadata: (event: ThoughtEvent) => void
+  getMessageTimeline: (messageId: string) => ThoughtEvent[]
+  clearMetadataForMessage: (messageId: string) => void
+
   // Actions
   extractAndStoreTopics: (query: string, response: string, queryId: string) => Promise<Topic[]>
   generateSynopsisForTopic: (topicId: string) => Promise<void>
   refreshSuggestions: () => Promise<void>
   loadTopics: () => Promise<void>
   removeSuggestion: (topicId: string) => void
+  addRefinement: (text: string) => void
+  clearRefinements: () => void
+  getRefinementContext: () => string | null
   toggleEnabled: (enabled: boolean) => void
   toggleContextInjection: (enabled: boolean) => void
   toggleAutoExtract: (enabled: boolean) => void
@@ -49,6 +73,10 @@ export const useSideCanalStore = create<SideCanalState>()(
       currentTopics: [],
       suggestions: [],
       synopses: {},
+      liveRefinements: [],
+      metadataHistory: [],
+      messageMetadata: {},
+      currentMetadata: {},
       loading: false,
       error: null,
       toastVisible: false,
@@ -59,6 +87,38 @@ export const useSideCanalStore = create<SideCanalState>()(
       contextInjectionEnabled: true,
       autoExtractEnabled: true,
       autoSynopsisEnabled: false, // Disabled to prevent errors (user can enable manually)
+
+      // Metadata Actions
+
+      pushMetadata: (event: ThoughtEvent) => {
+        set((state) => {
+          const messageId = event.messageId || ''
+          const old = state.currentMetadata[messageId]
+          const existingTimeline = state.messageMetadata[messageId] || []
+          return {
+            currentMetadata: { ...state.currentMetadata, [messageId]: event },
+            metadataHistory: old
+              ? [...state.metadataHistory, old]
+              : state.metadataHistory,
+            messageMetadata: {
+              ...state.messageMetadata,
+              [messageId]: [...existingTimeline, event],
+            },
+          }
+        })
+      },
+
+      getMessageTimeline: (messageId: string) => {
+        return get().messageMetadata[messageId] || []
+      },
+
+      clearMetadataForMessage: (messageId: string) => {
+        set((state) => {
+          const { [messageId]: _, ...restCurrent } = state.currentMetadata
+          const { [messageId]: __, ...restTimeline } = state.messageMetadata
+          return { currentMetadata: restCurrent, messageMetadata: restTimeline }
+        })
+      },
 
       // Actions
 
@@ -224,6 +284,40 @@ export const useSideCanalStore = create<SideCanalState>()(
       },
 
       /**
+       * Add a live refinement with auto-classified type
+       */
+      addRefinement: (text: string) => {
+        const lower = text.toLowerCase()
+        let type: RefinementType = 'instruct'
+        if (/\b(focus|narrow|specific|only|limit|restrict)\b/.test(lower)) type = 'refine'
+        else if (/\b(more|deeper|detail|expand|elaborate|further)\b/.test(lower)) type = 'enhance'
+        else if (/\b(wrong|correct|actually|no|fix|instead|not)\b/.test(lower)) type = 'correct'
+
+        set((state) => ({
+          liveRefinements: [
+            ...state.liveRefinements,
+            { id: Math.random().toString(36).slice(2, 10), text, timestamp: new Date(), type },
+          ],
+        }))
+      },
+
+      /**
+       * Clear all live refinements
+       */
+      clearRefinements: () => {
+        set({ liveRefinements: [] })
+      },
+
+      /**
+       * Get formatted refinement context for AI injection
+       */
+      getRefinementContext: () => {
+        const { liveRefinements } = get()
+        if (liveRefinements.length === 0) return null
+        return liveRefinements.map((r) => `- [${r.type}] ${r.text}`).join('\n')
+      },
+
+      /**
        * Toggle Side Canal feature on/off
        */
       toggleEnabled: (enabled: boolean) => {
@@ -274,6 +368,9 @@ export const useSideCanalStore = create<SideCanalState>()(
           currentTopics: [],
           suggestions: [],
           synopses: {},
+          metadataHistory: [],
+          messageMetadata: {},
+          currentMetadata: {},
           loading: false,
           error: null,
           toastVisible: false,
