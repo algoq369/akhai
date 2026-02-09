@@ -9,19 +9,19 @@ import SuperSaiyanIcon from '@/components/SuperSaiyanIcon'
  * INSTINCT MODE CONSOLE
  *
  * Minimalist expandable console showing 7 Hermetic Lenses
- * Uses Sefirot colors for each lens
+ * Uses Layers colors for each lens
  * No backgrounds, no borders - pure raw text
  */
 
-// Map each lens to its Sefirot color
+// Map each lens to its Layers color
 const LENS_COLORS: Record<string, string> = {
-  'exoteric': '#fbbf24',     // amber-400 - Malkuth
-  'esoteric': '#c084fc',     // purple-400 - Yesod
-  'gnostic': '#22d3ee',      // cyan-400 - Da'at
-  'hermetic': '#fb923c',     // orange-400 - Hod
-  'kabbalistic': '#facc15',  // yellow-400 - Tiferet
-  'alchemical': '#f87171',   // red-400 - Gevurah
-  'prophetic': '#60a5fa',    // blue-400 - Chesed
+  'exoteric': '#fbbf24',     // amber-400 - Embedding
+  'esoteric': '#c084fc',     // purple-400 - Executor
+  'gnostic': '#22d3ee',      // cyan-400 - Synthesis
+  'hermetic': '#fb923c',     // orange-400 - Classifier
+  'kabbalistic': '#facc15',  // yellow-400 - Attention
+  'alchemical': '#f87171',   // red-400 - Discriminator
+  'prophetic': '#60a5fa',    // blue-400 - Expansion
 }
 
 export function InstinctModeConsole() {

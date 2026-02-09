@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Transpile xyflow for CSS imports
+  transpilePackages: ['@xyflow/react'],
   eslint: {
     // Disable ESLint during production builds to avoid linting errors blocking build
     ignoreDuringBuilds: true,
@@ -11,10 +13,9 @@ const nextConfig = {
   // Hide Next.js development indicator (N button in bottom left)
   devIndicators: false,
 
-  // Webpack configuration to exclude server-only packages from client bundle
+  // Webpack configuration for production builds
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Don't bundle server-only packages in client bundle
       config.resolve.fallback = {
         ...config.resolve.fallback,
         'posthog-node': false,

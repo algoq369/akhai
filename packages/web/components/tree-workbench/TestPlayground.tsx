@@ -7,19 +7,19 @@
  */
 
 import { useState } from 'react'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
-import { formatGnosticAnnotation, formatCompactAnnotation, type QlipothReport } from '@/lib/qlipoth'
+import { useLayerStore } from '@/lib/stores/layer-store'
+import { formatGnosticAnnotation, formatCompactAnnotation, type AntipatternReport } from '@/lib/antipattern'
 
 interface TestResult {
   response: string
   methodology: string
-  dominantSefirah: string
+  dominantLayer: string
   activations: Record<number, number>
   blendedActivations?: Record<number, number>
   processingTime: number
   tokensUsed: number
   cost: number
-  qlipothReport?: QlipothReport
+  antipatternReport?: AntipatternReport
 }
 
 interface TestPlaygroundProps {
@@ -27,7 +27,7 @@ interface TestPlaygroundProps {
 }
 
 export function TestPlayground({ onTestComplete }: TestPlaygroundProps) {
-  const { weights, processingMode, showGnosticAnnotation } = useSefirotStore()
+  const { weights, processingMode, showProcessingAnnotation } = useLayerStore()
   const [query, setQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<TestResult | null>(null)
@@ -62,13 +62,13 @@ export function TestPlayground({ onTestComplete }: TestPlaygroundProps) {
       const testResult: TestResult = {
         response: data.response || '',
         methodology: data.methodology || 'direct',
-        dominantSefirah: data.gnostic?.sefirotProcessing?.dominant || 'Unknown',
-        activations: data.gnostic?.sefirotProcessing?.activations || {},
-        blendedActivations: data.gnostic?.sefirotProcessing?.blendedActivations,
+        dominantLayer: data.gnostic?.layersProcessing?.dominant || 'Unknown',
+        activations: data.gnostic?.layersProcessing?.activations || {},
+        blendedActivations: data.gnostic?.layersProcessing?.blendedActivations,
         processingTime: data.metrics?.latency || 0,
         tokensUsed: data.metrics?.tokens || 0,
         cost: data.metrics?.cost || 0,
-        qlipothReport: data.qlipothReport
+        antipatternReport: data.antipatternReport
       }
 
       setResult(testResult)
@@ -130,7 +130,7 @@ export function TestPlayground({ onTestComplete }: TestPlaygroundProps) {
               <div className="p-2 bg-relic-ghost dark:bg-relic-slate/10 rounded text-center">
                 <div className="text-[9px] uppercase text-relic-silver">Primary Layer</div>
                 <div className="text-[11px] font-mono text-purple-600 dark:text-purple-400">
-                  {result.dominantSefirah}
+                  {result.dominantLayer}
                 </div>
               </div>
               <div className="p-2 bg-relic-ghost dark:bg-relic-slate/10 rounded text-center">
@@ -177,12 +177,12 @@ export function TestPlayground({ onTestComplete }: TestPlaygroundProps) {
                 Layer Activity
               </span>
               <div className="grid grid-cols-4 gap-1">
-                {Object.entries(result.activations).map(([sefirah, activation]) => (
+                {Object.entries(result.activations).map(([layer, activation]) => (
                   <div
-                    key={sefirah}
+                    key={layer}
                     className="p-1 bg-relic-ghost dark:bg-relic-slate/10 rounded text-center"
                   >
-                    <div className="text-[8px] text-relic-silver">{sefirah}</div>
+                    <div className="text-[8px] text-relic-silver">{layer}</div>
                     <div className="text-[10px] font-mono text-relic-void dark:text-white">
                       {Math.round((activation as number) * 100)}%
                     </div>
@@ -192,7 +192,7 @@ export function TestPlayground({ onTestComplete }: TestPlaygroundProps) {
             </div>
 
             {/* Processing Report */}
-            {showGnosticAnnotation && result.qlipothReport && (
+            {showProcessingAnnotation && result.antipatternReport && (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[9px] uppercase tracking-wider text-relic-silver">
@@ -208,13 +208,13 @@ export function TestPlayground({ onTestComplete }: TestPlaygroundProps) {
 
                 {/* Compact View */}
                 <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded text-[10px] font-mono text-purple-700 dark:text-purple-300">
-                  {formatCompactAnnotation(result.qlipothReport)}
+                  {formatCompactAnnotation(result.antipatternReport)}
                 </div>
 
                 {/* Full Annotation */}
                 {showAnnotation && (
                   <div className="mt-2 p-3 bg-relic-ghost dark:bg-relic-slate/10 rounded text-[10px] font-mono whitespace-pre-wrap text-relic-void dark:text-white">
-                    {formatGnosticAnnotation(result.qlipothReport)}
+                    {formatGnosticAnnotation(result.antipatternReport)}
                   </div>
                 )}
               </div>

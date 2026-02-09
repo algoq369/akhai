@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import SefirotMini from '@/components/SefirotMini'
+import LayerMini from '@/components/LayerMini'
 import SuggestionToast from '@/components/SuggestionToast'
 import TopicsPanel from '@/components/TopicsPanel'
 import { useSettingsStore } from '@/lib/stores/settings-store'
@@ -621,10 +621,10 @@ export default function ProfilePage() {
 
             {/* Mini Visualizations */}
             <div className="grid grid-cols-2 gap-4">
-              {/* Mini Sefirot */}
+              {/* Mini AI Layers */}
               <div className="bg-white dark:bg-relic-void/50 border border-relic-mist dark:border-relic-slate/30 p-4 relative group">
                 <div className="flex items-center justify-center min-h-[180px]">
-                  <SefirotMini
+                  <LayerMini
                     activations={{
                       1: stats.developmentLevel >= 1 ? 1 : 0,
                       2: stats.developmentLevel >= 2 ? 0.8 : 0,
@@ -636,12 +636,12 @@ export default function ProfilePage() {
                       8: stats.developmentLevel >= 8 ? 0.8 : 0,
                       9: stats.developmentLevel >= 9 ? 0.8 : 0,
                       10: stats.developmentLevel >= 10 ? 1 : 0,
-                      11: 0, // Da'at
+                      11: 0, // Synthesis
                     }}
                     userLevel={stats.developmentLevel}
                     onExpand={() => {
-                      // TODO: Open full Sefirot visualization
-                      console.log('[Profile] Expand Sefirot visualization')
+                      // TODO: Open full AI Layers visualization
+                      console.log('[Profile] Expand AI Layers visualization')
                     }}
                   />
                 </div>

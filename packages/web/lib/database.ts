@@ -7,7 +7,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 
 // Ensure data directory exists
 const dataDir = path.join(process.cwd(), 'data');
@@ -388,15 +388,15 @@ db.exec(`
     FOREIGN KEY (query_id) REFERENCES queries(id)
   );
 
-  -- Tree Configurations: User-defined Sephiroth/Qliphoth weights and personas
+  -- Tree Configurations: User-defined Layers/Antipatterns weights and personas
   CREATE TABLE IF NOT EXISTS tree_configurations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT,
     name TEXT NOT NULL,
     description TEXT,
     is_active INTEGER DEFAULT 0,
-    sephiroth_weights TEXT NOT NULL,
-    qliphoth_suppression TEXT,
+    layer_weights TEXT NOT NULL,
+    antipattern_suppression TEXT,
     pillar_balance TEXT,
     created_at INTEGER DEFAULT (strftime('%s', 'now')),
     updated_at INTEGER DEFAULT (strftime('%s', 'now')),
@@ -457,7 +457,7 @@ try {
 
   if (existingPresets.count === 0) {
     const insertPreset = db.prepare(`
-      INSERT INTO tree_configurations (user_id, name, description, is_active, sephiroth_weights, qliphoth_suppression, pillar_balance)
+      INSERT INTO tree_configurations (user_id, name, description, is_active, layer_weights, antipattern_suppression, pillar_balance)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
@@ -465,7 +465,7 @@ try {
     insertPreset.run(
       null,
       'Balanced',
-      'Default balanced configuration with equal emphasis on all Sephiroth',
+      'Default balanced configuration with equal emphasis on all Layers',
       0,
       JSON.stringify({"1":0.5,"2":0.5,"3":0.5,"4":0.5,"5":0.5,"6":0.5,"7":0.5,"8":0.5,"9":0.5,"10":0.5,"11":0.5}),
       JSON.stringify({"1":0.5,"2":0.5,"3":0.5,"4":0.5,"5":0.5,"6":0.5,"7":0.5,"8":0.5,"9":0.5,"10":0.5,"11":0.5,"12":0.5}),
@@ -476,7 +476,7 @@ try {
     insertPreset.run(
       null,
       'Analytical',
-      'Emphasizes logic, understanding, and structured reasoning (Chokmah, Binah, Hod)',
+      'Emphasizes logic, understanding, and structured reasoning (Reasoning, Encoder, Classifier)',
       0,
       JSON.stringify({"1":0.3,"2":0.9,"3":0.9,"4":0.4,"5":0.7,"6":0.5,"7":0.4,"8":0.8,"9":0.5,"10":0.6,"11":0.4}),
       JSON.stringify({"1":0.8,"2":0.2,"3":0.3,"4":0.7,"5":0.6,"6":0.5,"7":0.6,"8":0.2,"9":0.7,"10":0.6,"11":0.5,"12":0.3}),
@@ -487,7 +487,7 @@ try {
     insertPreset.run(
       null,
       'Compassionate',
-      'Emphasizes empathy, mercy, and harmonious integration (Chesed, Tiferet, Netzach)',
+      'Emphasizes empathy, mercy, and harmonious integration (Expansion, Attention, Generative)',
       0,
       JSON.stringify({"1":0.4,"2":0.5,"3":0.6,"4":0.9,"5":0.3,"6":0.9,"7":0.7,"8":0.5,"9":0.6,"10":0.5,"11":0.5}),
       JSON.stringify({"1":0.6,"2":0.5,"3":0.5,"4":0.3,"5":0.9,"6":0.2,"7":0.4,"8":0.5,"9":0.4,"10":0.5,"11":0.6,"12":0.5}),
@@ -498,7 +498,7 @@ try {
     insertPreset.run(
       null,
       'Creative',
-      'Emphasizes imagination, creative expression, and innovative thinking (Netzach, Yesod, Chokmah)',
+      'Emphasizes imagination, creative expression, and innovative thinking (Generative, Executor, Reasoning)',
       0,
       JSON.stringify({"1":0.5,"2":0.8,"3":0.7,"4":0.6,"5":0.5,"6":0.7,"7":0.9,"8":0.6,"9":0.9,"10":0.5,"11":0.6}),
       JSON.stringify({"1":0.5,"2":0.4,"3":0.4,"4":0.5,"5":0.6,"6":0.4,"7":0.2,"8":0.4,"9":0.1,"10":0.3,"11":0.5,"12":0.6}),
@@ -907,7 +907,7 @@ export function createOrGetUser(
   }
   
   // Create new user
-  const userId = Math.random().toString(36).substring(2, 15);
+  const userId = randomUUID();
   db.prepare(`
     INSERT INTO users (id, username, email, avatar_url, auth_provider, auth_id)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -961,8 +961,8 @@ export interface Session {
  * Create a new session
  */
 export function createSession(userId: string, expiresInSeconds: number = 30 * 24 * 60 * 60): Session {
-  const sessionId = Math.random().toString(36).substring(2, 15);
-  const token = Math.random().toString(36).substring(2, 30) + Date.now().toString(36);
+  const sessionId = randomUUID();
+  const token = randomBytes(32).toString('hex');
   const expiresAt = Math.floor(Date.now() / 1000) + expiresInSeconds;
   
   db.prepare(`
@@ -1236,3 +1236,122 @@ export function cleanupExpiredPKCEVerifiers(): number {
   const result = stmt.run(tenMinutesAgo);
   return result.changes;
 }
+
+// ============================================
+// STALE QUERY CLEANUP
+// ============================================
+
+/**
+ * Clean up queries stuck in 'pending' status for more than 1 hour
+ * Marks them as 'failed' with error message 'Timeout'
+ */
+export function cleanupStalePendingQueries(): { cleaned: number; queries: string[] } {
+  const oneHourAgo = Math.floor(Date.now() / 1000) - 60 * 60; // 1 hour
+
+  // Get IDs of stale queries for logging
+  const staleQueries = db.prepare(`
+    SELECT id FROM queries
+    WHERE status = 'pending' AND created_at < ?
+  `).all(oneHourAgo) as Array<{ id: string }>;
+
+  if (staleQueries.length === 0) {
+    return { cleaned: 0, queries: [] };
+  }
+
+  // Update stale queries to failed status
+  const result = db.prepare(`
+    UPDATE queries
+    SET status = 'failed',
+        result = '{"error": "Timeout - Query exceeded 1 hour processing limit"}',
+        completed_at = strftime('%s', 'now')
+    WHERE status = 'pending' AND created_at < ?
+  `).run(oneHourAgo);
+
+  const cleanedIds = staleQueries.map(q => q.id);
+  console.log(`[Cleanup] Marked ${result.changes} stale pending queries as failed:`, cleanedIds.slice(0, 5));
+
+  return { cleaned: result.changes, queries: cleanedIds };
+}
+
+/**
+ * Get count of queries by status
+ */
+export function getQueryStatusCounts(): Record<string, number> {
+  const counts = db.prepare(`
+    SELECT status, COUNT(*) as count
+    FROM queries
+    GROUP BY status
+  `).all() as Array<{ status: string; count: number }>;
+
+  return counts.reduce((acc, row) => {
+    acc[row.status] = row.count;
+    return acc;
+  }, {} as Record<string, number>);
+}
+
+// ============================================
+// AUTOMATIC CLEANUP SCHEDULER
+// ============================================
+
+let cleanupIntervalId: NodeJS.Timeout | null = null;
+
+/**
+ * Start automatic cleanup scheduler
+ * Runs every hour to clean up stale queries and expired sessions
+ */
+export function startCleanupScheduler(): void {
+  if (cleanupIntervalId) {
+    console.log('[Cleanup] Scheduler already running');
+    return;
+  }
+
+  // Run immediately on startup
+  runCleanupTasks();
+
+  // Then run every hour (3600000ms)
+  cleanupIntervalId = setInterval(() => {
+    runCleanupTasks();
+  }, 60 * 60 * 1000); // 1 hour
+
+  console.log('[Cleanup] Scheduler started - will run every hour');
+}
+
+/**
+ * Stop automatic cleanup scheduler
+ */
+export function stopCleanupScheduler(): void {
+  if (cleanupIntervalId) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
+    console.log('[Cleanup] Scheduler stopped');
+  }
+}
+
+/**
+ * Run all cleanup tasks
+ */
+function runCleanupTasks(): void {
+  const timestamp = new Date().toISOString();
+  console.log(`[Cleanup] Running cleanup tasks at ${timestamp}`);
+
+  try {
+    // 1. Clean stale pending queries
+    const { cleaned: staleQueries } = cleanupStalePendingQueries();
+
+    // 2. Clean expired sessions
+    cleanExpiredSessions();
+
+    // 3. Clean expired PKCE verifiers
+    const expiredPKCE = cleanupExpiredPKCEVerifiers();
+
+    console.log(`[Cleanup] Completed: ${staleQueries} stale queries, ${expiredPKCE} expired PKCE verifiers`);
+  } catch (error) {
+    console.error('[Cleanup] Error during cleanup tasks:', error);
+  }
+}
+
+// Auto-start cleanup scheduler when module loads
+// Use setTimeout to ensure database is fully initialized
+setTimeout(() => {
+  startCleanupScheduler();
+}, 5000); // Wait 5 seconds after module load

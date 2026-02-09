@@ -16,7 +16,7 @@ export interface QueryCard {
   response: string
   timestamp: Date
   methodology?: string
-  sefirah?: string
+  layerNode?: string
   guardWarnings?: string[]
 }
 
@@ -38,8 +38,9 @@ function QueryCardItem({ card, isExpanded, onToggle, onSelect, isSelected }: Que
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 1, y: 0 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15 }}
       className={`border rounded-lg overflow-hidden transition-all cursor-pointer ${
         isSelected 
           ? 'border-purple-400 bg-purple-50/50' 
@@ -48,7 +49,7 @@ function QueryCardItem({ card, isExpanded, onToggle, onSelect, isSelected }: Que
       onClick={onSelect}
     >
       {/* Card Header */}
-      <div className="px-3 py-2 bg-relic-ghost/30 border-b border-relic-mist">
+      <div className="px-2 py-1.5 bg-relic-ghost/30 border-b border-relic-mist">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[8px] text-purple-500 font-medium">Q</span>
@@ -62,9 +63,9 @@ function QueryCardItem({ card, isExpanded, onToggle, onSelect, isSelected }: Que
                 {card.methodology}
               </span>
             )}
-            {card.sefirah && (
+            {card.layerNode && (
               <span className="text-[7px] px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded">
-                {card.sefirah}
+                {card.layerNode}
               </span>
             )}
           </div>
@@ -72,14 +73,15 @@ function QueryCardItem({ card, isExpanded, onToggle, onSelect, isSelected }: Que
       </div>
 
       {/* Response Preview/Full */}
-      <div className="px-3 py-2">
+      <div className="px-2 py-1.5">
         <AnimatePresence mode="wait">
           {isExpanded ? (
             <motion.div
               key="full"
-              initial={{ opacity: 0 }}
+              initial={{ opacity: 1 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
               className="text-[10px] text-relic-slate leading-relaxed whitespace-pre-wrap"
             >
               {card.response}
@@ -87,9 +89,10 @@ function QueryCardItem({ card, isExpanded, onToggle, onSelect, isSelected }: Que
           ) : (
             <motion.div
               key="preview"
-              initial={{ opacity: 0 }}
+              initial={{ opacity: 1 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
               className="text-[10px] text-relic-silver leading-relaxed"
             >
               {responsePreview}
@@ -151,7 +154,7 @@ export function QueryCardsPanel({ cards, onCardSelect, selectedCardId }: QueryCa
   }
 
   return (
-    <div className="p-3 space-y-2">
+    <div className="p-2 space-y-1.5">
       {cards.length === 0 ? (
         <div className="text-center py-8 text-[10px] text-relic-silver">
           No queries yet. Start a conversation!

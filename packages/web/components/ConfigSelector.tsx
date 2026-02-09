@@ -6,8 +6,8 @@ interface TreeConfiguration {
   id?: number
   name: string
   description?: string
-  sephiroth_weights: Record<number, number>
-  qliphoth_suppression?: Record<number, number>
+  layer_weights: Record<number, number>
+  antipattern_suppression?: Record<number, number>
   processing_mode: 'weighted' | 'parallel' | 'adaptive'
 }
 
@@ -78,7 +78,7 @@ export default function ConfigSelector({ value, onChange, label }: ConfigSelecto
       {customMode && (
         <div className="mt-4 p-3 bg-relic-ghost rounded">
           <p className="text-xs text-relic-slate mb-2">
-            Custom configuration coming soon. For now, use the SefirotConsole to create and save a configuration,
+            Custom configuration coming soon. For now, use the LayerConsole to create and save a configuration,
             then select it here.
           </p>
           <button
@@ -102,8 +102,8 @@ export default function ConfigSelector({ value, onChange, label }: ConfigSelecto
                 Mode: <span className="font-medium uppercase">{value.processing_mode}</span>
               </span>
               <span>
-                Active Sephiroth: {
-                  Object.entries(value.sephiroth_weights)
+                Active Layers: {
+                  Object.entries(value.layer_weights)
                     .filter(([_, w]) => w > 0.1)
                     .length
                 }/11
@@ -111,10 +111,10 @@ export default function ConfigSelector({ value, onChange, label }: ConfigSelecto
             </div>
             <div className="mt-2">
               <p className="text-[10px] text-relic-silver uppercase tracking-wider mb-1">
-                Top 3 Sephiroth:
+                Top 3 Layers:
               </p>
               <div className="flex gap-2">
-                {Object.entries(value.sephiroth_weights)
+                {Object.entries(value.layer_weights)
                   .sort(([, a], [, b]) => (b as number) - (a as number))
                   .slice(0, 3)
                   .map(([id, weight]) => (

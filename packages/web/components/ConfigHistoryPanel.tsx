@@ -9,25 +9,25 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sefirah } from '@/lib/ascent-tracker'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
+import { Layer } from '@/lib/layer-registry'
+import { useLayerStore } from '@/lib/stores/layer-store'
 
 // ═══════════════════════════════════════════════════════════
 // AI LABELS
 // ═══════════════════════════════════════════════════════════
 
 const AI_LABELS: Record<number, string> = {
-  [Sefirah.KETHER]: 'meta-cognition',
-  [Sefirah.CHOKMAH]: 'first-principles',
-  [Sefirah.BINAH]: 'pattern-recognition',
-  [Sefirah.DAAT]: 'emergent-insight',
-  [Sefirah.CHESED]: 'expansion',
-  [Sefirah.GEVURAH]: 'critical-analysis',
-  [Sefirah.TIFERET]: 'synthesis',
-  [Sefirah.NETZACH]: 'persistence',
-  [Sefirah.HOD]: 'communication',
-  [Sefirah.YESOD]: 'foundation',
-  [Sefirah.MALKUTH]: 'manifestation',
+  [Layer.META_CORE]: 'meta-cognition',
+  [Layer.REASONING]: 'first-principles',
+  [Layer.ENCODER]: 'pattern-recognition',
+  [Layer.SYNTHESIS]: 'emergent-insight',
+  [Layer.EXPANSION]: 'expansion',
+  [Layer.DISCRIMINATOR]: 'critical-analysis',
+  [Layer.ATTENTION]: 'synthesis',
+  [Layer.GENERATIVE]: 'persistence',
+  [Layer.CLASSIFIER]: 'communication',
+  [Layer.EXECUTOR]: 'foundation',
+  [Layer.EMBEDDING]: 'manifestation',
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -67,10 +67,10 @@ const SAMPLE_HISTORY: ConfigHistory[] = [
     name: 'Deep Research v2',
     date: 'Jan 29',
     weights: {
-      [Sefirah.KETHER]: 0.5, [Sefirah.CHOKMAH]: 0.85, [Sefirah.BINAH]: 0.7,
-      [Sefirah.DAAT]: 0.95, [Sefirah.CHESED]: 0.6, [Sefirah.GEVURAH]: 0.75,
-      [Sefirah.TIFERET]: 0.5, [Sefirah.NETZACH]: 0.6, [Sefirah.HOD]: 0.8,
-      [Sefirah.YESOD]: 0.8, [Sefirah.MALKUTH]: 0.85,
+      [Layer.META_CORE]: 0.5, [Layer.REASONING]: 0.85, [Layer.ENCODER]: 0.7,
+      [Layer.SYNTHESIS]: 0.95, [Layer.EXPANSION]: 0.6, [Layer.DISCRIMINATOR]: 0.75,
+      [Layer.ATTENTION]: 0.5, [Layer.GENERATIVE]: 0.6, [Layer.CLASSIFIER]: 0.8,
+      [Layer.EXECUTOR]: 0.8, [Layer.EMBEDDING]: 0.85,
     },
     testCount: 3,
     tests: [
@@ -83,10 +83,10 @@ const SAMPLE_HISTORY: ConfigHistory[] = [
     name: 'Creative Writing',
     date: 'Jan 28',
     weights: {
-      [Sefirah.KETHER]: 0.8, [Sefirah.CHOKMAH]: 0.7, [Sefirah.BINAH]: 0.4,
-      [Sefirah.DAAT]: 0.9, [Sefirah.CHESED]: 0.95, [Sefirah.GEVURAH]: 0.3,
-      [Sefirah.TIFERET]: 0.85, [Sefirah.NETZACH]: 0.9, [Sefirah.HOD]: 0.5,
-      [Sefirah.YESOD]: 0.6, [Sefirah.MALKUTH]: 0.7,
+      [Layer.META_CORE]: 0.8, [Layer.REASONING]: 0.7, [Layer.ENCODER]: 0.4,
+      [Layer.SYNTHESIS]: 0.9, [Layer.EXPANSION]: 0.95, [Layer.DISCRIMINATOR]: 0.3,
+      [Layer.ATTENTION]: 0.85, [Layer.GENERATIVE]: 0.9, [Layer.CLASSIFIER]: 0.5,
+      [Layer.EXECUTOR]: 0.6, [Layer.EMBEDDING]: 0.7,
     },
     testCount: 7,
     tests: []
@@ -96,10 +96,10 @@ const SAMPLE_HISTORY: ConfigHistory[] = [
     name: 'Code Analysis',
     date: 'Jan 27',
     weights: {
-      [Sefirah.KETHER]: 0.3, [Sefirah.CHOKMAH]: 0.9, [Sefirah.BINAH]: 0.85,
-      [Sefirah.DAAT]: 0.4, [Sefirah.CHESED]: 0.3, [Sefirah.GEVURAH]: 0.95,
-      [Sefirah.TIFERET]: 0.5, [Sefirah.NETZACH]: 0.3, [Sefirah.HOD]: 0.9,
-      [Sefirah.YESOD]: 0.85, [Sefirah.MALKUTH]: 0.9,
+      [Layer.META_CORE]: 0.3, [Layer.REASONING]: 0.9, [Layer.ENCODER]: 0.85,
+      [Layer.SYNTHESIS]: 0.4, [Layer.EXPANSION]: 0.3, [Layer.DISCRIMINATOR]: 0.95,
+      [Layer.ATTENTION]: 0.5, [Layer.GENERATIVE]: 0.3, [Layer.CLASSIFIER]: 0.9,
+      [Layer.EXECUTOR]: 0.85, [Layer.EMBEDDING]: 0.9,
     },
     testCount: 12,
     tests: []
@@ -116,7 +116,7 @@ export function ConfigHistoryPanel({
   position = 'right',
   className = ''
 }: ConfigHistoryPanelProps) {
-  const { setWeight } = useSefirotStore()
+  const { setWeight } = useLayerStore()
   const [isCollapsed, setIsCollapsed] = useState(collapsed)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [configHistory, setConfigHistory] = useState<ConfigHistory[]>(SAMPLE_HISTORY)
@@ -128,8 +128,8 @@ export function ConfigHistoryPanel({
   }
 
   const loadConfig = (config: ConfigHistory) => {
-    Object.entries(config.weights).forEach(([sefirah, weight]) => {
-      setWeight(parseInt(sefirah) as Sefirah, weight)
+    Object.entries(config.weights).forEach(([layerNode, weight]) => {
+      setWeight(parseInt(layerNode) as Layer, weight)
     })
   }
 
@@ -209,10 +209,10 @@ export function ConfigHistoryPanel({
                       Layer Weights
                     </div>
                     <div className="space-y-1">
-                      {Object.entries(config.weights).slice(0, 6).map(([sefirah, weight]) => (
-                        <div key={sefirah} className="flex items-center justify-between text-[9px]">
+                      {Object.entries(config.weights).slice(0, 6).map(([layerNode, weight]) => (
+                        <div key={layerNode} className="flex items-center justify-between text-[9px]">
                           <span className="text-neutral-500 truncate">
-                            {AI_LABELS[parseInt(sefirah)]?.slice(0, 15)}
+                            {AI_LABELS[parseInt(layerNode)]?.slice(0, 15)}
                           </span>
                           <div className="flex items-center gap-2">
                             <div className="w-16 h-1 bg-neutral-100 rounded-full overflow-hidden">

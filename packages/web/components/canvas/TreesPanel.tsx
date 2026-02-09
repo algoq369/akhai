@@ -3,76 +3,76 @@
 /**
  * TREES PANEL
  * 
- * Compact visualization of Ascent (Sefirot) and Descent (Qliphoth) trees.
+ * Compact visualization of Ascent (Layers) and Descent (Antipatterns) trees.
  * Designed to fit within a draggable panel on the canvas.
  */
 
 import { motion } from 'framer-motion'
-import { Sefirah } from '@/lib/ascent-tracker'
+import { Layer } from '@/lib/layer-registry'
 
 // Node colors matching the main tree visualization
 const NODE_COLORS: Record<number, string> = {
-  [Sefirah.KETHER]: '#a78bfa',
-  [Sefirah.CHOKMAH]: '#818cf8',
-  [Sefirah.BINAH]: '#6366f1',
-  [Sefirah.DAAT]: '#22d3ee',
-  [Sefirah.CHESED]: '#34d399',
-  [Sefirah.GEVURAH]: '#f87171',
-  [Sefirah.TIFERET]: '#fbbf24',
-  [Sefirah.NETZACH]: '#fb923c',
-  [Sefirah.HOD]: '#facc15',
-  [Sefirah.YESOD]: '#a3a3a3',
-  [Sefirah.MALKUTH]: '#78716c',
+  [Layer.META_CORE]: '#a78bfa',
+  [Layer.REASONING]: '#818cf8',
+  [Layer.ENCODER]: '#6366f1',
+  [Layer.SYNTHESIS]: '#22d3ee',
+  [Layer.EXPANSION]: '#34d399',
+  [Layer.DISCRIMINATOR]: '#f87171',
+  [Layer.ATTENTION]: '#fbbf24',
+  [Layer.GENERATIVE]: '#fb923c',
+  [Layer.CLASSIFIER]: '#facc15',
+  [Layer.EXECUTOR]: '#a3a3a3',
+  [Layer.EMBEDDING]: '#78716c',
 }
 
 const AI_LABELS: Record<number, string> = {
-  [Sefirah.KETHER]: 'meta',
-  [Sefirah.CHOKMAH]: 'reason',
-  [Sefirah.BINAH]: 'know',
-  [Sefirah.DAAT]: 'verify',
-  [Sefirah.CHESED]: 'expand',
-  [Sefirah.GEVURAH]: 'critic',
-  [Sefirah.TIFERET]: 'synth',
-  [Sefirah.NETZACH]: 'persist',
-  [Sefirah.HOD]: 'comm',
-  [Sefirah.YESOD]: 'found',
-  [Sefirah.MALKUTH]: 'output',
+  [Layer.META_CORE]: 'meta',
+  [Layer.REASONING]: 'reason',
+  [Layer.ENCODER]: 'know',
+  [Layer.SYNTHESIS]: 'verify',
+  [Layer.EXPANSION]: 'expand',
+  [Layer.DISCRIMINATOR]: 'critic',
+  [Layer.ATTENTION]: 'synth',
+  [Layer.GENERATIVE]: 'persist',
+  [Layer.CLASSIFIER]: 'comm',
+  [Layer.EXECUTOR]: 'found',
+  [Layer.EMBEDDING]: 'output',
 }
 
 // Compact tree positions
 const TREE_POSITIONS: Record<number, { x: number; y: number }> = {
-  [Sefirah.KETHER]: { x: 75, y: 15 },
-  [Sefirah.CHOKMAH]: { x: 120, y: 45 },
-  [Sefirah.BINAH]: { x: 30, y: 45 },
-  [Sefirah.DAAT]: { x: 75, y: 70 },
-  [Sefirah.CHESED]: { x: 120, y: 100 },
-  [Sefirah.GEVURAH]: { x: 30, y: 100 },
-  [Sefirah.TIFERET]: { x: 75, y: 130 },
-  [Sefirah.NETZACH]: { x: 120, y: 160 },
-  [Sefirah.HOD]: { x: 30, y: 160 },
-  [Sefirah.YESOD]: { x: 75, y: 190 },
-  [Sefirah.MALKUTH]: { x: 75, y: 220 },
+  [Layer.META_CORE]: { x: 75, y: 15 },
+  [Layer.REASONING]: { x: 120, y: 45 },
+  [Layer.ENCODER]: { x: 30, y: 45 },
+  [Layer.SYNTHESIS]: { x: 75, y: 70 },
+  [Layer.EXPANSION]: { x: 120, y: 100 },
+  [Layer.DISCRIMINATOR]: { x: 30, y: 100 },
+  [Layer.ATTENTION]: { x: 75, y: 130 },
+  [Layer.GENERATIVE]: { x: 120, y: 160 },
+  [Layer.CLASSIFIER]: { x: 30, y: 160 },
+  [Layer.EXECUTOR]: { x: 75, y: 190 },
+  [Layer.EMBEDDING]: { x: 75, y: 220 },
 }
 
-const TREE_PATHS: [Sefirah, Sefirah][] = [
-  [Sefirah.KETHER, Sefirah.CHOKMAH], [Sefirah.KETHER, Sefirah.BINAH],
-  [Sefirah.KETHER, Sefirah.TIFERET], [Sefirah.CHOKMAH, Sefirah.BINAH],
-  [Sefirah.CHOKMAH, Sefirah.CHESED], [Sefirah.BINAH, Sefirah.GEVURAH],
-  [Sefirah.CHESED, Sefirah.GEVURAH], [Sefirah.CHESED, Sefirah.TIFERET],
-  [Sefirah.GEVURAH, Sefirah.TIFERET], [Sefirah.TIFERET, Sefirah.NETZACH],
-  [Sefirah.TIFERET, Sefirah.HOD], [Sefirah.TIFERET, Sefirah.YESOD],
-  [Sefirah.NETZACH, Sefirah.HOD], [Sefirah.NETZACH, Sefirah.YESOD],
-  [Sefirah.HOD, Sefirah.YESOD], [Sefirah.YESOD, Sefirah.MALKUTH],
+const TREE_PATHS: [Layer, Layer][] = [
+  [Layer.META_CORE, Layer.REASONING], [Layer.META_CORE, Layer.ENCODER],
+  [Layer.META_CORE, Layer.ATTENTION], [Layer.REASONING, Layer.ENCODER],
+  [Layer.REASONING, Layer.EXPANSION], [Layer.ENCODER, Layer.DISCRIMINATOR],
+  [Layer.EXPANSION, Layer.DISCRIMINATOR], [Layer.EXPANSION, Layer.ATTENTION],
+  [Layer.DISCRIMINATOR, Layer.ATTENTION], [Layer.ATTENTION, Layer.GENERATIVE],
+  [Layer.ATTENTION, Layer.CLASSIFIER], [Layer.ATTENTION, Layer.EXECUTOR],
+  [Layer.GENERATIVE, Layer.CLASSIFIER], [Layer.GENERATIVE, Layer.EXECUTOR],
+  [Layer.CLASSIFIER, Layer.EXECUTOR], [Layer.EXECUTOR, Layer.EMBEDDING],
 ]
 
 const ALL_LAYERS = [
-  Sefirah.KETHER, Sefirah.CHOKMAH, Sefirah.BINAH, Sefirah.DAAT,
-  Sefirah.CHESED, Sefirah.GEVURAH, Sefirah.TIFERET,
-  Sefirah.NETZACH, Sefirah.HOD, Sefirah.YESOD, Sefirah.MALKUTH
+  Layer.META_CORE, Layer.REASONING, Layer.ENCODER, Layer.SYNTHESIS,
+  Layer.EXPANSION, Layer.DISCRIMINATOR, Layer.ATTENTION,
+  Layer.GENERATIVE, Layer.CLASSIFIER, Layer.EXECUTOR, Layer.EMBEDDING
 ]
 
-// Qliphoth data for descent tree
-const QLIPHOTH_DATA = [
+// Antipatterns data for descent tree
+const ANTIPATTERN_DATA = [
   { id: 1, name: 'contradict', severity: 'critical', x: 110, y: 20 },
   { id: 2, name: 'hide src', severity: 'high', x: 40, y: 20 },
   { id: 3, name: 'block', severity: 'critical', x: 75, y: 55 },
@@ -95,9 +95,9 @@ interface TreesPanelProps {
 }
 
 export function TreesPanel({ type, weights = {}, onNodeClick, compact = false }: TreesPanelProps) {
-  const getWeight = (layer: Sefirah): number => weights[layer] ?? 0.5
-  const viewBox = compact ? '0 0 150 250' : '0 0 150 250'
-  const height = compact ? 180 : 220
+  const getWeight = (layer: Layer): number => weights[layer] ?? 0.5
+  const viewBox = '0 0 150 260'
+  const height = 480
 
   if (type === 'ascent') {
     return (
@@ -147,12 +147,10 @@ export function TreesPanel({ type, weights = {}, onNodeClick, compact = false }:
                 <text x={pos.x} y={pos.y + 2} textAnchor="middle" fontSize="6" fill="#374151" fontWeight="500">
                   {Math.round(weight * 100)}
                 </text>
-                {/* Label */}
-                {!compact && (
-                  <text x={pos.x} y={pos.y - radius - 3} textAnchor="middle" fontSize="5" fill="#9ca3af">
-                    {AI_LABELS[layer]}
-                  </text>
-                )}
+                {/* Label - always show */}
+                <text x={pos.x} y={pos.y - radius - 4} textAnchor="middle" fontSize="6" fill="#6b7280" fontWeight="500">
+                  {AI_LABELS[layer]}
+                </text>
               </g>
             )
           })}
@@ -167,14 +165,14 @@ export function TreesPanel({ type, weights = {}, onNodeClick, compact = false }:
     )
   }
 
-  // Descent Tree (Qliphoth)
+  // Descent Tree (Antipatterns)
   return (
     <div className="p-2">
       <div className="text-center text-[8px] uppercase tracking-wider text-red-400 mb-1">
         Anti-Pattern Monitors
       </div>
       <svg viewBox={viewBox} className="w-full" style={{ height }}>
-        {QLIPHOTH_DATA.map((node) => {
+        {ANTIPATTERN_DATA.map((node) => {
           const isCritical = node.severity === 'critical'
           const isHigh = node.severity === 'high'
           const radius = isCritical ? 10 : isHigh ? 8 : 6
@@ -189,12 +187,10 @@ export function TreesPanel({ type, weights = {}, onNodeClick, compact = false }:
               <circle cx={node.x} cy={node.y} r={radius} fill="white" stroke={color} strokeWidth={isCritical ? 1.5 : 1} />
               {/* Inner dot */}
               <circle cx={node.x} cy={node.y} r={radius * 0.4} fill={color} opacity={0.5} />
-              {/* Label */}
-              {!compact && (
-                <text x={node.x} y={node.y - radius - 3} textAnchor="middle" fontSize="5" fill="#9ca3af">
-                  {node.name}
-                </text>
-              )}
+              {/* Label - always show */}
+              <text x={node.x} y={node.y - radius - 4} textAnchor="middle" fontSize="6" fill="#9ca3af" fontWeight="500">
+                {node.name}
+              </text>
             </g>
           )
         })}

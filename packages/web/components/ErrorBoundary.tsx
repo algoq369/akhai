@@ -194,17 +194,17 @@ export function MindMapErrorBoundary({ children }: { children: ReactNode }) {
   )
 }
 
-export function SefirotErrorBoundary({ children }: { children: ReactNode }) {
+export function LayersErrorBoundary({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary
-      fallbackMessage="Failed to load Sefirot visualization."
+      fallbackMessage="Failed to load AI Computational Layers visualization."
       fallback={
         <div className="p-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-sm">
           <p className="text-sm text-red-800 dark:text-red-200 font-mono">
-            ⚠ Sefirot Error
+            AI Layers Error
           </p>
           <p className="text-xs text-red-600 dark:text-red-300 mt-2">
-            Failed to render Tree of Life component
+            Failed to render AI Computational Layers component
           </p>
         </div>
       }

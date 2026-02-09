@@ -26,7 +26,7 @@ export function MessageSkeleton() {
   )
 }
 
-export function SefirotDashboardSkeleton() {
+export function LayerDashboardSkeleton() {
   return (
     <div className="animate-pulse p-8 space-y-6">
       {/* Header */}

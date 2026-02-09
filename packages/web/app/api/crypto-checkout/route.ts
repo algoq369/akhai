@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { nowPayments, CreatePaymentParams, getQRCodeURL } from '@/lib/nowpayments'
-import { trackEvent } from '@/lib/posthog'
+import { trackServerEvent } from '@/lib/posthog-server'
+import { getAnonymousDistinctId } from '@/lib/posthog-events'
+import { getUserFromSession } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 
 export const runtime = 'nodejs'
@@ -11,11 +13,38 @@ interface CheckoutRequest {
   productType: 'subscription' | 'credits'
   planId?: string
   creditAmount?: number
+  userId?: string // Optional: can be passed from client if already known
 }
 
+/**
+ * NOWPayments Crypto Checkout
+ *
+ * IMPORTANT: NOWPayments doesn't support custom metadata fields.
+ * We encode userId in the orderId for webhook processing.
+ *
+ * Order ID format: akhai-{type}-{userId}-{tokenAmount}-{nanoId}
+ * Example: akhai-credits-abc123-50000-xYz789
+ *
+ * For subscriptions: akhai-subscription-{userId}-{planId}-{nanoId}
+ * Example: akhai-subscription-abc123-pro-xYz789
+ */
 export async function POST(req: NextRequest) {
   try {
+    // Get user from session (same pattern as Stripe/BTCPay checkout)
+    const token = req.cookies.get('session_token')?.value
+    const user = token ? getUserFromSession(token) : null
+
     const body: CheckoutRequest = await req.json()
+
+    // Use userId from body if provided, otherwise from session
+    const userId = body.userId || user?.id || null
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to make a purchase.' },
+        { status: 401 }
+      )
+    }
 
     // Validation
     if (!body.amount || body.amount <= 0) {
@@ -39,8 +68,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Generate unique order ID
-    const orderId = `akhai-${body.productType}-${nanoid(12)}`
+    // Generate unique order ID with userId encoded
+    // Format: akhai-{type}-{userId}-{planIdOrTokenAmount}-{nanoId}
+    let orderId: string
+    if (body.productType === 'credits') {
+      // Include token amount in orderId for easy parsing
+      orderId = `akhai-credits-${userId}-${body.creditAmount || 0}-${nanoid(8)}`
+    } else {
+      // Include planId in orderId for easy parsing
+      orderId = `akhai-subscription-${userId}-${body.planId || 'unknown'}-${nanoid(8)}`
+    }
 
     // Create description
     let description = ''
@@ -71,16 +108,16 @@ export async function POST(req: NextRequest) {
     )
 
     // Track analytics
-    if (typeof window !== 'undefined') {
-      trackEvent('crypto_checkout_started', {
-        product_type: body.productType,
-        amount: body.amount,
-        currency: body.currency,
-        plan_id: body.planId,
-        credit_amount: body.creditAmount,
-        payment_id: payment.payment_id,
-      })
-    }
+    const distinctId = userId || getAnonymousDistinctId(req)
+    trackServerEvent('crypto_checkout_started', distinctId, {
+      product_type: body.productType,
+      amount: body.amount,
+      currency: body.currency,
+      plan_id: body.planId,
+      credit_amount: body.creditAmount,
+      payment_id: payment.payment_id,
+      user_id: userId,
+    })
 
     // Return payment details
     return NextResponse.json({

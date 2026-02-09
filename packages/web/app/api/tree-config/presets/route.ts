@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/database'
-import { SEFIROT_PRESETS, PRESET_NAMES, type PresetName } from '@/lib/sefirot-presets'
+import { LAYER_PRESETS, PRESET_NAMES, type PresetName } from '@/lib/layer-presets'
 
 /**
  * GET /api/tree-config/presets
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const builtInPresets = PRESET_NAMES.map(name => ({
       id: `builtin-${name}`,
       name,
-      weights: SEFIROT_PRESETS[name],
+      weights: LAYER_PRESETS[name],
       isBuiltIn: true,
       createdAt: null
     }))
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     let userPresets: any[] = []
     if (sessionId) {
       const stmt = db.prepare(`
-        SELECT id, name, sephiroth_weights, created_at
+        SELECT id, name, layer_weights, created_at
         FROM tree_configurations
         WHERE user_id IS NULL AND session_id = ?
         ORDER BY created_at DESC
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       userPresets = rows.map(row => ({
         id: row.id.toString(),
         name: row.name,
-        weights: JSON.parse(row.sephiroth_weights),
+        weights: JSON.parse(row.layer_weights),
         isBuiltIn: false,
         createdAt: row.created_at
       }))
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const stmt = db.prepare(`
       INSERT INTO tree_configurations (
         user_id, session_id, name, description, is_active,
-        sephiroth_weights, qliphoth_suppression, pillar_balance
+        layer_weights, antipattern_suppression, pillar_balance
       ) VALUES (?, ?, ?, ?, 0, ?, '{}', '{"left":0.33,"middle":0.34,"right":0.33}')
     `)
 

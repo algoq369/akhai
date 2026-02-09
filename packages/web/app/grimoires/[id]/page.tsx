@@ -8,7 +8,7 @@ import { useGrimoireStore } from '@/lib/stores/grimoire-store'
 import { useParams } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-// GrimoireConsoleDrawer removed - keeping only instinct and sefirot tree buttons
+// GrimoireConsoleDrawer removed - keeping only instinct and layers tree buttons
 import { useSettingsStore } from '@/lib/stores/settings-store'
 import TreeConfigurationModal from '@/components/TreeConfigurationModal'
 import SuperSaiyanIcon from '@/components/SuperSaiyanIcon'
@@ -50,7 +50,7 @@ export default function GrimoirePage() {
   const [newLinkUrl, setNewLinkUrl] = useState('')
   const [methodology, setMethodology] = useState<string>('direct')
   const { settings } = useSettingsStore()
-  const [showSefirotTree, setShowSefirotTree] = useState(false)
+  const [showLayerTree, setShowLayersTree] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -240,10 +240,10 @@ export default function GrimoirePage() {
           )}
         </div>
 
-        {/* Instinct & Sefirot Tree Buttons */}
+        {/* Instinct & AI Layers Buttons */}
         <div className="border-t border-slate-200 p-2">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
-            {/* Left - Instinct & Sefirot Buttons */}
+            {/* Left - Instinct & AI Layers Buttons */}
             <div className="flex items-center gap-3">
               {/* Instinct Button */}
               <button
@@ -259,22 +259,22 @@ export default function GrimoirePage() {
                 </span>
               </button>
 
-              {/* Sefirot Tree Button */}
+              {/* AI Layers Button */}
               <button
-                onClick={() => setShowSefirotTree(!showSefirotTree)}
+                onClick={() => setShowLayersTree(!showLayerTree)}
                 className="flex items-center gap-1.5 text-[10px] font-mono text-slate-600 hover:text-slate-900 transition-colors"
               >
                 <span
                   className="text-[13px] transition-all"
                   style={{
-                    color: showSefirotTree ? '#a855f7' : '#64748b',
-                    filter: showSefirotTree ? 'drop-shadow(0 0 3px #a855f7)' : 'none'
+                    color: showLayerTree ? '#a855f7' : '#64748b',
+                    filter: showLayerTree ? 'drop-shadow(0 0 3px #a855f7)' : 'none'
                   }}
                 >
                   ✦
                 </span>
-                <span className={showSefirotTree ? 'text-purple-600 font-semibold' : ''}>
-                  sefirot tree
+                <span className={showLayerTree ? 'text-purple-600 font-semibold' : ''}>
+                  ai layers
                 </span>
               </button>
             </div>
@@ -468,8 +468,8 @@ export default function GrimoirePage() {
 
       {/* Tree Configuration Modal */}
       <TreeConfigurationModal
-        isOpen={showSefirotTree}
-        onClose={() => setShowSefirotTree(false)}
+        isOpen={showLayerTree}
+        onClose={() => setShowLayersTree(false)}
       />
     </div>
   )

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import MindMapDiagramView from './MindMapDiagramView'
 import MindMapHistoryView from './MindMapHistoryView'
-import MindMapGrimoireView from './MindMapGrimoireView'
+import MindMapReportView from './MindMapReportView'
 
 export interface Node {
   id: string
@@ -25,7 +25,7 @@ interface Connection {
   toName?: string
 }
 
-type ViewMode = 'graph' | 'history' | 'grimoire'
+type ViewMode = 'graph' | 'history' | 'report'
 
 interface MindMapProps {
   isOpen: boolean
@@ -58,6 +58,7 @@ function getCategoryStyle(category: string | null | undefined) {
 export default function MindMap({ isOpen, onClose, userId, initialView = 'graph' }: MindMapProps) {
   const [nodes, setNodes] = useState<Node[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>(initialView)
   const [searchQuery, setSearchQuery] = useState('')
   const [connections, setConnections] = useState<Connection[]>([])
@@ -80,29 +81,32 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
     }
   }, [selectedGraphNode])
 
+  const fetchData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/mindmap/data')
+      if (!res.ok) {
+        throw new Error(`Failed to load mind map data (${res.status})`)
+      }
+      const data = await res.json()
+      setNodes(data.nodes || [])
+      const conns = (data.connections || []).map((c: any) => ({
+        ...c,
+        fromName: data.nodes?.find((n: Node) => n.id === c.from)?.name,
+        toName: data.nodes?.find((n: Node) => n.id === c.to)?.name,
+      }))
+      setConnections(conns)
+    } catch (err) {
+      console.error('Failed to fetch:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load mind map data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!isOpen || !userId) return
-    
-    const fetchData = async () => {
-      try {
-        const res = await fetch('/api/mindmap/data')
-        if (res.ok) {
-          const data = await res.json()
-          setNodes(data.nodes || [])
-          const conns = (data.connections || []).map((c: any) => ({
-            ...c,
-            fromName: data.nodes?.find((n: Node) => n.id === c.from)?.name,
-            toName: data.nodes?.find((n: Node) => n.id === c.to)?.name,
-          }))
-          setConnections(conns)
-        }
-      } catch (error) {
-        console.error('Failed to fetch:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    
     fetchData()
   }, [isOpen, userId])
 
@@ -191,7 +195,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
             {[
               { id: 'graph', label: 'graph' },
               { id: 'history', label: 'history' },
-              { id: 'grimoire', label: 'grimoire' },
+              { id: 'report', label: 'report' },
             ].map(({ id, label }) => (
               <button
                 key={id}
@@ -278,6 +282,25 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="text-center">
+                <svg className="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-sm text-slate-600 mb-1">Failed to load mind map</p>
+                <p className="text-xs text-slate-400">{error}</p>
+              </div>
+              <button
+                onClick={() => fetchData()}
+                className="px-4 py-2 bg-slate-800 text-white text-xs font-medium rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                retry
+              </button>
             </div>
           ) : viewMode === 'graph' ? (
             <div className="relative w-full h-full">
@@ -379,8 +402,8 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
             </div>
           ) : viewMode === 'history' ? (
             <MindMapHistoryView onClose={onClose} />
-          ) : viewMode === 'grimoire' ? (
-            <MindMapGrimoireView userId={userId} selectedTopics={[]} />
+          ) : viewMode === 'report' ? (
+            <MindMapReportView userId={userId} selectedTopics={[]} />
           ) : null}
         </div>
 

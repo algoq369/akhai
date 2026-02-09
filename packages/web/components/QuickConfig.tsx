@@ -18,7 +18,7 @@ import {
   isCriticalLayer,
   type AIPreset 
 } from '@/lib/ai-layers'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
+import { useLayerStore } from '@/lib/stores/layer-store'
 
 // Slider extremity labels for each critical layer
 const SLIDER_LABELS: Record<AILayer, { low: string; high: string }> = {
@@ -57,7 +57,7 @@ interface QuickConfigProps {
 }
 
 export function QuickConfig({ onExpandAdvanced, className = '' }: QuickConfigProps) {
-  const { weights, setWeight } = useSefirotStore()
+  const { weights, setWeight } = useLayerStore()
   const [activePreset, setActivePreset] = useState<string>('balanced')
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
 

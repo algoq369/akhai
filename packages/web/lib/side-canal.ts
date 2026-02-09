@@ -6,6 +6,7 @@
 
 import { db } from './database';
 import { randomBytes } from 'crypto';
+import { LAYERS_KEYWORDS_BY_NAME } from './constants/layer-keywords';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
@@ -55,17 +56,21 @@ export async function extractTopics(
     const keywords = extractKeywords(query + ' ' + response);
     
     // Step 2: AI-powered topic identification using Claude Haiku
-    const topicPrompt = `Extract 3-5 main topics from this conversation:
+    const topicPrompt = `Extract 3-5 SPECIFIC topics from this conversation.
 
 Query: "${query}"
 Response: "${response.substring(0, 500)}..."
 
+IMPORTANT: Topic names MUST be SPECIFIC and DESCRIPTIVE (3-5 words).
+- BAD: "Technology", "Finance", "Science" (too generic)
+- GOOD: "Bitcoin Mining Efficiency", "RSA Encryption Vulnerability", "Quantum Error Correction"
+
 Return ONLY a JSON array of topic objects, each with:
-- name: short topic name (2-4 words)
-- description: brief description (optional)
+- name: SPECIFIC descriptive topic name (3-5 words, NOT generic categories)
+- description: brief explanation of the specific concept (1 sentence)
 - category: one of: technology, finance, science, business, health, education, other
 
-Example: [{"name": "Bitcoin", "description": "Cryptocurrency", "category": "finance"}, ...]`;
+Example: [{"name": "Quantum Computing RSA Threat", "description": "How quantum algorithms like Shor's can break RSA encryption", "category": "technology"}, {"name": "Post-Quantum Cryptography Standards", "description": "NIST-approved algorithms resistant to quantum attacks", "category": "technology"}]`;
 
     const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -75,7 +80,7 @@ Example: [{"name": "Bitcoin", "description": "Cryptocurrency", "category": "fina
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5-20251101',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
         messages: [
           {
@@ -149,7 +154,7 @@ Example: [{"name": "Bitcoin", "description": "Cryptocurrency", "category": "fina
  * - TF-IDF-like scoring (term frequency * inverse document frequency)
  * - Named entity detection (capitalized words, technical terms)
  * - Compound term detection ("machine learning" vs "machine" + "learning")
- * - Sefirot-aligned keyword boosting
+ * - Layers-aligned keyword boosting
  */
 
 // Common English stop words (expanded list)
@@ -172,23 +177,11 @@ const DOMAIN_TERMS = new Set([
   'learning', 'neural', 'network', 'optimization', 'protocol', 'security',
   'trading', 'investment', 'portfolio', 'strategy', 'analysis', 'model',
   'framework', 'architecture', 'infrastructure', 'deployment', 'integration',
-  'sefirot', 'kabbalistic', 'hermetic', 'methodology', 'consciousness'
+  'layers', 'kabbalistic', 'hermetic', 'methodology', 'consciousness'
 ])
 
-// Sefirot-related keywords for context boosting
-const SEFIROT_KEYWORDS: Record<string, string[]> = {
-  'malkuth': ['data', 'fact', 'evidence', 'concrete', 'physical', 'material'],
-  'yesod': ['implement', 'build', 'setup', 'foundation', 'process', 'execute'],
-  'hod': ['analyze', 'classify', 'logic', 'systematic', 'compare', 'evaluate'],
-  'netzach': ['create', 'innovate', 'design', 'artistic', 'creative', 'vision'],
-  'tiferet': ['integrate', 'synthesize', 'balance', 'harmony', 'unify', 'bridge'],
-  'gevurah': ['limit', 'constraint', 'discipline', 'boundary', 'strict', 'risk'],
-  'chesed': ['expand', 'opportunity', 'growth', 'abundance', 'generous', 'broad'],
-  'binah': ['pattern', 'structure', 'framework', 'understand', 'insight', 'system'],
-  'chokmah': ['principle', 'wisdom', 'fundamental', 'truth', 'essence', 'core'],
-  'kether': ['meta', 'transcend', 'ultimate', 'holistic', 'unity', 'source'],
-  'daat': ['emerge', 'breakthrough', 'revelation', 'hidden', 'gnosis', 'realize']
-}
+// Layers-related keywords for context boosting - imported from shared module
+// See: ./constants/layers-keywords.ts
 
 interface KeywordScore {
   word: string
@@ -196,7 +189,7 @@ interface KeywordScore {
   tfIdf: number
   isEntity: boolean
   isDomain: boolean
-  sefirotMatch: string | null
+  layersMatch: string | null
   finalScore: number
 }
 
@@ -326,24 +319,24 @@ function extractKeywords(text: string): string[] {
 }
 
 /**
- * Get Sefirot context for keywords
- * Returns which Sefirot are most relevant based on keywords
+ * Get Layers context for keywords
+ * Returns which Layers are most relevant based on keywords
  */
-export function getKeywordSefirotContext(keywords: string[]): Record<string, number> {
-  const sefirotScores: Record<string, number> = {}
+export function getKeywordLayersContext(keywords: string[]): Record<string, number> {
+  const layersScores: Record<string, number> = {}
 
   for (const keyword of keywords) {
     const keywordLower = keyword.toLowerCase()
-    for (const [sefirah, sefirahKeywords] of Object.entries(SEFIROT_KEYWORDS)) {
-      for (const sk of sefirahKeywords) {
+    for (const [layerNode, layerNodeKeywords] of Object.entries(LAYERS_KEYWORDS_BY_NAME)) {
+      for (const sk of layerNodeKeywords) {
         if (keywordLower.includes(sk) || sk.includes(keywordLower)) {
-          sefirotScores[sefirah] = (sefirotScores[sefirah] || 0) + 0.2
+          layersScores[layerNode] = (layersScores[layerNode] || 0) + 0.2
         }
       }
     }
   }
 
-  return sefirotScores
+  return layersScores
 }
 
 /**
@@ -392,7 +385,7 @@ Synopsis:`;
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5-20251101',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 200,
         messages: [
           {

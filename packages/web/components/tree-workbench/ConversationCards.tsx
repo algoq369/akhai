@@ -7,26 +7,26 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
 
-const SEFIRAH_COLORS: Record<number, string> = {
-  [Sefirah.MALKUTH]: '#92400e',
-  [Sefirah.YESOD]: '#94a3b8',
-  [Sefirah.HOD]: '#eab308',
-  [Sefirah.NETZACH]: '#f97316',
-  [Sefirah.TIFERET]: '#22c55e',
-  [Sefirah.GEVURAH]: '#dc2626',
-  [Sefirah.CHESED]: '#06b6d4',
-  [Sefirah.BINAH]: '#3b82f6',
-  [Sefirah.CHOKMAH]: '#4f46e5',
-  [Sefirah.KETHER]: '#9333ea',
-  [Sefirah.DAAT]: '#06b6d4'
+const LAYER_COLORS: Record<number, string> = {
+  [Layer.EMBEDDING]: '#92400e',
+  [Layer.EXECUTOR]: '#94a3b8',
+  [Layer.CLASSIFIER]: '#eab308',
+  [Layer.GENERATIVE]: '#f97316',
+  [Layer.ATTENTION]: '#22c55e',
+  [Layer.DISCRIMINATOR]: '#dc2626',
+  [Layer.EXPANSION]: '#06b6d4',
+  [Layer.ENCODER]: '#3b82f6',
+  [Layer.REASONING]: '#4f46e5',
+  [Layer.META_CORE]: '#9333ea',
+  [Layer.SYNTHESIS]: '#06b6d4'
 }
 
 interface Conversation {
   id: string
   query: string
-  dominantSefirah: Sefirah
+  dominantLayer: Layer
   methodology: string
   timestamp: number
   tokensUsed?: number
@@ -40,7 +40,7 @@ interface ConversationCardsProps {
 export function ConversationCards({ onCardClick, limit = 20 }: ConversationCardsProps) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedSefirah, setSelectedSefirah] = useState<Sefirah | null>(null)
+  const [selectedLayer, setSelectedLayer] = useState<Layer | null>(null)
 
   useEffect(() => {
     fetchConversations()
@@ -51,11 +51,11 @@ export function ConversationCards({ onCardClick, limit = 20 }: ConversationCards
       const res = await fetch(`/api/history?limit=${limit}`)
       const data = await res.json()
 
-      // Map queries to conversations with dominant Sefirah
+      // Map queries to conversations with dominant Layer
       const mapped: Conversation[] = (data.queries || []).map((q: any) => ({
         id: q.id,
         query: q.query,
-        dominantSefirah: extractDominantSefirah(q),
+        dominantLayer: extractDominantLayer(q),
         methodology: q.flow || 'direct',
         timestamp: q.created_at * 1000,
         tokensUsed: q.tokens_used
@@ -69,33 +69,33 @@ export function ConversationCards({ onCardClick, limit = 20 }: ConversationCards
     }
   }
 
-  // Extract dominant Sefirah from query metadata (simplified heuristic)
-  const extractDominantSefirah = (query: any): Sefirah => {
+  // Extract dominant Layer from query metadata (simplified heuristic)
+  const extractDominantLayer = (query: any): Layer => {
     const text = (query.query || '').toLowerCase()
 
     // Simple keyword-based heuristic
-    if (text.includes('how') || text.includes('implement')) return Sefirah.YESOD
-    if (text.includes('analyze') || text.includes('compare')) return Sefirah.HOD
-    if (text.includes('create') || text.includes('imagine')) return Sefirah.NETZACH
-    if (text.includes('understand') || text.includes('pattern')) return Sefirah.BINAH
-    if (text.includes('why') || text.includes('principle')) return Sefirah.CHOKMAH
-    if (text.includes('what if') || text.includes('expand')) return Sefirah.CHESED
-    if (text.includes('critique') || text.includes('limit')) return Sefirah.GEVURAH
+    if (text.includes('how') || text.includes('implement')) return Layer.EXECUTOR
+    if (text.includes('analyze') || text.includes('compare')) return Layer.CLASSIFIER
+    if (text.includes('create') || text.includes('imagine')) return Layer.GENERATIVE
+    if (text.includes('understand') || text.includes('pattern')) return Layer.ENCODER
+    if (text.includes('why') || text.includes('principle')) return Layer.REASONING
+    if (text.includes('what if') || text.includes('expand')) return Layer.EXPANSION
+    if (text.includes('critique') || text.includes('limit')) return Layer.DISCRIMINATOR
 
-    return Sefirah.TIFERET // Default to Tiferet (balance)
+    return Layer.ATTENTION // Default to Attention (balance)
   }
 
-  // Group conversations by dominant Sefirah
-  const groupedBySefirah = conversations.reduce((acc, conv) => {
-    const key = conv.dominantSefirah
+  // Group conversations by dominant Layer
+  const groupedByLayer = conversations.reduce((acc, conv) => {
+    const key = conv.dominantLayer
     if (!acc[key]) acc[key] = []
     acc[key].push(conv)
     return acc
-  }, {} as Record<Sefirah, Conversation[]>)
+  }, {} as Record<Layer, Conversation[]>)
 
-  // Filter by selected Sefirah
-  const filteredConversations = selectedSefirah
-    ? conversations.filter(c => c.dominantSefirah === selectedSefirah)
+  // Filter by selected Layer
+  const filteredConversations = selectedLayer
+    ? conversations.filter(c => c.dominantLayer === selectedLayer)
     : conversations
 
   if (isLoading) {
@@ -116,35 +116,35 @@ export function ConversationCards({ onCardClick, limit = 20 }: ConversationCards
 
   return (
     <div className="space-y-4">
-      {/* Sefirah Filter */}
+      {/* Layer Filter */}
       <div className="flex items-center gap-2 px-4 overflow-x-auto pb-2">
         <button
-          onClick={() => setSelectedSefirah(null)}
+          onClick={() => setSelectedLayer(null)}
           className={`px-2 py-1 text-[9px] font-mono rounded whitespace-nowrap
-            ${selectedSefirah === null
+            ${selectedLayer === null
               ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
               : 'text-relic-slate hover:bg-relic-ghost dark:hover:bg-relic-slate/10'
             }`}
         >
           All ({conversations.length})
         </button>
-        {Object.entries(groupedBySefirah).map(([sefirahStr, convs]) => {
-          const sefirah = parseInt(sefirahStr) as Sefirah
+        {Object.entries(groupedByLayer).map(([layerNodeStr, convs]) => {
+          const layerNode = parseInt(layerNodeStr) as Layer
           return (
             <button
-              key={sefirah}
-              onClick={() => setSelectedSefirah(sefirah)}
+              key={layerNode}
+              onClick={() => setSelectedLayer(layerNode)}
               className={`px-2 py-1 text-[9px] font-mono rounded whitespace-nowrap flex items-center gap-1
-                ${selectedSefirah === sefirah
+                ${selectedLayer === layerNode
                   ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
                   : 'text-relic-slate hover:bg-relic-ghost dark:hover:bg-relic-slate/10'
                 }`}
             >
               <span
                 className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: SEFIRAH_COLORS[sefirah] }}
+                style={{ backgroundColor: LAYER_COLORS[layerNode] }}
               />
-              {SEPHIROTH_METADATA[sefirah]?.name} ({convs.length})
+              {LAYER_METADATA[layerNode]?.name} ({convs.length})
             </button>
           )
         })}
@@ -163,10 +163,10 @@ export function ConversationCards({ onCardClick, limit = 20 }: ConversationCards
               <div className="flex items-center gap-1">
                 <span
                   className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: SEFIRAH_COLORS[conv.dominantSefirah] }}
+                  style={{ backgroundColor: LAYER_COLORS[conv.dominantLayer] }}
                 />
                 <span className="text-[9px] font-mono text-relic-slate">
-                  {SEPHIROTH_METADATA[conv.dominantSefirah]?.name}
+                  {LAYER_METADATA[conv.dominantLayer]?.name}
                 </span>
               </div>
               <span className="text-[8px] text-relic-silver">

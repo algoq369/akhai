@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateQlipothReport, formatJSONAnnotation } from '@/lib/qlipoth'
+import { generateAntipatternReport, formatJSONAnnotation } from '@/lib/antipattern'
 import type { TreeConfiguration } from '@/lib/tree-configuration'
 
 export const runtime = 'nodejs'
@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
  * POST /api/tree-config/test
  *
  * Run a test query with specified tree configuration.
- * Returns response, metrics, and gnostic annotation.
+ * Returns response, metrics, and annotation.
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Build tree config override
     const treeConfigOverride: Partial<TreeConfiguration> = {
-      sephiroth_weights: weights || {},
+      layer_weights: weights || {},
       processing_mode: processingMode
     }
 
@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
 
     const data = await queryResponse.json()
 
-    // Generate Qlipoth report
-    const qlipothReport = generateQlipothReport(
-      data.gnostic?.sefirotProcessing || null,
+    // Generate antipattern report
+    const antipatternReport = generateAntipatternReport(
+      data.gnostic?.layerProcessing || null,
       data.guardResult || null,
       {
         id: 0,
@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
         name: 'Test',
         description: '',
         is_active: false,
-        sephiroth_weights: weights || {},
-        qliphoth_suppression: {},
+        layer_weights: weights || {},
+        antipattern_suppression: {},
         pillar_balance: { left: 0.33, middle: 0.34, right: 0.33 },
         created_at: Date.now(),
         updated_at: Date.now()
@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
       },
       gnostic: data.gnostic,
       guardResult: data.guardResult,
-      qlipothReport,
-      qlipothAnnotation: formatJSONAnnotation(qlipothReport)
+      antipatternReport: antipatternReport,
+      antipatternAnnotation: formatJSONAnnotation(antipatternReport)
     })
   } catch (error) {
     console.error('Tree config test error:', error)

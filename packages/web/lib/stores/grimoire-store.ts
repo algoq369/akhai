@@ -28,8 +28,46 @@ export interface Memory {
   type: 'insight' | 'fact' | 'preference' | 'context'
   sourceMessageId?: string
   confidence: number
+  relevanceScore: number // 0-1 score based on recency and access frequency
+  accessCount: number // Number of times this memory was accessed
   createdAt: number
   lastAccessed?: number
+  archived?: boolean // Memories inactive for 90+ days get archived
+}
+
+// 90 days in milliseconds
+const MEMORY_TTL_MS = 90 * 24 * 60 * 60 * 1000
+
+/**
+ * Calculate memory relevance score based on recency and access frequency
+ */
+function calculateRelevance(memory: Memory): number {
+  const now = Date.now()
+  const ageMs = now - memory.createdAt
+  const lastAccessMs = memory.lastAccessed ? now - memory.lastAccessed : ageMs
+
+  // Recency factor (0-1): more recent = higher score
+  // Decays over 30 days
+  const recencyFactor = Math.max(0, 1 - (lastAccessMs / (30 * 24 * 60 * 60 * 1000)))
+
+  // Access frequency factor (0-1): more accesses = higher score
+  // Caps at 10 accesses
+  const accessFactor = Math.min(1, (memory.accessCount || 0) / 10)
+
+  // Confidence contributes to relevance
+  const confidenceFactor = memory.confidence || 0.5
+
+  // Weighted combination: 40% recency, 30% access, 30% confidence
+  return (recencyFactor * 0.4) + (accessFactor * 0.3) + (confidenceFactor * 0.3)
+}
+
+/**
+ * Check if memory should be archived (inactive for 90+ days)
+ */
+function shouldArchive(memory: Memory): boolean {
+  const now = Date.now()
+  const lastActivity = memory.lastAccessed || memory.createdAt
+  return (now - lastActivity) > MEMORY_TTL_MS
 }
 
 export interface GrimoireFile {
@@ -75,10 +113,12 @@ interface GrimoireStore {
   getGrimoire: (id: string) => Grimoire | undefined
 
   // Memory actions
-  addMemory: (grimoireId: string, memory: Omit<Memory, 'id' | 'createdAt'>) => void
+  addMemory: (grimoireId: string, memory: Omit<Memory, 'id' | 'createdAt' | 'relevanceScore' | 'accessCount' | 'archived'>) => void
   getMemories: (grimoireId: string) => Memory[]
+  getActiveMemories: (grimoireId: string) => Memory[] // Returns non-archived memories sorted by relevance
   clearMemories: (grimoireId: string) => void
   updateMemoryAccess: (memoryId: string) => void
+  archiveStaleMemories: () => void // Archive memories inactive for 90+ days
 
   // File actions
   addFile: (grimoireId: string, file: Omit<GrimoireFile, 'id' | 'createdAt'>) => void
@@ -157,7 +197,10 @@ export const useGrimoireStore = create<GrimoireStore>()(
           ...memory,
           id: crypto.randomUUID(),
           grimoireId,
-          createdAt: Date.now()
+          createdAt: Date.now(),
+          relevanceScore: memory.confidence || 0.5, // Initial relevance based on confidence
+          accessCount: 0,
+          archived: false,
         }
 
         set(state => ({
@@ -175,6 +218,14 @@ export const useGrimoireStore = create<GrimoireStore>()(
         return get().memories[grimoireId] || []
       },
 
+      getActiveMemories: (grimoireId) => {
+        const memories = get().memories[grimoireId] || []
+        return memories
+          .filter(m => !m.archived)
+          .map(m => ({ ...m, relevanceScore: calculateRelevance(m) }))
+          .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      },
+
       clearMemories: (grimoireId) => {
         set(state => ({
           memories: {
@@ -189,11 +240,26 @@ export const useGrimoireStore = create<GrimoireStore>()(
           memories: Object.fromEntries(
             Object.entries(state.memories).map(([gId, mems]) => [
               gId,
-              mems.map(m =>
-                m.id === memoryId
-                  ? { ...m, lastAccessed: Date.now() }
-                  : m
-              )
+              mems.map(m => {
+                if (m.id !== memoryId) return m
+                const updated = {
+                  ...m,
+                  lastAccessed: Date.now(),
+                  accessCount: (m.accessCount || 0) + 1,
+                }
+                return { ...updated, relevanceScore: calculateRelevance(updated) }
+              })
+            ])
+          )
+        }))
+      },
+
+      archiveStaleMemories: () => {
+        set(state => ({
+          memories: Object.fromEntries(
+            Object.entries(state.memories).map(([gId, mems]) => [
+              gId,
+              mems.map(m => shouldArchive(m) ? { ...m, archived: true } : m)
             ])
           )
         }))

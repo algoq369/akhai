@@ -7,12 +7,12 @@
  * Origin visibility controlled by showLayerOrigins setting.
  */
 
-import { Sefirah } from '@/lib/ascent-tracker'
+import { Layer } from '@/lib/layer-registry'
 import { useSettingsStore } from '@/lib/stores/settings-store'
 import { AI_LAYERS, ANTI_PATTERNS, type AILayer, type AntiPattern } from '@/lib/ai-terminology'
 
 interface LayerLabelProps {
-  layerId: Sefirah | number
+  layerId: Layer | number
   type?: 'layer' | 'anti-pattern'
   size?: 'sm' | 'md' | 'lg'
   showWeight?: boolean
@@ -35,7 +35,7 @@ export function LayerLabel({
 
   // Get the appropriate data based on type
   const data: AILayer | AntiPattern | null = type === 'layer'
-    ? AI_LAYERS[layerId as Sefirah]
+    ? AI_LAYERS[layerId as Layer]
     : ANTI_PATTERNS[layerId]
 
   if (!data) return null
@@ -111,7 +111,7 @@ export function LayerLabel({
  * Compact inline version for use in tables/lists
  */
 interface LayerLabelInlineProps {
-  layerId: Sefirah | number
+  layerId: Layer | number
   type?: 'layer' | 'anti-pattern'
   className?: string
 }
@@ -125,7 +125,7 @@ export function LayerLabelInline({
   const showOrigins = settings.appearance.showLayerOrigins
 
   const data: AILayer | AntiPattern | null = type === 'layer'
-    ? AI_LAYERS[layerId as Sefirah]
+    ? AI_LAYERS[layerId as Layer]
     : ANTI_PATTERNS[layerId]
 
   if (!data) return null
@@ -153,7 +153,7 @@ export function LayerLabelInline({
  * Badge version for status displays
  */
 interface LayerBadgeProps {
-  layerId: Sefirah | number
+  layerId: Layer | number
   type?: 'layer' | 'anti-pattern'
   active?: boolean
   className?: string
@@ -166,7 +166,7 @@ export function LayerBadge({
   className = ''
 }: LayerBadgeProps) {
   const data: AILayer | AntiPattern | null = type === 'layer'
-    ? AI_LAYERS[layerId as Sefirah]
+    ? AI_LAYERS[layerId as Layer]
     : ANTI_PATTERNS[layerId]
 
   if (!data) return null

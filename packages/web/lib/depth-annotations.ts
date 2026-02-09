@@ -1125,7 +1125,7 @@ const DETECTION_PATTERNS: DetectionPattern[] = [
 
 // ============ HEBREW/KABBALISTIC TERM DETECTION ============
 
-import { HEBREW_TERMS, HebrewTermKey } from '@/components/HebrewTerm';
+import { HEBREW_TERMS, HebrewTermKey } from '@/components/OriginTerm';
 
 const KABBALISTIC_TERMS = Object.keys(HEBREW_TERMS);
 

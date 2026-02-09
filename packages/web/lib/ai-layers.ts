@@ -7,19 +7,19 @@
  * Processing Order: Input → Understanding → Reasoning → Output
  */
 
-// Layer IDs (mapped to existing Sefirah enum for compatibility)
+// Layer IDs (mapped to existing Layer enum for compatibility)
 export enum AILayer {
-  RECEPTION = 10,        // Malkuth - Input parsing
-  COMPREHENSION = 9,     // Yesod - Semantic understanding  
-  CONTEXT_BUILDING = 8,  // Hod - Relationship mapping
-  KNOWLEDGE_RECALL = 3,  // Binah - Fact retrieval
-  REASONING = 2,         // Chokmah - Problem decomposition
-  EXPANSION = 4,         // Chesed - Creative exploration
-  CRITICAL_ANALYSIS = 5, // Gevurah - Evaluation & limits
-  SYNTHESIS = 6,         // Tiferet - Integration
-  VERIFICATION = 11,     // Daat - Self-checking
-  ARTICULATION = 7,      // Netzach - Response crafting
-  OUTPUT = 1,            // Kether - Final delivery (meta-cognition)
+  RECEPTION = 10,        // Embedding - Input parsing
+  COMPREHENSION = 9,     // Executor - Semantic understanding  
+  CONTEXT_BUILDING = 8,  // Classifier - Relationship mapping
+  KNOWLEDGE_RECALL = 3,  // Encoder - Fact retrieval
+  REASONING = 2,         // Reasoning - Problem decomposition
+  EXPANSION = 4,         // Expansion - Creative exploration
+  CRITICAL_ANALYSIS = 5, // Discriminator - Evaluation & limits
+  SYNTHESIS = 6,         // Attention - Integration
+  VERIFICATION = 11,     // Synthesis - Self-checking
+  ARTICULATION = 7,      // Generative - Response crafting
+  OUTPUT = 1,            // Meta-Core - Final delivery (meta-cognition)
 }
 
 // Processing order (input to output)

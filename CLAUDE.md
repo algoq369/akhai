@@ -49,6 +49,37 @@ This file provides guidance to Claude Code when working with the AkhAI repositor
 
 ---
 
+## 🔄 Workflow Orchestration
+
+> **READ THIS FIRST EVERY SESSION**
+
+### Session Start Checklist
+1. Read `tasks/lessons.md` for rules and anti-patterns
+2. Check `tasks/todo.md` for current sprint
+3. Verify dev server: `lsof -i :3000`
+4. Confirm task with user before starting
+
+### Core Rules
+
+| Rule | Action |
+|------|--------|
+| **Plan First** | 3+ steps = write plan, get approval |
+| **Verify Before Done** | Screenshot + logs = proof |
+| **Minimal Impact** | Small edits > large rewrites |
+| **No Assumptions** | Read file before editing |
+| **Learn From Errors** | Update `lessons.md` after corrections |
+
+### Task Flow
+```
+Plan → Verify Plan → Execute → Test → Document Result
+```
+
+### File Locations
+- `tasks/todo.md` - Current sprint tasks
+- `tasks/lessons.md` - Rules and patterns to follow
+
+---
+
 ## 📦 Repository Structure
 
 This is a **pnpm monorepo** with multiple packages:

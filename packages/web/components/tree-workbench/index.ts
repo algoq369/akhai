@@ -6,7 +6,7 @@
 
 export { PresetPanel } from './PresetPanel'
 export { WeightMatrix } from './WeightMatrix'
-export { SefirotTreeSVG } from './SefirotTreeSVG'
-export { QlipothTreeSVG } from './QlipothTreeSVG'
+export { LayerTreeSVG } from './LayerTreeSVG'
+export { AntipatternTreeSVG } from './AntipatternTreeSVG'
 export { TestPlayground } from './TestPlayground'
 export { ConversationCards } from './ConversationCards'

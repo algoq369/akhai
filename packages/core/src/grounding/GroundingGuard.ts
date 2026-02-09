@@ -52,6 +52,7 @@ export class GroundingGuard {
   private config: GroundingConfig;
   private lastCheckTimestamp: number = 0;
   private conversationStartTime: number = Date.now();
+  private lastDecayTimestamp: number = Date.now();
 
   // Pattern accumulator (tracks trends)
   private patternAccumulator: PatternAccumulator = {
@@ -138,12 +139,20 @@ export class GroundingGuard {
     const redFlags = (response.match(GroundingGuard.RED_FLAGS) || []).length;
     const agreements = (response.match(/^(yes|exactly|absolutely|i agree)/i) || []).length;
 
+    // Time-normalized decay: decay based on minutes elapsed, not call frequency
+    // This ensures consistent decay rate regardless of how often the function is called
+    const now = Date.now();
+    const minutesElapsed = (now - this.lastDecayTimestamp) / 60000;
+    const decayFactor = Math.pow(0.9, minutesElapsed);
+    this.lastDecayTimestamp = now;
+
+    // Apply decay before adding new patterns
+    this.patternAccumulator.redFlagCount *= decayFactor;
+    this.patternAccumulator.agreementCount *= decayFactor;
+
+    // Add new patterns
     this.patternAccumulator.redFlagCount += redFlags;
     this.patternAccumulator.agreementCount += agreements;
-
-    // Decay over time (older patterns matter less)
-    this.patternAccumulator.redFlagCount *= 0.9;
-    this.patternAccumulator.agreementCount *= 0.9;
   }
 
   /**
@@ -243,16 +252,48 @@ export class GroundingGuard {
     const duration = Date.now() - this.conversationStartTime;
 
     // Run all detectors in parallel for maximum speed
-    const detectorStartTime = Date.now();
+    // Track individual detector timing for accurate performance reporting
+    const detectorTimings = {
+      hype: { start: 0, end: 0 },
+      echo: { start: 0, end: 0 },
+      drift: { start: 0, end: 0 },
+      factuality: { start: 0, end: 0 },
+    };
+
+    const timedDetectHype = async () => {
+      detectorTimings.hype.start = Date.now();
+      const result = await detectHype(messages, this.config.detectors.hypeSensitivity);
+      detectorTimings.hype.end = Date.now();
+      return result;
+    };
+
+    const timedDetectEcho = async () => {
+      detectorTimings.echo.start = Date.now();
+      const result = await detectEcho(messages, this.config.detectors.echoSimilarityThreshold);
+      detectorTimings.echo.end = Date.now();
+      return result;
+    };
+
+    const timedDetectDrift = async () => {
+      detectorTimings.drift.start = Date.now();
+      const result = await detectDrift(messages, this.config.detectors.driftTolerance);
+      detectorTimings.drift.end = Date.now();
+      return result;
+    };
+
+    const timedDetectFactuality = async () => {
+      detectorTimings.factuality.start = Date.now();
+      const result = await detectFactuality(messages, this.config.detectors.factualityEnabled);
+      detectorTimings.factuality.end = Date.now();
+      return result;
+    };
 
     const [hypeResult, echoResult, driftResult, factualityResult] = await Promise.allSettled([
-      detectHype(messages, this.config.detectors.hypeSensitivity),
-      detectEcho(messages, this.config.detectors.echoSimilarityThreshold),
-      detectDrift(messages, this.config.detectors.driftTolerance),
-      detectFactuality(messages, this.config.detectors.factualityEnabled),
+      timedDetectHype(),
+      timedDetectEcho(),
+      timedDetectDrift(),
+      timedDetectFactuality(),
     ]);
-
-    const detectorEndTime = Date.now();
 
     // Collect alerts from successful detectors
     const alerts: GroundingAlert[] = [];
@@ -298,19 +339,19 @@ export class GroundingGuard {
         detectors: {
           hype:
             hypeResult.status === 'fulfilled'
-              ? detectorEndTime - detectorStartTime
+              ? detectorTimings.hype.end - detectorTimings.hype.start
               : 0,
           echo:
             echoResult.status === 'fulfilled'
-              ? detectorEndTime - detectorStartTime
+              ? detectorTimings.echo.end - detectorTimings.echo.start
               : 0,
           drift:
             driftResult.status === 'fulfilled'
-              ? detectorEndTime - detectorStartTime
+              ? detectorTimings.drift.end - detectorTimings.drift.start
               : 0,
           factuality:
             factualityResult.status === 'fulfilled'
-              ? detectorEndTime - detectorStartTime
+              ? detectorTimings.factuality.end - detectorTimings.factuality.start
               : 0,
         },
       },
@@ -460,6 +501,13 @@ export class GroundingGuard {
   reset(): void {
     this.lastCheckTimestamp = 0;
     this.conversationStartTime = Date.now();
+    this.lastDecayTimestamp = Date.now();
+    this.patternAccumulator = {
+      redFlagCount: 0,
+      agreementCount: 0,
+      superlativeCount: 0,
+      lastTopics: [],
+    };
     console.log('[GroundingGuard] Reset');
   }
 

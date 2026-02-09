@@ -7,8 +7,8 @@
  */
 
 import { useState } from 'react'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
-import { PRESET_NAMES, getPresetWeights, type PresetName } from '@/lib/sefirot-presets'
+import { useLayerStore } from '@/lib/stores/layer-store'
+import { PRESET_NAMES, getPresetWeights, type PresetName } from '@/lib/layer-presets'
 
 interface SavedConfig {
   id: string
@@ -22,7 +22,7 @@ interface PresetPanelProps {
 }
 
 export function PresetPanel({ onPresetSelect }: PresetPanelProps) {
-  const { weights, activePreset, applyPreset } = useSefirotStore()
+  const { weights, activePreset, applyPreset } = useLayerStore()
   const [savedConfigs, setSavedConfigs] = useState<SavedConfig[]>([])
   const [newConfigName, setNewConfigName] = useState('')
   const [showSaveForm, setShowSaveForm] = useState(false)

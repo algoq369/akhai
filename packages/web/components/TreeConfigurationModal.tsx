@@ -5,14 +5,14 @@
  * 
  * Minimalist two-column grid layout.
  * Monospace typography, no decorations.
- * Triggered by footer "sefirot tree" button.
+ * Triggered by footer "layer tree" button.
  */
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
-import { SEFIROT_PRESETS, type PresetName } from '@/lib/sefirot-presets'
+import { useLayerStore } from '@/lib/stores/layer-store'
+import { LAYER_PRESETS, type PresetName } from '@/lib/layer-presets'
 
 interface TreeConfigurationModalProps {
   isOpen: boolean
@@ -35,13 +35,13 @@ const LAYERS = [
 
 export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigurationModalProps) {
   const router = useRouter()
-  const { weights, setWeight, applyPreset, activePreset: storePreset } = useSefirotStore()
+  const { weights, setWeight, applyPreset, activePreset: storePreset } = useLayerStore()
   const [activePreset, setActivePreset] = useState<PresetName | null>(storePreset as PresetName | null)
 
   const getPercentage = (level: number) => Math.round((weights[level] || 0.5) * 100)
 
   const handlePreset = (name: PresetName) => {
-    const presetWeights = SEFIROT_PRESETS[name]
+    const presetWeights = LAYER_PRESETS[name]
     if (presetWeights) {
       applyPreset(presetWeights as Record<number, number>, name)
       setActivePreset(name)

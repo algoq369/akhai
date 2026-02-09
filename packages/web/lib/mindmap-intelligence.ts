@@ -3,32 +3,32 @@
  *
  * Connects Intelligence Fusion data to Mind Map visualization:
  * - Extract nodes from intelligence.analysis.keywords
- * - Color nodes by dominant Sefirot activation
+ * - Color nodes by dominant Layers activation
  * - Size nodes by relevance score
  * - Create edges between related topics
  *
  * @module mindmap-intelligence
  */
 
-import { Sefirah } from './ascent-tracker'
-import { IntelligenceFusionResult, SefirotActivation } from './intelligence-fusion'
+import { Layer } from './layer-registry'
+import { IntelligenceFusionResult, LayersActivation } from './intelligence-fusion'
 
 // ============================================================
-// SEFIROT COLOR MAPPING (Traditional Kabbalistic Colors)
+// LAYERS COLOR MAPPING (Traditional Kabbalistic Colors)
 // ============================================================
 
-export const SEFIROT_COLORS: Record<Sefirah, { primary: string; secondary: string; name: string }> = {
-  [Sefirah.KETHER]: { primary: '#FFFFFF', secondary: '#FFD700', name: 'Crown' },      // White/Gold
-  [Sefirah.CHOKMAH]: { primary: '#808080', secondary: '#A9A9A9', name: 'Wisdom' },    // Grey
-  [Sefirah.BINAH]: { primary: '#1a1a1a', secondary: '#2d2d2d', name: 'Understanding' }, // Black (adjusted for visibility)
-  [Sefirah.CHESED]: { primary: '#0066FF', secondary: '#3388FF', name: 'Mercy' },      // Blue
-  [Sefirah.GEVURAH]: { primary: '#FF3333', secondary: '#FF6666', name: 'Severity' },  // Red
-  [Sefirah.TIFERET]: { primary: '#FFD700', secondary: '#FFEB3B', name: 'Beauty' },    // Yellow/Gold
-  [Sefirah.NETZACH]: { primary: '#00DD00', secondary: '#44FF44', name: 'Victory' },   // Green
-  [Sefirah.HOD]: { primary: '#FF8C00', secondary: '#FFA500', name: 'Glory' },         // Orange
-  [Sefirah.YESOD]: { primary: '#8B008B', secondary: '#9932CC', name: 'Foundation' },  // Purple
-  [Sefirah.MALKUTH]: { primary: '#8B4513', secondary: '#A0522D', name: 'Kingdom' },   // Brown/Earth
-  [Sefirah.DAAT]: { primary: '#C0C0C0', secondary: '#D3D3D3', name: 'Knowledge' },    // Silver (hidden)
+export const LAYERS_COLORS: Record<Layer, { primary: string; secondary: string; name: string }> = {
+  [Layer.META_CORE]: { primary: '#FFFFFF', secondary: '#FFD700', name: 'Crown' },      // White/Gold
+  [Layer.REASONING]: { primary: '#808080', secondary: '#A9A9A9', name: 'Wisdom' },    // Grey
+  [Layer.ENCODER]: { primary: '#1a1a1a', secondary: '#2d2d2d', name: 'Understanding' }, // Black (adjusted for visibility)
+  [Layer.EXPANSION]: { primary: '#0066FF', secondary: '#3388FF', name: 'Mercy' },      // Blue
+  [Layer.DISCRIMINATOR]: { primary: '#FF3333', secondary: '#FF6666', name: 'Severity' },  // Red
+  [Layer.ATTENTION]: { primary: '#FFD700', secondary: '#FFEB3B', name: 'Beauty' },    // Yellow/Gold
+  [Layer.GENERATIVE]: { primary: '#00DD00', secondary: '#44FF44', name: 'Victory' },   // Green
+  [Layer.CLASSIFIER]: { primary: '#FF8C00', secondary: '#FFA500', name: 'Glory' },         // Orange
+  [Layer.EXECUTOR]: { primary: '#8B008B', secondary: '#9932CC', name: 'Foundation' },  // Purple
+  [Layer.EMBEDDING]: { primary: '#8B4513', secondary: '#A0522D', name: 'Kingdom' },   // Brown/Earth
+  [Layer.SYNTHESIS]: { primary: '#C0C0C0', secondary: '#D3D3D3', name: 'Knowledge' },    // Silver (hidden)
 }
 
 // ============================================================
@@ -38,12 +38,12 @@ export const SEFIROT_COLORS: Record<Sefirah, { primary: string; secondary: strin
 export interface IntelligenceNode {
   id: string
   label: string
-  type: 'query' | 'keyword' | 'topic' | 'sefirah'
+  type: 'query' | 'keyword' | 'topic' | 'layerNode'
   size: number                    // 10-50 based on relevance
-  color: string                   // Sefirot-based color
-  borderColor: string             // Secondary Sefirot color
-  dominantSefirah: Sefirah | null
-  sefirotActivations: Partial<Record<Sefirah, number>>
+  color: string                   // Layers-based color
+  borderColor: string             // Secondary Layers color
+  dominantLayer: Layer | null
+  layerActivations: Partial<Record<Layer, number>>
   metadata: {
     queryId?: string
     tokens?: number
@@ -59,8 +59,8 @@ export interface IntelligenceEdge {
   source: string
   target: string
   weight: number                  // 0-1 topic relevance
-  type: 'query-topic' | 'topic-topic' | 'keyword-topic' | 'sefirot-path'
-  color: string                   // Based on Sefirot path
+  type: 'query-topic' | 'topic-topic' | 'keyword-topic' | 'layers-path'
+  color: string                   // Based on Layers path
   animated: boolean               // Animate active paths
 }
 
@@ -71,7 +71,7 @@ export interface IntelligenceMindMapData {
   metadata: {
     totalQueries: number
     totalTokens: number
-    dominantSefirot: Sefirah[]
+    dominantLayers: Layer[]
     methodologyBreakdown: Record<string, number>
     generatedAt: number
   }
@@ -79,7 +79,7 @@ export interface IntelligenceMindMapData {
 
 export interface IntelligenceCluster {
   id: string
-  sefirah: Sefirah
+  layerNode: Layer
   name: string
   color: string
   nodeIds: string[]
@@ -91,47 +91,47 @@ export interface IntelligenceCluster {
 // ============================================================
 
 /**
- * Get color for a node based on its dominant Sefirah activation
+ * Get color for a node based on its dominant Layer activation
  */
-export function getSefirotColor(
-  activations: Partial<Record<Sefirah, number>> | SefirotActivation[] | Record<number, number>
-): { primary: string; secondary: string; dominant: Sefirah | null } {
+export function getLayersColor(
+  activations: Partial<Record<Layer, number>> | LayersActivation[] | Record<number, number>
+): { primary: string; secondary: string; dominant: Layer | null } {
   // Convert array to record if needed
   let activationMap: Record<number, number> = {}
 
   if (Array.isArray(activations)) {
     activations.forEach(a => {
-      activationMap[a.sefirah] = a.effectiveWeight || a.activation
+      activationMap[a.layerNode] = a.effectiveWeight || a.activation
     })
   } else {
     activationMap = activations as Record<number, number>
   }
 
-  // Find dominant Sefirah
+  // Find dominant Layer
   let maxActivation = 0
-  let dominant: Sefirah | null = null
+  let dominant: Layer | null = null
 
-  for (const [sefirah, activation] of Object.entries(activationMap)) {
-    const sefirahNum = parseInt(sefirah) as Sefirah
+  for (const [layerNode, activation] of Object.entries(activationMap)) {
+    const layerNodeNum = parseInt(layerNode) as Layer
     if (activation > maxActivation) {
       maxActivation = activation
-      dominant = sefirahNum
+      dominant = layerNodeNum
     }
   }
 
-  if (dominant !== null && SEFIROT_COLORS[dominant]) {
+  if (dominant !== null && LAYERS_COLORS[dominant]) {
     return {
-      primary: SEFIROT_COLORS[dominant].primary,
-      secondary: SEFIROT_COLORS[dominant].secondary,
+      primary: LAYERS_COLORS[dominant].primary,
+      secondary: LAYERS_COLORS[dominant].secondary,
       dominant
     }
   }
 
-  // Default to Malkuth (grounding)
+  // Default to Embedding (grounding)
   return {
-    primary: SEFIROT_COLORS[Sefirah.MALKUTH].primary,
-    secondary: SEFIROT_COLORS[Sefirah.MALKUTH].secondary,
-    dominant: Sefirah.MALKUTH
+    primary: LAYERS_COLORS[Layer.EMBEDDING].primary,
+    secondary: LAYERS_COLORS[Layer.EMBEDDING].secondary,
+    dominant: Layer.EMBEDDING
   }
 }
 
@@ -161,12 +161,12 @@ export function extractIntelligenceNodes(
   const nodes: IntelligenceNode[] = []
 
   // Create query node
-  const sefirotActivationMap: Partial<Record<Sefirah, number>> = {}
-  intelligence.sefirotActivations.forEach(a => {
-    sefirotActivationMap[a.sefirah] = a.effectiveWeight
+  const layersActivationMap: Partial<Record<Layer, number>> = {}
+  intelligence.layerActivations.forEach(a => {
+    layersActivationMap[a.layerNode] = a.effectiveWeight
   })
 
-  const queryColor = getSefirotColor(sefirotActivationMap)
+  const queryColor = getLayersColor(layersActivationMap)
 
   nodes.push({
     id: `query-${queryId}`,
@@ -175,8 +175,8 @@ export function extractIntelligenceNodes(
     size: calculateNodeSize(1, tokens, 30),
     color: queryColor.primary,
     borderColor: queryColor.secondary,
-    dominantSefirah: queryColor.dominant,
-    sefirotActivations: sefirotActivationMap,
+    dominantLayer: queryColor.dominant,
+    layerActivations: layersActivationMap,
     metadata: {
       queryId,
       tokens,
@@ -199,8 +199,8 @@ export function extractIntelligenceNodes(
       size: calculateNodeSize(relevance, 0, 15),
       color: queryColor.primary,
       borderColor: queryColor.secondary,
-      dominantSefirah: queryColor.dominant,
-      sefirotActivations: sefirotActivationMap,
+      dominantLayer: queryColor.dominant,
+      layerActivations: layersActivationMap,
       metadata: {
         relevanceScore: relevance,
         queryId
@@ -216,7 +216,7 @@ export function extractIntelligenceNodes(
  */
 export function createIntelligenceEdges(
   nodes: IntelligenceNode[],
-  pathActivations: Array<{ from: Sefirah; to: Sefirah; weight: number }>
+  pathActivations: Array<{ from: Layer; to: Layer; weight: number }>
 ): IntelligenceEdge[] {
   const edges: IntelligenceEdge[] = []
   const queryNodes = nodes.filter(n => n.type === 'query')
@@ -268,18 +268,18 @@ export function createIntelligenceEdges(
     }
   }
 
-  // Add Sefirot path edges if significant
+  // Add Layers path edges if significant
   pathActivations.forEach(path => {
     if (path.weight > 0.3) {
-      const fromColor = SEFIROT_COLORS[path.from]
-      const toColor = SEFIROT_COLORS[path.to]
+      const fromColor = LAYERS_COLORS[path.from]
+      const toColor = LAYERS_COLORS[path.to]
 
       edges.push({
-        id: `sefirot-path-${path.from}-${path.to}`,
-        source: `sefirah-${path.from}`,
-        target: `sefirah-${path.to}`,
+        id: `layers-path-${path.from}-${path.to}`,
+        source: `layerNode-${path.from}`,
+        target: `layerNode-${path.to}`,
         weight: path.weight,
-        type: 'sefirot-path',
+        type: 'layers-path',
         color: blendColors(fromColor.primary, toColor.primary),
         animated: true
       })
@@ -290,26 +290,26 @@ export function createIntelligenceEdges(
 }
 
 /**
- * Cluster nodes by dominant Sefirah
+ * Cluster nodes by dominant Layer
  */
-export function clusterBySefirot(nodes: IntelligenceNode[]): IntelligenceCluster[] {
-  const clusters: Map<Sefirah, IntelligenceCluster> = new Map()
+export function clusterByLayers(nodes: IntelligenceNode[]): IntelligenceCluster[] {
+  const clusters: Map<Layer, IntelligenceCluster> = new Map()
 
   nodes.forEach(node => {
-    if (node.dominantSefirah === null) return
+    if (node.dominantLayer === null) return
 
-    const sefirah = node.dominantSefirah
-    if (!clusters.has(sefirah)) {
-      clusters.set(sefirah, {
-        id: `cluster-${sefirah}`,
-        sefirah,
-        name: SEFIROT_COLORS[sefirah]?.name || 'Unknown',
-        color: SEFIROT_COLORS[sefirah]?.primary || '#888888',
+    const layerNode = node.dominantLayer
+    if (!clusters.has(layerNode)) {
+      clusters.set(layerNode, {
+        id: `cluster-${layerNode}`,
+        layerNode,
+        name: LAYERS_COLORS[layerNode]?.name || 'Unknown',
+        color: LAYERS_COLORS[layerNode]?.primary || '#888888',
         nodeIds: []
       })
     }
 
-    clusters.get(sefirah)!.nodeIds.push(node.id)
+    clusters.get(layerNode)!.nodeIds.push(node.id)
   })
 
   return Array.from(clusters.values())
@@ -329,7 +329,7 @@ export function buildIntelligenceMindMap(
   const allNodes: IntelligenceNode[] = []
   const methodologyBreakdown: Record<string, number> = {}
   let totalTokens = 0
-  const allPathActivations: Array<{ from: Sefirah; to: Sefirah; weight: number }> = []
+  const allPathActivations: Array<{ from: Layer; to: Layer; weight: number }> = []
 
   // Process each query
   queries.forEach(({ id, query, intelligence, tokens }) => {
@@ -354,20 +354,20 @@ export function buildIntelligenceMindMap(
   const edges = createIntelligenceEdges(allNodes, allPathActivations)
 
   // Create clusters
-  const clusters = clusterBySefirot(allNodes)
+  const clusters = clusterByLayers(allNodes)
 
-  // Find dominant Sefirot across all queries
-  const sefirotCounts: Record<number, number> = {}
+  // Find dominant Layers across all queries
+  const layersCounts: Record<number, number> = {}
   allNodes.forEach(node => {
-    if (node.dominantSefirah !== null) {
-      sefirotCounts[node.dominantSefirah] = (sefirotCounts[node.dominantSefirah] || 0) + 1
+    if (node.dominantLayer !== null) {
+      layersCounts[node.dominantLayer] = (layersCounts[node.dominantLayer] || 0) + 1
     }
   })
 
-  const dominantSefirot = Object.entries(sefirotCounts)
+  const dominantLayers = Object.entries(layersCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
-    .map(([s]) => parseInt(s) as Sefirah)
+    .map(([s]) => parseInt(s) as Layer)
 
   return {
     nodes: allNodes,
@@ -376,7 +376,7 @@ export function buildIntelligenceMindMap(
     metadata: {
       totalQueries: queries.length,
       totalTokens,
-      dominantSefirot,
+      dominantLayers,
       methodologyBreakdown,
       generatedAt: Date.now()
     }
@@ -408,7 +408,7 @@ export function addQueryToMindMap(
   const edges = createIntelligenceEdges(allNodes, allPathActivations)
 
   // Update clusters
-  const clusters = clusterBySefirot(allNodes)
+  const clusters = clusterByLayers(allNodes)
 
   // Update methodology breakdown
   const methodologyBreakdown = { ...existingData.metadata.methodologyBreakdown }
@@ -422,7 +422,7 @@ export function addQueryToMindMap(
     metadata: {
       totalQueries: existingData.metadata.totalQueries + 1,
       totalTokens: existingData.metadata.totalTokens + tokens,
-      dominantSefirot: existingData.metadata.dominantSefirot, // Recalculate if needed
+      dominantLayers: existingData.metadata.dominantLayers, // Recalculate if needed
       methodologyBreakdown,
       generatedAt: Date.now()
     }
@@ -460,8 +460,8 @@ export function importMindMapJSON(json: string): IntelligenceMindMapData | null 
  * Generate shareable summary of mind map
  */
 export function generateMindMapSummary(data: IntelligenceMindMapData): string {
-  const dominantNames = data.metadata.dominantSefirot
-    .map(s => SEFIROT_COLORS[s]?.name || 'Unknown')
+  const dominantNames = data.metadata.dominantLayers
+    .map(s => LAYERS_COLORS[s]?.name || 'Unknown')
     .join(', ')
 
   const methodologies = Object.entries(data.metadata.methodologyBreakdown)
@@ -481,7 +481,7 @@ Statistics:
 - Edges: ${data.edges.length}
 - Clusters: ${data.clusters.length}
 
-Dominant Sefirot: ${dominantNames}
+Dominant Layers: ${dominantNames}
 
 Methodology Usage: ${methodologies}
 

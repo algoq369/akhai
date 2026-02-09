@@ -4,18 +4,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import MindMapHistoryView from '@/components/MindMapHistoryView'
-import MindMapGrimoireView from '@/components/MindMapGrimoireView'
-import SefirotConsole from '@/components/SefirotConsole'
+import MindMapReportView from '@/components/MindMapReportView'
+import LayerConsole from '@/components/LayerConsole'
 
-// Dynamic import with SSR disabled for ReactFlow-based components
-const AkhAIMindMap = dynamic(
-  () => import('@/components/akhai-mindmap').then(mod => mod.AkhAIMindMap),
-  { ssr: false }
-)
-
-// New simplified mind map with D3 force layout
-const SimpleMindMap = dynamic(
-  () => import('@/components/simple-mindmap').then(mod => mod.SimpleMindMap),
+// Radial knowledge graph
+const MindMapDiagramView = dynamic(
+  () => import('@/components/MindMapDiagramView'),
   { ssr: false }
 )
 import {
@@ -26,7 +20,7 @@ import {
   Cog6ToothIcon
 } from '@heroicons/react/24/outline'
 
-type ViewMode = 'graph' | 'simple' | 'history' | 'grimoire'
+type ViewMode = 'graph' | 'history' | 'report'
 
 interface Topic {
   id: string
@@ -46,8 +40,8 @@ interface Connection {
 
 export default function MindMapPage() {
   const router = useRouter()
-  const [viewMode, setViewMode] = useState<ViewMode>('simple')
-  const [showSefirotConsole, setShowSefirotConsole] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('graph')
+  const [showLayerConsole, setShowLayerConsole] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [user, setUser] = useState<any>(null)
   const [topics, setTopics] = useState<Topic[]>([])
@@ -105,10 +99,9 @@ export default function MindMapPage() {
   }, [])
 
   const viewModes = [
-    { id: 'simple' as ViewMode, icon: MapIcon, label: 'Simple' },
     { id: 'graph' as ViewMode, icon: MapIcon, label: 'Graph' },
     { id: 'history' as ViewMode, icon: ClockIcon, label: 'History' },
-    { id: 'grimoire' as ViewMode, icon: BookOpenIcon, label: 'Grimoire' }
+    { id: 'report' as ViewMode, icon: BookOpenIcon, label: 'Report' }
   ]
 
   return (
@@ -157,9 +150,9 @@ export default function MindMapPage() {
                 ))}
               </div>
 
-              {/* Sefirot Console Toggle */}
+              {/* Layers Console Toggle */}
               <button
-                onClick={() => setShowSefirotConsole(!showSefirotConsole)}
+                onClick={() => setShowLayerConsole(!showLayerConsole)}
                 className="text-relic-silver hover:text-purple-500 transition-colors"
                 title="Tree of Life Configuration"
               >
@@ -172,57 +165,38 @@ export default function MindMapPage() {
 
       {/* Main Content */}
       <main className="h-[calc(100vh-60px)]">
-        {/* New Simple Mind Map with D3 Force Layout */}
-        {viewMode === 'simple' && (
-          isLoading ? (
-            <div className="h-full flex items-center justify-center bg-neutral-50">
-              <div className="text-center">
-                <div className="animate-spin w-5 h-5 border border-neutral-300 border-t-neutral-500 rounded-full mx-auto mb-2" />
-                <p className="text-xs text-neutral-400">loading...</p>
-              </div>
-            </div>
-          ) : (
-            <SimpleMindMap
-              topics={filteredTopics}
-              connections={connections}
-              onTopicSelect={(id) => console.log('Selected:', id)}
-              onTopicExpand={handleTopicExpand}
-            />
-          )
-        )}
-        {/* Original Graph View */}
+        {/* Radial Knowledge Graph View */}
         {viewMode === 'graph' && (
           isLoading ? (
-            <div className="h-full flex items-center justify-center bg-[#1a1a1a]">
+            <div className="h-full flex items-center justify-center bg-[#fafbfc]">
               <div className="text-center">
-                <div className="animate-spin w-6 h-6 border-2 border-slate-500 border-t-purple-500 rounded-full mx-auto mb-2" />
-                <p className="text-xs text-slate-500 font-mono">Loading mind map...</p>
+                <div className="animate-spin w-5 h-5 border border-slate-300 border-t-slate-500 rounded-full mx-auto mb-2" />
+                <p className="text-xs text-slate-400">loading graph...</p>
               </div>
             </div>
           ) : (
-            <AkhAIMindMap
-              topics={filteredTopics}
-              connections={connections}
+            <MindMapDiagramView
               userId={user?.id || null}
-              onTopicExpand={handleTopicExpand}
+              nodes={filteredTopics as any}
+              searchQuery={searchTerm}
             />
           )
         )}
         {viewMode === 'history' && (
           <MindMapHistoryView />
         )}
-        {viewMode === 'grimoire' && (
-          <MindMapGrimoireView
+        {viewMode === 'report' && (
+          <MindMapReportView
             userId={user?.id || null}
             selectedTopics={[]}
           />
         )}
       </main>
 
-      {/* Sefirot Console */}
-      <SefirotConsole
-        isOpen={showSefirotConsole}
-        onToggle={() => setShowSefirotConsole(!showSefirotConsole)}
+      {/* Layers Console */}
+      <LayerConsole
+        isOpen={showLayerConsole}
+        onToggle={() => setShowLayerConsole(!showLayerConsole)}
       />
     </div>
   )

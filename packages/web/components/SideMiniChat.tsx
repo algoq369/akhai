@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { Message } from '@/lib/chat-store'
 
 interface SideMiniChatProps {
@@ -10,6 +10,8 @@ interface SideMiniChatProps {
   externalQuery?: string  // NEW: For Deep Dive button to inject queries
   conversationId?: string  // NEW: For sharing conversation
   onPromoteToMain?: (query: string, response: string) => void  // NEW: Bidirectional sync
+  draggable?: boolean  // When true (canvas mode), allows drag-to-move
+  defaultPosition?: { left: number; top: number }  // Starting position when draggable
 }
 
 interface Insight {
@@ -30,12 +32,82 @@ interface Insight {
  * - Pertinent links based on actual query content
  * - Context-aware suggestions
  */
-export default function SideMiniChat({ isVisible = true, messages = [], onSendQuery, externalQuery, conversationId, onPromoteToMain }: SideMiniChatProps) {
+export default function SideMiniChat({ isVisible = true, messages = [], onSendQuery, externalQuery, conversationId, onPromoteToMain, draggable = false, defaultPosition }: SideMiniChatProps) {
   const [insights, setInsights] = useState<Insight[]>([])
   const [inputText, setInputText] = useState('')
   const [miniChatMessages, setMiniChatMessages] = useState<{query: string, response: string}[]>([])
   const [isMiniLoading, setIsMiniLoading] = useState(false)
   const [showShareToast, setShowShareToast] = useState(false)
+
+  // ── Drag logic (canvas mode) ──
+  const [dragPos, setDragPos] = useState({ left: defaultPosition?.left ?? 10, top: defaultPosition?.top ?? (typeof window !== 'undefined' ? window.innerHeight - 280 : 500) })
+  const [isDragging, setIsDragging] = useState(false)
+  const dragOffset = useRef({ x: 0, y: 0 })
+  // ── Resize logic (canvas mode) ──
+  const [chatSize, setChatSize] = useState({ width: 200, height: 260 })
+  const [isResizing, setIsResizing] = useState(false)
+  const resizeStart = useRef({ x: 0, y: 0, w: 200, h: 260 })
+
+  // Update default position when prop changes
+  useEffect(() => {
+    if (defaultPosition) {
+      setDragPos({ left: defaultPosition.left, top: defaultPosition.top })
+    }
+  }, [defaultPosition?.left, defaultPosition?.top])
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    if (!draggable) return
+    e.preventDefault()
+    setIsDragging(true)
+    dragOffset.current = { x: e.clientX - dragPos.left, y: e.clientY - dragPos.top }
+
+    const handleMove = (ev: MouseEvent) => {
+      setDragPos({ left: ev.clientX - dragOffset.current.x, top: ev.clientY - dragOffset.current.y })
+    }
+
+    const cleanup = () => {
+      setIsDragging(false)
+      document.removeEventListener('mousemove', handleMove)
+      document.removeEventListener('mouseup', cleanup)
+      document.removeEventListener('mouseleave', cleanup)
+    }
+
+    // Handle normal mouseup
+    document.addEventListener('mousemove', handleMove)
+    document.addEventListener('mouseup', cleanup)
+    // Also cleanup if mouse leaves the window (prevents stuck drag state)
+    document.addEventListener('mouseleave', cleanup)
+  }, [draggable, dragPos.left, dragPos.top])
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    if (!draggable) return
+    e.preventDefault()
+    e.stopPropagation()
+    setIsResizing(true)
+    resizeStart.current = { x: e.clientX, y: e.clientY, w: chatSize.width, h: chatSize.height }
+
+    const handleMove = (ev: MouseEvent) => {
+      const dw = ev.clientX - resizeStart.current.x
+      const dh = ev.clientY - resizeStart.current.y
+      setChatSize({
+        width: Math.min(400, Math.max(150, resizeStart.current.w + dw)),
+        height: Math.min(500, Math.max(150, resizeStart.current.h + dh)),
+      })
+    }
+
+    const cleanup = () => {
+      setIsResizing(false)
+      document.removeEventListener('mousemove', handleMove)
+      document.removeEventListener('mouseup', cleanup)
+      document.removeEventListener('mouseleave', cleanup)
+    }
+
+    document.addEventListener('mousemove', handleMove)
+    document.addEventListener('mouseup', cleanup)
+    // Also cleanup if mouse leaves the window (prevents stuck resize state)
+    document.addEventListener('mouseleave', cleanup)
+  }, [draggable, chatSize.width, chatSize.height])
+
   const [extractedTopics, setExtractedTopics] = useState<string[]>([])
   const [metacognition, setMetacognition] = useState<{ confidence: number; reasoning: string } | null>(null)
   const lastAnalyzedLength = useRef(0)
@@ -458,6 +530,80 @@ ${conversationId ? `View: ${window.location.origin}?continue=${conversationId}` 
 
   if (!isVisible) return null
 
+  // Canvas (draggable) mode: fixed position with drag handle + compact bg
+  if (draggable) {
+    return (
+      <div
+        className="fixed z-50 select-none"
+        style={{ left: dragPos.left, top: dragPos.top, width: chatSize.width }}
+      >
+        {/* Drag handle */}
+        <div
+          className={`cursor-grab active:cursor-grabbing h-5 flex items-center justify-center rounded-t border border-b-0 border-relic-mist/40 bg-white/90 backdrop-blur-sm ${isDragging ? 'ring-1 ring-purple-300' : ''} ${isResizing ? 'ring-1 ring-blue-300' : ''}`}
+          onMouseDown={handleDragStart}
+        >
+          <span className="text-[7px] text-relic-silver font-mono uppercase tracking-wider">≡ side canal</span>
+        </div>
+        {/* Content with bg for canvas visibility */}
+        <div className="relative bg-white/85 backdrop-blur-sm rounded-b border border-relic-mist/40 p-1.5 overflow-y-auto overflow-x-hidden space-y-1.5 break-words" style={{ maxHeight: chatSize.height - 20 }}>
+          {/* Topics */}
+          {extractedTopics.length > 0 && (
+            <div className="pb-1 border-b border-relic-mist/10">
+              <div className="text-[6px] text-relic-silver/40 font-mono uppercase tracking-wider mb-0.5">topics</div>
+              <div className="flex flex-wrap gap-0.5">
+                {extractedTopics.map((topic, idx) => (
+                  <span key={idx} className="text-[7px] text-relic-slate/70 font-mono">
+                    {topic}{idx < extractedTopics.length - 1 ? ' ·' : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Synthetic summary */}
+          {syntheticSummary.summary && (
+            <div className="pb-1 border-b border-relic-mist/10">
+              <div className="text-[7px] text-relic-slate/80 font-mono leading-snug">{syntheticSummary.summary}</div>
+            </div>
+          )}
+          {/* Links */}
+          {insights.filter(i => i.type === 'link').length > 0 && (
+            <div className="pb-1">
+              <div className="text-[6px] text-relic-silver/40 font-mono uppercase tracking-wider mb-0.5">links</div>
+              {insights.filter(i => i.type === 'link').slice(0, 3).map((link) => (
+                <button key={link.id} onClick={() => handleInsightClick(link)} className="block w-full text-left text-[7px] text-relic-slate/60 hover:text-relic-void font-mono truncate">
+                  → {typeof link.source === 'string' ? link.source : String(link.source || 'Link')}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Mini input */}
+          <form onSubmit={(e) => { e.preventDefault(); if (inputText.trim() && onSendQuery) { onSendQuery(inputText.trim()); setInputText('') } }} className="flex gap-1">
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="ask..."
+              className="flex-1 text-[7px] font-mono bg-transparent border-b border-relic-mist/20 outline-none text-relic-slate placeholder:text-relic-silver/30 py-0.5"
+            />
+            <button type="submit" className="text-[7px] text-relic-silver hover:text-relic-void font-mono">→</button>
+          </form>
+          {/* Resize grip */}
+          <div
+            className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-center justify-center text-relic-silver/40 hover:text-relic-slate"
+            onMouseDown={handleResizeStart}
+          >
+            <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1">
+              <line x1="4" y1="14" x2="14" y2="4" />
+              <line x1="8" y1="14" x2="14" y2="8" />
+              <line x1="12" y1="14" x2="14" y2="12" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Classic mode: original fixed overlay
   return (
     <div className="fixed left-[5%] top-[35%] bottom-[15%] w-[15%] max-w-[220px] z-50 pointer-events-none">
       {/* Invisible console - no background, no border, just raw text */}

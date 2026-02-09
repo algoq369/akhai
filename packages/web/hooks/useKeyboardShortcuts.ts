@@ -9,7 +9,7 @@ import { useQuickChatStore } from '@/lib/stores/quick-chat-store'
  * Shortcuts:
  * - Cmd+K / Ctrl+K: Focus search input
  * - Cmd+M / Ctrl+M: Open Mind Map
- * - Cmd+S / Ctrl+S: Open Sefirot Dashboard
+ * - Cmd+S / Ctrl+S: Open Layers Dashboard
  * - Cmd+H / Ctrl+H: Open History
  * - Cmd+, / Ctrl+,: Open Settings
  * - Cmd+Shift+Q / Ctrl+Shift+Q: Toggle Quick Chat
@@ -18,13 +18,13 @@ import { useQuickChatStore } from '@/lib/stores/quick-chat-store'
 export function useKeyboardShortcuts({
   onSearch,
   onMindMap,
-  onSefirot,
+  onLayers,
   onHistory,
   onSettings,
 }: {
   onSearch?: () => void
   onMindMap?: () => void
-  onSefirot?: () => void
+  onLayers?: () => void
   onHistory?: () => void
   onSettings?: () => void
 } = {}) {
@@ -59,10 +59,10 @@ export function useKeyboardShortcuts({
         return
       }
 
-      // Cmd/Ctrl + S: Open Sefirot Dashboard
+      // Cmd/Ctrl + S: Open Layers Dashboard
       if (modKey && event.key === 's') {
         event.preventDefault()
-        onSefirot?.()
+        onLayers?.()
         return
       }
 
@@ -93,7 +93,7 @@ export function useKeyboardShortcuts({
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [toggle, onSearch, onMindMap, onSefirot, onHistory, onSettings])
+  }, [toggle, onSearch, onMindMap, onLayers, onHistory, onSettings])
 }
 
 /**

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { HebrewTermDisplay } from '@/lib/hebrew-formatter'
+import { HebrewTermDisplay } from '@/lib/origin-formatter'
 import DarkModeToggle from '@/components/DarkModeToggle'
 
 // Force dynamic rendering to avoid prerender errors

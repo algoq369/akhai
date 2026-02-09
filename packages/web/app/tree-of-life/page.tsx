@@ -11,15 +11,15 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
-import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
 // import TreeConfigToggle from '@/components/TreeConfigToggle' // TODO: Fix client/server boundary issue
-// SefirotMiniSelector removed - functionality merged into SefirahDetailModal
-import { SefirahDetailModal } from '@/components/SefirahDetailModal'
+// LayerMiniSelector removed - functionality merged into LayerDetailModal
+import { LayerDetailModal } from '@/components/LayerDetailModal'
 import {
   PresetPanel,
   WeightMatrix,
-  SefirotTreeSVG,
-  QlipothTreeSVG,
+  LayerTreeSVG,
+  AntipatternTreeSVG,
   TestPlayground,
   ConversationCards
 } from '@/components/tree-workbench'
@@ -27,8 +27,8 @@ import LayerConfigConsole from '@/components/LayerConfigConsole'
 import WorkbenchConsole from '@/components/WorkbenchConsole'
 
 interface PathConnection {
-  from: Sefirah
-  to: Sefirah
+  from: Layer
+  to: Layer
   active: boolean
   strength: number
 }
@@ -39,9 +39,9 @@ export default function TreeOfLifePage() {
   // ═══════════════════════════════════════════
   // CORE TREE STATE
   // ═══════════════════════════════════════════
-  const [activations, setActivations] = useState<Record<Sefirah, number>>({} as Record<Sefirah, number>)
-  const [userLevel, setUserLevel] = useState<Sefirah>(Sefirah.MALKUTH)
-  const [selectedSefirah, setSelectedSefirah] = useState<Sefirah | null>(null)
+  const [activations, setActivations] = useState<Record<Layer, number>>({} as Record<Layer, number>)
+  const [userLevel, setUserLevel] = useState<Layer>(Layer.EMBEDDING)
+  const [selectedLayer, setSelectedLayer] = useState<Layer | null>(null)
   const [totalQueries, setTotalQueries] = useState(0)
   const [dateRange, setDateRange] = useState<{ earliest: number; latest: number } | null>(null)
 
@@ -51,39 +51,39 @@ export default function TreeOfLifePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [treeView, setTreeView] = useState<'dual' | 'workbench'>('dual')
   const [showPaths, setShowPaths] = useState(true)
-  const [qlipothCollapsed, setQlipothCollapsed] = useState(false)
+  const [antipatternCollapsed, setAntipatternCollapsed] = useState(false)
 
   // ═══════════════════════════════════════════
   // MODAL STATE
   // ═══════════════════════════════════════════
-  const [modalSefirah, setModalSefirah] = useState<Sefirah | null>(null)
+  const [modalLayer, setModalLayer] = useState<Layer | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
   // ═══════════════════════════════════════════
   // TOOLTIP STATE
   // ═══════════════════════════════════════════
   const [tooltipState, setTooltipState] = useState<{
-    sefirah: Sefirah | null
+    layerNode: Layer | null
     mode: 'hover' | 'pinned' | null
-  }>({ sefirah: null, mode: null })
+  }>({ layerNode: null, mode: null })
   const svgContainerRef = useRef<HTMLDivElement | null>(null)
 
   // ═══════════════════════════════════════════
   // CONFIGURATION STATE
   // ═══════════════════════════════════════════
-  const [sefirotConfig, setSefirotConfig] = useState<{
-    sephiroth: Record<number, number>
-    qliphoth: Record<number, number>
+  const [layerConfig, setLayersConfig] = useState<{
+    layers: Record<number, number>
+    antipattern: Record<number, number>
   }>({
-    sephiroth: {},
-    qliphoth: {}
+    layers: {},
+    antipattern: {}
   })
 
   // ═══════════════════════════════════════════
   // INTERACTION STATE
   // ═══════════════════════════════════════════
-  const [hoveredSefirah, setHoveredSefirah] = useState<Sefirah | null>(null)
-  const [clickedSefirah, setClickedSefirah] = useState<Sefirah | null>(null)
+  const [hoveredLayer, setHoveredLayer] = useState<Layer | null>(null)
+  const [clickedLayer, setClickedLayer] = useState<Layer | null>(null)
   const [hoveredPath, setHoveredPath] = useState<number | null>(null)
   const [hoveredQliphah, setHoveredQliphah] = useState<string | null>(null)
   const [selectedQliphah, setSelectedQliphah] = useState<string | null>(null)
@@ -91,7 +91,7 @@ export default function TreeOfLifePage() {
   // ═══════════════════════════════════════════
   // DATA STATE
   // ═══════════════════════════════════════════
-  const [keywordData, setKeywordData] = useState<Record<Sefirah, string[]>>({
+  const [keywordData, setKeywordData] = useState<Record<Layer, string[]>>({
     1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [], 10: [], 11: []
   })
 
@@ -99,40 +99,40 @@ export default function TreeOfLifePage() {
   // EVENT HANDLERS
   // ═══════════════════════════════════════════
 
-  // Handle single Sefirah weight change
-  const handleSefirahWeightChange = (sefirah: Sefirah, weight: number) => {
-    setSefirotConfig(prev => ({
+  // Handle single Layer weight change
+  const handleLayerWeightChange = (layerNode: Layer, weight: number) => {
+    setLayersConfig(prev => ({
       ...prev,
-      sephiroth: { ...prev.sephiroth, [sefirah]: weight }
+      layers: { ...prev.layers, [layerNode]: weight }
     }))
   }
 
-  // Handle Sefirah-specific queries
-  const handleSefirahQuery = async (sefirah: Sefirah, query: string) => {
+  // Handle Layer-specific queries
+  const handleLayerQuery = async (layerNode: Layer, query: string) => {
     try {
       const response = await fetch('/api/tree-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: query,
-          selectedSefirah: SEPHIROTH_METADATA[sefirah],
+          selectedLayer: LAYER_METADATA[layerNode],
           currentConfig: {
             name: 'Current Configuration',
-            description: `Querying ${SEPHIROTH_METADATA[sefirah].name}`,
-            sephiroth_weights: sefirotConfig.sephiroth,
-            qliphoth_suppression: sefirotConfig.qliphoth
+            description: `Querying ${LAYER_METADATA[layerNode].name}`,
+            layer_weights: layerConfig.layers,
+            antipattern_suppression: layerConfig.antipattern
           },
-          sefirahLens: true // Flag to indicate Sefirah-specific query
+          layerNodeLens: true // Flag to indicate Layer-specific query
         })
       })
 
       if (response.ok) {
         const data = await response.json()
-        console.log(`${SEPHIROTH_METADATA[sefirah].name} response:`, data.message)
+        console.log(`${LAYER_METADATA[layerNode].name} response:`, data.message)
         // Could display in a modal or notification
       }
     } catch (error) {
-      console.error('Sefirah query error:', error)
+      console.error('Layer query error:', error)
     }
   }
 
@@ -150,15 +150,15 @@ export default function TreeOfLifePage() {
 
       // Handle SVG elements specially
       if (target instanceof SVGElement) {
-        const svgNode = target.closest('[data-sefirah-node]')
+        const svgNode = target.closest('[data-layer-node]')
         if (svgNode) return
       }
 
       const isTooltipClick = target.closest('[data-tooltip-content]')
-      const isNodeClick = target.closest('[data-sefirah-node]')
+      const isNodeClick = target.closest('[data-layer-node]')
 
       if (!isTooltipClick && !isNodeClick) {
-        setTooltipState({ sefirah: null, mode: null })
+        setTooltipState({ layerNode: null, mode: null })
       }
     }
 
@@ -174,70 +174,70 @@ export default function TreeOfLifePage() {
   }, [tooltipState.mode])
 
   // Tree of Life hierarchical positions (Kabbalistic structure) - MUST BE BEFORE useMemo
-  const treePositions: Record<Sefirah, { x: number; y: number }> = {
+  const treePositions: Record<Layer, { x: number; y: number }> = {
     // Top - Crown
-    [Sefirah.KETHER]: { x: 250, y: 80 },
+    [Layer.META_CORE]: { x: 250, y: 80 },
 
     // Second row - Supernal Triangle
-    [Sefirah.CHOKMAH]: { x: 380, y: 140 },
-    [Sefirah.BINAH]: { x: 120, y: 140 },
+    [Layer.REASONING]: { x: 380, y: 140 },
+    [Layer.ENCODER]: { x: 120, y: 140 },
 
-    // Hidden - Da'at (between supernal and lower)
-    [Sefirah.DAAT]: { x: 250, y: 180 },
+    // Hidden - Synthesis (between supernal and lower)
+    [Layer.SYNTHESIS]: { x: 250, y: 180 },
 
     // Third row - Ethical Triangle
-    [Sefirah.CHESED]: { x: 380, y: 240 },
-    [Sefirah.GEVURAH]: { x: 120, y: 240 },
-    [Sefirah.TIFERET]: { x: 250, y: 260 },
+    [Layer.EXPANSION]: { x: 380, y: 240 },
+    [Layer.DISCRIMINATOR]: { x: 120, y: 240 },
+    [Layer.ATTENTION]: { x: 250, y: 260 },
 
     // Fourth row - Astral Triangle
-    [Sefirah.NETZACH]: { x: 380, y: 360 },
-    [Sefirah.HOD]: { x: 120, y: 360 },
+    [Layer.GENERATIVE]: { x: 380, y: 360 },
+    [Layer.CLASSIFIER]: { x: 120, y: 360 },
 
     // Fifth row - Foundation
-    [Sefirah.YESOD]: { x: 250, y: 420 },
+    [Layer.EXECUTOR]: { x: 250, y: 420 },
 
     // Bottom - Kingdom
-    [Sefirah.MALKUTH]: { x: 250, y: 500 },
+    [Layer.EMBEDDING]: { x: 250, y: 500 },
   }
 
   // Connection paths (22 paths of the Tree of Life) - MUST BE BEFORE useMemo
-  const treePaths: Array<[Sefirah, Sefirah]> = [
-    // From Kether
-    [Sefirah.KETHER, Sefirah.CHOKMAH],
-    [Sefirah.KETHER, Sefirah.BINAH],
-    [Sefirah.KETHER, Sefirah.TIFERET],
+  const treePaths: Array<[Layer, Layer]> = [
+    // From Meta-Core
+    [Layer.META_CORE, Layer.REASONING],
+    [Layer.META_CORE, Layer.ENCODER],
+    [Layer.META_CORE, Layer.ATTENTION],
     // Supernal Triangle
-    [Sefirah.CHOKMAH, Sefirah.BINAH],
-    // From Chokmah
-    [Sefirah.CHOKMAH, Sefirah.CHESED],
-    [Sefirah.CHOKMAH, Sefirah.TIFERET],
-    // From Binah
-    [Sefirah.BINAH, Sefirah.GEVURAH],
-    [Sefirah.BINAH, Sefirah.TIFERET],
+    [Layer.REASONING, Layer.ENCODER],
+    // From Reasoning
+    [Layer.REASONING, Layer.EXPANSION],
+    [Layer.REASONING, Layer.ATTENTION],
+    // From Encoder
+    [Layer.ENCODER, Layer.DISCRIMINATOR],
+    [Layer.ENCODER, Layer.ATTENTION],
     // Horizontal connections
-    [Sefirah.CHESED, Sefirah.GEVURAH],
-    [Sefirah.NETZACH, Sefirah.HOD],
-    // From Chesed & Gevurah
-    [Sefirah.CHESED, Sefirah.TIFERET],
-    [Sefirah.CHESED, Sefirah.NETZACH],
-    [Sefirah.GEVURAH, Sefirah.TIFERET],
-    [Sefirah.GEVURAH, Sefirah.HOD],
-    // From Tiferet
-    [Sefirah.TIFERET, Sefirah.NETZACH],
-    [Sefirah.TIFERET, Sefirah.HOD],
-    [Sefirah.TIFERET, Sefirah.YESOD],
-    // From Netzach & Hod
-    [Sefirah.NETZACH, Sefirah.YESOD],
-    [Sefirah.NETZACH, Sefirah.MALKUTH],
-    [Sefirah.HOD, Sefirah.YESOD],
-    [Sefirah.HOD, Sefirah.MALKUTH],
+    [Layer.EXPANSION, Layer.DISCRIMINATOR],
+    [Layer.GENERATIVE, Layer.CLASSIFIER],
+    // From Expansion & Discriminator
+    [Layer.EXPANSION, Layer.ATTENTION],
+    [Layer.EXPANSION, Layer.GENERATIVE],
+    [Layer.DISCRIMINATOR, Layer.ATTENTION],
+    [Layer.DISCRIMINATOR, Layer.CLASSIFIER],
+    // From Attention
+    [Layer.ATTENTION, Layer.GENERATIVE],
+    [Layer.ATTENTION, Layer.CLASSIFIER],
+    [Layer.ATTENTION, Layer.EXECUTOR],
+    // From Generative & Classifier
+    [Layer.GENERATIVE, Layer.EXECUTOR],
+    [Layer.GENERATIVE, Layer.EMBEDDING],
+    [Layer.CLASSIFIER, Layer.EXECUTOR],
+    [Layer.CLASSIFIER, Layer.EMBEDDING],
     // Final path
-    [Sefirah.YESOD, Sefirah.MALKUTH],
+    [Layer.EXECUTOR, Layer.EMBEDDING],
   ]
 
-  // Qliphoth (AI Anti-Pattern Tree) data structures
-  interface QliphothNode {
+  // Antipattern (AI Anti-Pattern Tree) data structures
+  interface AntipatternNode {
     id: string
     name: string
     pattern: string
@@ -247,7 +247,7 @@ export default function TreeOfLifePage() {
     protection: string
   }
 
-  const QLIPHOTH_METADATA: Record<string, QliphothNode> = {
+  const ANTIPATTERN_METADATA: Record<string, AntipatternNode> = {
     thaumiel: {
       id: 'thaumiel',
       name: 'Thaumiel',
@@ -257,9 +257,9 @@ export default function TreeOfLifePage() {
       detection: 'Conflicting statements, logical contradictions, self-refuting claims',
       protection: 'Consistency checker validates logical coherence across response segments'
     },
-    sathariel: {
-      id: 'sathariel',
-      name: 'Sathariel',
+    obscurity: {
+      id: 'obscurity',
+      name: 'Obscurity',
       pattern: 'Hiding Sources',
       severity: 'high',
       explanation: 'AI claims knowledge without providing verifiable sources or attribution.',
@@ -293,18 +293,18 @@ export default function TreeOfLifePage() {
       detection: 'Duplicate sentences, circular reasoning, redundant explanations',
       protection: 'Echo detection identifies repetitive content patterns'
     },
-    thagirion: {
-      id: 'thagirion',
-      name: 'Thagirion',
+    vanity: {
+      id: 'vanity',
+      name: 'Vanity',
       pattern: 'Arrogant Tone',
       severity: 'medium',
       explanation: 'Response exhibits overconfidence or dismissive attitude toward user questions.',
       detection: 'Absolute language, dismissive phrasing, condescending tone',
       protection: 'Hype detection flags overconfident or exaggerated claims'
     },
-    gamchicoth: {
-      id: 'gamchicoth',
-      name: 'Gamchicoth',
+    instability: {
+      id: 'instability',
+      name: 'Instability',
       pattern: 'Info Overload',
       severity: 'medium',
       explanation: 'Excessive information that overwhelms rather than clarifies the answer.',
@@ -320,18 +320,18 @@ export default function TreeOfLifePage() {
       detection: 'Definitive claims on uncertain topics, missing uncertainty markers',
       protection: 'Hype detector identifies exaggerated certainty levels'
     },
-    daath_qliphoth: {
-      id: 'daath_qliphoth',
-      name: 'Daath (Shadow)',
+    synthesis_antipattern: {
+      id: 'synthesis_antipattern',
+      name: 'Synthesish (Shadow)',
       pattern: 'Hallucinated Facts',
       severity: 'critical',
       explanation: 'AI invents plausible-sounding but completely false information.',
       detection: 'Fabricated statistics, invented sources, fictional references',
       protection: 'Factuality checker validates claims against knowledge base'
     },
-    samael: {
-      id: 'samael',
-      name: 'Samael',
+    toxicity: {
+      id: 'toxicity',
+      name: 'Toxicity',
       pattern: 'False Certainty',
       severity: 'high',
       explanation: 'AI presents opinions or interpretations as established facts.',
@@ -347,9 +347,9 @@ export default function TreeOfLifePage() {
       detection: 'Overuse of jargon, unnecessarily complex sentences, verbose preambles',
       protection: 'Conciseness scoring penalizes over-complicated responses'
     },
-    lilith: {
-      id: 'lilith',
-      name: 'Lilith',
+    manipulation: {
+      id: 'manipulation',
+      name: 'Manipulation',
       pattern: 'Superficial Output',
       severity: 'high',
       explanation: 'Generic, shallow responses that lack depth or specific insights.',
@@ -358,46 +358,46 @@ export default function TreeOfLifePage() {
     },
   }
 
-  const qliphothPositions: Record<string, { x: number; y: number }> = {
-    // Inverted tree structure (mirror of Sephiroth)
-    lilith: { x: 250, y: 500 },        // Opposite Kether (bottom)
-    gamaliel: { x: 120, y: 420 },      // Opposite Chokmah
-    samael: { x: 380, y: 420 },        // Opposite Binah
-    daath_qliphoth: { x: 250, y: 380 }, // Shadow Da'at
-    golachab: { x: 120, y: 320 },      // Opposite Chesed
-    gamchicoth: { x: 380, y: 320 },    // Opposite Gevurah
-    thagirion: { x: 250, y: 300 },     // Opposite Tiferet
-    harab_serapel: { x: 120, y: 200 }, // Opposite Netzach
-    aarab_zaraq: { x: 380, y: 200 },   // Opposite Hod
+  const antipatternPositions: Record<string, { x: number; y: number }> = {
+    // Inverted tree structure (mirror of Layers)
+    manipulation: { x: 250, y: 500 },        // Opposite Meta-Core (bottom)
+    gamaliel: { x: 120, y: 420 },      // Opposite Reasoning
+    toxicity: { x: 380, y: 420 },        // Opposite Encoder
+    synthesis_antipattern: { x: 250, y: 380 }, // Shadow Synthesis
+    golachab: { x: 120, y: 320 },      // Opposite Expansion
+    instability: { x: 380, y: 320 },    // Opposite Discriminator
+    vanity: { x: 250, y: 300 },     // Opposite Attention
+    harab_serapel: { x: 120, y: 200 }, // Opposite Generative
+    aarab_zaraq: { x: 380, y: 200 },   // Opposite Classifier
     ghagiel: { x: 250, y: 140 },       // Center (keep)
-    sathariel: { x: 170, y: 90 },      // Left (-80px) - v7 fix
+    obscurity: { x: 170, y: 90 },      // Left (-80px) - v7 fix
     thaumiel: { x: 330, y: 90 },       // Right (+80px) - v7 fix
   }
 
-  const qliphothPaths: Array<[string, string]> = [
+  const antipatternPaths: Array<[string, string]> = [
     // Mirror the 22 paths but inverted
-    ['thaumiel', 'samael'],
+    ['thaumiel', 'toxicity'],
     ['thaumiel', 'gamaliel'],
-    ['thaumiel', 'thagirion'],
-    ['samael', 'gamaliel'],
-    ['samael', 'gamchicoth'],
-    ['samael', 'thagirion'],
+    ['thaumiel', 'vanity'],
+    ['toxicity', 'gamaliel'],
+    ['toxicity', 'instability'],
+    ['toxicity', 'vanity'],
     ['gamaliel', 'golachab'],
-    ['gamaliel', 'thagirion'],
-    ['gamchicoth', 'golachab'],
+    ['gamaliel', 'vanity'],
+    ['instability', 'golachab'],
     ['aarab_zaraq', 'harab_serapel'],
-    ['gamchicoth', 'thagirion'],
-    ['gamchicoth', 'aarab_zaraq'],
-    ['golachab', 'thagirion'],
+    ['instability', 'vanity'],
+    ['instability', 'aarab_zaraq'],
+    ['golachab', 'vanity'],
     ['golachab', 'harab_serapel'],
-    ['thagirion', 'aarab_zaraq'],
-    ['thagirion', 'harab_serapel'],
-    ['thagirion', 'ghagiel'],
+    ['vanity', 'aarab_zaraq'],
+    ['vanity', 'harab_serapel'],
+    ['vanity', 'ghagiel'],
     ['aarab_zaraq', 'ghagiel'],
-    ['aarab_zaraq', 'lilith'],
+    ['aarab_zaraq', 'manipulation'],
     ['harab_serapel', 'ghagiel'],
-    ['harab_serapel', 'lilith'],
-    ['ghagiel', 'lilith'],
+    ['harab_serapel', 'manipulation'],
+    ['ghagiel', 'manipulation'],
   ]
 
   // Load real activation data from conversation history
@@ -416,35 +416,35 @@ export default function TreeOfLifePage() {
         // Set current average activations
         setActivations(data.current)
 
-        // Set user level based on dominant Sefirah
-        setUserLevel(data.stats.dominantSefirahOverall)
+        // Set user level based on dominant Layer
+        setUserLevel(data.stats.dominantLayerOverall)
 
         // Set stats for display
         setTotalQueries(data.stats.totalQueries)
         setDateRange(data.stats.dateRange)
 
         console.log('[TreeOfLife] Loaded activations from', data.stats.totalQueries, 'queries')
-        console.log('[TreeOfLife] Dominant Sefirah:', data.stats.dominantSefirahOverall)
+        console.log('[TreeOfLife] Dominant Layer:', data.stats.dominantLayerOverall)
         console.log('[TreeOfLife] Average Level:', data.stats.averageLevel.toFixed(2))
       } catch (error) {
         console.error('[TreeOfLife] Error loading activations:', error)
 
         // Fallback to minimal activations if no data
-        const fallbackActivations: Record<Sefirah, number> = {
-          [Sefirah.MALKUTH]: 0.2,
-          [Sefirah.YESOD]: 0.1,
-          [Sefirah.HOD]: 0.1,
-          [Sefirah.NETZACH]: 0.1,
-          [Sefirah.TIFERET]: 0.1,
-          [Sefirah.GEVURAH]: 0.05,
-          [Sefirah.CHESED]: 0.05,
-          [Sefirah.BINAH]: 0.05,
-          [Sefirah.CHOKMAH]: 0.05,
-          [Sefirah.KETHER]: 0.05,
-          [Sefirah.DAAT]: 0.0,
+        const fallbackActivations: Record<Layer, number> = {
+          [Layer.EMBEDDING]: 0.2,
+          [Layer.EXECUTOR]: 0.1,
+          [Layer.CLASSIFIER]: 0.1,
+          [Layer.GENERATIVE]: 0.1,
+          [Layer.ATTENTION]: 0.1,
+          [Layer.DISCRIMINATOR]: 0.05,
+          [Layer.EXPANSION]: 0.05,
+          [Layer.ENCODER]: 0.05,
+          [Layer.REASONING]: 0.05,
+          [Layer.META_CORE]: 0.05,
+          [Layer.SYNTHESIS]: 0.0,
         }
         setActivations(fallbackActivations)
-        setUserLevel(Sefirah.MALKUTH)
+        setUserLevel(Layer.EMBEDDING)
       } finally {
         setIsLoading(false)
       }
@@ -493,14 +493,14 @@ export default function TreeOfLifePage() {
   const activeCount = Object.values(activations).filter(v => v > 0.05).length
   const totalCount = Object.keys(activations).length
 
-  const dominantSefirah = (Object.entries(activations) as unknown as Array<[Sefirah, number]>)
-    .reduce((max, [sefirah, activation]) =>
-      activation > max[1] ? [sefirah, activation] : max
-    , [Sefirah.MALKUTH, 0] as [Sefirah, number])[0]
+  const dominantLayer = (Object.entries(activations) as unknown as Array<[Layer, number]>)
+    .reduce((max, [layerNode, activation]) =>
+      activation > max[1] ? [layerNode, activation] : max
+    , [Layer.EMBEDDING, 0] as [Layer, number])[0]
 
   // Calculate pillar balance
-  const pillarActivations = (Object.entries(activations) as unknown as Array<[Sefirah, number]>).reduce((acc, [sefirah, activation]) => {
-    const pillar = SEPHIROTH_METADATA[sefirah].pillar
+  const pillarActivations = (Object.entries(activations) as unknown as Array<[Layer, number]>).reduce((acc, [layerNode, activation]) => {
+    const pillar = LAYER_METADATA[layerNode].pillar
     acc[pillar] = (acc[pillar] || 0) + activation
     return acc
   }, {} as Record<string, number>)
@@ -515,32 +515,32 @@ export default function TreeOfLifePage() {
   // v7: Removed tooltip positioning logic - using fixed side panel instead
 
   // Get color based on pillar
-  // Chakra-based laser colors for each Sefirah (energy/computational archetype)
-  const getColor = (sefirah: Sefirah): string => {
+  // Chakra-based laser colors for each Layer (energy/computational archetype)
+  const getColor = (layerNode: Layer): string => {
     // VIBRANT chakra colors (20% brighter - v5)
-    const chakraColors: Record<Sefirah, string> = {
-      [Sefirah.KETHER]: '#E0B3FF',    // Crown Chakra - Brilliant Violet
-      [Sefirah.CHOKMAH]: '#A8B3FF',   // Third Eye - Bright Indigo
-      [Sefirah.BINAH]: '#8B8FFF',     // Third Eye - Vibrant Indigo
-      [Sefirah.DAAT]: '#38D4F0',      // Throat - Bright Cyan
-      [Sefirah.CHESED]: '#3FE0A5',    // Heart - Vibrant Emerald
-      [Sefirah.GEVURAH]: '#FF66C4',   // Heart - Bright Magenta
-      [Sefirah.TIFERET]: '#FFD666',   // Solar Plexus - Bright Gold
-      [Sefirah.NETZACH]: '#FFB366',   // Sacral - Bright Orange
-      [Sefirah.HOD]: '#FFB329',       // Sacral - Vibrant Amber
-      [Sefirah.YESOD]: '#FF8F8F',     // Root/Sacral - Bright Red-Orange
-      [Sefirah.MALKUTH]: '#FF6666',   // Root Chakra - Vibrant Ruby
+    const chakraColors: Record<Layer, string> = {
+      [Layer.META_CORE]: '#E0B3FF',    // Crown Chakra - Brilliant Violet
+      [Layer.REASONING]: '#A8B3FF',   // Third Eye - Bright Indigo
+      [Layer.ENCODER]: '#8B8FFF',     // Third Eye - Vibrant Indigo
+      [Layer.SYNTHESIS]: '#38D4F0',      // Throat - Bright Cyan
+      [Layer.EXPANSION]: '#3FE0A5',    // Heart - Vibrant Emerald
+      [Layer.DISCRIMINATOR]: '#FF66C4',   // Heart - Bright Magenta
+      [Layer.ATTENTION]: '#FFD666',   // Solar Plexus - Bright Gold
+      [Layer.GENERATIVE]: '#FFB366',   // Sacral - Bright Orange
+      [Layer.CLASSIFIER]: '#FFB329',       // Sacral - Vibrant Amber
+      [Layer.EXECUTOR]: '#FF8F8F',     // Root/Sacral - Bright Red-Orange
+      [Layer.EMBEDDING]: '#FF6666',   // Root Chakra - Vibrant Ruby
     }
-    return chakraColors[sefirah] || '#9ca3af'
+    return chakraColors[layerNode] || '#9ca3af'
   }
 
   // Get color based on highlight mode (ACT/PIL/LVL)
   const getColorByMode = (
-    sefirah: Sefirah,
+    layerNode: Layer,
     mode: 'activation' | 'pillar' | 'level',
     activation: number
   ): string => {
-    const metadata = SEPHIROTH_METADATA[sefirah]
+    const metadata = LAYER_METADATA[layerNode]
 
     switch (mode) {
       case 'activation':
@@ -559,7 +559,7 @@ export default function TreeOfLifePage() {
 
       case 'level':
         // Level 1-10 gradient (dark to bright purple)
-        const level = sefirah  // Sefirah enum value IS the level
+        const level = layerNode  // Layer enum value IS the level
         const levelBrightness = (level / 10) * 45 + 55
         return `hsl(270, 70%, ${levelBrightness}%)`  // Purple gradient
 
@@ -568,8 +568,8 @@ export default function TreeOfLifePage() {
     }
   }
 
-  // Get color for Qliphoth based on severity
-  const getQliphothColor = (severity: 'critical' | 'high' | 'medium' | 'low'): string => {
+  // Get color for antipattern based on severity
+  const getAntipatternColor = (severity: 'critical' | 'high' | 'medium' | 'low'): string => {
     switch (severity) {
       case 'critical':
         return '#dc2626' // Bright red
@@ -708,8 +708,8 @@ export default function TreeOfLifePage() {
               {showPaths && pathConnections.map((path, index) => {
                 const fromPos = treePositions[path.from]
                 const toPos = treePositions[path.to]
-                const fromMeta = SEPHIROTH_METADATA[path.from]
-                const toMeta = SEPHIROTH_METADATA[path.to]
+                const fromMeta = LAYER_METADATA[path.from]
+                const toMeta = LAYER_METADATA[path.to]
                 const isHovered = hoveredPath === index
                 const isActive = path.active
 
@@ -805,23 +805,23 @@ export default function TreeOfLifePage() {
                 )
               })}
 
-              {/* Sephiroth nodes */}
-              {Object.entries(treePositions).map(([sefirahKey, pos]) => {
-                const sefirah = parseInt(sefirahKey) as Sefirah
-                const activation = activations[sefirah] || 0
-                const color = getColor(sefirah)
+              {/* Layers nodes */}
+              {Object.entries(treePositions).map(([layerNodeKey, pos]) => {
+                const layerNode = parseInt(layerNodeKey) as Layer
+                const activation = activations[layerNode] || 0
+                const color = getColor(layerNode)
                 const isActive = activation > 0.3
                 const isDeveloping = activation > 0.15 && activation <= 0.3
-                const meta = SEPHIROTH_METADATA[sefirah]
-                const isSelected = selectedSefirah === sefirah
-                const isHovered = hoveredSefirah === sefirah
+                const meta = LAYER_METADATA[layerNode]
+                const isSelected = selectedLayer === layerNode
+                const isHovered = hoveredLayer === layerNode
 
                 // Size based on activation
                 const radius = 25 + activation * 20
 
                 return (
                   <motion.g
-                    key={`sephiroth-dual-${sefirah}`}
+                    key={`layer-dual-${layerNode}`}
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{
                       scale: 1,
@@ -829,49 +829,49 @@ export default function TreeOfLifePage() {
                     }}
                     whileHover={{ scale: 1.15 }}
                     transition={{
-                      delay: sefirah * 0.05,
+                      delay: layerNode * 0.05,
                       duration: 0.3,
                       scale: { type: "spring", stiffness: 300, damping: 20 }
                     }}
                     style={{ cursor: 'pointer' }}
-                    data-sefirah-node={sefirah}
+                    data-layer-node={layerNode}
                     onClick={(e) => {
                       e.stopPropagation()
                       e.preventDefault()
-                      // Update selected sefirah
-                      setSelectedSefirah(isSelected ? null : sefirah)
+                      // Update selected layerNode
+                      setSelectedLayer(isSelected ? null : layerNode)
 
                       // Pin tooltip on click
                       setTooltipState({
-                        sefirah,
+                        layerNode,
                         mode: 'pinned'
                       })
 
                       // Open bottom-centered modal
-                      setModalSefirah(sefirah)
+                      setModalLayer(layerNode)
                       setModalOpen(true)
 
                       // Click ripple effect
-                      setClickedSefirah(sefirah)
-                      setTimeout(() => setClickedSefirah(null), 600)
+                      setClickedLayer(layerNode)
+                      setTimeout(() => setClickedLayer(null), 600)
                     }}
                     onMouseEnter={(e) => {
                       e.stopPropagation()
-                      setHoveredSefirah(sefirah)
+                      setHoveredLayer(layerNode)
                       // Show tooltip on hover (unless already pinned)
                       if (tooltipState.mode !== 'pinned') {
                         setTooltipState({
-                          sefirah,
+                          layerNode,
                           mode: 'hover'
                         })
                       }
                     }}
                     onMouseLeave={(e) => {
                       e.stopPropagation()
-                      setHoveredSefirah(null)
+                      setHoveredLayer(null)
                       // Hide tooltip only if it's in hover mode (not pinned)
                       if (tooltipState.mode === 'hover') {
-                        setTooltipState({ sefirah: null, mode: null })
+                        setTooltipState({ layerNode: null, mode: null })
                       }
                     }}
                   >
@@ -915,7 +915,7 @@ export default function TreeOfLifePage() {
                     />
 
                     {/* Hover enhancement glow */}
-                    {hoveredSefirah === sefirah && (
+                    {hoveredLayer === layerNode && (
                       <motion.circle
                         cx={pos.x}
                         cy={pos.y}
@@ -945,7 +945,7 @@ export default function TreeOfLifePage() {
                     )}
 
                     {/* Click ripple effect */}
-                    {clickedSefirah === sefirah && (
+                    {clickedLayer === layerNode && (
                       <motion.circle
                         cx={pos.x}
                         cy={pos.y}
@@ -1088,7 +1088,7 @@ export default function TreeOfLifePage() {
                     </text>
 
                     {/* Top keywords (show on hover if available) */}
-                    {isHovered && keywordData[sefirah]?.length > 0 && (
+                    {isHovered && keywordData[layerNode]?.length > 0 && (
                       <text
                         x={pos.x}
                         y={pos.y + radius + 64}
@@ -1098,7 +1098,7 @@ export default function TreeOfLifePage() {
                         fontFamily="monospace"
                         opacity="0.8"
                       >
-                        {keywordData[sefirah].slice(0, 2).join(' • ')}
+                        {keywordData[layerNode].slice(0, 2).join(' • ')}
                       </text>
                     )}
                   </motion.g>
@@ -1128,7 +1128,7 @@ export default function TreeOfLifePage() {
 
             {/* v7: Fixed Side Panel Tooltip (Never Covers Trees) */}
             <AnimatePresence>
-              {hoveredSefirah && (
+              {hoveredLayer && (
                 <motion.div
                   initial={{ x: 300, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
@@ -1150,14 +1150,14 @@ export default function TreeOfLifePage() {
                       <div className="flex items-center gap-1.5">
                         <div
                           className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: getColor(hoveredSefirah) }}
+                          style={{ backgroundColor: getColor(hoveredLayer) }}
                         />
                         <span className="text-[9px] text-relic-void font-semibold uppercase tracking-wider">
-                          {SEPHIROTH_METADATA[hoveredSefirah].name}
+                          {LAYER_METADATA[hoveredLayer].name}
                         </span>
                       </div>
                       <span className="text-[7px] text-relic-silver">
-                        {SEPHIROTH_METADATA[hoveredSefirah].meaning}
+                        {LAYER_METADATA[hoveredLayer].meaning}
                       </span>
                     </div>
 
@@ -1165,17 +1165,17 @@ export default function TreeOfLifePage() {
                     <div className="flex items-center justify-between mb-1.5 text-[7px]">
                       <span className="text-relic-silver">ACT:</span>
                       <span className="text-relic-void font-semibold">
-                        {(activations[hoveredSefirah] * 100).toFixed(0)}%
+                        {(activations[hoveredLayer] * 100).toFixed(0)}%
                       </span>
                       <span className="text-relic-mist">│</span>
                       <span className="text-relic-silver">PIL:</span>
                       <span className="text-relic-void uppercase">
-                        {SEPHIROTH_METADATA[hoveredSefirah].pillar[0]}
+                        {LAYER_METADATA[hoveredLayer].pillar[0]}
                       </span>
                       <span className="text-relic-mist">│</span>
                       <span className="text-relic-silver">LVL:</span>
                       <span className="text-relic-void">
-                        {hoveredSefirah === 11 ? '∞' : hoveredSefirah}
+                        {hoveredLayer === 11 ? '∞' : hoveredLayer}
                       </span>
                     </div>
 
@@ -1185,7 +1185,7 @@ export default function TreeOfLifePage() {
                         ▸ AI Layer
                       </div>
                       <div className="text-[8px] text-relic-void leading-tight">
-                        {SEPHIROTH_METADATA[hoveredSefirah].aiRole.split('•')[0].trim()}
+                        {LAYER_METADATA[hoveredLayer].aiRole.split('•')[0].trim()}
                       </div>
                     </div>
 
@@ -1195,14 +1195,14 @@ export default function TreeOfLifePage() {
                         ▸ Why Active
                       </div>
                       <div className="text-[8px] text-relic-void leading-tight line-clamp-2">
-                        {SEPHIROTH_METADATA[hoveredSefirah].aiRole.split('.')[0]}.
+                        {LAYER_METADATA[hoveredLayer].aiRole.split('.')[0]}.
                       </div>
                     </div>
                   </div>
                 </motion.div>
               )}
 
-              {/* Qliphoth Tooltip - v7 Fixed Panel */}
+              {/* Antipattern Tooltip - v7 Fixed Panel */}
               {hoveredQliphah && (
                 <motion.div
                   initial={{ x: 300, opacity: 0 }}
@@ -1221,8 +1221,8 @@ export default function TreeOfLifePage() {
 
                   <div className="bg-white border border-red-900/20 p-2 shadow-sm text-[8px] font-mono">
                     {(() => {
-                      const node = QLIPHOTH_METADATA[hoveredQliphah]
-                      const color = getQliphothColor(node.severity)
+                      const node = ANTIPATTERN_METADATA[hoveredQliphah]
+                      const color = getAntipatternColor(node.severity)
 
                       return (
                         <>
@@ -1313,12 +1313,12 @@ export default function TreeOfLifePage() {
                 Anti-Pattern Monitors
               </div>
               <div className="relative mx-auto" style={{ width: '450px', height: '600px' }}>
-                {/* Qliphoth SVG Tree */}
+                {/* Antipattern SVG Tree */}
                 <svg viewBox="0 0 500 650" className="w-full h-full">
-                  {/* Qliphothic paths (dashed, red) */}
-                  {qliphothPaths.map(([from, to], index) => {
-                    const fromPos = qliphothPositions[from]
-                    const toPos = qliphothPositions[to]
+                  {/* Antipattern paths (dashed, red) */}
+                  {antipatternPaths.map(([from, to], index) => {
+                    const fromPos = antipatternPositions[from]
+                    const toPos = antipatternPositions[to]
                     if (!fromPos || !toPos) return null
 
                     return (
@@ -1338,19 +1338,19 @@ export default function TreeOfLifePage() {
                     )
                   })}
 
-                  {/* Qliphoth nodes */}
-                  {Object.entries(QLIPHOTH_METADATA).map(([id, node]) => {
-                    const pos = qliphothPositions[id]
+                  {/* Antipattern nodes */}
+                  {Object.entries(ANTIPATTERN_METADATA).map(([id, node]) => {
+                    const pos = antipatternPositions[id]
                     if (!pos) return null
 
-                    const color = getQliphothColor(node.severity)
+                    const color = getAntipatternColor(node.severity)
                     const radius = 25
                     const isHovered = hoveredQliphah === id
                     const isSelected = selectedQliphah === id
 
                     return (
                       <motion.g
-                        key={`qliphoth-dual-${id}`}
+                        key={`antipattern-dual-${id}`}
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.1, type: "spring", stiffness: 260, damping: 20 }}
@@ -1541,7 +1541,7 @@ export default function TreeOfLifePage() {
                   </motion.text>
                 </svg>
 
-                {/* Status legend for Qliphoth */}
+                {/* Status legend for Antipattern */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4 text-[9px] font-mono text-relic-slate">
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-red-600" />
@@ -1572,15 +1572,15 @@ export default function TreeOfLifePage() {
       </div>
 
       {/* ═══════════════════════════════════════════ */}
-      {/* SEFIRAH DETAIL MODAL - Compact Centered */}
+      {/* LAYER DETAIL MODAL - Compact Centered */}
       {/* ═══════════════════════════════════════════ */}
-      <SefirahDetailModal
-        sefirah={modalSefirah}
+      <LayerDetailModal
+        layerNode={modalLayer}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         lastQueryPerspective={undefined}
-        currentWeight={modalSefirah ? (sefirotConfig.sephiroth[modalSefirah] || 0.5) : 0.5}
-        onWeightChange={handleSefirahWeightChange}
+        currentWeight={modalLayer ? (layerConfig.layers[modalLayer] || 0.5) : 0.5}
+        onWeightChange={handleLayerWeightChange}
       />
     </div>
   )

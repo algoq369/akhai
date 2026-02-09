@@ -11,15 +11,133 @@ import { executeFlowAWithEvents, executeFlowBWithEvents, executeGTPWithEvents } 
 import type { ModelFamily } from '@akhai/core';
 import { classifyQuery } from '@/lib/query-classifier';
 
+// Methodology-specific instruction prefixes
+// These create distinct execution paths for each methodology
+const METHODOLOGY_INSTRUCTIONS: Record<string, string> = {
+  cod: `[CHAIN OF DRAFT MODE]
+Follow this iterative refinement process:
+1. DRAFT 1: Write your initial response
+2. SELF-CRITIQUE: Identify gaps, assumptions, unverified claims
+3. DRAFT 2: Improve based on critique, add missing details
+4. FINAL: Present polished, verified response
+
+Show all drafts explicitly.
+---
+USER QUERY: `,
+
+  aot: `[ATOM OF THOUGHTS MODE]
+Follow this decomposition process:
+1. DECOMPOSE: Break the query into independent sub-questions (atoms)
+2. SOLVE: Answer each atom separately
+3. CONTRACT: Synthesize atoms into unified response
+
+Show your decomposition and synthesis explicitly.
+---
+USER QUERY: `,
+
+  bot: `[BUFFER OF THOUGHTS MODE]
+Apply structured template analysis:
+1. SELECT TEMPLATE: Choose from Analytical, Procedural, Comparative, Investigative, or Creative
+2. APPLY: Fill in template sections systematically
+3. SYNTHESIZE: Build conclusion from structured analysis
+
+Show your template selection and application.
+---
+USER QUERY: `,
+};
+
+// Security: Input validation constants
+const MAX_QUERY_LENGTH = 10000;
+const MAX_CONVERSATION_HISTORY = 50;
+
+// Security: Rate limiting (in-memory token bucket)
+const rateLimitMap = new Map<string, { tokens: number; lastRefill: number }>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const RATE_LIMIT_MAX_TOKENS = 20; // 20 requests per minute per IP
+const RATE_LIMIT_REFILL_RATE = 20; // Refill to max per window
+
+function getRateLimitKey(request: NextRequest): string {
+  // Use X-Forwarded-For for proxied requests, fallback to a default
+  const forwarded = request.headers.get('x-forwarded-for');
+  const ip = forwarded?.split(',')[0]?.trim() || 'unknown';
+  return ip;
+}
+
+function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  let bucket = rateLimitMap.get(key);
+
+  if (!bucket) {
+    bucket = { tokens: RATE_LIMIT_MAX_TOKENS, lastRefill: now };
+    rateLimitMap.set(key, bucket);
+  }
+
+  // Refill tokens based on time elapsed
+  const elapsed = now - bucket.lastRefill;
+  if (elapsed >= RATE_LIMIT_WINDOW_MS) {
+    bucket.tokens = RATE_LIMIT_MAX_TOKENS;
+    bucket.lastRefill = now;
+  }
+
+  if (bucket.tokens > 0) {
+    bucket.tokens--;
+    return { allowed: true, remaining: bucket.tokens };
+  }
+
+  return { allowed: false, remaining: 0 };
+}
+
+// Clean up old rate limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of rateLimitMap.entries()) {
+    if (now - bucket.lastRefill > RATE_LIMIT_WINDOW_MS * 5) {
+      rateLimitMap.delete(key);
+    }
+  }
+}, 300000);
+
 export async function POST(request: NextRequest) {
   try {
+    // Security: Rate limiting check
+    const rateLimitKey = getRateLimitKey(request);
+    const { allowed, remaining } = checkRateLimit(rateLimitKey);
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please wait before making more requests.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Remaining': '0',
+            'Retry-After': '60'
+          }
+        }
+      );
+    }
+
     const { query, flow, methodology, conversationHistory = [] } = await request.json();
 
-    console.log('=== QUERY RECEIVED ===', { query: query.substring(0, 50), methodology, flow, historyLength: conversationHistory.length });
+    console.log('=== QUERY RECEIVED ===', { query: query?.substring(0, 50), methodology, flow, historyLength: conversationHistory.length });
 
+    // Security: Input validation
     if (!query || typeof query !== 'string') {
       return NextResponse.json(
         { error: 'Query is required' },
+        { status: 400 }
+      );
+    }
+
+    if (query.length > MAX_QUERY_LENGTH) {
+      return NextResponse.json(
+        { error: `Query exceeds maximum length of ${MAX_QUERY_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+
+    if (conversationHistory.length > MAX_CONVERSATION_HISTORY) {
+      return NextResponse.json(
+        { error: `Conversation history exceeds maximum of ${MAX_CONVERSATION_HISTORY} messages` },
         { status: 400 }
       );
     }
@@ -165,7 +283,17 @@ _Live data from ${priceData.source} • Updated just now_`;
 
       const response = await provider.complete({
         messages,
-        systemPrompt: 'You are a helpful AI assistant. Provide clear, concise, and accurate answers. Use conversation context when relevant.',
+        systemPrompt: `You are AkhAI, a sovereign AI research assistant.
+
+Write in a direct, humble, data-grounded voice:
+- Be straightforward and concise — no fluff
+- Acknowledge uncertainty when appropriate
+- Cite sources and use data when available
+- Focus on actionable insights
+
+FORBIDDEN: "Great question!", "Absolutely!", "I'd be happy to...", "Revolutionary", excessive hedging.
+
+Respond directly and accurately. Use conversation context when relevant.`,
       });
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -269,32 +397,48 @@ _Live data from ${priceData.source} • Updated just now_`;
         slot2Family
       );
       result.methodology = 'direct';
-    } else if (flowType === 'cot') {
-      // Chain of Thought: Step-by-step reasoning
-      // Map to Flow B with explicit CoT instructions
-      console.log(`[Query Route] Using Chain of Thought methodology (Flow B)`);
+    } else if (flowType === 'cot' || flowType === 'cod') {
+      // Chain of Draft (CoD): Iterative refinement through progressive drafts
+      // Uses distinct instruction prefix to enforce draft-based reasoning
+      console.log(`[Query Route] Using Chain of Draft methodology (Flow B + CoD instructions)`);
+      const codQuery = METHODOLOGY_INSTRUCTIONS.cod + queryData.query;
       result = await executeFlowBWithEvents(
         queryId,
-        queryData.query,
+        codQuery,
         'ResearchAgent',
         motherBaseFamily,
         slot1Family,
         slot2Family
       );
-      result.methodology = 'cot';
+      result.methodology = 'cod';
     } else if (flowType === 'aot') {
-      // Atom of Thoughts: Decompose → solve → contract
-      // Map to Flow B with decomposition strategy
-      console.log(`[Query Route] Using Atom of Thoughts methodology (Flow B)`);
+      // Atom of Thoughts (AoT): Decompose → solve → contract
+      // Uses distinct instruction prefix to enforce decomposition strategy
+      console.log(`[Query Route] Using Atom of Thoughts methodology (Flow B + AoT instructions)`);
+      const aotQuery = METHODOLOGY_INSTRUCTIONS.aot + queryData.query;
       result = await executeFlowBWithEvents(
         queryId,
-        queryData.query,
+        aotQuery,
         'ResearchAgent',
         motherBaseFamily,
         slot1Family,
         slot2Family
       );
       result.methodology = 'aot';
+    } else if (flowType === 'bot') {
+      // Buffer of Thoughts (BoT): Template-based structured analysis
+      // Uses distinct instruction prefix to enforce template selection
+      console.log(`[Query Route] Using Buffer of Thoughts methodology (Flow B + BoT instructions)`);
+      const botQuery = METHODOLOGY_INSTRUCTIONS.bot + queryData.query;
+      result = await executeFlowBWithEvents(
+        queryId,
+        botQuery,
+        'ResearchAgent',
+        motherBaseFamily,
+        slot1Family,
+        slot2Family
+      );
+      result.methodology = 'bot';
     } else if (flowType === 'auto') {
       // Auto: Smart methodology selection based on query analysis
       // Default to Flow A for now

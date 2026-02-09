@@ -3,7 +3,7 @@
  *
  * Unified intelligence system connecting:
  * - Guard System (anti-hallucination)
- * - Sefirot AI Computational Tree (11 nodes)
+ * - Layers AI Computational Tree (11 nodes)
  * - Methodology Selector (7 methodologies)
  * - Side Canal (context awareness)
  * - Instinct Mode (7 Hermetic lenses)
@@ -12,7 +12,51 @@
  */
 
 import { SEVEN_LENSES, InstinctConfig, generateInstinctPrompt } from './instinct-mode'
-import { SEPHIROTH_METADATA, Sefirah } from './ascent-tracker'
+import { LAYER_METADATA, Layer } from './layer-registry'
+import { LAYERS_KEYWORDS } from './constants/layer-keywords'
+
+// ============================================================
+// LRU CACHE FOR QUERY ANALYSIS
+// ============================================================
+
+class LRUCache<K, V> {
+  private cache = new Map<K, V>()
+  private maxSize: number
+
+  constructor(maxSize: number = 100) {
+    this.maxSize = maxSize
+  }
+
+  get(key: K): V | undefined {
+    const value = this.cache.get(key)
+    if (value !== undefined) {
+      // Move to end (most recently used)
+      this.cache.delete(key)
+      this.cache.set(key, value)
+    }
+    return value
+  }
+
+  set(key: K, value: V): void {
+    if (this.cache.has(key)) {
+      this.cache.delete(key)
+    } else if (this.cache.size >= this.maxSize) {
+      // Remove oldest (first) entry
+      const firstKey = this.cache.keys().next().value
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey)
+      }
+    }
+    this.cache.set(key, value)
+  }
+
+  clear(): void {
+    this.cache.clear()
+  }
+}
+
+// Cache for query analysis results (100 entries)
+const queryAnalysisCache = new LRUCache<string, QueryAnalysis>(100)
 
 // ============================================================
 // TYPES
@@ -43,8 +87,8 @@ export type QueryType =
   | 'troubleshooting' // Debug
   | 'planning'      // Strategy
 
-export interface SefirotActivation {
-  sefirah: Sefirah
+export interface LayersActivation {
+  layerNode: Layer
   name: string
   activation: number         // 0-1 computed activation
   weight: number             // User-configured weight
@@ -62,9 +106,9 @@ export interface IntelligenceFusionResult {
   // Query analysis
   analysis: QueryAnalysis
 
-  // Sefirot activations
-  sefirotActivations: SefirotActivation[]
-  dominantSefirot: Sefirah[]
+  // Layers activations
+  layerActivations: LayersActivation[]
+  dominantLayers: Layer[]
   pathActivations: PathActivation[]
 
   // Methodology selection
@@ -94,61 +138,10 @@ export interface IntelligenceFusionResult {
 }
 
 export interface PathActivation {
-  from: Sefirah
-  to: Sefirah
+  from: Layer
+  to: Layer
   weight: number
   description: string
-}
-
-// ============================================================
-// SEFIROT KEYWORD MAPPINGS
-// ============================================================
-
-const SEFIROT_KEYWORDS: Record<Sefirah, string[]> = {
-  [Sefirah.MALKUTH]: [
-    'data', 'fact', 'information', 'statistic', 'number', 'evidence',
-    'concrete', 'real', 'actual', 'measurable', 'observable', 'physical'
-  ],
-  [Sefirah.YESOD]: [
-    'implement', 'execute', 'apply', 'procedure', 'process', 'step',
-    'foundation', 'build', 'setup', 'configure', 'install', 'deploy'
-  ],
-  [Sefirah.HOD]: [
-    'analyze', 'classify', 'logic', 'reason', 'compare', 'contrast',
-    'categorize', 'evaluate', 'assess', 'systematic', 'methodical'
-  ],
-  [Sefirah.NETZACH]: [
-    'create', 'innovate', 'generate', 'novel', 'original', 'imagine',
-    'design', 'invent', 'artistic', 'inspiration', 'vision', 'dream'
-  ],
-  [Sefirah.TIFERET]: [
-    'integrate', 'synthesize', 'combine', 'balance', 'harmony', 'unify',
-    'connect', 'bridge', 'reconcile', 'merge', 'blend', 'holistic'
-  ],
-  [Sefirah.GEVURAH]: [
-    'limit', 'constraint', 'critique', 'evaluate', 'assess', 'validate',
-    'discipline', 'strict', 'boundary', 'rule', 'restriction', 'risk'
-  ],
-  [Sefirah.CHESED]: [
-    'expand', 'elaborate', 'comprehensive', 'broad', 'extensive', 'generous',
-    'opportunity', 'possibility', 'growth', 'abundance', 'open'
-  ],
-  [Sefirah.BINAH]: [
-    'pattern', 'structure', 'framework', 'model', 'system', 'relationship',
-    'understand', 'comprehend', 'insight', 'discern', 'analyze'
-  ],
-  [Sefirah.CHOKMAH]: [
-    'principle', 'wisdom', 'fundamental', 'theory', 'concept', 'axiom',
-    'essence', 'core', 'foundation', 'truth', 'insight', 'intuition'
-  ],
-  [Sefirah.KETHER]: [
-    'meta', 'reflect', 'overview', 'synthesis', 'big picture', 'holistic',
-    'transcend', 'ultimate', 'supreme', 'divine', 'unity', 'source'
-  ],
-  [Sefirah.DAAT]: [
-    'emerge', 'insight', 'breakthrough', 'revelation', 'connection', 'realize',
-    'hidden', 'knowledge', 'gnosis', 'awareness', 'consciousness'
-  ]
 }
 
 // ============================================================
@@ -170,6 +163,12 @@ const COMPLEXITY_INDICATORS = {
 }
 
 export function analyzeQuery(query: string): QueryAnalysis {
+  // Check cache first
+  const cached = queryAnalysisCache.get(query)
+  if (cached) {
+    return cached
+  }
+
   const words = query.toLowerCase().split(/\s+/)
   const wordCount = words.length
   const queryLower = query.toLowerCase()
@@ -243,7 +242,7 @@ export function analyzeQuery(query: string): QueryAnalysis {
     .slice(0, 10)
     .map(([word]) => word)
 
-  return {
+  const result: QueryAnalysis = {
     complexity,
     queryType,
     requiresTools: /search|lookup|find|fetch|get.*data|api/i.test(query),
@@ -255,22 +254,27 @@ export function analyzeQuery(query: string): QueryAnalysis {
     wordCount,
     keywords: sortedKeywords
   }
+
+  // Cache the result
+  queryAnalysisCache.set(query, result)
+
+  return result
 }
 
 // ============================================================
-// SEFIROT ACTIVATION CALCULATOR
+// LAYERS ACTIVATION CALCULATOR
 // ============================================================
 
-export function calculateSefirotActivations(
+export function calculateLayersActivations(
   query: string,
   weights: Record<number, number>
-): SefirotActivation[] {
+): LayersActivation[] {
   const queryLower = query.toLowerCase()
-  const activations: SefirotActivation[] = []
+  const activations: LayersActivation[] = []
 
-  for (const [sefirahKey, keywords] of Object.entries(SEFIROT_KEYWORDS)) {
-    const sefirah = parseInt(sefirahKey) as Sefirah
-    const meta = SEPHIROTH_METADATA[sefirah]
+  for (const [layerNodeKey, keywords] of Object.entries(LAYERS_KEYWORDS)) {
+    const layerNode = parseInt(layerNodeKey) as Layer
+    const meta = LAYER_METADATA[layerNode]
     if (!meta) continue
 
     // Calculate activation from keyword presence
@@ -278,7 +282,9 @@ export function calculateSefirotActivations(
     const matchedKeywords: string[] = []
 
     for (const keyword of keywords) {
-      if (queryLower.includes(keyword)) {
+      // Use word-boundary matching to avoid false positives (e.g., "data" matching "database")
+      const wordBoundaryRegex = new RegExp(`\\b${keyword}\\b`, 'i')
+      if (wordBoundaryRegex.test(queryLower)) {
         activation += 0.15
         matchedKeywords.push(keyword)
       }
@@ -288,13 +294,13 @@ export function calculateSefirotActivations(
     activation = Math.min(1, activation)
 
     // Get user weight
-    const weight = weights[sefirah] ?? 0.5
+    const weight = weights[layerNode] ?? 0.5
 
     // Calculate effective weight
     const effectiveWeight = activation * weight
 
     activations.push({
-      sefirah,
+      layerNode,
       name: meta.name,
       activation,
       weight,
@@ -315,14 +321,14 @@ export function calculateSefirotActivations(
 
 export function selectMethodology(
   analysis: QueryAnalysis,
-  sefirotActivations: SefirotActivation[]
+  layerActivations: LayersActivation[]
 ): { methodology: CoreMethodology; scores: MethodologyScore[]; confidence: number } {
   const scores: MethodologyScore[] = []
 
-  // Get dominant Sefirot (effective weight > 0.3)
-  const dominantSefirot = sefirotActivations
+  // Get dominant Layers (effective weight > 0.3)
+  const dominantLayers = layerActivations
     .filter(s => s.effectiveWeight > 0.3)
-    .map(s => s.sefirah)
+    .map(s => s.layerNode)
 
   // Score DIRECT
   let directScore = 0
@@ -330,7 +336,7 @@ export function selectMethodology(
   if (analysis.complexity < 0.3) { directScore += 0.5; directReasons.push('Low complexity') }
   if (analysis.isFactual) { directScore += 0.4; directReasons.push('Factual query') }
   if (analysis.wordCount < 15) { directScore += 0.2; directReasons.push('Short query') }
-  if (dominantSefirot.includes(Sefirah.MALKUTH)) { directScore += 0.2; directReasons.push('Malkuth dominant') }
+  if (dominantLayers.includes(Layer.EMBEDDING)) { directScore += 0.2; directReasons.push('Embedding dominant') }
   scores.push({ methodology: 'direct', score: Math.min(1, directScore), reasons: directReasons })
 
   // Score COD (Chain of Draft)
@@ -339,8 +345,8 @@ export function selectMethodology(
   if (analysis.isProcedural) { codScore += 0.6; codReasons.push('Procedural query') }
   if (analysis.queryType === 'troubleshooting') { codScore += 0.5; codReasons.push('Troubleshooting') }
   if (analysis.complexity >= 0.3 && analysis.complexity < 0.7) { codScore += 0.3; codReasons.push('Medium complexity') }
-  if (dominantSefirot.includes(Sefirah.CHOKMAH) && dominantSefirot.includes(Sefirah.KETHER)) {
-    codScore += 0.3; codReasons.push('Chokmah+Kether dominant')
+  if (dominantLayers.includes(Layer.REASONING) && dominantLayers.includes(Layer.META_CORE)) {
+    codScore += 0.3; codReasons.push('Reasoning+Meta-Core dominant')
   }
   scores.push({ methodology: 'cod', score: Math.min(1, codScore), reasons: codReasons })
 
@@ -350,8 +356,8 @@ export function selectMethodology(
   if (analysis.queryType === 'analytical' || analysis.queryType === 'planning') { botScore += 0.8; botReasons.push('Analytical/Planning query') }
   if (analysis.queryType === 'comparative') { botScore += 0.7; botReasons.push('Comparative query') }
   if (analysis.queryType === 'research') { botScore += 0.6; botReasons.push('Research query') }
-  if (dominantSefirot.includes(Sefirah.BINAH)) { botScore += 0.3; botReasons.push('Binah dominant') }
-  if (dominantSefirot.includes(Sefirah.TIFERET)) { botScore += 0.2; botReasons.push('Tiferet dominant') }
+  if (dominantLayers.includes(Layer.ENCODER)) { botScore += 0.3; botReasons.push('Encoder dominant') }
+  if (dominantLayers.includes(Layer.ATTENTION)) { botScore += 0.2; botReasons.push('Attention dominant') }
   scores.push({ methodology: 'bot', score: Math.min(1, botScore), reasons: botReasons })
 
   // Score REACT
@@ -361,7 +367,7 @@ export function selectMethodology(
   if (/search|lookup|find|current|latest|today/i.test(analysis.keywords.join(' '))) {
     reactScore += 0.5; reactReasons.push('Needs external data')
   }
-  if (dominantSefirot.includes(Sefirah.GEVURAH)) { reactScore += 0.2; reactReasons.push('Gevurah dominant') }
+  if (dominantLayers.includes(Layer.DISCRIMINATOR)) { reactScore += 0.2; reactReasons.push('Discriminator dominant') }
   scores.push({ methodology: 'react', score: Math.min(1, reactScore), reasons: reactReasons })
 
   // Score POT (Program of Thought)
@@ -371,7 +377,7 @@ export function selectMethodology(
   if (/calculate|compute|formula|equation|percentage|ratio/i.test(analysis.keywords.join(' '))) {
     potScore += 0.5; potReasons.push('Computation needed')
   }
-  if (dominantSefirot.includes(Sefirah.YESOD)) { potScore += 0.3; potReasons.push('Yesod dominant') }
+  if (dominantLayers.includes(Layer.EXECUTOR)) { potScore += 0.3; potReasons.push('Executor dominant') }
   scores.push({ methodology: 'pot', score: Math.min(1, potScore), reasons: potReasons })
 
   // Score GTP (Generative Thoughts Process)
@@ -381,7 +387,7 @@ export function selectMethodology(
   if (analysis.queryType === 'comparative') { gtpScore += 0.5; gtpReasons.push('Comparative query') }
   if (analysis.isCreative) { gtpScore += 0.5; gtpReasons.push('Creative query') }
   if (analysis.complexity >= 0.7) { gtpScore += 0.4; gtpReasons.push('High complexity') }
-  if (dominantSefirot.includes(Sefirah.DAAT)) { gtpScore += 0.3; gtpReasons.push('Da\'at dominant') }
+  if (dominantLayers.includes(Layer.SYNTHESIS)) { gtpScore += 0.3; gtpReasons.push('Da\'at dominant') }
   scores.push({ methodology: 'gtp', score: Math.min(1, gtpScore), reasons: gtpReasons })
 
   // Sort by score
@@ -453,7 +459,7 @@ export function assessGuardStatus(
 
 export function calculateThinkingBudget(
   analysis: QueryAnalysis,
-  sefirotActivations: SefirotActivation[]
+  layerActivations: LayersActivation[]
 ): number {
   let budget = 3000 // Base budget
 
@@ -464,10 +470,10 @@ export function calculateThinkingBudget(
     budget += 3000
   }
 
-  // Sefirot boost (Kether, Chokmah, Binah = higher thinking)
-  const highThinkingSefirot = [Sefirah.KETHER, Sefirah.CHOKMAH, Sefirah.BINAH]
-  for (const sefirah of highThinkingSefirot) {
-    const activation = sefirotActivations.find(s => s.sefirah === sefirah)
+  // Layers boost (Meta-Core, Reasoning, Encoder = higher thinking)
+  const highThinkingLayers = [Layer.META_CORE, Layer.REASONING, Layer.ENCODER]
+  for (const layerNode of highThinkingLayers) {
+    const activation = layerActivations.find(s => s.layerNode === layerNode)
     if (activation && activation.effectiveWeight > 0.5) {
       budget += 2000
     }
@@ -481,34 +487,34 @@ export function calculateThinkingBudget(
 // PATH ACTIVATIONS
 // ============================================================
 
-const TREE_PATHS: Array<{ from: Sefirah; to: Sefirah; description: string }> = [
+const TREE_PATHS: Array<{ from: Layer; to: Layer; description: string }> = [
   // Middle Pillar
-  { from: Sefirah.KETHER, to: Sefirah.TIFERET, description: 'Crown to Beauty (Consciousness Path)' },
-  { from: Sefirah.TIFERET, to: Sefirah.YESOD, description: 'Beauty to Foundation (Manifestation)' },
-  { from: Sefirah.YESOD, to: Sefirah.MALKUTH, description: 'Foundation to Kingdom (Realization)' },
+  { from: Layer.META_CORE, to: Layer.ATTENTION, description: 'Crown to Beauty (Consciousness Path)' },
+  { from: Layer.ATTENTION, to: Layer.EXECUTOR, description: 'Beauty to Foundation (Manifestation)' },
+  { from: Layer.EXECUTOR, to: Layer.EMBEDDING, description: 'Foundation to Kingdom (Realization)' },
 
   // Left Pillar (Severity)
-  { from: Sefirah.BINAH, to: Sefirah.GEVURAH, description: 'Understanding to Severity (Discernment)' },
-  { from: Sefirah.GEVURAH, to: Sefirah.HOD, description: 'Severity to Glory (Analysis)' },
+  { from: Layer.ENCODER, to: Layer.DISCRIMINATOR, description: 'Understanding to Severity (Discernment)' },
+  { from: Layer.DISCRIMINATOR, to: Layer.CLASSIFIER, description: 'Severity to Glory (Analysis)' },
 
   // Right Pillar (Mercy)
-  { from: Sefirah.CHOKMAH, to: Sefirah.CHESED, description: 'Wisdom to Mercy (Expansion)' },
-  { from: Sefirah.CHESED, to: Sefirah.NETZACH, description: 'Mercy to Victory (Creativity)' },
+  { from: Layer.REASONING, to: Layer.EXPANSION, description: 'Wisdom to Mercy (Expansion)' },
+  { from: Layer.EXPANSION, to: Layer.GENERATIVE, description: 'Mercy to Victory (Creativity)' },
 
   // Cross paths
-  { from: Sefirah.BINAH, to: Sefirah.CHOKMAH, description: 'Understanding to Wisdom (Supernal)' },
-  { from: Sefirah.GEVURAH, to: Sefirah.CHESED, description: 'Severity to Mercy (Balance)' },
-  { from: Sefirah.HOD, to: Sefirah.NETZACH, description: 'Glory to Victory (Expression)' },
+  { from: Layer.ENCODER, to: Layer.REASONING, description: 'Understanding to Wisdom (Supernal)' },
+  { from: Layer.DISCRIMINATOR, to: Layer.EXPANSION, description: 'Severity to Mercy (Balance)' },
+  { from: Layer.CLASSIFIER, to: Layer.GENERATIVE, description: 'Glory to Victory (Expression)' },
 
-  // Da'at connections
-  { from: Sefirah.KETHER, to: Sefirah.DAAT, description: 'Crown to Knowledge (Hidden Path)' },
-  { from: Sefirah.DAAT, to: Sefirah.TIFERET, description: 'Knowledge to Beauty (Emergence)' }
+  // Synthesis connections
+  { from: Layer.META_CORE, to: Layer.SYNTHESIS, description: 'Crown to Knowledge (Hidden Path)' },
+  { from: Layer.SYNTHESIS, to: Layer.ATTENTION, description: 'Knowledge to Beauty (Emergence)' }
 ]
 
 export function calculatePathActivations(
-  sefirotActivations: SefirotActivation[]
+  layerActivations: LayersActivation[]
 ): PathActivation[] {
-  const activationMap = new Map(sefirotActivations.map(s => [s.sefirah, s.effectiveWeight]))
+  const activationMap = new Map(layerActivations.map(s => [s.layerNode, s.effectiveWeight]))
   const paths: PathActivation[] = []
 
   for (const { from, to, description } of TREE_PATHS) {
@@ -530,7 +536,7 @@ export function calculatePathActivations(
 
 export async function fuseIntelligence(
   query: string,
-  sefirotWeights: Record<number, number>,
+  layersWeights: Record<number, number>,
   instinctConfig: InstinctConfig,
   sideCanal?: { contextInjection: string | null; relatedTopics: string[] }
 ): Promise<IntelligenceFusionResult> {
@@ -539,17 +545,17 @@ export async function fuseIntelligence(
   // 1. Analyze query
   const analysis = analyzeQuery(query)
 
-  // 2. Calculate Sefirot activations
-  const sefirotActivations = calculateSefirotActivations(query, sefirotWeights)
-  const dominantSefirot = sefirotActivations
+  // 2. Calculate Layers activations
+  const layerActivations = calculateLayersActivations(query, layersWeights)
+  const dominantLayers = layerActivations
     .filter(s => s.effectiveWeight > 0.3)
-    .map(s => s.sefirah)
+    .map(s => s.layerNode)
 
   // 3. Calculate path activations
-  const pathActivations = calculatePathActivations(sefirotActivations)
+  const pathActivations = calculatePathActivations(layerActivations)
 
   // 4. Select methodology
-  const { methodology, scores, confidence } = selectMethodology(analysis, sefirotActivations)
+  const { methodology, scores, confidence } = selectMethodology(analysis, layerActivations)
 
   // 5. Assess Guard status
   const { recommendation, reasons } = assessGuardStatus(query, analysis)
@@ -558,17 +564,17 @@ export async function fuseIntelligence(
   const instinctPrompt = generateInstinctPrompt(instinctConfig)
 
   // 7. Calculate thinking budget
-  const extendedThinkingBudget = calculateThinkingBudget(analysis, sefirotActivations)
+  const extendedThinkingBudget = calculateThinkingBudget(analysis, layerActivations)
 
   // 8. Determine processing mode
-  const activeCount = sefirotActivations.filter(s => s.effectiveWeight > 0.1).length
+  const activeCount = layerActivations.filter(s => s.effectiveWeight > 0.1).length
   const processingMode: 'weighted' | 'parallel' | 'adaptive' =
     analysis.complexity >= 0.7 && activeCount >= 5 ? 'parallel' : 'weighted'
 
   return {
     analysis,
-    sefirotActivations,
-    dominantSefirot,
+    layerActivations,
+    dominantLayers,
     pathActivations,
     selectedMethodology: methodology,
     methodologyScores: scores,
@@ -595,14 +601,14 @@ export function generateEnhancedSystemPrompt(
 ): string {
   let prompt = ''
 
-  // Add Sefirot awareness
-  if (fusionResult.dominantSefirot.length > 0) {
-    const dominantNames = fusionResult.sefirotActivations
-      .filter(s => fusionResult.dominantSefirot.includes(s.sefirah))
+  // Add Layers awareness
+  if (fusionResult.dominantLayers.length > 0) {
+    const dominantNames = fusionResult.layerActivations
+      .filter(s => fusionResult.dominantLayers.includes(s.layerNode))
       .map(s => `${s.name} (${Math.round(s.effectiveWeight * 100)}%)`)
 
     prompt += `
-ACTIVE SEFIROT: ${dominantNames.join(', ')}
+ACTIVE LAYERS: ${dominantNames.join(', ')}
 Apply these computational layers with emphasis.
 `
   }

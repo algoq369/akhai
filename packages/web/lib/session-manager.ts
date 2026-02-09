@@ -10,7 +10,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { AscentState } from './ascent-tracker'
+import type { AscentState } from './layer-registry'
 
 /**
  * getSessionId

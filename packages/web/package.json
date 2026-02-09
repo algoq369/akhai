@@ -4,14 +4,16 @@
   "description": "AkhAI Web Interface - Next.js 15 app with minimalist UI and GTP Flash visualization",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev --turbopack -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "db:init": "tsx scripts/init-db.ts",
+    "db:backup": "tsx scripts/backup-db.ts"
   },
   "dependencies": {
     "@akhai/core": "workspace:*",
@@ -21,6 +23,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/d3": "^7.4.3",
     "@types/diff": "^8.0.0",
+    "@types/html2canvas": "^1.0.0",
     "@xyflow/react": "^12.10.0",
     "better-sqlite3": "^12.5.0",
     "cheerio": "^1.1.2",
@@ -29,6 +32,7 @@
     "d3-force-reuse": "^1.0.1",
     "diff": "^8.0.2",
     "framer-motion": "^12.23.26",
+    "html2canvas": "^1.4.1",
     "lucide-react": "^0.562.0",
     "nanoid": "^5.0.8",
     "next": "^15.1.0",
@@ -59,7 +63,7 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.0",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.16"
   }
 }

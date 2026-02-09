@@ -21,6 +21,7 @@ export interface CreateInvoiceParams {
   description: string
   buyerEmail?: string
   redirectURL?: string
+  posData?: string // JSON string with custom data (userId, productType, etc.)
 }
 
 export interface BTCPayInvoice {
@@ -37,6 +38,8 @@ export interface BTCPayInvoice {
   metadata: {
     orderId: string
     itemDesc: string
+    posData?: string // JSON string with custom data (userId, productType, etc.)
+    buyerEmail?: string
   }
 }
 
@@ -126,6 +129,7 @@ class BTCPayClient {
             orderId: params.orderId,
             itemDesc: params.description,
             buyerEmail: params.buyerEmail,
+            posData: params.posData, // Custom data for webhook processing (userId, productType, etc.)
           },
           checkout: {
             speedPolicy: 'HighSpeed', // 0 confirmations for small amounts

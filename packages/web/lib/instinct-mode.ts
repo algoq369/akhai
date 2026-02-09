@@ -2,19 +2,19 @@
  * INSTINCT MODE - Full Capacity Hermetic Analysis
  *
  * Activates 7 Lenses of perception for holistic understanding.
- * Each lens maps to Sefirot computational layers for deep integration.
+ * Each lens maps to Layers computational layers for deep integration.
  *
- * LENS → SEFIROT MAPPING:
- * - Exoteric (Surface) → Malkuth (Token Embedding)
- * - Esoteric (Hidden) → Yesod (Algorithm Executor)
- * - Gnostic (Intuition) → Da'at (Emergent Capability)
- * - Hermetic (Correspondence) → Hod (Classifier Network)
- * - Kabbalistic (Tree) → Tiferet (Multi-Head Attention)
- * - Alchemical (Transform) → Gevurah (Discriminator Network)
- * - Prophetic (Future) → Chesed (Beam Search Expansion)
+ * LENS → LAYERS MAPPING:
+ * - Exoteric (Surface) → Embedding (Token Embedding)
+ * - Esoteric (Hidden) → Executor (Algorithm Executor)
+ * - Gnostic (Intuition) → Synthesis (Emergent Capability)
+ * - Hermetic (Correspondence) → Classifier (Classifier Network)
+ * - Kabbalistic (Tree) → Attention (Multi-Head Attention)
+ * - Alchemical (Transform) → Discriminator (Discriminator Network)
+ * - Prophetic (Future) → Expansion (Beam Search Expansion)
  */
 
-import { Sefirah } from './ascent-tracker'
+import { Layer } from './layer-registry'
 
 export interface InstinctLens {
   id: string
@@ -22,8 +22,8 @@ export interface InstinctLens {
   symbol: string
   description: string
   prompt: string
-  sefirah: Sefirah           // Mapped Sefirah
-  color: string              // UI color (Sefirot-based)
+  layerNode: Layer           // Mapped Layer
+  color: string              // UI color (Layers-based)
   keywords: string[]         // Keywords that activate this lens
 }
 
@@ -32,71 +32,71 @@ export const SEVEN_LENSES: InstinctLens[] = [
     id: 'exoteric',
     name: 'Exoteric',
     symbol: '◯',
-    description: 'Surface meaning, literal interpretation',
+    description: 'Outer/literal meaning - surface level interpretation',
     prompt: 'Analyze the literal, surface-level meaning. What does this explicitly state?',
-    sefirah: Sefirah.MALKUTH,
+    layerNode: Layer.EMBEDDING,
     color: '#fbbf24', // amber-400
-    keywords: ['literal', 'explicit', 'surface', 'direct', 'obvious', 'plain']
+    keywords: ['literal', 'explicit', 'surface', 'direct', 'obvious', 'plain', 'basic', 'simple']
+  },
+  {
+    id: 'mesoteric',
+    name: 'Mesoteric',
+    symbol: '◎',
+    description: 'Middle/symbolic meaning - allegorical interpretation',
+    prompt: 'Analyze the symbolic and allegorical layers. What metaphors and analogies are at play?',
+    layerNode: Layer.EXECUTOR,
+    color: '#c084fc', // purple-400
+    keywords: ['symbolic', 'allegory', 'metaphor', 'analogy', 'parable', 'figurative', 'representation']
   },
   {
     id: 'esoteric',
     name: 'Esoteric',
-    symbol: '◉',
-    description: 'Hidden meanings, deeper symbolism',
+    symbol: '●',
+    description: 'Inner/mystical meaning - hidden depths',
     prompt: 'Look beneath the surface. What hidden meanings, symbols, or deeper layers exist?',
-    sefirah: Sefirah.YESOD,
-    color: '#c084fc', // purple-400
-    keywords: ['hidden', 'symbol', 'deeper', 'subtle', 'underlying', 'secret']
-  },
-  {
-    id: 'gnostic',
-    name: 'Gnostic',
-    symbol: '⊙',
-    description: 'Direct knowing, intuitive insight',
-    prompt: 'Access direct knowing beyond logic. What intuitive insights emerge?',
-    sefirah: Sefirah.DAAT,
+    layerNode: Layer.SYNTHESIS,
     color: '#22d3ee', // cyan-400
-    keywords: ['intuition', 'insight', 'knowing', 'awareness', 'revelation', 'gnosis']
+    keywords: ['hidden', 'mystical', 'deeper', 'subtle', 'underlying', 'secret', 'occult', 'inner']
   },
   {
     id: 'hermetic',
     name: 'Hermetic',
     symbol: '☿',
-    description: 'As above so below - correspondences',
-    prompt: 'Apply "as above, so below". What correspondences exist across scales and domains?',
-    sefirah: Sefirah.HOD,
+    description: 'Alchemical transformation - as above, so below',
+    prompt: 'Apply "as above, so below". What correspondences exist across scales and domains? What transmutations are possible?',
+    layerNode: Layer.CLASSIFIER,
     color: '#fb923c', // orange-400
-    keywords: ['correspondence', 'pattern', 'analogy', 'parallel', 'scale', 'mirror']
+    keywords: ['correspondence', 'pattern', 'alchemy', 'transmute', 'scale', 'mirror', 'transform', 'mercury']
   },
   {
-    id: 'kabbalistic',
-    name: 'Kabbalistic',
-    symbol: '✡',
-    description: 'Tree of Life mapping, Sefirot analysis',
-    prompt: 'Map to the Tree of Life. Which Sefirot resonate? What is the path of emanation?',
-    sefirah: Sefirah.TIFERET,
+    id: 'orphic',
+    name: 'Orphic',
+    symbol: '♪',
+    description: 'Musical/harmonic resonance - vibrational patterns',
+    prompt: 'What harmonic patterns, rhythms, and resonances are present? How do elements relate through vibration and frequency?',
+    layerNode: Layer.ATTENTION,
     color: '#facc15', // yellow-400
-    keywords: ['tree', 'sefirot', 'path', 'emanation', 'structure', 'balance']
-  },
-  {
-    id: 'alchemical',
-    name: 'Alchemical',
-    symbol: '⚗',
-    description: 'Transformation patterns, solve et coagula',
-    prompt: 'Identify transformation patterns. What must be dissolved? What crystallizes?',
-    sefirah: Sefirah.GEVURAH,
-    color: '#f87171', // red-400
-    keywords: ['transform', 'change', 'dissolve', 'crystallize', 'transmute', 'refine']
+    keywords: ['harmony', 'rhythm', 'resonance', 'music', 'vibration', 'frequency', 'pattern', 'cycle']
   },
   {
     id: 'prophetic',
     name: 'Prophetic',
     symbol: '◈',
-    description: 'Future implications, trajectory vision',
-    prompt: 'Project forward. What trajectories emerge? What future implications unfold?',
-    sefirah: Sefirah.CHESED,
+    description: 'Visionary foresight - future trajectories',
+    prompt: 'Project forward. What trajectories emerge? What future implications and possibilities unfold?',
+    layerNode: Layer.EXPANSION,
     color: '#60a5fa', // blue-400
-    keywords: ['future', 'trajectory', 'implication', 'vision', 'foresight', 'destiny']
+    keywords: ['future', 'trajectory', 'vision', 'foresight', 'destiny', 'prophecy', 'prediction', 'potential']
+  },
+  {
+    id: 'initiatic',
+    name: 'Initiatic',
+    symbol: '△',
+    description: 'Transformative process - stages of becoming',
+    prompt: 'What initiatory stages or transformative processes are at work? What must be transcended for growth?',
+    layerNode: Layer.DISCRIMINATOR,
+    color: '#f87171', // red-400
+    keywords: ['initiation', 'transform', 'transcend', 'growth', 'stage', 'process', 'ascend', 'evolve']
   }
 ]
 
@@ -107,7 +107,7 @@ export interface InstinctAnalysis {
     insight: string
   }[]
   synthesis: string
-  sefirotMapping?: string[]
+  layerMapping?: string[]
   timestamp: number
 }
 
@@ -115,7 +115,7 @@ export interface InstinctConfig {
   enabled: boolean
   activeLenses: string[] // Which lenses to use (default: all 7)
   depth: 'standard' | 'deep' | 'profound'
-  includeSefirot: boolean
+  includeLayers: boolean
   includeYechidah: boolean
 }
 
@@ -123,7 +123,7 @@ export const DEFAULT_INSTINCT_CONFIG: InstinctConfig = {
   enabled: false,
   activeLenses: SEVEN_LENSES.map(l => l.id),
   depth: 'deep',
-  includeSefirot: true,
+  includeLayers: true,
   includeYechidah: true
 }
 
@@ -160,17 +160,17 @@ ANALYSIS PROTOCOL:
 DEPTH LEVEL: ${config.depth.toUpperCase()}
 `
 
-  if (config.includeSefirot) {
+  if (config.includeLayers) {
     prompt += `
-SEFIROT COUNCIL ACTIVE:
-Map insights to Tree of Life. Identify which Sefirot resonate:
-Kether (Crown) → Chokmah (Wisdom) → Binah (Understanding)
+LAYERS COUNCIL ACTIVE:
+Map insights to Tree of Life. Identify which Layers resonate:
+Meta-Core (Crown) → Reasoning (Wisdom) → Encoder (Understanding)
     ↓
-Chesed (Mercy) → Gevurah (Severity) → Tiferet (Beauty)
+Expansion (Mercy) → Discriminator (Severity) → Attention (Beauty)
     ↓
-Netzach (Victory) → Hod (Splendor) → Yesod (Foundation)
+Generative (Victory) → Classifier (Splendor) → Executor (Foundation)
     ↓
-        Malkuth (Kingdom)
+        Embedding (Kingdom)
 `
   }
 
@@ -210,113 +210,91 @@ export function formatInstinctResponse(analysis: Partial<InstinctAnalysis>): str
     response += `${analysis.synthesis}\n\n`
   }
 
-  if (analysis.sefirotMapping && analysis.sefirotMapping.length > 0) {
-    response += '✡ SEFIROT RESONANCE: ' + analysis.sefirotMapping.join(' → ') + '\n'
+  if (analysis.layerMapping && analysis.layerMapping.length > 0) {
+    response += '✡ LAYERS RESONANCE: ' + analysis.layerMapping.join(' → ') + '\n'
   }
 
   return response
 }
 
 // ============================================================
-// ENHANCED FUNCTIONS - Sefirot Integration
+// ENHANCED FUNCTIONS - Layers Integration
 // ============================================================
 
 /**
  * Auto-detect which lenses should activate based on query content
- * ENHANCED: Returns MORE lenses for comprehensive analysis
+ * ENHANCED: Activates ALL 7 lenses for comprehensive Hermetic analysis
+ *
+ * The 7 Hermetic Lenses provide multi-dimensional understanding:
+ * - Exoteric: Surface/literal meaning
+ * - Mesoteric: Symbolic/allegorical meaning
+ * - Esoteric: Hidden/mystical meaning
+ * - Hermetic: Alchemical correspondences
+ * - Orphic: Harmonic/musical patterns
+ * - Prophetic: Future trajectories
+ * - Initiatic: Transformative processes
  */
 export function autoDetectLenses(query: string): string[] {
   const queryLower = query.toLowerCase()
-  const lensScores: Array<{ id: string; score: number }> = []
 
-  // Score each lens based on keyword matches
+  // Calculate query complexity to determine depth of analysis
+  const wordCount = query.split(/\s+/).length
+  const hasMultipleParts = query.includes(' and ') || query.includes(' or ') || query.includes(',')
+  const hasQuestion = /\?|how|why|what|explain|describe|analyze/i.test(queryLower)
+
+  // Detect domain-specific queries
+  const isTechnicalQuery = /quantum|encryption|algorithm|protocol|system|architecture|mechanism|process/i.test(queryLower)
+  const isPhilosophicalQuery = /philosophy|meaning|consciousness|existence|nature of|fundamental|truth|reality/i.test(queryLower)
+  const isAnalyticalQuery = /explain|analyze|compare|contrast|evaluate|assess|break.*down/i.test(queryLower)
+
+  // For simple queries (< 5 words, no complexity indicators), use 5 lenses
+  // For moderate queries, use 6 lenses
+  // For complex queries, use ALL 7 lenses
+  const isComplex = wordCount > 10 || hasMultipleParts || isTechnicalQuery || isPhilosophicalQuery || isAnalyticalQuery
+  const isModerate = wordCount > 5 || hasQuestion
+
+  // Score each lens based on keyword matches (for ordering)
+  const lensScores: Array<{ id: string; score: number }> = []
   for (const lens of SEVEN_LENSES) {
-    let score = 0
+    let score = 1 // Base score - all lenses start active
     for (const keyword of lens.keywords) {
       if (queryLower.includes(keyword)) {
-        score += 1
+        score += 2 // Boost for keyword match
       }
     }
     lensScores.push({ id: lens.id, score })
   }
 
-  // Sort by score descending
+  // Sort by relevance score (highest first)
   lensScores.sort((a, b) => b.score - a.score)
 
-  // Calculate query complexity
-  const wordCount = query.split(/\s+/).length
-  const hasMultipleParts = query.includes(' and ') || query.includes(' or ') || query.includes(',')
-
-  // Detect domain-specific queries that deserve more lenses
-  const isEconomicQuery = /economic|economy|financial|finance|world bank|imf|wef|world economic forum|monetary|fiscal|market|trade|gdp/i.test(queryLower)
-  const isPhilosophicalQuery = /philosophy|meaning|consciousness|existence|nature of|fundamental|truth|reality/i.test(queryLower)
-  const isComplexTopic = isEconomicQuery || isPhilosophicalQuery || /how.*work|explain.*system|understand.*complex/i.test(queryLower)
-
   // Determine how many lenses to activate
-  let minLenses = 4 // Increased base minimum from 3 to 4
-  let maxLenses = 5
-
-  // Boost for complex topics
-  if (isComplexTopic) {
-    minLenses = 5
-    maxLenses = 7
+  let lensCount: number
+  if (isComplex) {
+    lensCount = 7 // All 7 lenses for complex queries
+  } else if (isModerate) {
+    lensCount = 6 // 6 lenses for moderate queries
+  } else {
+    lensCount = 5 // 5 lenses minimum for simple queries
   }
 
-  // Further boost for long or multi-part queries
-  if (wordCount > 15 || hasMultipleParts) {
-    minLenses = Math.max(minLenses, 5)
-    maxLenses = 7 // All lenses for complex queries
-  } else if (wordCount > 8) {
-    minLenses = Math.max(minLenses, 4)
-    maxLenses = Math.max(maxLenses, 6)
-  }
-
-  // Always include exoteric (literal) and hermetic (patterns)
-  const activeLenses = new Set<string>(['exoteric', 'hermetic'])
-
-  // For economic queries, always include prophetic (future implications) and kabbalistic (structure)
-  if (isEconomicQuery) {
-    activeLenses.add('prophetic')
-    activeLenses.add('kabbalistic')
-  }
-
-  // For philosophical queries, always include gnostic (intuition) and esoteric (hidden meaning)
-  if (isPhilosophicalQuery) {
-    activeLenses.add('gnostic')
-    activeLenses.add('esoteric')
-  }
-
-  // Add top-scoring lenses
-  for (const { id, score } of lensScores) {
-    if (score > 0 || activeLenses.size < minLenses) {
-      activeLenses.add(id)
-    }
-    if (activeLenses.size >= maxLenses) break
-  }
-
-  // Ensure we have at least the minimum
-  const defaultOrder = ['exoteric', 'hermetic', 'prophetic', 'esoteric', 'kabbalistic', 'alchemical', 'gnostic']
-  for (const id of defaultOrder) {
-    if (activeLenses.size >= minLenses) break
-    activeLenses.add(id)
-  }
-
-  return Array.from(activeLenses)
+  // Return top N lenses based on relevance
+  return lensScores.slice(0, lensCount).map(l => l.id)
 }
 
 /**
- * Get Sefirot weights needed for active lenses
- * Returns map of Sefirah → suggested weight boost
+ * Get Layers weights needed for active lenses
+ * Returns map of Layer → suggested weight boost
  */
-export function getLensSefirotWeights(activeLenses: string[]): Record<number, number> {
+export function getLensLayersWeights(activeLenses: string[]): Record<number, number> {
   const weights: Record<number, number> = {}
 
   for (const lensId of activeLenses) {
     const lens = SEVEN_LENSES.find(l => l.id === lensId)
     if (lens) {
-      // Boost the mapped Sefirah weight by 0.2
-      const current = weights[lens.sefirah] ?? 0
-      weights[lens.sefirah] = Math.min(1, current + 0.2)
+      // Boost the mapped Layer weight by 0.2
+      const current = weights[lens.layerNode] ?? 0
+      weights[lens.layerNode] = Math.min(1, current + 0.2)
     }
   }
 
@@ -324,13 +302,13 @@ export function getLensSefirotWeights(activeLenses: string[]): Record<number, nu
 }
 
 /**
- * Calculate lens activation from Sefirot weights (reverse mapping)
+ * Calculate lens activation from Layers weights (reverse mapping)
  */
 export function calculateLensActivations(
-  sefirotWeights: Record<number, number>
+  layersWeights: Record<number, number>
 ): Array<{ lens: InstinctLens; activation: number }> {
   return SEVEN_LENSES.map(lens => {
-    const weight = sefirotWeights[lens.sefirah] ?? 0.5
+    const weight = layersWeights[lens.layerNode] ?? 0.5
     return {
       lens,
       activation: weight
@@ -361,7 +339,7 @@ Provide a concise insight (2-4 sentences) from this perspective.
 export function createHolisticAnalysis(
   query: string,
   lensInsights: Array<{ lensId: string; insight: string }>,
-  sefirotActivations?: Array<{ name: string; activation: number }>
+  layerActivations?: Array<{ name: string; activation: number }>
 ): InstinctAnalysis {
   const lenses = lensInsights
     .map(li => {
@@ -376,8 +354,8 @@ export function createHolisticAnalysis(
     ? `Multi-perspective analysis through ${lenses.length} Hermetic lenses reveals convergent insights.`
     : 'No lens insights available.'
 
-  // Map to Sefirot names
-  const sefirotMapping = sefirotActivations
+  // Map to Layers names
+  const layerMapping = layerActivations
     ?.filter(s => s.activation > 0.3)
     .map(s => s.name) ?? []
 
@@ -385,7 +363,7 @@ export function createHolisticAnalysis(
     query,
     lenses,
     synthesis,
-    sefirotMapping,
+    layerMapping,
     timestamp: Date.now()
   }
 }
@@ -405,26 +383,26 @@ export function getRecommendedDepth(complexity: number): 'standard' | 'deep' | '
 export function createAutoInstinctConfig(
   query: string,
   complexity: number,
-  sefirotWeights?: Record<number, number>
+  layersWeights?: Record<number, number>
 ): InstinctConfig {
   // Auto-detect lenses from query
   let activeLenses = autoDetectLenses(query)
 
-  // If Sefirot weights provided, boost lenses with high Sefirot activation
-  if (sefirotWeights) {
-    const sefirotLenses = calculateLensActivations(sefirotWeights)
+  // If Layers weights provided, boost lenses with high Layers activation
+  if (layersWeights) {
+    const layersLenses = calculateLensActivations(layersWeights)
       .filter(l => l.activation > 0.6)
       .map(l => l.lens.id)
 
     // Merge with detected lenses (unique)
-    activeLenses = [...new Set([...activeLenses, ...sefirotLenses])]
+    activeLenses = [...new Set([...activeLenses, ...layersLenses])]
   }
 
   return {
     enabled: activeLenses.length > 0,
     activeLenses,
     depth: getRecommendedDepth(complexity),
-    includeSefirot: true,
+    includeLayers: true,
     includeYechidah: complexity >= 0.5
   }
 }

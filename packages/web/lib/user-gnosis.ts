@@ -344,7 +344,7 @@ function analyzeWorldview(
   if (message.match(/\b(crypto|blockchain|bitcoin|ethereum|defi|web3|token)\b/gi)) {
     domains.push('cryptocurrency/blockchain');
   }
-  if (message.match(/\b(kabbala|sefirot|tree of life|gnostic|hermetic|alchemy)\b/gi)) {
+  if (message.match(/\b(kabbala|layers|tree of life|gnostic|hermetic|alchemy)\b/gi)) {
     domains.push('esoteric/kabbalistic');
   }
   

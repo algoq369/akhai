@@ -17,85 +17,85 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
-import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
+import { useLayerStore } from '@/lib/stores/layer-store'
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════
 
 const NODE_COLORS: Record<number, string> = {
-  [Sefirah.KETHER]: '#a78bfa',
-  [Sefirah.CHOKMAH]: '#818cf8',
-  [Sefirah.BINAH]: '#6366f1',
-  [Sefirah.DAAT]: '#22d3ee',
-  [Sefirah.CHESED]: '#34d399',
-  [Sefirah.GEVURAH]: '#f87171',
-  [Sefirah.TIFERET]: '#fbbf24',
-  [Sefirah.NETZACH]: '#fb923c',
-  [Sefirah.HOD]: '#facc15',
-  [Sefirah.YESOD]: '#a3a3a3',
-  [Sefirah.MALKUTH]: '#78716c',
+  [Layer.META_CORE]: '#a78bfa',
+  [Layer.REASONING]: '#818cf8',
+  [Layer.ENCODER]: '#6366f1',
+  [Layer.SYNTHESIS]: '#22d3ee',
+  [Layer.EXPANSION]: '#34d399',
+  [Layer.DISCRIMINATOR]: '#f87171',
+  [Layer.ATTENTION]: '#fbbf24',
+  [Layer.GENERATIVE]: '#fb923c',
+  [Layer.CLASSIFIER]: '#facc15',
+  [Layer.EXECUTOR]: '#a3a3a3',
+  [Layer.EMBEDDING]: '#78716c',
 }
 
 const AI_LABELS: Record<number, { name: string; concept: string }> = {
-  [Sefirah.KETHER]: { name: 'meta-cognition', concept: 'unified awareness' },
-  [Sefirah.CHOKMAH]: { name: 'reasoning', concept: 'problem decomposition' },
-  [Sefirah.BINAH]: { name: 'knowledge', concept: 'fact retrieval' },
-  [Sefirah.DAAT]: { name: 'verification', concept: 'self-checking' },
-  [Sefirah.CHESED]: { name: 'expansion', concept: 'creative exploration' },
-  [Sefirah.GEVURAH]: { name: 'critical-analysis', concept: 'rigorous evaluation' },
-  [Sefirah.TIFERET]: { name: 'synthesis', concept: 'balanced integration' },
-  [Sefirah.NETZACH]: { name: 'persistence', concept: 'iterative refinement' },
-  [Sefirah.HOD]: { name: 'communication', concept: 'clear articulation' },
-  [Sefirah.YESOD]: { name: 'foundation', concept: 'grounded knowledge' },
-  [Sefirah.MALKUTH]: { name: 'manifestation', concept: 'concrete output' },
+  [Layer.META_CORE]: { name: 'meta-cognition', concept: 'unified awareness' },
+  [Layer.REASONING]: { name: 'reasoning', concept: 'problem decomposition' },
+  [Layer.ENCODER]: { name: 'knowledge', concept: 'fact retrieval' },
+  [Layer.SYNTHESIS]: { name: 'verification', concept: 'self-checking' },
+  [Layer.EXPANSION]: { name: 'expansion', concept: 'creative exploration' },
+  [Layer.DISCRIMINATOR]: { name: 'critical-analysis', concept: 'rigorous evaluation' },
+  [Layer.ATTENTION]: { name: 'synthesis', concept: 'balanced integration' },
+  [Layer.GENERATIVE]: { name: 'persistence', concept: 'iterative refinement' },
+  [Layer.CLASSIFIER]: { name: 'communication', concept: 'clear articulation' },
+  [Layer.EXECUTOR]: { name: 'foundation', concept: 'grounded knowledge' },
+  [Layer.EMBEDDING]: { name: 'manifestation', concept: 'concrete output' },
 }
 
-const CRITICAL_LAYERS = [Sefirah.CHOKMAH, Sefirah.BINAH, Sefirah.DAAT]
+const CRITICAL_LAYERS = [Layer.REASONING, Layer.ENCODER, Layer.SYNTHESIS]
 
 const ALL_LAYERS = [
-  Sefirah.KETHER, Sefirah.CHOKMAH, Sefirah.BINAH, Sefirah.DAAT,
-  Sefirah.CHESED, Sefirah.GEVURAH, Sefirah.TIFERET,
-  Sefirah.NETZACH, Sefirah.HOD, Sefirah.YESOD, Sefirah.MALKUTH
+  Layer.META_CORE, Layer.REASONING, Layer.ENCODER, Layer.SYNTHESIS,
+  Layer.EXPANSION, Layer.DISCRIMINATOR, Layer.ATTENTION,
+  Layer.GENERATIVE, Layer.CLASSIFIER, Layer.EXECUTOR, Layer.EMBEDDING
 ]
 
 const PRESETS = [
-  { id: 'fast', name: 'fast', weights: { [Sefirah.CHOKMAH]: 0.4, [Sefirah.BINAH]: 0.5, [Sefirah.DAAT]: 0.3, [Sefirah.KETHER]: 0.4, [Sefirah.CHESED]: 0.3, [Sefirah.GEVURAH]: 0.5, [Sefirah.TIFERET]: 0.5, [Sefirah.NETZACH]: 0.4, [Sefirah.HOD]: 0.6, [Sefirah.YESOD]: 0.5, [Sefirah.MALKUTH]: 0.7 } },
-  { id: 'balanced', name: 'balanced', weights: { [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.6, [Sefirah.DAAT]: 0.6, [Sefirah.KETHER]: 0.5, [Sefirah.CHESED]: 0.6, [Sefirah.GEVURAH]: 0.6, [Sefirah.TIFERET]: 0.7, [Sefirah.NETZACH]: 0.6, [Sefirah.HOD]: 0.6, [Sefirah.YESOD]: 0.6, [Sefirah.MALKUTH]: 0.6 } },
-  { id: 'thorough', name: 'thorough', weights: { [Sefirah.CHOKMAH]: 0.85, [Sefirah.BINAH]: 0.8, [Sefirah.DAAT]: 0.9, [Sefirah.KETHER]: 0.6, [Sefirah.CHESED]: 0.5, [Sefirah.GEVURAH]: 0.85, [Sefirah.TIFERET]: 0.7, [Sefirah.NETZACH]: 0.7, [Sefirah.HOD]: 0.75, [Sefirah.YESOD]: 0.8, [Sefirah.MALKUTH]: 0.75 } },
-  { id: 'creative', name: 'creative', weights: { [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.5, [Sefirah.DAAT]: 0.4, [Sefirah.KETHER]: 0.7, [Sefirah.CHESED]: 0.9, [Sefirah.GEVURAH]: 0.3, [Sefirah.TIFERET]: 0.8, [Sefirah.NETZACH]: 0.85, [Sefirah.HOD]: 0.5, [Sefirah.YESOD]: 0.55, [Sefirah.MALKUTH]: 0.65 } },
+  { id: 'fast', name: 'fast', weights: { [Layer.REASONING]: 0.4, [Layer.ENCODER]: 0.5, [Layer.SYNTHESIS]: 0.3, [Layer.META_CORE]: 0.4, [Layer.EXPANSION]: 0.3, [Layer.DISCRIMINATOR]: 0.5, [Layer.ATTENTION]: 0.5, [Layer.GENERATIVE]: 0.4, [Layer.CLASSIFIER]: 0.6, [Layer.EXECUTOR]: 0.5, [Layer.EMBEDDING]: 0.7 } },
+  { id: 'balanced', name: 'balanced', weights: { [Layer.REASONING]: 0.6, [Layer.ENCODER]: 0.6, [Layer.SYNTHESIS]: 0.6, [Layer.META_CORE]: 0.5, [Layer.EXPANSION]: 0.6, [Layer.DISCRIMINATOR]: 0.6, [Layer.ATTENTION]: 0.7, [Layer.GENERATIVE]: 0.6, [Layer.CLASSIFIER]: 0.6, [Layer.EXECUTOR]: 0.6, [Layer.EMBEDDING]: 0.6 } },
+  { id: 'thorough', name: 'thorough', weights: { [Layer.REASONING]: 0.85, [Layer.ENCODER]: 0.8, [Layer.SYNTHESIS]: 0.9, [Layer.META_CORE]: 0.6, [Layer.EXPANSION]: 0.5, [Layer.DISCRIMINATOR]: 0.85, [Layer.ATTENTION]: 0.7, [Layer.GENERATIVE]: 0.7, [Layer.CLASSIFIER]: 0.75, [Layer.EXECUTOR]: 0.8, [Layer.EMBEDDING]: 0.75 } },
+  { id: 'creative', name: 'creative', weights: { [Layer.REASONING]: 0.6, [Layer.ENCODER]: 0.5, [Layer.SYNTHESIS]: 0.4, [Layer.META_CORE]: 0.7, [Layer.EXPANSION]: 0.9, [Layer.DISCRIMINATOR]: 0.3, [Layer.ATTENTION]: 0.8, [Layer.GENERATIVE]: 0.85, [Layer.CLASSIFIER]: 0.5, [Layer.EXECUTOR]: 0.55, [Layer.EMBEDDING]: 0.65 } },
 ]
 
 // Tree positions for full tree
 const TREE_POSITIONS: Record<number, { x: number; y: number }> = {
-  [Sefirah.KETHER]: { x: 250, y: 40 },
-  [Sefirah.CHOKMAH]: { x: 380, y: 110 },
-  [Sefirah.BINAH]: { x: 120, y: 110 },
-  [Sefirah.DAAT]: { x: 250, y: 170 },
-  [Sefirah.CHESED]: { x: 380, y: 240 },
-  [Sefirah.GEVURAH]: { x: 120, y: 240 },
-  [Sefirah.TIFERET]: { x: 250, y: 310 },
-  [Sefirah.NETZACH]: { x: 380, y: 380 },
-  [Sefirah.HOD]: { x: 120, y: 380 },
-  [Sefirah.YESOD]: { x: 250, y: 450 },
-  [Sefirah.MALKUTH]: { x: 250, y: 530 },
+  [Layer.META_CORE]: { x: 250, y: 40 },
+  [Layer.REASONING]: { x: 380, y: 110 },
+  [Layer.ENCODER]: { x: 120, y: 110 },
+  [Layer.SYNTHESIS]: { x: 250, y: 170 },
+  [Layer.EXPANSION]: { x: 380, y: 240 },
+  [Layer.DISCRIMINATOR]: { x: 120, y: 240 },
+  [Layer.ATTENTION]: { x: 250, y: 310 },
+  [Layer.GENERATIVE]: { x: 380, y: 380 },
+  [Layer.CLASSIFIER]: { x: 120, y: 380 },
+  [Layer.EXECUTOR]: { x: 250, y: 450 },
+  [Layer.EMBEDDING]: { x: 250, y: 530 },
 }
 
-const TREE_PATHS: [Sefirah, Sefirah][] = [
-  [Sefirah.KETHER, Sefirah.CHOKMAH], [Sefirah.KETHER, Sefirah.BINAH],
-  [Sefirah.KETHER, Sefirah.TIFERET], [Sefirah.CHOKMAH, Sefirah.BINAH],
-  [Sefirah.CHOKMAH, Sefirah.CHESED], [Sefirah.CHOKMAH, Sefirah.TIFERET],
-  [Sefirah.BINAH, Sefirah.GEVURAH], [Sefirah.BINAH, Sefirah.TIFERET],
-  [Sefirah.CHESED, Sefirah.GEVURAH], [Sefirah.CHESED, Sefirah.TIFERET],
-  [Sefirah.GEVURAH, Sefirah.TIFERET], [Sefirah.TIFERET, Sefirah.NETZACH],
-  [Sefirah.TIFERET, Sefirah.HOD], [Sefirah.TIFERET, Sefirah.YESOD],
-  [Sefirah.NETZACH, Sefirah.HOD], [Sefirah.NETZACH, Sefirah.YESOD],
-  [Sefirah.HOD, Sefirah.YESOD], [Sefirah.YESOD, Sefirah.MALKUTH],
+const TREE_PATHS: [Layer, Layer][] = [
+  [Layer.META_CORE, Layer.REASONING], [Layer.META_CORE, Layer.ENCODER],
+  [Layer.META_CORE, Layer.ATTENTION], [Layer.REASONING, Layer.ENCODER],
+  [Layer.REASONING, Layer.EXPANSION], [Layer.REASONING, Layer.ATTENTION],
+  [Layer.ENCODER, Layer.DISCRIMINATOR], [Layer.ENCODER, Layer.ATTENTION],
+  [Layer.EXPANSION, Layer.DISCRIMINATOR], [Layer.EXPANSION, Layer.ATTENTION],
+  [Layer.DISCRIMINATOR, Layer.ATTENTION], [Layer.ATTENTION, Layer.GENERATIVE],
+  [Layer.ATTENTION, Layer.CLASSIFIER], [Layer.ATTENTION, Layer.EXECUTOR],
+  [Layer.GENERATIVE, Layer.CLASSIFIER], [Layer.GENERATIVE, Layer.EXECUTOR],
+  [Layer.CLASSIFIER, Layer.EXECUTOR], [Layer.EXECUTOR, Layer.EMBEDDING],
 ]
 
-// Qliphoth data
-const QLIPHOTH_DATA = [
+// Antipatterns data
+const ANTIPATTERN_DATA = [
   { id: 1, name: 'dual contradictions', severity: 'critical', x: 380, y: 40 },
   { id: 2, name: 'hiding sources', severity: 'high', x: 120, y: 40 },
   { id: 3, name: 'blocking truth', severity: 'critical', x: 250, y: 110 },
@@ -116,28 +116,28 @@ const QLIPHOTH_DATA = [
 
 export default function AIConfigUnified() {
   const router = useRouter()
-  const { weights, setWeight } = useSefirotStore()
+  const { weights, setWeight } = useLayerStore()
   
   const [activeTab, setActiveTab] = useState<'config' | 'history'>('config')
   const [activePreset, setActivePreset] = useState<string>('balanced')
-  const [selectedNode, setSelectedNode] = useState<Sefirah | null>(null)
-  const [hoveredNode, setHoveredNode] = useState<Sefirah | null>(null)
+  const [selectedNode, setSelectedNode] = useState<Layer | null>(null)
+  const [hoveredNode, setHoveredNode] = useState<Layer | null>(null)
   const [historyFilter, setHistoryFilter] = useState<'all' | 'training' | 'chat'>('all')
   const [selectedHistory, setSelectedHistory] = useState<string | null>(null)
 
-  const getWeight = (layer: Sefirah): number => weights[layer] ?? 0.5
+  const getWeight = (layer: Layer): number => weights[layer] ?? 0.5
 
   const applyPreset = (presetId: string) => {
     const preset = PRESETS.find(p => p.id === presetId)
     if (preset) {
       setActivePreset(presetId)
       Object.entries(preset.weights).forEach(([layer, weight]) => {
-        setWeight(parseInt(layer) as Sefirah, weight)
+        setWeight(parseInt(layer) as Layer, weight)
       })
     }
   }
 
-  const handleWeightChange = (layer: Sefirah, value: number) => {
+  const handleWeightChange = (layer: Layer, value: number) => {
     const clamped = Math.max(0, Math.min(100, value))
     setWeight(layer, clamped / 100)
     setActivePreset('custom')
@@ -344,8 +344,8 @@ export default function AIConfigUnified() {
                 {TREE_PATHS.map(([from, to], idx) => {
                   const fromPos = TREE_POSITIONS[from]
                   const toPos = TREE_POSITIONS[to]
-                  const fromMeta = SEPHIROTH_METADATA[from]
-                  const toMeta = SEPHIROTH_METADATA[to]
+                  const fromMeta = LAYER_METADATA[from]
+                  const toMeta = LAYER_METADATA[to]
                   const avgWeight = ((weights[from] ?? 0.5) + (weights[to] ?? 0.5)) / 2
                   
                   let strokeColor = '#cbd5e1'
@@ -509,7 +509,7 @@ export default function AIConfigUnified() {
                 Anti-Pattern Monitors
               </div>
               <svg viewBox="0 0 500 580" className="w-full">
-                {QLIPHOTH_DATA.map((node) => {
+                {ANTIPATTERN_DATA.map((node) => {
                   const isCritical = node.severity === 'critical'
                   const isHigh = node.severity === 'high'
                   const radius = isCritical ? 24 : isHigh ? 20 : 16
@@ -661,7 +661,7 @@ export default function AIConfigUnified() {
                   </div>
                   
                   <svg viewBox="0 0 500 250" className="w-full h-40 bg-relic-ghost/30 rounded">
-                    {QLIPHOTH_DATA.slice(0, 8).map((node) => {
+                    {ANTIPATTERN_DATA.slice(0, 8).map((node) => {
                       const color = node.severity === 'critical' ? '#ef4444' : node.severity === 'high' ? '#f97316' : '#fbbf24'
                       const radius = node.severity === 'critical' ? 16 : node.severity === 'high' ? 14 : 12
                       return (

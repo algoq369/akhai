@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { btcPay, isBTCPayConfigured, getBTCPayQRCode } from '@/lib/btcpay'
-import { trackEvent } from '@/lib/posthog'
+import { trackServerEvent } from '@/lib/posthog-server'
+import { getAnonymousDistinctId } from '@/lib/posthog-events'
+import { getUserFromSession } from '@/lib/auth'
 import { nanoid } from 'nanoid'
 
 export const runtime = 'nodejs'
@@ -11,6 +13,7 @@ interface CheckoutRequest {
   productType: 'subscription' | 'credits'
   planId?: string
   creditAmount?: number
+  userId?: string // Optional: can be passed from client if already known
 }
 
 export async function POST(req: NextRequest) {
@@ -23,7 +26,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Get user from session (same pattern as Stripe checkout)
+    const token = req.cookies.get('session_token')?.value
+    const user = token ? getUserFromSession(token) : null
+
     const body: CheckoutRequest = await req.json()
+
+    // Use userId from body if provided, otherwise from session
+    const userId = body.userId || user?.id || null
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to make a purchase.' },
+        { status: 401 }
+      )
+    }
 
     // Validation
     if (!body.amount || body.amount <= 0) {
@@ -47,7 +64,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Generate unique order ID
+    // Generate unique order ID (include userId for easy lookup)
     const orderId = `akhai-btc-${body.productType}-${nanoid(12)}`
 
     // Create description
@@ -61,27 +78,36 @@ export async function POST(req: NextRequest) {
     }
 
     // Create invoice with BTCPay Server
+    // Include userId in metadata for webhook processing
     const invoice = await btcPay.createInvoice({
       amount: body.amount,
       currency: 'USD',
       orderId,
       description,
+      // Pass additional metadata via posData (BTCPay supports this)
+      posData: JSON.stringify({
+        userId,
+        productType: body.productType,
+        planId: body.planId || null,
+        creditAmount: body.creditAmount || null,
+        tokenAmount: body.creditAmount || null, // Store token amount for easy processing
+      }),
     })
 
     // Get payment methods
     const paymentMethods = await btcPay.getPaymentMethods(invoice.id)
 
     // Track analytics
-    if (typeof window !== 'undefined') {
-      trackEvent('btcpay_checkout_started', {
-        product_type: body.productType,
-        amount: body.amount,
-        currency: body.currency,
-        plan_id: body.planId,
-        credit_amount: body.creditAmount,
-        invoice_id: invoice.id,
-      })
-    }
+    const distinctId = userId || getAnonymousDistinctId(req)
+    trackServerEvent('btcpay_checkout_started', distinctId, {
+      product_type: body.productType,
+      amount: body.amount,
+      currency: body.currency,
+      plan_id: body.planId,
+      credit_amount: body.creditAmount,
+      invoice_id: invoice.id,
+      user_id: userId,
+    })
 
     // Return invoice details
     return NextResponse.json({

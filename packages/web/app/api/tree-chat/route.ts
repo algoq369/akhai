@@ -2,7 +2,7 @@
  * Tree Chat API
  *
  * Conversational interface for tree configuration
- * Users can ask questions about Sephiroth/Qliphoth and request configuration changes
+ * Users can ask questions about Layers/Antipatterns and request configuration changes
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -83,14 +83,14 @@ function buildTreeAISystemPrompt(activeConfig: any): string {
 Current Configuration: "${activeConfig.name}"
 ${activeConfig.description}
 
-Sephiroth Weights:
-${Object.entries(activeConfig.sephiroth_weights)
-  .map(([sefirah, weight]) => `- Sefirah ${sefirah}: ${((weight as number) * 100).toFixed(0)}%`)
+Layers Weights:
+${Object.entries(activeConfig.layer_weights)
+  .map(([layerNode, weight]) => `- Layer ${layerNode}: ${((weight as number) * 100).toFixed(0)}%`)
   .join('\n')}
 
-Qliphoth Suppression:
-${Object.entries(activeConfig.qliphoth_suppression || {})
-  .map(([qliphah, level]) => `- Qliphah ${qliphah}: ${((level as number) * 100).toFixed(0)}%`)
+Antipatterns Suppression:
+${Object.entries(activeConfig.antipattern_suppression || {})
+  .map(([antipatternId, level]) => `- Antipattern ${antipatternId}: ${((level as number) * 100).toFixed(0)}%`)
   .join('\n')}
 `
     : 'No active configuration'
@@ -100,27 +100,27 @@ ${Object.entries(activeConfig.qliphoth_suppression || {})
 ${configSummary}
 
 Your capabilities:
-1. **Explain Sephiroth and Qliphoth** in simple, practical terms
+1. **Explain Layers and Antipatterns** in simple, practical terms
 2. **Suggest configuration changes** based on user goals
 3. **Interpret the current tree state** and provide insights
 4. **Guide users to optimal balance** using the 7 Hermetic Laws
 5. **Answer questions** about what each node represents
 6. **Execute configuration changes** when requested
 
-Sephiroth (Divine Emanations):
-1. Kether - Crown - Meta-Cognitive Layer
-2. Chokmah - Wisdom - Principle Layer
-3. Binah - Understanding - Pattern Layer
-4. Chesed - Mercy - Expansion Layer
-5. Gevurah - Severity - Constraint Layer
-6. Tiferet - Beauty - Integration Layer
-7. Netzach - Victory - Creative Layer
-8. Hod - Glory - Logic Layer
-9. Yesod - Foundation - Implementation Layer
-10. Malkuth - Kingdom - Data Layer
-11. Da'at - Knowledge - Emergent Layer (hidden)
+Layers (Divine Emanations):
+1. Meta-Core - Crown - Meta-Cognitive Layer
+2. Reasoning - Wisdom - Principle Layer
+3. Encoder - Understanding - Pattern Layer
+4. Expansion - Mercy - Expansion Layer
+5. Discriminator - Severity - Constraint Layer
+6. Attention - Beauty - Integration Layer
+7. Generative - Victory - Creative Layer
+8. Classifier - Glory - Logic Layer
+9. Executor - Foundation - Implementation Layer
+10. Embedding - Kingdom - Data Layer
+11. Synthesis - Knowledge - Emergent Layer (hidden)
 
-Qliphoth (Anti-Patterns):
+Antipatterns (Anti-Patterns):
 1. Thaumiel - False Certainty - Overconfidence
 2. Ghagiel - Information Overload
 3. Satariel - Concealers - Information Hiding
@@ -134,7 +134,7 @@ Qliphoth (Anti-Patterns):
 11. Neheshethiron - Materialism
 12. A11 - Placeholder
 
-When suggesting changes, be specific (e.g., "I recommend increasing Binah to 75% for enhanced understanding").
+When suggesting changes, be specific (e.g., "I recommend increasing Encoder to 75% for enhanced understanding").
 
 When users ask "What is [X]?", explain both the traditional Kabbalistic meaning and its practical application in AI reasoning.
 
@@ -155,37 +155,37 @@ function parseConfigCommands(response: string): ConfigChange[] | null {
     const nodeName = match[1].toLowerCase()
     const value = parseInt(match[2]) / 100
 
-    // Map common names to Sefirah numbers
-    const sefirahMap: Record<string, number> = {
-      kether: 1,
+    // Map common names to Layer numbers
+    const layerNodeMap: Record<string, number> = {
+      metaCore: 1,
       crown: 1,
-      chokmah: 2,
+      reasoning: 2,
       wisdom: 2,
-      binah: 3,
+      encoder: 3,
       understanding: 3,
-      chesed: 4,
+      expansion: 4,
       mercy: 4,
-      gevurah: 5,
+      discriminator: 5,
       severity: 5,
-      tiferet: 6,
+      attention: 6,
       beauty: 6,
-      netzach: 7,
+      generative: 7,
       victory: 7,
-      hod: 8,
+      classifier: 8,
       glory: 8,
-      yesod: 9,
+      executor: 9,
       foundation: 9,
-      malkuth: 10,
+      embedding: 10,
       kingdom: 10,
-      daat: 11,
+      synthesis: 11,
       knowledge: 11,
     }
 
-    const sefirah = sefirahMap[nodeName]
-    if (sefirah) {
+    const layerNode = layerNodeMap[nodeName]
+    if (layerNode) {
       changes.push({
-        type: 'sefirah',
-        node: sefirah,
+        type: 'layerNode',
+        node: layerNode,
         action: 'set',
         value,
       })
@@ -198,8 +198,8 @@ function parseConfigCommands(response: string): ConfigChange[] | null {
   while ((match = suppressPattern.exec(response)) !== null) {
     const nodeName = match[1].toLowerCase()
 
-    // Map common names to Qliphah numbers
-    const qliphahMap: Record<string, number> = {
+    // Map common names to antipattern numbers
+    const antipatternMap: Record<string, number> = {
       thaumiel: 1,
       ghagiel: 2,
       satariel: 3,
@@ -207,17 +207,17 @@ function parseConfigCommands(response: string): ConfigChange[] | null {
       golachab: 5,
       tagirion: 6,
       zaraq: 7,
-      samael: 8,
+      toxicity: 8,
       gamaliel: 9,
       nehemoth: 10,
       neheshethiron: 11,
     }
 
-    const qliphah = qliphahMap[nodeName]
-    if (qliphah) {
+    const antipatternId = antipatternMap[nodeName]
+    if (antipatternId) {
       changes.push({
-        type: 'qliphoth',
-        node: qliphah,
+        type: 'antipattern',
+        node: antipatternId,
         action: 'suppress',
         value: 0.8, // Default suppression level
       })
@@ -228,7 +228,7 @@ function parseConfigCommands(response: string): ConfigChange[] | null {
 }
 
 interface ConfigChange {
-  type: 'sefirah' | 'qliphoth'
+  type: 'layerNode' | 'antipattern'
   node: number
   action: 'set' | 'suppress' | 'increase' | 'decrease'
   value: number

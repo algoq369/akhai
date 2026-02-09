@@ -9,8 +9,8 @@ interface TreeConfiguration {
   id?: number
   name: string
   description?: string
-  sephiroth_weights: Record<number, number>
-  qliphoth_suppression?: Record<number, number>
+  layer_weights: Record<number, number>
+  antipattern_suppression?: Record<number, number>
   processing_mode: 'weighted' | 'parallel' | 'adaptive'
 }
 
@@ -86,7 +86,7 @@ export default function CompareConfigsPage() {
             Tree Configuration A/B Testing
           </h1>
           <p className="text-relic-slate">
-            Compare how different Sephiroth configurations affect AI responses
+            Compare how different Layers configurations affect AI responses
           </p>
         </div>
 

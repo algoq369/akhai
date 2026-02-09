@@ -76,7 +76,7 @@ export interface SideCanalEvent {
 
 export interface MindmapEvent {
   action: 'view_toggled' | 'node_clicked' | 'export_requested'
-  view_mode?: 'sefirot' | 'insight' | 'mindmap'
+  view_mode?: 'layers' | 'insight' | 'mindmap'
   node_count?: number
   methodology?: string
 }

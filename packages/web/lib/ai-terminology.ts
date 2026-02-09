@@ -5,7 +5,7 @@
  * layer names, anti-pattern monitors, and their Kabbalistic origins.
  */
 
-import { Sefirah } from './ascent-tracker'
+import { Layer } from './layer-registry'
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -18,7 +18,7 @@ export interface LayerOrigin {
 }
 
 export interface AILayer {
-  id: Sefirah
+  id: Layer
   name: string          // Full AI name (e.g., "Meta-Learning Core")
   short: string         // Short form (e.g., "meta-core")
   description: string   // What this layer does
@@ -40,9 +40,9 @@ export interface AntiPattern {
 // AI PROCESSING LAYERS (11 Layers)
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const AI_LAYERS: Record<Sefirah, AILayer> = {
-  [Sefirah.KETHER]: {
-    id: Sefirah.KETHER,
+export const AI_LAYERS: Record<Layer, AILayer> = {
+  [Layer.META_CORE]: {
+    id: Layer.META_CORE,
     name: 'Meta-Learning Core',
     short: 'meta-core',
     description: 'Self-improvement and meta-cognition layer for adaptive learning',
@@ -54,8 +54,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'Represents the highest level of consciousness and unity'
     }
   },
-  [Sefirah.CHOKMAH]: {
-    id: Sefirah.CHOKMAH,
+  [Layer.REASONING]: {
+    id: Layer.REASONING,
     name: 'Abstract Reasoning Module',
     short: 'reasoning',
     description: 'High-level reasoning and wisdom processing',
@@ -67,8 +67,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'The flash of inspiration before structure forms'
     }
   },
-  [Sefirah.BINAH]: {
-    id: Sefirah.BINAH,
+  [Layer.ENCODER]: {
+    id: Layer.ENCODER,
     name: 'Transformer Encoder',
     short: 'encoder',
     description: 'Pattern recognition and structural understanding',
@@ -80,8 +80,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'Taking wisdom and giving it form and structure'
     }
   },
-  [Sefirah.DAAT]: {
-    id: Sefirah.DAAT,
+  [Layer.SYNTHESIS]: {
+    id: Layer.SYNTHESIS,
     name: 'Emergent Synthesis Layer',
     short: 'synthesis',
     description: 'Integration of all layers into emergent knowledge',
@@ -93,8 +93,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'Where wisdom and understanding unite into knowledge'
     }
   },
-  [Sefirah.CHESED]: {
-    id: Sefirah.CHESED,
+  [Layer.EXPANSION]: {
+    id: Layer.EXPANSION,
     name: 'Beam Search Expansion',
     short: 'expansion',
     description: 'Exploratory reasoning and possibility expansion',
@@ -106,8 +106,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'Unbounded giving and expansion without limit'
     }
   },
-  [Sefirah.GEVURAH]: {
-    id: Sefirah.GEVURAH,
+  [Layer.DISCRIMINATOR]: {
+    id: Layer.DISCRIMINATOR,
     name: 'Discriminator Network',
     short: 'discriminator',
     description: 'Quality control and constraint enforcement',
@@ -119,8 +119,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'Setting boundaries and enforcing limits'
     }
   },
-  [Sefirah.TIFERET]: {
-    id: Sefirah.TIFERET,
+  [Layer.ATTENTION]: {
+    id: Layer.ATTENTION,
     name: 'Multi-Head Attention',
     short: 'attention',
     description: 'Central integration and balanced focus',
@@ -132,8 +132,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'The heart that balances mercy and judgment'
     }
   },
-  [Sefirah.NETZACH]: {
-    id: Sefirah.NETZACH,
+  [Layer.GENERATIVE]: {
+    id: Layer.GENERATIVE,
     name: 'Generative Model',
     short: 'generative',
     description: 'Creative generation and endurance in iteration',
@@ -145,8 +145,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'The driving force of nature and persistence'
     }
   },
-  [Sefirah.HOD]: {
-    id: Sefirah.HOD,
+  [Layer.CLASSIFIER]: {
+    id: Layer.CLASSIFIER,
     name: 'Classifier Network',
     short: 'classifier',
     description: 'Classification and analytical processing',
@@ -158,8 +158,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'Analytical thinking and logical structure'
     }
   },
-  [Sefirah.YESOD]: {
-    id: Sefirah.YESOD,
+  [Layer.EXECUTOR]: {
+    id: Layer.EXECUTOR,
     name: 'Algorithm Executor',
     short: 'executor',
     description: 'Core execution and foundation processing',
@@ -171,8 +171,8 @@ export const AI_LAYERS: Record<Sefirah, AILayer> = {
       example: 'Channels all higher energies into manifestation'
     }
   },
-  [Sefirah.MALKUTH]: {
-    id: Sefirah.MALKUTH,
+  [Layer.EMBEDDING]: {
+    id: Layer.EMBEDDING,
     name: 'Token Embedding Layer',
     short: 'embedding',
     description: 'Input processing and data grounding',
@@ -400,16 +400,16 @@ export const UI_LABELS = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Get the AI layer name for a given Sefirah ID
+ * Get the AI layer name for a given Layer ID
  */
-export function getLayerName(id: Sefirah): string {
+export function getLayerName(id: Layer): string {
   return AI_LAYERS[id]?.name || 'Unknown Layer'
 }
 
 /**
- * Get the short name for a given Sefirah ID
+ * Get the short name for a given Layer ID
  */
-export function getLayerShort(id: Sefirah): string {
+export function getLayerShort(id: Layer): string {
   return AI_LAYERS[id]?.short || 'unknown'
 }
 
@@ -430,7 +430,7 @@ export function getAntiPatternShort(id: number): string {
 /**
  * Get origin information for a layer
  */
-export function getLayerOrigin(id: Sefirah): LayerOrigin | null {
+export function getLayerOrigin(id: Layer): LayerOrigin | null {
   return AI_LAYERS[id]?.origin || null
 }
 
@@ -451,25 +451,25 @@ export function getLayerByShort(short: string): AILayer | null {
 /**
  * Get all layer IDs in order (from embedding to meta-core)
  */
-export function getLayerOrder(): Sefirah[] {
+export function getLayerOrder(): Layer[] {
   return [
-    Sefirah.MALKUTH,
-    Sefirah.YESOD,
-    Sefirah.HOD,
-    Sefirah.NETZACH,
-    Sefirah.TIFERET,
-    Sefirah.GEVURAH,
-    Sefirah.CHESED,
-    Sefirah.BINAH,
-    Sefirah.CHOKMAH,
-    Sefirah.KETHER,
-    Sefirah.DAAT
+    Layer.EMBEDDING,
+    Layer.EXECUTOR,
+    Layer.CLASSIFIER,
+    Layer.GENERATIVE,
+    Layer.ATTENTION,
+    Layer.DISCRIMINATOR,
+    Layer.EXPANSION,
+    Layer.ENCODER,
+    Layer.REASONING,
+    Layer.META_CORE,
+    Layer.SYNTHESIS
   ]
 }
 
 /**
  * Get all layer IDs in reverse order (from meta-core to embedding)
  */
-export function getLayerOrderDescending(): Sefirah[] {
+export function getLayerOrderDescending(): Layer[] {
   return getLayerOrder().reverse()
 }

@@ -42,7 +42,7 @@ export interface FeatureSettings {
 export interface InstinctModeConfig {
   depth: 'standard' | 'deep' | 'profound';
   activeLenses: string[];
-  includeSefirot: boolean;
+  includeLayers: boolean;
   includeYechidah: boolean;
 }
 
@@ -126,7 +126,7 @@ const defaultSettings: Settings = {
   instinctConfig: {
     depth: 'deep',
     activeLenses: ['exoteric', 'esoteric', 'gnostic', 'hermetic', 'kabbalistic', 'alchemical', 'prophetic'],
-    includeSefirot: true,
+    includeLayers: true,
     includeYechidah: true,
   },
   privacy: {

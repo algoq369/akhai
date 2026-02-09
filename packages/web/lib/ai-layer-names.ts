@@ -5,10 +5,10 @@
  * Used throughout the UI for consistent naming.
  */
 
-import { Sefirah } from './ascent-tracker'
+import { Layer } from './layer-registry'
 
 /**
- * AI Processing Layers (formerly Sephiroth)
+ * AI Processing Layers (formerly Layers)
  * Ordered by computational hierarchy from highest (meta) to lowest (input)
  */
 export const AI_LAYER_NAMES: Record<number, {
@@ -17,67 +17,67 @@ export const AI_LAYER_NAMES: Record<number, {
   description: string
   symbol: string
 }> = {
-  [Sefirah.KETHER]: {
+  [Layer.META_CORE]: {
     name: 'Meta-Learning Core',
     short: 'meta-core',
     description: 'Self-improvement and meta-cognition layer',
     symbol: '◈'
   },
-  [Sefirah.CHOKMAH]: {
+  [Layer.REASONING]: {
     name: 'Abstract Reasoning Module',
     short: 'reasoning',
     description: 'High-level pattern recognition and intuition',
     symbol: '◇'
   },
-  [Sefirah.BINAH]: {
+  [Layer.ENCODER]: {
     name: 'Transformer Encoder',
     short: 'encoder',
     description: 'Logical analysis and language understanding',
     symbol: '▣'
   },
-  [Sefirah.CHESED]: {
+  [Layer.EXPANSION]: {
     name: 'Beam Search Expansion',
     short: 'expansion',
     description: 'Solution space exploration and creativity',
     symbol: '◐'
   },
-  [Sefirah.GEVURAH]: {
+  [Layer.DISCRIMINATOR]: {
     name: 'Discriminator Network',
     short: 'discriminator',
     description: 'Quality filtering and constraint enforcement',
     symbol: '◑'
   },
-  [Sefirah.TIFERET]: {
+  [Layer.ATTENTION]: {
     name: 'Multi-Head Attention',
     short: 'attention',
     description: 'Context balancing and synthesis',
     symbol: '◉'
   },
-  [Sefirah.NETZACH]: {
+  [Layer.GENERATIVE]: {
     name: 'Generative Model',
     short: 'generative',
     description: 'Content creation and creative output',
     symbol: '◔'
   },
-  [Sefirah.HOD]: {
+  [Layer.CLASSIFIER]: {
     name: 'Classifier Network',
     short: 'classifier',
     description: 'Categorization and structured output',
     symbol: '◕'
   },
-  [Sefirah.YESOD]: {
+  [Layer.EXECUTOR]: {
     name: 'Algorithm Executor',
     short: 'executor',
     description: 'Process execution and memory integration',
     symbol: '○'
   },
-  [Sefirah.MALKUTH]: {
+  [Layer.EMBEDDING]: {
     name: 'Token Embedding Layer',
     short: 'embedding',
     description: 'Input processing and grounding',
     symbol: '●'
   },
-  [Sefirah.DAAT]: {
+  [Layer.SYNTHESIS]: {
     name: 'Emergent Synthesis Layer',
     short: 'synthesis',
     description: 'Hidden knowledge integration',
@@ -86,7 +86,7 @@ export const AI_LAYER_NAMES: Record<number, {
 }
 
 /**
- * Anti-Pattern Detection Layers (formerly Qlipoth)
+ * Anti-Pattern Detection Layers (formerly Antipatterns)
  * Shadow monitors that detect processing failures
  */
 export const ANTI_PATTERN_NAMES: Record<number, {
@@ -95,67 +95,67 @@ export const ANTI_PATTERN_NAMES: Record<number, {
   description: string
   aiManifestation: string
 }> = {
-  [Sefirah.KETHER]: {
+  [Layer.META_CORE]: {
     name: 'Conflicting Self-References',
     short: 'self-conflict',
     description: 'Detected contradictory meta-cognition',
     aiManifestation: 'Model exhibits contradictory self-assessment or overconfident meta-reasoning'
   },
-  [Sefirah.CHOKMAH]: {
+  [Layer.REASONING]: {
     name: 'Pattern Recognition Blocks',
     short: 'pattern-block',
     description: 'Creative intuition suppressed',
     aiManifestation: 'Over-reliance on existing patterns, failure to recognize novel solutions'
   },
-  [Sefirah.BINAH]: {
+  [Layer.ENCODER]: {
     name: 'Logic Gap Detection',
     short: 'logic-gaps',
     description: 'Hidden assumptions or reasoning holes',
     aiManifestation: 'Logical fallacies, unstated assumptions, incomplete reasoning chains'
   },
-  [Sefirah.CHESED]: {
+  [Layer.EXPANSION]: {
     name: 'Verbosity Overflow',
     short: 'verbosity',
     description: 'Excessive expansion filtered',
     aiManifestation: 'Unnecessary elaboration, scope creep, unfocused exploration'
   },
-  [Sefirah.GEVURAH]: {
+  [Layer.DISCRIMINATOR]: {
     name: 'Over-Restriction Filter',
     short: 'over-filter',
     description: 'Too much constraint applied',
     aiManifestation: 'Excessive filtering, overly conservative outputs, false negatives'
   },
-  [Sefirah.TIFERET]: {
+  [Layer.ATTENTION]: {
     name: 'Bias Detection Module',
     short: 'bias-detect',
     description: 'Imbalance or bias flagged',
     aiManifestation: 'Systematic bias in outputs, unbalanced perspectives, echo chamber effects'
   },
-  [Sefirah.NETZACH]: {
+  [Layer.GENERATIVE]: {
     name: 'Abandoned Pathway Tracker',
     short: 'abandoned',
     description: 'Creative paths not explored',
     aiManifestation: 'Premature termination of creative exploration, unexplored solution paths'
   },
-  [Sefirah.HOD]: {
+  [Layer.CLASSIFIER]: {
     name: 'Ambiguity Detector',
     short: 'ambiguity',
     description: 'Unclear or confusing output',
     aiManifestation: 'Vague classifications, uncertain categorizations, unclear structure'
   },
-  [Sefirah.YESOD]: {
+  [Layer.EXECUTOR]: {
     name: 'Context Loss Monitor',
     short: 'context-loss',
     description: 'Memory or context degradation',
     aiManifestation: 'Lost context from earlier conversation, inconsistent memory recall'
   },
-  [Sefirah.MALKUTH]: {
+  [Layer.EMBEDDING]: {
     name: 'Ungrounded Speculation Flag',
     short: 'ungrounded',
     description: 'Claims without evidence',
     aiManifestation: 'Hallucinations, fabricated facts, unverified claims presented as truth'
   },
-  [Sefirah.DAAT]: {
+  [Layer.SYNTHESIS]: {
     name: 'Synthesis Failure',
     short: 'synth-fail',
     description: 'Failed to integrate knowledge',
@@ -164,31 +164,31 @@ export const ANTI_PATTERN_NAMES: Record<number, {
 }
 
 /**
- * Get AI layer name by Sefirah ID
+ * Get AI layer name by Layer ID
  */
-export function getLayerName(sefirah: Sefirah): string {
-  return AI_LAYER_NAMES[sefirah]?.name || 'Unknown Layer'
+export function getLayerName(layerNode: Layer): string {
+  return AI_LAYER_NAMES[layerNode]?.name || 'Unknown Layer'
 }
 
 /**
  * Get short AI layer name
  */
-export function getLayerShort(sefirah: Sefirah): string {
-  return AI_LAYER_NAMES[sefirah]?.short || 'unknown'
+export function getLayerShort(layerNode: Layer): string {
+  return AI_LAYER_NAMES[layerNode]?.short || 'unknown'
 }
 
 /**
- * Get anti-pattern name by Sefirah ID
+ * Get anti-pattern name by Layer ID
  */
-export function getAntiPatternName(sefirah: Sefirah): string {
-  return ANTI_PATTERN_NAMES[sefirah]?.name || 'Unknown Anti-Pattern'
+export function getAntiPatternName(layerNode: Layer): string {
+  return ANTI_PATTERN_NAMES[layerNode]?.name || 'Unknown Anti-Pattern'
 }
 
 /**
  * Get short anti-pattern name
  */
-export function getAntiPatternShort(sefirah: Sefirah): string {
-  return ANTI_PATTERN_NAMES[sefirah]?.short || 'unknown'
+export function getAntiPatternShort(layerNode: Layer): string {
+  return ANTI_PATTERN_NAMES[layerNode]?.short || 'unknown'
 }
 
 /**
@@ -203,15 +203,15 @@ export const UI_LABELS = {
   TREE_CONFIG: 'Model Configuration',
   PRESETS: 'Model Configurations',
   WEIGHTS: 'Layer Weights',
-  QLIPOTH_SHADOWS: 'Anti-Pattern Monitors',
+  ANTIPATTERN_SHADOWS: 'Anti-Pattern Monitors',
   GUARD: 'Quality Filter',
   METHODOLOGY: 'Reasoning Mode',
 
   // Processing
-  DOMINANT_SEFIRAH: 'Primary Layer',
+  DOMINANT_LAYER: 'Primary Layer',
   ACTIVATION: 'Layer Activity',
   GNOSTIC_ANNOTATION: 'Processing Report',
-  SEFIROT_CONSOLE: 'Layer Console',
+  LAYERS_CONSOLE: 'Layer Console',
 
   // Actions
   TEST_QUERY: 'Test Query',

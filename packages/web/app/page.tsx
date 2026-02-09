@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
+import { useState, useRef, useEffect, useCallback, Suspense, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -10,7 +10,7 @@ import { useSideCanalStore } from '@/lib/stores/side-canal-store'
 import { useSettingsStore } from '@/lib/stores/settings-store'
 import GuardWarning from '@/components/GuardWarning'
 import { InstinctModeConsole } from '@/components/InstinctModeConsole'
-import SefirotConsole from '@/components/SefirotConsole'
+import LayerConsole from '@/components/LayerConsole'
 import TreeConfigurationModal from '@/components/TreeConfigurationModal'
 import QChat from '@/components/QChat'
 // MethodologyExplorer removed - now using inline CSS hover
@@ -32,19 +32,24 @@ import MethodologyFrame from '@/components/MethodologyFrame'
 import SuperSaiyanIcon from '@/components/SuperSaiyanIcon'
 import ResponseMindmap, { shouldShowMindmap } from '@/components/ResponseMindmap'
 import InsightMindmap, { shouldShowInsightMap } from '@/components/InsightMindmap'
-import SefirotResponse, { shouldShowSefirot } from '@/components/SefirotResponse'
+import LayerResponse, { shouldShowLayers } from '@/components/LayerResponse'
 import ConversationConsole, { InlineConsole } from '@/components/ConversationConsole'
-import { SefirotTreeFull } from '@/components/SefirotTreeFull'
-import QliphothBadge from '@/components/QliphothBadge'
+import { LayerTreeFull } from '@/components/LayerTreeFull'
+import AntipatternBadge from '@/components/AntipatternBadge'
 import IntelligenceBadge from '@/components/IntelligenceBadge'
+import MetadataStrip from '@/components/MetadataStrip'
 import DarkModeToggle from '@/components/DarkModeToggle'
-import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
 import { useSession } from '@/lib/session-manager'
-import { HebrewTermDisplay } from '@/lib/hebrew-formatter'
-import { analyzeSephirothicContent } from '@/lib/sefirot-mapper'
+import { HebrewTermDisplay } from '@/lib/origin-formatter'
+import { analyzeLayerContent } from '@/lib/layer-mapper'
 import { DepthText } from '@/components/DepthAnnotation'
 import { useDepthAnnotations } from '@/hooks/useDepthAnnotations'
+import LiveRefinementCanal from '@/components/LiveRefinementCanal'
 import FileDropZone from '@/components/FileDropZone'
+import CanvasWorkspace from '@/components/canvas/CanvasWorkspace'
+import type { QueryCard } from '@/components/canvas/QueryCardsPanel'
+import type { VisualNode, VisualEdge } from '@/components/canvas/VisualsPanel'
 
 const METHODOLOGIES = [
   { id: 'auto', symbol: '◎', name: 'auto', tooltip: 'Smart routing', tokens: '500-5k', latency: '2-30s', cost: 'varies', savings: 'varies' },
@@ -288,60 +293,52 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
 ]
 
 /**
- * Generate SefirotMini data for every query - adapts to content and evolves with conversation
+ * Generate LayerMini data for every query - adapts to content and evolves with conversation
  * Always returns valid activations even if gnostic metadata doesn't exist
  */
-function generateSefirotData(message: Message, messageIndex: number, totalMessages: number): {
+function generateLayerData(message: Message, messageIndex: number, totalMessages: number): {
   activations: Record<number, number>
-  userLevel: Sefirah
+  userLevel: Layer
 } {
-  // 🔍 DIAGNOSTIC: Log what we receive
-  console.log('🌳 RENDER: generateSefirotData called:', {
-    messageId: message.id,
-    hasGnostic: !!message.gnostic,
-    hasIntelligence: !!message.intelligence,
-    hasSephirothAnalysis: !!message.gnostic?.sephirothAnalysis,
-  })
+  // Default activations for all 11 Layers (ensures no undefined values)
+  const defaultActivations: Record<number, number> = {
+    1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0
+  }
 
   // PRIORITY 1: Use Intelligence Fusion activations (most accurate from pre-processing)
-  if (message.intelligence?.sefirotActivations && message.intelligence.sefirotActivations.length > 0) {
-    console.log('✅ RENDER: Using Intelligence Fusion sefirotActivations')
-    const activations: Record<number, number> = {}
-    message.intelligence.sefirotActivations.forEach(({ sefirah, activation }) => {
-      activations[sefirah] = activation
+  if (message.intelligence?.layerActivations && message.intelligence.layerActivations.length > 0) {
+    const activations: Record<number, number> = { ...defaultActivations }
+    message.intelligence.layerActivations.forEach(({ layerNode, activation }) => {
+      activations[layerNode] = activation ?? 0
     })
     return {
       activations,
-      userLevel: (message.gnostic?.ascentState?.currentLevel || 1) as Sefirah
+      userLevel: (message.gnostic?.progressState?.currentLevel || 1) as Layer
     }
   }
 
   // PRIORITY 2: Use gnostic metadata (from API response processing)
-  if (message.gnostic?.sephirothAnalysis) {
-    console.log('✅ RENDER: Using gnostic sephirothAnalysis from API:', message.gnostic.sephirothAnalysis)
+  if (message.gnostic?.layerAnalysis) {
     return {
-      activations: message.gnostic.sephirothAnalysis.activations,
-      userLevel: (message.gnostic.ascentState?.currentLevel || 1) as Sefirah
+      activations: { ...defaultActivations, ...message.gnostic.layerAnalysis.activations },
+      userLevel: (message.gnostic.progressState?.currentLevel || 1) as Layer
     }
   }
 
-  // 🔍 DIAGNOSTIC: Falling back to content analysis
-  console.log('⚠️  RENDER: No gnostic data, falling back to content analysis')
-
   // Generate activations based on content analysis
   const content = message.content || ''
-  const analysis = analyzeSephirothicContent(content)
+  const analysis = analyzeLayerContent(content)
 
-  // Convert analysis to activations record
-  const activations: Record<number, number> = {}
-  analysis.activations.forEach(({ sefirah, activation }) => {
-    activations[sefirah] = activation
+  // Convert analysis to activations record (with defaults)
+  const activations: Record<number, number> = { ...defaultActivations }
+  analysis.activations.forEach(({ layerNode, activation }) => {
+    activations[layerNode] = activation ?? 0
   })
 
   // Calculate user level based on conversation progression
   // More messages = higher ascent (evolves with chat)
   const progressionLevel = Math.min(Math.ceil((messageIndex + 1) / 3), 10)
-  const userLevel = progressionLevel as Sefirah
+  const userLevel = progressionLevel as Layer
 
   return { activations, userLevel }
 }
@@ -386,9 +383,9 @@ function HomePage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   // topicSuggestions and showTopicsPanel now managed by Side Canal store
   const [showMindMap, setShowMindMap] = useState(false)
-  const [mindMapInitialView, setMindMapInitialView] = useState<'graph' | 'history' | 'grimoire'>('graph')
+  const [mindMapInitialView, setMindMapInitialView] = useState<'graph' | 'history' | 'report'>('graph')
   const [showDashboard, setShowDashboard] = useState(false)
-  const [showSefirotDashboard, setShowSefirotDashboard] = useState(false)
+  const [showLayerDashboard, setShowLayerDashboard] = useState(false)
   const [legendMode, setLegendMode] = useState(false)
   const [sideChats, setSideChats] = useState<Array<{ id: string; methodology: string; messages: Message[] }>>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
@@ -397,11 +394,14 @@ function HomePage() {
   const [pendingMethodology, setPendingMethodology] = useState<string | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [mindmapVisibility, setMindmapVisibility] = useState<Record<string, boolean>>({})
-  const [vizMode, setVizMode] = useState<Record<string, 'sefirot' | 'insight' | 'text' | 'mindmap'>>({})
+  const [vizMode, setVizMode] = useState<Record<string, 'layers' | 'insight' | 'text' | 'mindmap'>>({})
   const [gnosticVisibility, setGnosticVisibility] = useState<Record<string, boolean>>({})
   const [deepDiveQuery, setDeepDiveQuery] = useState<string>('')  // NEW: For Deep Dive → Mini Chat
   const [messageAnnotations, setMessageAnnotations] = useState<Record<string, any[]>>({})  // Store annotations per message
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(undefined)  // NEW: For sharing conversation
+
+  // Canvas Mode State
+  const [isCanvasMode, setIsCanvasMode] = useState(false)
 
   // Gnostic Session Management - Track user's ascent journey
   const { sessionId, isClient } = useSession()
@@ -412,6 +412,51 @@ function HomePage() {
   // Instinct Mode Settings
   const { settings } = useSettingsStore()
   const { instinctMode, instinctConfig } = settings
+
+  // Canvas Data Adapters - Convert messages to canvas format
+  const queryCards = useMemo<QueryCard[]>(() => {
+    return messages
+      .filter(m => m.role === 'user')
+      .map((m, idx) => {
+        // Find the assistant response that follows this user message
+        const userIndex = messages.indexOf(m)
+        const nextAssistant = messages.find((r, i) => r.role === 'assistant' && i > userIndex)
+        return {
+          id: m.id,
+          query: m.content,
+          response: nextAssistant?.content || '',
+          timestamp: new Date(),
+          methodology: methodology,
+        }
+      })
+  }, [messages, methodology])
+
+  const visualNodes = useMemo<VisualNode[]>(() => {
+    // Extract key concepts from messages for mindmap
+    const nodes: VisualNode[] = []
+    messages.forEach((m, idx) => {
+      if (m.role === 'assistant' && m.content.length > 50) {
+        // Create a node for each significant response
+        nodes.push({
+          id: `node-${m.id}`,
+          label: m.content.slice(0, 40) + '...',
+          type: 'concept',
+          x: 100 + (idx % 3) * 150,
+          y: 100 + Math.floor(idx / 3) * 120,
+        })
+      }
+    })
+    return nodes
+  }, [messages])
+
+  const visualEdges = useMemo<VisualEdge[]>(() => {
+    // Create edges between consecutive nodes
+    return visualNodes.slice(1).map((node, idx) => ({
+      id: `edge-${idx}`,
+      source: visualNodes[idx].id,
+      target: node.id,
+    }))
+  }, [visualNodes])
 
   // Log depth config on mount
   useEffect(() => {
@@ -900,6 +945,7 @@ function HomePage() {
     try {
       const currentChatId = activeChatId || 'main'
       const pageContext = getPageContext()
+      const { liveRefinements } = useSideCanalStore.getState()
       const res = await fetch('/api/simple-query', {
         method: 'POST',
         headers: {
@@ -918,6 +964,7 @@ function HomePage() {
           pageContext,
           instinctMode,
           instinctConfig,
+          liveRefinements: liveRefinements.length > 0 ? liveRefinements : undefined,
           attachments: processedFiles.length > 0 ? processedFiles : undefined,
           fileUrls: currentFileUrls.length > 0 ? currentFileUrls : undefined
         })
@@ -927,7 +974,28 @@ function HomePage() {
       if (!res.ok) throw new Error('Failed to get response')
 
       const data = await res.json()
-      
+
+      // Pre-generate assistant message ID for metadata stream binding
+      const assistantMsgId = generateId()
+
+      // Connect Metadata Thought Stream (SSE) if queryId available
+      if (data.queryId) {
+        try {
+          const evtSource = new EventSource(`/api/thought-stream?queryId=${data.queryId}`)
+          evtSource.onmessage = (ev) => {
+            try {
+              const thought = JSON.parse(ev.data) as import('@/lib/thought-stream').ThoughtEvent
+              thought.messageId = assistantMsgId
+              useSideCanalStore.getState().pushMetadata(thought)
+              if (thought.stage === 'complete' || thought.stage === 'error') {
+                evtSource.close()
+              }
+            } catch { /* ignore parse errors */ }
+          }
+          evtSource.onerror = () => evtSource.close()
+        } catch { /* SSE not critical */ }
+      }
+
       // Handle Side Canal suggestions - refresh from store
       if (data.sideCanal?.suggestions && data.sideCanal.suggestions.length > 0) {
         // Suggestions are now managed by the store, refresh will be triggered automatically
@@ -938,14 +1006,14 @@ function HomePage() {
       if (data.queryId) {
         // Set conversation ID for sharing
         setCurrentConversationId(data.queryId)
-        await pollForResult(data.queryId, startTime)
+        await pollForResult(data.queryId, startTime, assistantMsgId)
       } else {
         // 🔍 DIAGNOSTIC: Log received gnostic data from API
         console.log('🌳 FRONTEND: Received API response with gnostic:', {
           hasGnostic: !!data.gnostic,
           gnosticKeys: data.gnostic ? Object.keys(data.gnostic) : [],
-          sephirothAnalysis: data.gnostic?.sephirothAnalysis,
-          activations: data.gnostic?.sephirothAnalysis?.activations,
+          layerAnalysis: data.gnostic?.layerAnalysis,
+          activations: data.gnostic?.layerAnalysis?.activations,
         })
 
         // Check for grounding guard failures
@@ -953,7 +1021,7 @@ function HomePage() {
 
         // Immediate response (store guard result, hide if failed)
         const assistantMessage: Message = {
-          id: generateId(),
+          id: assistantMsgId,
           role: 'assistant',
           content: data.response || data.finalDecision || 'No response',
           methodology: data.methodology || methodology,
@@ -963,7 +1031,42 @@ function HomePage() {
           guardAction: guardFailed ? 'pending' : undefined,
           isHidden: guardFailed,
           gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
+          // INTELLIGENCE: Map fusion response to intelligence interface
+          intelligence: data.fusion ? {
+            analysis: {
+              complexity: data.fusion.confidence || 0,
+              queryType: data.fusion.methodology || 'direct',
+              keywords: data.fusion.layerActivations?.[0]?.keywords || []
+            },
+            layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
+              layerNode: 0,
+              name: s.name,
+              activation: s.effectiveWeight || 0,
+              effectiveWeight: s.effectiveWeight || 0
+            })),
+            dominantLayers: data.fusion.dominantLayers || [],
+            pathActivations: [],
+            methodologySelection: {
+              selected: data.fusion.methodology || 'direct',
+              confidence: data.fusion.confidence || 0,
+              alternatives: []
+            },
+            guard: {
+              recommendation: data.fusion.guardRecommendation || 'proceed',
+              reasons: []
+            },
+            instinct: {
+              enabled: (data.fusion.activeLenses || []).length > 0,
+              activeLenses: data.fusion.activeLenses || []
+            },
+            processing: {
+              mode: data.fusion.processingMode || 'weighted',
+              extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000
+            },
+            timing: {
+              fusionMs: data.fusion.processingTimeMs || 0
+            }
+          } : undefined,
         }
 
         // 🔍 DIAGNOSTIC: Log message with gnostic before setting state
@@ -1026,7 +1129,7 @@ function HomePage() {
     }
   }
 
-  const pollForResult = async (queryId: string, startTime: number) => {
+  const pollForResult = async (queryId: string, startTime: number, messageId?: string) => {
     const maxAttempts = 30
     let attempts = 0
 
@@ -1042,7 +1145,7 @@ function HomePage() {
           const guardFailed = data.guardResult && !data.guardResult.passed
 
           const assistantMessage: Message = {
-            id: generateId(),
+            id: messageId || generateId(),
             role: 'assistant',
             content: data.response || data.finalDecision || 'No response',
             methodology: data.methodology,
@@ -1052,7 +1155,42 @@ function HomePage() {
             guardAction: guardFailed ? 'pending' : undefined,
             isHidden: guardFailed,
             gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
+          // INTELLIGENCE: Map fusion response to intelligence interface
+          intelligence: data.fusion ? {
+            analysis: {
+              complexity: data.fusion.confidence || 0,
+              queryType: data.fusion.methodology || 'direct',
+              keywords: data.fusion.layerActivations?.[0]?.keywords || []
+            },
+            layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
+              layerNode: 0,
+              name: s.name,
+              activation: s.effectiveWeight || 0,
+              effectiveWeight: s.effectiveWeight || 0
+            })),
+            dominantLayers: data.fusion.dominantLayers || [],
+            pathActivations: [],
+            methodologySelection: {
+              selected: data.fusion.methodology || 'direct',
+              confidence: data.fusion.confidence || 0,
+              alternatives: []
+            },
+            guard: {
+              recommendation: data.fusion.guardRecommendation || 'proceed',
+              reasons: []
+            },
+            instinct: {
+              enabled: (data.fusion.activeLenses || []).length > 0,
+              activeLenses: data.fusion.activeLenses || []
+            },
+            processing: {
+              mode: data.fusion.processingMode || 'weighted',
+              extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000
+            },
+            timing: {
+              fusionMs: data.fusion.processingTimeMs || 0
+            }
+          } : undefined,
           }
           setMessages(prev => [...prev, assistantMessage])
           setIsLoading(false)
@@ -1213,7 +1351,42 @@ function HomePage() {
           guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
           isHidden: data.guardResult?.passed === false,
           gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
+          // INTELLIGENCE: Map fusion response to intelligence interface
+          intelligence: data.fusion ? {
+            analysis: {
+              complexity: data.fusion.confidence || 0,
+              queryType: data.fusion.methodology || 'direct',
+              keywords: data.fusion.layerActivations?.[0]?.keywords || []
+            },
+            layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
+              layerNode: 0,
+              name: s.name,
+              activation: s.effectiveWeight || 0,
+              effectiveWeight: s.effectiveWeight || 0
+            })),
+            dominantLayers: data.fusion.dominantLayers || [],
+            pathActivations: [],
+            methodologySelection: {
+              selected: data.fusion.methodology || 'direct',
+              confidence: data.fusion.confidence || 0,
+              alternatives: []
+            },
+            guard: {
+              recommendation: data.fusion.guardRecommendation || 'proceed',
+              reasons: []
+            },
+            instinct: {
+              enabled: (data.fusion.activeLenses || []).length > 0,
+              activeLenses: data.fusion.activeLenses || []
+            },
+            processing: {
+              mode: data.fusion.processingMode || 'weighted',
+              extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000
+            },
+            timing: {
+              fusionMs: data.fusion.processingTimeMs || 0
+            }
+          } : undefined,
         }
         setMessages(prev => [...prev, assistantMessage])
       } catch (error) {
@@ -1337,7 +1510,42 @@ function HomePage() {
           guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
           isHidden: data.guardResult?.passed === false,
           gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
+          // INTELLIGENCE: Map fusion response to intelligence interface
+          intelligence: data.fusion ? {
+            analysis: {
+              complexity: data.fusion.confidence || 0,
+              queryType: data.fusion.methodology || 'direct',
+              keywords: data.fusion.layerActivations?.[0]?.keywords || []
+            },
+            layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
+              layerNode: 0,
+              name: s.name,
+              activation: s.effectiveWeight || 0,
+              effectiveWeight: s.effectiveWeight || 0
+            })),
+            dominantLayers: data.fusion.dominantLayers || [],
+            pathActivations: [],
+            methodologySelection: {
+              selected: data.fusion.methodology || 'direct',
+              confidence: data.fusion.confidence || 0,
+              alternatives: []
+            },
+            guard: {
+              recommendation: data.fusion.guardRecommendation || 'proceed',
+              reasons: []
+            },
+            instinct: {
+              enabled: (data.fusion.activeLenses || []).length > 0,
+              activeLenses: data.fusion.activeLenses || []
+            },
+            processing: {
+              mode: data.fusion.processingMode || 'weighted',
+              extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000
+            },
+            timing: {
+              fusionMs: data.fusion.processingTimeMs || 0
+            }
+          } : undefined,
         }
         setMessages(prev => [...prev, assistantMessage])
       } catch (error) {
@@ -1485,6 +1693,18 @@ function HomePage() {
                 ◊ akhai
               </button>
               <div className="flex items-center gap-3">
+                {/* Canvas Mode Toggle */}
+                <button
+                  onClick={() => setIsCanvasMode(!isCanvasMode)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-medium transition-all ${
+                    isCanvasMode 
+                      ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300' 
+                      : 'bg-relic-ghost text-relic-silver hover:bg-relic-mist dark:bg-relic-slate/30 dark:text-relic-ghost'
+                  }`}
+                >
+                  <span>{isCanvasMode ? '◫' : '☰'}</span>
+                  <span>{isCanvasMode ? 'Canvas' : 'Classic'}</span>
+                </button>
                 <span className="text-[10px] text-relic-silver dark:text-relic-silver/70">{methodology}</span>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-blink-green" />
@@ -1497,12 +1717,23 @@ function HomePage() {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded ? 'ml-60' : ''} ${
-        isExpanded && user ? 'mr-80' : ''
+      <main className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded && !isCanvasMode ? 'ml-60' : ''} ${
+        isExpanded && user && !isCanvasMode ? 'mr-80' : ''
       }`}>
 
-        {/* Logo Section - Fixed at TOP when not expanded */}
-        {!isExpanded && (
+        {/* Canvas Mode */}
+        {isCanvasMode && isExpanded && (
+          <CanvasWorkspace
+            queryCards={queryCards}
+            visualNodes={visualNodes}
+            visualEdges={visualEdges}
+            onQuerySelect={(id) => console.log('Selected query:', id)}
+            onNodeSelect={(id) => console.log('Selected node:', id)}
+          />
+        )}
+
+        {/* Classic Mode - Logo Section - Fixed at TOP when not expanded */}
+        {!isCanvasMode && !isExpanded && (
           <div className="text-center pt-8 pb-4">
             <h1 className="text-3xl font-light text-relic-slate dark:text-white tracking-[0.3em] mb-1">
               A K H A I
@@ -1661,7 +1892,7 @@ function HomePage() {
         {!isExpanded && <div className="flex-1" />}
 
         {/* Diamond for expanded mode only - small version */}
-        {isExpanded && (
+        {isExpanded && !isCanvasMode && (
           <div className="text-center py-3 mb-2">
             <span className="text-2xl font-extralight opacity-50 text-relic-mist">
               ◊
@@ -1669,8 +1900,8 @@ function HomePage() {
           </div>
         )}
 
-        {/* Messages Area - Appears when expanded */}
-        {isExpanded && (
+        {/* Messages Area - Appears when expanded (Classic Mode only) */}
+        {isExpanded && !isCanvasMode && (
           <div className="flex-1 overflow-y-auto px-6 pb-4">
             <div className="max-w-3xl mx-auto space-y-6">
               {messages.map((message) => (
@@ -1759,18 +1990,18 @@ function HomePage() {
                         <div className="border-l-2 border-relic-slate/30 pl-4">
 
                           {/* View Mode Toggle */}
-                          {globalVizMode !== 'off' && (shouldShowSefirot(message.content, !!message.gnostic) || shouldShowInsightMap(message.content, !!message.gnostic) || shouldShowMindmap(message.content, message.topics)) && (
+                          {globalVizMode !== 'off' && (shouldShowLayers(message.content, !!message.gnostic) || shouldShowInsightMap(message.content, !!message.gnostic) || shouldShowMindmap(message.content, message.topics)) && (
                             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-relic-mist/30">
                               <span className="text-[9px] text-relic-silver uppercase tracking-wide">View:</span>
                               <button
-                                onClick={() => setVizMode(prev => ({ ...prev, [message.id]: 'sefirot' }))}
+                                onClick={() => setVizMode(prev => ({ ...prev, [message.id]: 'layers' }))}
                                 className={`px-2 py-1 text-[9px] rounded-md transition-all ${
-                                  (vizMode[message.id] || 'sefirot') === 'sefirot'
+                                  (vizMode[message.id] || 'layers') === 'layers'
                                     ? 'bg-indigo-100 text-indigo-700 font-medium'
                                     : 'text-relic-silver hover:bg-relic-ghost'
                                 }`}
                               >
-                                ◎ Sefirot
+                                ◎ AI Layers
                               </button>
                               <button
                                 onClick={() => setVizMode(prev => ({ ...prev, [message.id]: 'insight' }))}
@@ -1795,9 +2026,9 @@ function HomePage() {
                             </div>
                           )}
 
-                          {/* SEFIROT VIEW - Sovereign Intelligence Tree */}
-                          {globalVizMode !== 'off' && (vizMode[message.id] || 'sefirot') === 'sefirot' && shouldShowSefirot(message.content, !!message.gnostic) && (
-                            <SefirotResponse
+                          {/* LAYERS VIEW - Sovereign Intelligence Tree */}
+                          {globalVizMode !== 'off' && (vizMode[message.id] || 'layers') === 'layers' && shouldShowLayers(message.content, !!message.gnostic) && (
+                            <LayerResponse
                               content={message.content}
                               query={messages[messages.indexOf(message) - 1]?.content || ''}
                               methodology={message.methodology || methodology}
@@ -1813,7 +2044,7 @@ function HomePage() {
                               content={message.content}
                               query={messages[messages.indexOf(message) - 1]?.content || ''}
                               methodology={message.methodology || methodology}
-                              onSwitchToSefirot={() => setVizMode(prev => ({ ...prev, [message.id]: 'sefirot' }))}
+                              onSwitchToLayers={() => setVizMode(prev => ({ ...prev, [message.id]: 'layers' }))}
                               onOpenMindMap={() => setShowMindMap(true)}
                             />
                           )}
@@ -1866,10 +2097,15 @@ function HomePage() {
                             </div>
                           )}
 
+                          {/* Metadata Thought Stream — real-time pipeline stage */}
+                          {message.role === 'assistant' && (
+                            <MetadataStrip messageId={message.id} />
+                          )}
+
                           {/* Inline Visualize Button */}
-                          {(shouldShowSefirot(message.content, !!message.gnostic) || shouldShowInsightMap(message.content, !!message.gnostic)) && globalVizMode === 'off' && (
+                          {(shouldShowLayers(message.content, !!message.gnostic) || shouldShowInsightMap(message.content, !!message.gnostic)) && globalVizMode === 'off' && (
                             <InlineConsole
-                              onVisualize={() => setVizMode(prev => ({ ...prev, [message.id]: 'sefirot' }))}
+                              onVisualize={() => setVizMode(prev => ({ ...prev, [message.id]: 'layers' }))}
                             />
                           )}
 
@@ -1896,27 +2132,19 @@ function HomePage() {
                               <IntelligenceBadge
                                 intelligence={message.intelligence}
                                 methodology={message.methodology}
-                                selectionReason={message.gnostic?.sephirothAnalysis?.dominant ? `Sefirot analysis: ${message.gnostic.sephirothAnalysis.dominant} dominant` : undefined}
+                                selectionReason={message.gnostic?.layerAnalysis?.dominant ? `Layer analysis: ${message.gnostic.layerAnalysis.dominant} dominant` : undefined}
                               />
                             </div>
                           )}
 
                           {/* ================================================================ */}
-                          {/* SEFIROT MINI - ALWAYS VISIBLE (Evolves with conversation) */}
+                          {/* LAYERS MINI - ALWAYS VISIBLE (Evolves with conversation) */}
                           {/* ================================================================ */}
                           <div className="mt-6 pt-4 border-t border-relic-mist/30 dark:border-relic-slate/20">
                             {(() => {
                               const messageIndex = messages.filter(m => m.role === 'assistant').indexOf(message)
                               const totalMessages = messages.filter(m => m.role === 'assistant').length
-                              const sefirotData = generateSefirotData(message, messageIndex, totalMessages)
-
-                              // 🔍 DIAGNOSTIC: Log final data passed to SefirotMini
-                              console.log('🌳 RENDER: Passing data to SefirotMini:', {
-                                messageId: message.id,
-                                activations: sefirotData.activations,
-                                userLevel: sefirotData.userLevel,
-                                activationCount: Object.keys(sefirotData.activations).length,
-                              })
+                              const layersData = generateLayerData(message, messageIndex, totalMessages)
 
                               return (
                                 <Link href="/tree-of-life" className="block cursor-pointer transition-all hover:shadow-lg">
@@ -1925,15 +2153,15 @@ function HomePage() {
                                       <span>Tree of Life • Query {messageIndex + 1}/{totalMessages}</span>
                                       <span className="text-[8px] text-relic-silver dark:text-relic-ghost opacity-60">Click to explore →</span>
                                     </div>
-                                    <SefirotTreeFull
-                                      activations={sefirotData.activations}
+                                    <LayerTreeFull
+                                      activations={layersData.activations}
                                       compact={true}
                                       showLabels={true}
                                       showPaths={true}
                                       className="mx-auto"
                                     />
                                     <div className="mt-3 text-center text-[8px] text-relic-silver">
-                                      Ascent Level: {sefirotData.userLevel}/11
+                                      Ascent Level: {layersData.userLevel}/11
                                     </div>
                                   </div>
                                 </Link>
@@ -1963,12 +2191,12 @@ function HomePage() {
 
                               {(gnosticVisibility[message.id] === undefined ? true : gnosticVisibility[message.id]) && (
                                 <div className="space-y-4 animate-fade-in">
-                                  {/* Qliphoth Purification Notice */}
-                                  {message.gnostic.qliphothPurified && (
-                                    <QliphothBadge
-                                      qliphothType={message.gnostic.qliphothType}
-                                      severity={message.gnostic.qliphothCritique?.severity ?? 0.5}
-                                      critique={message.gnostic.qliphothCritique ?? null}
+                                  {/* Antipatterns Purification Notice */}
+                                  {message.gnostic.antipatternPurified && (
+                                    <AntipatternBadge
+                                      antipatternType={message.gnostic.antipatternType}
+                                      severity={message.gnostic.antipatternCritique?.severity ?? 0.5}
+                                      critique={message.gnostic.antipatternCritique ?? null}
                                     />
                                   )}
 
@@ -1986,7 +2214,7 @@ function HomePage() {
                                   )}
 
                                   {/* Ascent Progress */}
-                                  {message.gnostic.ascentState && (
+                                  {message.gnostic.progressState && (
                                     <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
                                       <div className="text-[9px] text-relic-silver uppercase tracking-[0.2em] mb-3">
                                         <HebrewTermDisplay term="SEPHIROTH" showAI={false} /> Ascent
@@ -1996,57 +2224,57 @@ function HomePage() {
                                           Current Level:
                                         </span>
                                         <div className="text-[10px] font-mono text-relic-slate dark:text-white">
-                                          {message.gnostic.ascentState.levelName} ({message.gnostic.ascentState.currentLevel}/11)
+                                          {message.gnostic.progressState.levelName} ({message.gnostic.progressState.currentLevel}/11)
                                         </div>
                                       </div>
                                       <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] text-relic-silver">Velocity:</span>
                                         <span className="text-[10px] font-mono text-relic-slate dark:text-relic-ghost">
-                                          {message.gnostic.ascentState.velocity.toFixed(2)} levels/query
-                                          {message.gnostic.ascentState.velocity > 2.0 && ' ⚡'}
+                                          {message.gnostic.progressState.velocity.toFixed(2)} levels/query
+                                          {message.gnostic.progressState.velocity > 2.0 && ' ⚡'}
                                         </span>
                                       </div>
                                       <div className="flex items-center justify-between">
                                         <span className="text-[10px] text-relic-silver">Total Queries:</span>
                                         <span className="text-[10px] font-mono text-relic-slate dark:text-relic-ghost">
-                                          {message.gnostic.ascentState.totalQueries}
+                                          {message.gnostic.progressState.totalQueries}
                                         </span>
                                       </div>
-                                      {message.gnostic.ascentState.nextElevation && (
+                                      {message.gnostic.progressState.nextElevation && (
                                         <div className="mt-3 pt-3 border-t border-relic-mist/50 dark:border-relic-slate/20">
                                           <div className="text-[9px] text-relic-silver uppercase tracking-wider mb-1">
                                             Next Elevation
                                           </div>
                                           <p className="text-[10px] text-relic-slate dark:text-relic-ghost leading-relaxed">
-                                            {message.gnostic.ascentState.nextElevation}
+                                            {message.gnostic.progressState.nextElevation}
                                           </p>
                                         </div>
                                       )}
                                     </div>
                                   )}
 
-                                  {/* Detailed Sephirothic Activations */}
-                                  {message.gnostic.sephirothAnalysis?.activations && (
+                                  {/* Detailed Layer Activations */}
+                                  {message.gnostic.layerAnalysis?.activations && (
                                     <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
                                       <div className="text-[9px] text-relic-silver uppercase tracking-[0.2em] mb-3">
-                                        Sephirothic Analysis
+                                        Layer Analysis
                                       </div>
                                       <div className="space-y-1.5">
                                         {(() => {
-                                          // Convert Record<Sefirah, number> to array and sort
-                                          const activationsArray = Object.entries(message.gnostic.sephirothAnalysis.activations)
-                                            .map(([sefirah, activation]) => ({ sefirah: parseInt(sefirah), activation }))
+                                          // Convert Record<Layer, number> to array and sort
+                                          const activationsArray = Object.entries(message.gnostic.layerAnalysis.activations)
+                                            .map(([layerNode, activation]) => ({ layerNode: parseInt(layerNode), activation }))
                                             .sort((a, b) => b.activation - a.activation)
                                             .slice(0, 5)
 
                                           return activationsArray.map((act, idx) => {
-                                            const sefirah = Object.entries(SEPHIROTH_METADATA).find(([_, meta]) => meta.level === act.sefirah)?.[1]
-                                            if (!sefirah) return null
+                                            const layerNode = Object.entries(LAYER_METADATA).find(([_, meta]) => meta.level === act.layerNode)?.[1]
+                                            if (!layerNode) return null
                                             const percentage = Math.round(act.activation * 100)
                                             return (
                                               <div key={idx} className="flex items-center justify-between">
                                                 <span className="text-[10px] text-relic-slate dark:text-relic-ghost">
-                                                  {sefirah.name}
+                                                  {layerNode.name}
                                                 </span>
                                                 <div className="flex items-center gap-2">
                                                   <div className="w-24 h-1.5 bg-relic-mist dark:bg-relic-slate/30 rounded-full overflow-hidden">
@@ -2064,11 +2292,11 @@ function HomePage() {
                                           })
                                         })()}
                                       </div>
-                                      {message.gnostic?.sephirothAnalysis?.dominant && (
+                                      {message.gnostic?.layerAnalysis?.dominant && (
                                         <div className="mt-3 pt-2 border-t border-relic-mist/50 dark:border-relic-slate/20">
                                           <div className="text-[9px] text-relic-silver">
                                             Dominant: <span className="text-relic-slate dark:text-white font-medium">
-                                              {message.gnostic.sephirothAnalysis.dominant}
+                                              {message.gnostic.layerAnalysis.dominant}
                                             </span>
                                           </div>
                                         </div>
@@ -2076,23 +2304,23 @@ function HomePage() {
                                     </div>
                                   )}
 
-                                  {/* Da'at Insight */}
-                                  {message.gnostic.sephirothAnalysis.daatInsight && (
+                                  {/* Synthesis Insight */}
+                                  {message.gnostic.layerAnalysis.synthesisInsight && (
                                     <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
                                       <div className="text-[10px] uppercase tracking-wider text-relic-slate dark:text-relic-ghost mb-2">
                                         <HebrewTermDisplay term="DAAT" showAI={true} className="text-[10px]" />
                                       </div>
                                       <p className="text-[10px] text-relic-silver leading-relaxed mb-2">
-                                        {message.gnostic.sephirothAnalysis.daatInsight.insight}
+                                        {message.gnostic.layerAnalysis.synthesisInsight.insight}
                                       </p>
                                       <div className="text-[9px] text-relic-mist font-mono">
-                                        Confidence: {(message.gnostic.sephirothAnalysis.daatInsight.confidence * 100).toFixed(0)}%
+                                        Confidence: {(message.gnostic.layerAnalysis.synthesisInsight.confidence * 100).toFixed(0)}%
                                       </div>
                                     </div>
                                   )}
 
-                                  {/* Kether Protocol State */}
-                                  {message.gnostic.ketherState && (
+                                  {/* Meta-Core Protocol State */}
+                                  {message.gnostic.metaCoreState && (
                                     <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
                                       <div className="text-[9px] text-relic-silver mb-3">
                                         <HebrewTermDisplay term="KETHER" showAI={true} className="text-[9px]" /> Protocol
@@ -2100,34 +2328,34 @@ function HomePage() {
                                       <div className="space-y-2 text-[10px]">
                                         <div className="flex justify-between items-baseline">
                                           <span className="text-relic-silver">Intent:</span>
-                                          <span className="text-relic-slate dark:text-relic-ghost text-right ml-4">{message.gnostic.ketherState.intent}</span>
+                                          <span className="text-relic-slate dark:text-relic-ghost text-right ml-4">{message.gnostic.metaCoreState.intent}</span>
                                         </div>
                                         <div className="flex justify-between items-baseline">
                                           <span className="text-relic-silver">Boundary:</span>
-                                          <span className="text-relic-slate dark:text-relic-ghost text-right ml-4">{message.gnostic.ketherState.boundary}</span>
+                                          <span className="text-relic-slate dark:text-relic-ghost text-right ml-4">{message.gnostic.metaCoreState.boundary}</span>
                                         </div>
                                         <div className="flex justify-between items-baseline">
                                           <span className="text-relic-silver">Reflection:</span>
-                                          <span className="text-relic-slate dark:text-relic-ghost font-mono">{message.gnostic.ketherState.reflectionMode ? 'Active' : 'Inactive'}</span>
+                                          <span className="text-relic-slate dark:text-relic-ghost font-mono">{message.gnostic.metaCoreState.reflectionMode ? 'Active' : 'Inactive'}</span>
                                         </div>
                                         <div className="flex justify-between items-baseline">
                                           <span className="text-relic-silver">Ascent Level:</span>
-                                          <span className="text-relic-slate dark:text-relic-ghost font-mono">{message.gnostic.ketherState.ascentLevel}/10</span>
+                                          <span className="text-relic-slate dark:text-relic-ghost font-mono">{message.gnostic.metaCoreState.ascentLevel}/10</span>
                                         </div>
                                       </div>
                                     </div>
                                   )}
 
-                                  {/* Dominant Sefirah */}
+                                  {/* Dominant Layer */}
                                   <div className="text-[9px] text-relic-silver text-center border-t border-relic-mist/30 dark:border-relic-slate/20 pt-3">
                                     <div className="mb-1">
                                       Dominant <HebrewTermDisplay term="SEFIRAH" showAI={false} className="text-[9px]" />:
                                     </div>
                                     <div className="font-mono text-relic-slate dark:text-white">
-                                      {message.gnostic.sephirothAnalysis.dominant}
+                                      {message.gnostic.layerAnalysis.dominant}
                                     </div>
                                     <div className="text-[8px] text-relic-mist mt-1">
-                                      Average Level: {message.gnostic.sephirothAnalysis.averageLevel.toFixed(1)}
+                                      Average Level: {message.gnostic.layerAnalysis.averageLevel.toFixed(1)}
                                     </div>
                                   </div>
                                 </div>
@@ -2192,6 +2420,7 @@ function HomePage() {
 
         {/* Input Section */}
         <div className={`transition-all duration-500 ease-out ${isExpanded ? 'pb-4 pt-2 border-t border-relic-mist/30 dark:border-relic-slate/30 bg-white dark:bg-relic-void sticky bottom-0' : 'pb-8'}`}>
+          <LiveRefinementCanal isVisible={isExpanded && messages.length > 0} isLoading={isLoading} />
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto px-6">
             {/* Input Box */}
             <div className="relative transition-all duration-300">
@@ -2284,8 +2513,8 @@ function HomePage() {
                 currentMethodology={methodology}
                 onMethodologyChange={handleMethodologyClick}
                 isSubmitting={isTransitioning}
-                consoleOpen={showSefirotDashboard}
-                onConsoleToggle={() => setShowSefirotDashboard(!showSefirotDashboard)}
+                consoleOpen={showLayerDashboard}
+                onConsoleToggle={() => setShowLayerDashboard(!showLayerDashboard)}
               />
             </motion.div>
 
@@ -2458,7 +2687,42 @@ function HomePage() {
                 guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
                 isHidden: data.guardResult?.passed === false,
                 gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-          intelligence: data.intelligence, // INTELLIGENCE: Capture fusion metadata from API
+          // INTELLIGENCE: Map fusion response to intelligence interface
+          intelligence: data.fusion ? {
+            analysis: {
+              complexity: data.fusion.confidence || 0,
+              queryType: data.fusion.methodology || 'direct',
+              keywords: data.fusion.layerActivations?.[0]?.keywords || []
+            },
+            layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
+              layerNode: 0,
+              name: s.name,
+              activation: s.effectiveWeight || 0,
+              effectiveWeight: s.effectiveWeight || 0
+            })),
+            dominantLayers: data.fusion.dominantLayers || [],
+            pathActivations: [],
+            methodologySelection: {
+              selected: data.fusion.methodology || 'direct',
+              confidence: data.fusion.confidence || 0,
+              alternatives: []
+            },
+            guard: {
+              recommendation: data.fusion.guardRecommendation || 'proceed',
+              reasons: []
+            },
+            instinct: {
+              enabled: (data.fusion.activeLenses || []).length > 0,
+              activeLenses: data.fusion.activeLenses || []
+            },
+            processing: {
+              mode: data.fusion.processingMode || 'weighted',
+              extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000
+            },
+            timing: {
+              fusionMs: data.fusion.processingTimeMs || 0
+            }
+          } : undefined,
               }
               setSideChats(prev => prev.map(c => 
                 c.id === sideChat.id 
@@ -2511,19 +2775,19 @@ function HomePage() {
 
                 {/* AI Config Console Toggle */}
                 <button
-                  onClick={() => setShowSefirotDashboard(!showSefirotDashboard)}
+                  onClick={() => setShowLayerDashboard(!showLayerDashboard)}
                   className="flex items-center gap-2 text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
                 >
                   <span
                     className="text-[14px] transition-all"
                     style={{
-                      color: showSefirotDashboard ? '#a855f7' : '#94a3b8',
-                      filter: showSefirotDashboard ? 'drop-shadow(0 0 3px #a855f7)' : 'none'
+                      color: showLayerDashboard ? '#a855f7' : '#94a3b8',
+                      filter: showLayerDashboard ? 'drop-shadow(0 0 3px #a855f7)' : 'none'
                     }}
                   >
                     ✦
                   </span>
-                  <span className={showSefirotDashboard ? 'text-relic-void dark:text-white' : ''}>ai config</span>
+                  <span className={showLayerDashboard ? 'text-relic-void dark:text-white' : ''}>ai config</span>
                 </button>
 
                 {user ? (
@@ -2613,6 +2877,8 @@ function HomePage() {
       {/* Side Mini Chat - Context Watcher - Always visible if there are messages */}
       <SideMiniChat
         isVisible={messages.length > 0}
+        draggable={isCanvasMode}
+        defaultPosition={isCanvasMode ? { left: 10, top: 500 } : undefined}
         messages={messages}
         externalQuery={deepDiveQuery}
         conversationId={currentConversationId}
@@ -2687,14 +2953,49 @@ function HomePage() {
               methodology: data.methodologyUsed,
               topics: data.topics,
               gnostic: data.gnostic,
-              intelligence: data.intelligence
+              // INTELLIGENCE: Map fusion response to intelligence interface
+              intelligence: data.fusion ? {
+                analysis: {
+                  complexity: data.fusion.confidence || 0,
+                  queryType: data.fusion.methodology || 'direct',
+                  keywords: data.fusion.layerActivations?.[0]?.keywords || []
+                },
+                layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
+                  layerNode: 0,
+                  name: s.name,
+                  activation: s.effectiveWeight || 0,
+                  effectiveWeight: s.effectiveWeight || 0
+                })),
+                dominantLayers: data.fusion.dominantLayers || [],
+                pathActivations: [],
+                methodologySelection: {
+                  selected: data.fusion.methodology || 'direct',
+                  confidence: data.fusion.confidence || 0,
+                  alternatives: []
+                },
+                guard: {
+                  recommendation: data.fusion.guardRecommendation || 'proceed',
+                  reasons: []
+                },
+                instinct: {
+                  enabled: (data.fusion.activeLenses || []).length > 0,
+                  activeLenses: data.fusion.activeLenses || []
+                },
+                processing: {
+                  mode: data.fusion.processingMode || 'weighted',
+                  extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000
+                },
+                timing: {
+                  fusionMs: data.fusion.processingTimeMs || 0
+                }
+              } : undefined,
             }
 
             setMessages(prev => [...prev, aiMessage])
 
             // Auto-track Gnostic progression
-            if (data.gnostic?.ascentState) {
-              console.log(`[GNOSTIC] Ascent Level: ${data.gnostic.ascentState.currentLevel} (${data.gnostic.ascentState.levelName})`)
+            if (data.gnostic?.progressState) {
+              console.log(`[GNOSTIC] Ascent Level: ${data.gnostic.progressState.currentLevel} (${data.gnostic.progressState.levelName})`)
             }
 
             // Analytics tracking
@@ -2757,8 +3058,8 @@ function HomePage() {
 
       {/* Tree Configuration Modal - Single entry point for both buttons */}
       <TreeConfigurationModal
-        isOpen={showSefirotDashboard}
-        onClose={() => setShowSefirotDashboard(false)}
+        isOpen={showLayerDashboard}
+        onClose={() => setShowLayerDashboard(false)}
       />
 
       {/* URL Parameter Watcher - Wrapped in Suspense for Next.js 15 compatibility */}

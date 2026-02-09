@@ -6,35 +6,35 @@
  * 11-row grid with sliders for each AI processing layer weight configuration.
  */
 
-import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
+import { useLayerStore } from '@/lib/stores/layer-store'
 
-const SEFIRAH_COLORS: Record<number, string> = {
-  [Sefirah.MALKUTH]: '#92400e',
-  [Sefirah.YESOD]: '#94a3b8',
-  [Sefirah.HOD]: '#eab308',
-  [Sefirah.NETZACH]: '#f97316',
-  [Sefirah.TIFERET]: '#22c55e',
-  [Sefirah.GEVURAH]: '#dc2626',
-  [Sefirah.CHESED]: '#06b6d4',
-  [Sefirah.BINAH]: '#3b82f6',
-  [Sefirah.CHOKMAH]: '#4f46e5',
-  [Sefirah.KETHER]: '#9333ea',
-  [Sefirah.DAAT]: '#06b6d4'
+const LAYER_COLORS: Record<number, string> = {
+  [Layer.EMBEDDING]: '#92400e',
+  [Layer.EXECUTOR]: '#94a3b8',
+  [Layer.CLASSIFIER]: '#eab308',
+  [Layer.GENERATIVE]: '#f97316',
+  [Layer.ATTENTION]: '#22c55e',
+  [Layer.DISCRIMINATOR]: '#dc2626',
+  [Layer.EXPANSION]: '#06b6d4',
+  [Layer.ENCODER]: '#3b82f6',
+  [Layer.REASONING]: '#4f46e5',
+  [Layer.META_CORE]: '#9333ea',
+  [Layer.SYNTHESIS]: '#06b6d4'
 }
 
-const SEFIRAH_SYMBOLS: Record<number, string> = {
-  [Sefirah.MALKUTH]: '⊕',
-  [Sefirah.YESOD]: '◐',
-  [Sefirah.HOD]: '⬡',
-  [Sefirah.NETZACH]: '◉',
-  [Sefirah.TIFERET]: '✡',
-  [Sefirah.GEVURAH]: '⚗',
-  [Sefirah.CHESED]: '◯',
-  [Sefirah.BINAH]: '⊙',
-  [Sefirah.CHOKMAH]: '☿',
-  [Sefirah.KETHER]: '◈',
-  [Sefirah.DAAT]: '◬'
+const LAYER_SYMBOLS: Record<number, string> = {
+  [Layer.EMBEDDING]: '⊕',
+  [Layer.EXECUTOR]: '◐',
+  [Layer.CLASSIFIER]: '⬡',
+  [Layer.GENERATIVE]: '◉',
+  [Layer.ATTENTION]: '✡',
+  [Layer.DISCRIMINATOR]: '⚗',
+  [Layer.EXPANSION]: '◯',
+  [Layer.ENCODER]: '⊙',
+  [Layer.REASONING]: '☿',
+  [Layer.META_CORE]: '◈',
+  [Layer.SYNTHESIS]: '◬'
 }
 
 interface WeightMatrixProps {
@@ -44,25 +44,25 @@ interface WeightMatrixProps {
 }
 
 export function WeightMatrix({ compact = false, showLabels = true, onChange }: WeightMatrixProps) {
-  const { weights, setWeight, activePreset } = useSefirotStore()
+  const { weights, setWeight, activePreset } = useLayerStore()
 
-  const handleWeightChange = (sefirah: number, value: number) => {
-    setWeight(sefirah, value)
-    onChange?.({ ...weights, [sefirah]: value })
+  const handleWeightChange = (layerNode: number, value: number) => {
+    setWeight(layerNode, value)
+    onChange?.({ ...weights, [layerNode]: value })
   }
 
-  const sefirotOrder = [
-    Sefirah.KETHER,
-    Sefirah.CHOKMAH,
-    Sefirah.BINAH,
-    Sefirah.DAAT,
-    Sefirah.CHESED,
-    Sefirah.GEVURAH,
-    Sefirah.TIFERET,
-    Sefirah.NETZACH,
-    Sefirah.HOD,
-    Sefirah.YESOD,
-    Sefirah.MALKUTH
+  const layerOrder = [
+    Layer.META_CORE,
+    Layer.REASONING,
+    Layer.ENCODER,
+    Layer.SYNTHESIS,
+    Layer.EXPANSION,
+    Layer.DISCRIMINATOR,
+    Layer.ATTENTION,
+    Layer.GENERATIVE,
+    Layer.CLASSIFIER,
+    Layer.EXECUTOR,
+    Layer.EMBEDDING
   ]
 
   return (
@@ -83,22 +83,22 @@ export function WeightMatrix({ compact = false, showLabels = true, onChange }: W
 
       {/* Grid */}
       <div className={`grid ${compact ? 'gap-1' : 'gap-2'}`}>
-        {sefirotOrder.map(sefirah => {
-          const meta = SEPHIROTH_METADATA[sefirah]
-          const weight = weights[sefirah] ?? 0.5
+        {layerOrder.map(layerNode => {
+          const meta = LAYER_METADATA[layerNode]
+          const weight = weights[layerNode] ?? 0.5
           const percentage = Math.round(weight * 100)
 
           return (
             <div
-              key={sefirah}
+              key={layerNode}
               className={`flex items-center gap-2 ${compact ? 'px-1' : 'px-2 py-1'} rounded hover:bg-relic-ghost dark:hover:bg-relic-slate/10 transition-colors`}
             >
               {/* Symbol */}
               <span
                 className={`${compact ? 'text-[10px]' : 'text-sm'} w-5 text-center`}
-                style={{ color: SEFIRAH_COLORS[sefirah] }}
+                style={{ color: LAYER_COLORS[layerNode] }}
               >
-                {SEFIRAH_SYMBOLS[sefirah]}
+                {LAYER_SYMBOLS[layerNode]}
               </span>
 
               {/* Name */}
@@ -122,7 +122,7 @@ export function WeightMatrix({ compact = false, showLabels = true, onChange }: W
                   min="0"
                   max="100"
                   value={percentage}
-                  onChange={e => handleWeightChange(sefirah, parseInt(e.target.value) / 100)}
+                  onChange={e => handleWeightChange(layerNode, parseInt(e.target.value) / 100)}
                   className="flex-1 h-1 bg-relic-mist dark:bg-relic-slate/30 rounded-full appearance-none cursor-pointer
                     [&::-webkit-slider-thumb]:appearance-none
                     [&::-webkit-slider-thumb]:w-3
@@ -131,8 +131,8 @@ export function WeightMatrix({ compact = false, showLabels = true, onChange }: W
                     [&::-webkit-slider-thumb]:cursor-pointer"
                   style={{
                     // @ts-ignore - CSS custom property
-                    '--slider-color': SEFIRAH_COLORS[sefirah],
-                    backgroundImage: `linear-gradient(to right, ${SEFIRAH_COLORS[sefirah]} ${percentage}%, transparent ${percentage}%)`
+                    '--slider-color': LAYER_COLORS[layerNode],
+                    backgroundImage: `linear-gradient(to right, ${LAYER_COLORS[layerNode]} ${percentage}%, transparent ${percentage}%)`
                   }}
                 />
                 <span className={`${compact ? 'text-[9px] w-8' : 'text-[10px] w-10'} font-mono text-relic-slate text-right`}>
@@ -142,9 +142,9 @@ export function WeightMatrix({ compact = false, showLabels = true, onChange }: W
 
               {/* Toggle */}
               <button
-                onClick={() => handleWeightChange(sefirah, weight > 0.1 ? 0 : 0.5)}
+                onClick={() => handleWeightChange(layerNode, weight > 0.1 ? 0 : 0.5)}
                 className={`${compact ? 'text-[9px]' : 'text-[10px]'} w-4 text-center`}
-                style={{ color: weight > 0.1 ? SEFIRAH_COLORS[sefirah] : '#94a3b8' }}
+                style={{ color: weight > 0.1 ? LAYER_COLORS[layerNode] : '#94a3b8' }}
               >
                 {weight > 0.1 ? '●' : '○'}
               </button>

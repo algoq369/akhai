@@ -9,7 +9,7 @@ import {
   ChevronUpIcon,
   LinkIcon
 } from '@heroicons/react/24/outline'
-import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
 
 interface ConceptNode {
   id: string
@@ -21,13 +21,13 @@ interface ConceptNode {
   connections: string[]
   context: string
   insight: string
-  sefirotMapping: Sefirah[] // Which Sephiroth this concept relates to
+  layerMapping: Layer[] // Which Layers this concept relates to
 }
 
 interface QueryInsight {
   intent: string
   keywords: string[]
-  sefirotFocus: { sefirah: Sefirah; reason: string }[]
+  layersFocus: { layerNode: Layer; reason: string }[]
 }
 
 // Research link from dynamic discovery
@@ -44,65 +44,65 @@ interface InsightMindmapProps {
   content: string
   query: string
   methodology?: string
-  onSwitchToSefirot?: () => void
+  onSwitchToLayers?: () => void
   onOpenMindMap?: () => void
 }
 
-// Map concepts to Sefirot based on content
-function mapToSefirot(text: string, category: string): Sefirah[] {
+// Map concepts to Layers based on content
+function mapToLayers(text: string, category: string): Layer[] {
   const textLower = text.toLowerCase()
-  const sefirot: Sefirah[] = []
+  const layers: Layer[] = []
 
-  // Kether (10) - Crown - Meta, integration, highest level
+  // Meta-Core (10) - Crown - Meta, integration, highest level
   if (textLower.includes('meta') || textLower.includes('integration') || textLower.includes('holistic') || textLower.includes('overview')) {
-    sefirot.push(Sefirah.KETHER)
+    layers.push(Layer.META_CORE)
   }
-  // Chokmah (9) - Wisdom - Abstract reasoning, principles
+  // Reasoning (9) - Wisdom - Abstract reasoning, principles
   if (textLower.includes('principle') || textLower.includes('theory') || textLower.includes('abstract') || textLower.includes('reasoning')) {
-    sefirot.push(Sefirah.CHOKMAH)
+    layers.push(Layer.REASONING)
   }
-  // Binah (8) - Understanding - Patterns, analysis
+  // Encoder (8) - Understanding - Patterns, analysis
   if (textLower.includes('pattern') || textLower.includes('structure') || textLower.includes('analysis') || textLower.includes('understand')) {
-    sefirot.push(Sefirah.BINAH)
+    layers.push(Layer.ENCODER)
   }
-  // Chesed (7) - Expansion - Growth, possibilities
+  // Expansion (7) - Expansion - Growth, possibilities
   if (textLower.includes('expand') || textLower.includes('grow') || textLower.includes('possibilit') || textLower.includes('opportunity')) {
-    sefirot.push(Sefirah.CHESED)
+    layers.push(Layer.EXPANSION)
   }
-  // Gevurah (6) - Constraint - Limits, rules, validation
+  // Discriminator (6) - Constraint - Limits, rules, validation
   if (textLower.includes('limit') || textLower.includes('constrain') || textLower.includes('valid') || textLower.includes('rule')) {
-    sefirot.push(Sefirah.GEVURAH)
+    layers.push(Layer.DISCRIMINATOR)
   }
-  // Tiferet (5) - Balance - Harmony, integration
+  // Attention (5) - Balance - Harmony, integration
   if (textLower.includes('balance') || textLower.includes('harmony') || textLower.includes('core') || category === 'core') {
-    sefirot.push(Sefirah.TIFERET)
+    layers.push(Layer.ATTENTION)
   }
-  // Netzach (4) - Creativity - Generation, creation
+  // Generative (4) - Creativity - Generation, creation
   if (textLower.includes('creat') || textLower.includes('generat') || textLower.includes('design') || textLower.includes('innovate')) {
-    sefirot.push(Sefirah.NETZACH)
+    layers.push(Layer.GENERATIVE)
   }
-  // Hod (3) - Logic - Classification, logic
+  // Classifier (3) - Logic - Classification, logic
   if (textLower.includes('logic') || textLower.includes('classif') || textLower.includes('categor') || category === 'definition') {
-    sefirot.push(Sefirah.HOD)
+    layers.push(Layer.CLASSIFIER)
   }
-  // Yesod (2) - Foundation - Implementation, execution
+  // Executor (2) - Foundation - Implementation, execution
   if (textLower.includes('implement') || textLower.includes('execut') || textLower.includes('method') || category === 'method') {
-    sefirot.push(Sefirah.YESOD)
+    layers.push(Layer.EXECUTOR)
   }
-  // Malkuth (1) - Kingdom - Data, concrete
+  // Embedding (1) - Kingdom - Data, concrete
   if (textLower.includes('data') || textLower.includes('result') || textLower.includes('example') || category === 'data' || category === 'example') {
-    sefirot.push(Sefirah.MALKUTH)
+    layers.push(Layer.EMBEDDING)
   }
-  // Da'at (11) - Knowledge - Emergent insights
+  // Synthesis (11) - Knowledge - Emergent insights
   if (textLower.includes('insight') || textLower.includes('emergent') || textLower.includes('discover') || category === 'insight') {
-    sefirot.push(Sefirah.DAAT)
+    layers.push(Layer.SYNTHESIS)
   }
 
-  // Default to Tiferet (balance/core) if no match
-  return sefirot.length > 0 ? sefirot.slice(0, 2) : [Sefirah.TIFERET]
+  // Default to Attention (balance/core) if no match
+  return layers.length > 0 ? layers.slice(0, 2) : [Layer.ATTENTION]
 }
 
-// Generate query-specific insight with Sefirot focus
+// Generate query-specific insight with Layers focus
 function generateQueryInsight(query: string, content: string, nodes: ConceptNode[]): QueryInsight {
   const queryLower = query.toLowerCase()
   const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3)
@@ -119,31 +119,31 @@ function generateQueryInsight(query: string, content: string, nodes: ConceptNode
   else if (queryLower.includes('compare')) intent = 'Analyze differences and trade-offs'
   else intent = 'Explore and synthesize information'
 
-  // Determine Sefirot focus based on query type
-  const sefirotFocus: { sefirah: Sefirah; reason: string }[] = []
+  // Determine Layers focus based on query type
+  const layersFocus: { layerNode: Layer; reason: string }[] = []
 
   if (queryLower.includes('how') || queryLower.includes('implement') || queryLower.includes('build')) {
-    sefirotFocus.push({ sefirah: Sefirah.YESOD, reason: 'Implementation focus' })
+    layersFocus.push({ layerNode: Layer.EXECUTOR, reason: 'Implementation focus' })
   }
   if (queryLower.includes('what') || queryLower.includes('define') || queryLower.includes('explain')) {
-    sefirotFocus.push({ sefirah: Sefirah.HOD, reason: 'Classification & definition' })
+    layersFocus.push({ layerNode: Layer.CLASSIFIER, reason: 'Classification & definition' })
   }
   if (queryLower.includes('why') || queryLower.includes('reason') || queryLower.includes('cause')) {
-    sefirotFocus.push({ sefirah: Sefirah.BINAH, reason: 'Pattern understanding' })
+    layersFocus.push({ layerNode: Layer.ENCODER, reason: 'Pattern understanding' })
   }
   if (queryLower.includes('create') || queryLower.includes('design') || queryLower.includes('generate')) {
-    sefirotFocus.push({ sefirah: Sefirah.NETZACH, reason: 'Creative generation' })
+    layersFocus.push({ layerNode: Layer.GENERATIVE, reason: 'Creative generation' })
   }
   if (queryLower.includes('compare') || queryLower.includes('limit') || queryLower.includes('constraint')) {
-    sefirotFocus.push({ sefirah: Sefirah.GEVURAH, reason: 'Boundaries & evaluation' })
+    layersFocus.push({ layerNode: Layer.DISCRIMINATOR, reason: 'Boundaries & evaluation' })
   }
 
-  // Default to Tiferet if no specific focus
-  if (sefirotFocus.length === 0) {
-    sefirotFocus.push({ sefirah: Sefirah.TIFERET, reason: 'Balanced integration' })
+  // Default to Attention if no specific focus
+  if (layersFocus.length === 0) {
+    layersFocus.push({ layerNode: Layer.ATTENTION, reason: 'Balanced integration' })
   }
 
-  return { intent, keywords, sefirotFocus: sefirotFocus.slice(0, 2) }
+  return { intent, keywords, layersFocus: layersFocus.slice(0, 2) }
 }
 
 // Generate node-specific context and insight
@@ -214,7 +214,7 @@ function extractInsights(content: string, query: string): ConceptNode[] {
     const relevance = Math.min(0.98, 0.6 + (matchWords / Math.max(1, queryWords.length)) * 0.4)
 
     const { context, insight } = generateNodeInsight(item.text, category, query)
-    const sefirotMapping = mapToSefirot(item.text, category)
+    const layerMapping = mapToLayers(item.text, category)
 
     nodes.push({
       id: `insight-${nodes.length}`,
@@ -226,7 +226,7 @@ function extractInsights(content: string, query: string): ConceptNode[] {
       connections: [],
       context,
       insight,
-      sefirotMapping
+      layerMapping
     })
   })
 
@@ -289,22 +289,22 @@ async function discoverResearchLinks(query: string, content: string): Promise<{
   }
 }
 
-// Sefirah colors
-const SEFIRAH_COLORS: Record<number, string> = {
-  1: '#f59e0b', // Malkuth - amber
-  2: '#8b5cf6', // Yesod - violet
-  3: '#f97316', // Hod - orange
-  4: '#22c55e', // Netzach - green
-  5: '#eab308', // Tiferet - yellow
-  6: '#ef4444', // Gevurah - red
-  7: '#3b82f6', // Chesed - blue
-  8: '#6366f1', // Binah - indigo
-  9: '#64748b', // Chokmah - slate
-  10: '#ffffff', // Kether - white
-  11: '#06b6d4', // Da'at - cyan
+// Layer colors
+const LAYER_COLORS: Record<number, string> = {
+  1: '#f59e0b', // Embedding - amber
+  2: '#8b5cf6', // Executor - violet
+  3: '#f97316', // Classifier - orange
+  4: '#22c55e', // Generative - green
+  5: '#eab308', // Attention - yellow
+  6: '#ef4444', // Discriminator - red
+  7: '#3b82f6', // Expansion - blue
+  8: '#6366f1', // Encoder - indigo
+  9: '#64748b', // Reasoning - slate
+  10: '#ffffff', // Meta-Core - white
+  11: '#06b6d4', // Synthesis - cyan
 }
 
-export default function InsightMindmap({ content, query, onSwitchToSefirot, onOpenMindMap }: InsightMindmapProps) {
+export default function InsightMindmap({ content, query, onSwitchToLayers, onOpenMindMap }: InsightMindmapProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [selectedNode, setSelectedNode] = useState<ConceptNode | null>(null)
   const [researchLinks, setResearchLinks] = useState<ResearchLink[]>([])
@@ -319,8 +319,8 @@ export default function InsightMindmap({ content, query, onSwitchToSefirot, onOp
     })
   }, [query, content])
 
-  // Check if Sefirot view is available
-  const canShowSefirot = useMemo(() => {
+  // Check if Layers view is available
+  const canShowLayers = useMemo(() => {
     const headerCount = (content.match(/^#+\s*.+$/gm) || []).length
     const boldCount = (content.match(/\*\*[^*]+\*\*/g) || []).length
     return headerCount >= 2 || boldCount >= 3
@@ -328,11 +328,11 @@ export default function InsightMindmap({ content, query, onSwitchToSefirot, onOp
 
   if (nodes.length < 3) return null
 
-  // Get unique Sefirot from all nodes for the summary
-  const activeSefirot = useMemo(() => {
-    const sefirotSet = new Set<Sefirah>()
-    nodes.forEach(n => n.sefirotMapping.forEach(s => sefirotSet.add(s)))
-    return Array.from(sefirotSet).slice(0, 4)
+  // Get unique Layers from all nodes for the summary
+  const activeLayers = useMemo(() => {
+    const layersSet = new Set<Layer>()
+    nodes.forEach(n => n.layerMapping.forEach(s => layersSet.add(s)))
+    return Array.from(layersSet).slice(0, 4)
   }, [nodes])
 
   return (
@@ -353,14 +353,14 @@ export default function InsightMindmap({ content, query, onSwitchToSefirot, onOp
             <span className="text-[9px] text-slate-400 dark:text-slate-500">{nodes.length} topics</span>
           </div>
           <div className="flex items-center gap-2">
-            {/* Active Sefirot indicators */}
+            {/* Active Layers indicators */}
             <div className="flex items-center gap-0.5">
-              {activeSefirot.map(s => (
+              {activeLayers.map(s => (
                 <div
                   key={s}
                   className="w-2 h-2 rounded-full border border-white/50"
-                  style={{ backgroundColor: SEFIRAH_COLORS[s] }}
-                  title={SEPHIROTH_METADATA[s]?.name}
+                  style={{ backgroundColor: LAYER_COLORS[s] }}
+                  title={LAYER_METADATA[s]?.name}
                 />
               ))}
             </div>
@@ -384,20 +384,20 @@ export default function InsightMindmap({ content, query, onSwitchToSefirot, onOp
                     <p className="text-[10px] text-slate-700 dark:text-slate-300">{queryInsight.intent}</p>
                   </div>
                   <div className="flex-shrink-0">
-                    <div className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Sefirot Focus</div>
+                    <div className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Layer Focus</div>
                     <div className="flex items-center gap-1">
-                      {queryInsight.sefirotFocus.map(({ sefirah, reason }) => (
+                      {queryInsight.layersFocus.map(({ layerNode, reason }) => (
                         <div
-                          key={sefirah}
+                          key={layerNode}
                           className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-medium"
                           style={{
-                            backgroundColor: SEFIRAH_COLORS[sefirah] + '20',
-                            color: sefirah === 10 ? '#64748b' : SEFIRAH_COLORS[sefirah]
+                            backgroundColor: LAYER_COLORS[layerNode] + '20',
+                            color: layerNode === 10 ? '#64748b' : LAYER_COLORS[layerNode]
                           }}
                           title={reason}
                         >
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: SEFIRAH_COLORS[sefirah] }} />
-                          {SEPHIROTH_METADATA[sefirah]?.name}
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: LAYER_COLORS[layerNode] }} />
+                          {LAYER_METADATA[layerNode]?.name}
                         </div>
                       ))}
                     </div>
@@ -425,7 +425,7 @@ export default function InsightMindmap({ content, query, onSwitchToSefirot, onOp
                 <div className="space-y-1.5">
                   {nodes.slice(0, 6).map((node, i) => {
                     const isSelected = selectedNode?.id === node.id
-                    const primarySefirah = node.sefirotMapping[0]
+                    const primaryLayer = node.layerMapping[0]
 
                     return (
                       <motion.button
@@ -441,19 +441,29 @@ export default function InsightMindmap({ content, query, onSwitchToSefirot, onOp
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          {/* Sefirot indicator */}
+                          {/* Layers indicator */}
                           <div
                             className="w-2 h-2 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: SEFIRAH_COLORS[primarySefirah] }}
-                            title={SEPHIROTH_METADATA[primarySefirah]?.name}
+                            style={{ backgroundColor: LAYER_COLORS[primaryLayer] }}
+                            title={LAYER_METADATA[primaryLayer]?.name}
                           />
                           {/* Label */}
                           <span className="flex-1 text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate">
                             {node.label}
                           </span>
+                          {/* Extraction Confidence - how reliably this concept was identified */}
+                          <span
+                            className="text-[8px] text-emerald-600 dark:text-emerald-400 font-medium"
+                            title="Extraction Confidence: How reliably this concept was identified from the response (based on formatting: bold text, headers, and bullet points)"
+                          >
+                            {Math.round(node.confidence * 100)}%
+                          </span>
                           {/* Connection count */}
                           {node.connections.length > 0 && (
-                            <span className="flex items-center gap-0.5 text-[8px] text-slate-400">
+                            <span
+                              className="flex items-center gap-0.5 text-[8px] text-slate-400"
+                              title={`Connected to ${node.connections.length} other concept(s) via shared terminology`}
+                            >
                               <LinkIcon className="w-2.5 h-2.5" />
                               {node.connections.length}
                             </span>
@@ -469,18 +479,40 @@ export default function InsightMindmap({ content, query, onSwitchToSefirot, onOp
                             <p className="text-[9px] text-slate-600 dark:text-slate-400 leading-relaxed">
                               {node.fullText}
                             </p>
-                            <div className="mt-1 flex items-center gap-1">
-                              <span className="text-[8px] text-slate-400">Sefirot:</span>
-                              {node.sefirotMapping.map(s => (
+                            {/* Metrics with tooltips */}
+                            <div className="mt-2 flex items-center gap-3 text-[8px]">
+                              <span
+                                className="flex items-center gap-1"
+                                title="Extraction Confidence: How reliably this concept was identified from the AI response. Higher scores indicate clearer formatting (bold, headers) in the source."
+                              >
+                                <span className="text-slate-400">Confidence:</span>
+                                <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                                  {Math.round(node.confidence * 100)}%
+                                </span>
+                              </span>
+                              <span
+                                className="flex items-center gap-1"
+                                title="Query Relevance: How closely this concept matches keywords from your original question. Higher scores mean stronger topical alignment."
+                              >
+                                <span className="text-slate-400">Relevance:</span>
+                                <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                  {Math.round(node.relevance * 100)}%
+                                </span>
+                              </span>
+                            </div>
+                            <div className="mt-1.5 flex items-center gap-1">
+                              <span className="text-[8px] text-slate-400">AI Layers:</span>
+                              {node.layerMapping.map(s => (
                                 <span
                                   key={s}
                                   className="text-[8px] px-1 py-0.5 rounded"
                                   style={{
-                                    backgroundColor: SEFIRAH_COLORS[s] + '20',
-                                    color: s === 10 ? '#64748b' : SEFIRAH_COLORS[s]
+                                    backgroundColor: LAYER_COLORS[s] + '20',
+                                    color: s === 10 ? '#64748b' : LAYER_COLORS[s]
                                   }}
+                                  title={`${LAYER_METADATA[s]?.name}: ${LAYER_METADATA[s]?.aiRole || 'AI computational layer'}`}
                                 >
-                                  {SEPHIROTH_METADATA[s]?.name}
+                                  {LAYER_METADATA[s]?.name}
                                 </span>
                               ))}
                             </div>
@@ -520,12 +552,12 @@ export default function InsightMindmap({ content, query, onSwitchToSefirot, onOp
                 )}
 
                 {/* View Switch */}
-                {((onSwitchToSefirot && canShowSefirot) || onOpenMindMap) && (
+                {((onSwitchToLayers && canShowLayers) || onOpenMindMap) && (
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
                     <span className="text-[8px] text-slate-400 uppercase tracking-wider">Views:</span>
-                    {onSwitchToSefirot && canShowSefirot && (
+                    {onSwitchToLayers && canShowLayers && (
                       <button
-                        onClick={onSwitchToSefirot}
+                        onClick={onSwitchToLayers}
                         className="px-2 py-1 rounded text-[9px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
                       >
                         ◆ AI Config

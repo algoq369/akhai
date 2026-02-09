@@ -2,7 +2,7 @@
 
 /**
  * CANVAS MODE PAGE
- * 
+ *
  * Draggable whiteboard/canvas interface for AkhAI.
  * Alternative view to the classic chat interface.
  */
@@ -12,60 +12,21 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CanvasWorkspace, QueryCard, VisualNode, VisualEdge } from '@/components/canvas'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
+import { useLayerStore } from '@/lib/stores/layer-store'
 import DarkModeToggle from '@/components/DarkModeToggle'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
-
-// Demo data - in production this would come from the conversation store
-const DEMO_QUERY_CARDS: QueryCard[] = [
-  {
-    id: '1',
-    query: 'What is the Kabbalistic Tree of Life?',
-    response: 'The Kabbalistic Tree of Life (Etz Chaim) is a mystical symbol representing the structure of creation and the path of spiritual ascent. It consists of 10 Sefirot (emanations) connected by 22 paths, forming a map of consciousness and divine energy flow.',
-    timestamp: new Date(Date.now() - 3600000),
-    methodology: 'direct',
-    sefirah: 'Binah',
-  },
-  {
-    id: '2',
-    query: 'How does AkhAI use the Sefirot in AI processing?',
-    response: 'AkhAI maps the 10 Sefirot to AI processing layers: Malkuth (input parsing), Yesod (comprehension), Hod (communication), Netzach (persistence), Tiferet (synthesis), Gevurah (critical analysis), Chesed (expansion), Binah (knowledge recall), Chokmah (reasoning), and Kether (meta-cognition). This creates a holistic processing pipeline.',
-    timestamp: new Date(Date.now() - 1800000),
-    methodology: 'cod',
-    sefirah: 'Chokmah',
-    guardWarnings: ['Source verification pending'],
-  },
-  {
-    id: '3',
-    query: 'Explain the Guard system',
-    response: 'The Guard system monitors AI outputs for anti-patterns (Qliphoth). It detects: hallucinations, contradictions, over-confidence, verbose padding, and source hiding. Each warning triggers a confidence adjustment and optional correction.',
-    timestamp: new Date(Date.now() - 900000),
-    methodology: 'bot',
-    sefirah: 'Gevurah',
-  },
-]
-
-const DEMO_VISUAL_NODES: VisualNode[] = [
-  { id: 'n1', label: 'Kabbalistic Tree', type: 'concept', description: 'Central mystical framework', weight: 0.9, color: '#a78bfa' },
-  { id: 'n2', label: 'Sefirot Mapping', type: 'insight', description: 'AI layers correspond to emanations', weight: 0.8, color: '#818cf8' },
-  { id: 'n3', label: 'Guard System', type: 'connection', description: 'Anti-pattern detection', weight: 0.7, color: '#f87171' },
-  { id: 'n4', label: 'Processing Pipeline', type: 'sefirah', description: 'From input to output', weight: 0.6, color: '#fbbf24' },
-  { id: 'n5', label: 'Qliphoth', type: 'concept', description: 'Shadow patterns to avoid', weight: 0.5, color: '#ef4444' },
-]
-
-const DEMO_VISUAL_EDGES: VisualEdge[] = [
-  { source: 'n1', target: 'n2', label: 'maps to' },
-  { source: 'n2', target: 'n4', label: 'creates' },
-  { source: 'n3', target: 'n5', label: 'monitors' },
-  { source: 'n4', target: 'n3', label: 'feeds' },
-]
+import SideMiniChat from '@/components/SideMiniChat'
+import type { Message } from '@/lib/chat-store'
+// ArrowLeftIcon inline to avoid heroicons sizing issues
 
 export default function CanvasPage() {
   const router = useRouter()
   const [darkMode, setDarkMode] = useState(false)
-  const [queryCards, setQueryCards] = useState<QueryCard[]>(DEMO_QUERY_CARDS)
-  const [visualNodes, setVisualNodes] = useState<VisualNode[]>(DEMO_VISUAL_NODES)
-  const [visualEdges, setVisualEdges] = useState<VisualEdge[]>(DEMO_VISUAL_EDGES)
+  const [queryCards, setQueryCards] = useState<QueryCard[]>([])
+  const [visualNodes, setVisualNodes] = useState<VisualNode[]>([])
+  const [visualEdges, setVisualEdges] = useState<VisualEdge[]>([])
+  const [miniChatMessages, setMiniChatMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isQueryLoading, setIsQueryLoading] = useState(false)
 
   // Load dark mode preference
   useEffect(() => {
@@ -75,15 +36,154 @@ export default function CanvasPage() {
     }
   }, [])
 
+  // Fetch real query history on mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch('/api/history')
+        const data = await res.json()
+        const queries = data.queries || []
+
+        // Convert to QueryCard format
+        const cards: QueryCard[] = queries.slice(0, 10).map((q: any) => ({
+          id: q.id,
+          query: q.query,
+          response: q.result ? JSON.parse(q.result)?.finalAnswer || 'No response' : 'Pending...',
+          timestamp: new Date(q.created_at * 1000),
+          methodology: q.flow || 'direct',
+          layerNode: 'encoder',
+        }))
+
+        setQueryCards(cards)
+
+        // Generate visual nodes from query topics
+        const nodes: VisualNode[] = []
+        const nodeSet = new Set<string>()
+
+        cards.forEach((card, idx) => {
+          // Extract key terms from query for nodes
+          const terms = card.query
+            .toLowerCase()
+            .split(/\s+/)
+            .filter((w: string) => w.length > 4)
+            .slice(0, 2)
+
+          terms.forEach((term: string) => {
+            if (!nodeSet.has(term)) {
+              nodeSet.add(term)
+              nodes.push({
+                id: `n${nodes.length}`,
+                label: term.charAt(0).toUpperCase() + term.slice(1),
+                type: idx % 3 === 0 ? 'concept' : idx % 3 === 1 ? 'insight' : 'connection',
+                description: `Extracted from: "${card.query.substring(0, 50)}..."`,
+                weight: 0.9 - (nodes.length * 0.1),
+                color: ['#a78bfa', '#818cf8', '#f87171', '#fbbf24', '#22c55e'][nodes.length % 5],
+              })
+            }
+          })
+        })
+
+        setVisualNodes(nodes.slice(0, 8))
+
+        // Generate edges between consecutive nodes
+        const edges: VisualEdge[] = []
+        for (let i = 0; i < Math.min(nodes.length - 1, 5); i++) {
+          edges.push({
+            source: nodes[i].id,
+            target: nodes[i + 1].id,
+            label: 'relates to',
+          })
+        }
+        setVisualEdges(edges)
+      } catch (error) {
+        console.error('Failed to fetch history:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchHistory()
+  }, [])
+
   const handleQuerySelect = useCallback((queryId: string) => {
     console.log('Selected query:', queryId)
-    // In production: highlight related nodes, scroll to card, etc.
-  }, [])
+    // Highlight related nodes, scroll to card
+    const card = queryCards.find(c => c.id === queryId)
+    if (card) {
+      // Could scroll to card or highlight it
+    }
+  }, [queryCards])
 
   const handleNodeSelect = useCallback((nodeId: string) => {
     console.log('Selected node:', nodeId)
-    // In production: show node details, highlight related queries, etc.
+    // Show node details, highlight related queries
   }, [])
+
+  // Handle query submission from mini-chat
+  const handleSendQuery = useCallback(async (query: string) => {
+    if (!query.trim() || isQueryLoading) return
+
+    setIsQueryLoading(true)
+
+    // Add user message to mini chat
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: query,
+      timestamp: new Date(),
+    }
+    setMiniChatMessages(prev => [...prev, userMessage])
+
+    try {
+      // Submit to API
+      const res = await fetch('/api/simple-query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query,
+          methodology: 'direct',
+          conversationHistory: miniChatMessages.map(m => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      })
+
+      const data = await res.json()
+      const response = data.response || 'No response'
+
+      // Add AI response to mini chat
+      const aiMessage: Message = {
+        id: `ai-${Date.now()}`,
+        role: 'assistant',
+        content: response,
+        timestamp: new Date(),
+      }
+      setMiniChatMessages(prev => [...prev, aiMessage])
+
+      // Add to query cards
+      const newCard: QueryCard = {
+        id: `canvas-${Date.now()}`,
+        query,
+        response,
+        timestamp: new Date(),
+        methodology: 'direct',
+        layerNode: 'encoder',
+      }
+      setQueryCards(prev => [newCard, ...prev])
+    } catch (error) {
+      console.error('Query failed:', error)
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: 'Error: Failed to process query',
+        timestamp: new Date(),
+      }
+      setMiniChatMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsQueryLoading(false)
+    }
+  }, [isQueryLoading, miniChatMessages])
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-relic-void' : 'bg-white'}`}>
@@ -100,7 +200,9 @@ export default function CanvasPage() {
                 darkMode ? 'text-relic-ghost' : 'text-relic-slate'
               }`}
             >
-              <ArrowLeftIcon className="w-4 h-4" />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 16, height: 16 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+              </svg>
             </Link>
             <div>
               <h1 className={`text-sm font-light tracking-[0.2em] ${
@@ -116,24 +218,12 @@ export default function CanvasPage() {
             </div>
           </div>
 
-          {/* Center: View Toggle */}
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className={`px-3 py-1 text-[9px] rounded transition-all ${
-                darkMode 
-                  ? 'bg-relic-slate/30 text-relic-ghost hover:bg-relic-slate/50' 
-                  : 'bg-relic-ghost text-relic-slate hover:bg-relic-mist'
-              }`}
-            >
-              ← Classic Chat
-            </Link>
-            <span className={`px-3 py-1 text-[9px] rounded ${
-              darkMode 
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' 
-                : 'bg-purple-100 text-purple-600 border border-purple-200'
+          {/* Center: Minimal Label */}
+          <div className="flex items-center">
+            <span className={`text-[8px] uppercase tracking-widest ${
+              darkMode ? 'text-relic-ghost/40' : 'text-relic-silver/40'
             }`}>
-              ◇ Canvas
+              canvas
             </span>
           </div>
 
@@ -168,6 +258,24 @@ export default function CanvasPage() {
             </div>
           }
         />
+        <SideMiniChat
+          isVisible={true}
+          messages={miniChatMessages}
+          draggable={true}
+          defaultPosition={{ left: 20, top: 400 }}
+          onSendQuery={handleSendQuery}
+        />
+        {/* Loading overlay */}
+        {(isLoading || isQueryLoading) && (
+          <div className="fixed bottom-4 right-4 bg-white/90 dark:bg-relic-void/90 px-3 py-2 rounded-lg shadow-lg border border-relic-mist/30">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 border-2 border-relic-silver border-t-relic-void rounded-full animate-spin" />
+              <span className="text-[9px] text-relic-slate dark:text-relic-ghost font-mono">
+                {isLoading ? 'Loading history...' : 'Processing query...'}
+              </span>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

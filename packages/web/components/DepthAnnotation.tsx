@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * DEPTH ANNOTATION COMPONENT - SEFIROT SIGIL VERSION
+ * DEPTH ANNOTATION COMPONENT - LAYERS SIGIL VERSION
  *
  * Renders text with inline colored sigils from Tree of Life.
  * Click sigil to expand grey insight text in popover.

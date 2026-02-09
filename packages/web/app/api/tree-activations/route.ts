@@ -1,7 +1,7 @@
 /**
  * TREE ACTIVATIONS API
  *
- * Fetches aggregated Sefirot activations from conversation history
+ * Fetches aggregated Layers activations from conversation history
  * Makes the Tree of Life query-adaptive and evolution-based
  *
  * GET /api/tree-activations
@@ -13,30 +13,30 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/database'
-import { Sefirah } from '@/lib/ascent-tracker'
+import { Layer } from '@/lib/layer-registry'
 
 interface ActivationDataPoint {
   queryId: string
   query: string
   timestamp: number
-  activations: Record<Sefirah, number>
-  dominantSefirah: Sefirah
-  keywords: Record<Sefirah, string[]>
+  activations: Record<Layer, number>
+  dominantLayer: Layer
+  keywords: Record<Layer, string[]>
 }
 
 interface AggregatedActivations {
-  current: Record<Sefirah, number> // Current average activations
-  peak: Record<Sefirah, number> // Peak activation per Sefirah
-  total: Record<Sefirah, number> // Total activation count
+  current: Record<Layer, number> // Current average activations
+  peak: Record<Layer, number> // Peak activation per Layer
+  total: Record<Layer, number> // Total activation count
   evolution: ActivationDataPoint[] // Historical evolution
   stats: {
     totalQueries: number
-    queriesWithGnostic: number
+    queriesWithAnalysis: number
     dateRange: {
       earliest: number
       latest: number
     }
-    dominantSefirahOverall: Sefirah
+    dominantLayerOverall: Layer
     averageLevel: number
   }
 }
@@ -87,9 +87,9 @@ export async function GET(request: NextRequest) {
 
     // Parse gnostic metadata and extract activations
     const dataPoints: ActivationDataPoint[] = []
-    const activationSum: Record<Sefirah, number> = initializeSefirotRecord()
-    const activationPeak: Record<Sefirah, number> = initializeSefirotRecord()
-    const activationCount: Record<Sefirah, number> = initializeSefirotRecord()
+    const activationSum: Record<Layer, number> = initializeLayerRecord()
+    const activationPeak: Record<Layer, number> = initializeLayerRecord()
+    const activationCount: Record<Layer, number> = initializeLayerRecord()
 
     for (const row of rows) {
       if (!row.gnostic_metadata) continue
@@ -97,46 +97,46 @@ export async function GET(request: NextRequest) {
       try {
         const gnostic = JSON.parse(row.gnostic_metadata)
 
-        if (!gnostic.sephirothAnalysis?.activations) continue
+        if (!gnostic.layerAnalysis?.activations) continue
 
-        const activations = {} as Record<Sefirah, number>
-        const keywords = {} as Record<Sefirah, string[]>
+        const activations = {} as Record<Layer, number>
+        const keywords = {} as Record<Layer, string[]>
 
         // Extract activations and keywords from detailed analysis
-        if (Array.isArray(gnostic.sephirothAnalysis.activations)) {
+        if (Array.isArray(gnostic.layerAnalysis.activations)) {
           // New format: array of activation objects
-          for (const activation of gnostic.sephirothAnalysis.activations) {
-            const sefirah = activation.sefirah as Sefirah
-            activations[sefirah] = activation.activation
-            keywords[sefirah] = activation.keywords || []
+          for (const activation of gnostic.layerAnalysis.activations) {
+            const layerNode = activation.layerNode as Layer
+            activations[layerNode] = activation.activation
+            keywords[layerNode] = activation.keywords || []
           }
         } else {
           // Old format: just numbers
-          for (const [sefirahStr, activation] of Object.entries(gnostic.sephirothAnalysis.activations)) {
-            const sefirah = Number(sefirahStr) as Sefirah
-            activations[sefirah] = activation as number
-            keywords[sefirah] = []
+          for (const [layerNodeStr, activation] of Object.entries(gnostic.layerAnalysis.activations)) {
+            const layerNode = Number(layerNodeStr) as Layer
+            activations[layerNode] = activation as number
+            keywords[layerNode] = []
           }
         }
 
-        // Find dominant Sefirah
+        // Find dominant Layer
         let maxActivation = 0
-        let dominantSefirah = Sefirah.MALKUTH
+        let dominantLayer = Layer.EMBEDDING
 
-        for (const [sefirahStr, activation] of Object.entries(activations)) {
-          const sefirah = Number(sefirahStr) as Sefirah
+        for (const [layerNodeStr, activation] of Object.entries(activations)) {
+          const layerNode = Number(layerNodeStr) as Layer
 
           // Accumulate statistics
-          activationSum[sefirah] += activation
-          activationCount[sefirah] += activation > 0.1 ? 1 : 0
+          activationSum[layerNode] += activation
+          activationCount[layerNode] += activation > 0.1 ? 1 : 0
 
-          if (activation > activationPeak[sefirah]) {
-            activationPeak[sefirah] = activation
+          if (activation > activationPeak[layerNode]) {
+            activationPeak[layerNode] = activation
           }
 
           if (activation > maxActivation) {
             maxActivation = activation
-            dominantSefirah = sefirah
+            dominantLayer = layerNode
           }
         }
 
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
           query: row.query,
           timestamp: row.created_at * 1000, // Convert to milliseconds
           activations,
-          dominantSefirah,
+          dominantLayer,
           keywords,
         })
       } catch (parseError) {
@@ -154,33 +154,33 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate current average activations
-    const currentActivations: Record<Sefirah, number> = initializeSefirotRecord()
+    const currentActivations: Record<Layer, number> = initializeLayerRecord()
     const totalQueries = dataPoints.length
 
     if (totalQueries > 0) {
-      for (const sefirah of Object.values(Sefirah).filter((v): v is Sefirah => typeof v === 'number')) {
-        currentActivations[sefirah] = activationSum[sefirah] / totalQueries
+      for (const layerNode of Object.values(Layer).filter((v): v is Layer => typeof v === 'number')) {
+        currentActivations[layerNode] = activationSum[layerNode] / totalQueries
       }
     }
 
-    // Find overall dominant Sefirah
+    // Find overall dominant Layer
     let overallMax = 0
-    let dominantSefirahOverall = Sefirah.MALKUTH
+    let dominantLayerOverall = Layer.EMBEDDING
 
-    for (const [sefirah, activation] of Object.entries(currentActivations)) {
+    for (const [layerNode, activation] of Object.entries(currentActivations)) {
       if (activation > overallMax) {
         overallMax = activation
-        dominantSefirahOverall = Number(sefirah) as Sefirah
+        dominantLayerOverall = Number(layerNode) as Layer
       }
     }
 
-    // Calculate average level (weighted average of Sefirah numbers)
+    // Calculate average level (weighted average of Layer numbers)
     let weightedSum = 0
     let totalWeight = 0
 
-    for (const [sefirahStr, activation] of Object.entries(currentActivations)) {
-      const sefirah = Number(sefirahStr) as Sefirah
-      weightedSum += sefirah * activation
+    for (const [layerNodeStr, activation] of Object.entries(currentActivations)) {
+      const layerNode = Number(layerNodeStr) as Layer
+      weightedSum += layerNode * activation
       totalWeight += activation
     }
 
@@ -197,12 +197,12 @@ export async function GET(request: NextRequest) {
       evolution: dataPoints,
       stats: {
         totalQueries,
-        queriesWithGnostic: rows.length,
+        queriesWithAnalysis: rows.length,
         dateRange: {
           earliest: dataPoints.length > 0 ? dataPoints[0].timestamp : Date.now(),
           latest: dataPoints.length > 0 ? dataPoints[dataPoints.length - 1].timestamp : Date.now(),
         },
-        dominantSefirahOverall,
+        dominantLayerOverall,
         averageLevel,
       },
     }
@@ -222,20 +222,20 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Initialize a Record with all Sefirot set to 0
+ * Initialize a Record with all Layers set to 0
  */
-function initializeSefirotRecord(): Record<Sefirah, number> {
+function initializeLayerRecord(): Record<Layer, number> {
   return {
-    [Sefirah.MALKUTH]: 0,
-    [Sefirah.YESOD]: 0,
-    [Sefirah.HOD]: 0,
-    [Sefirah.NETZACH]: 0,
-    [Sefirah.TIFERET]: 0,
-    [Sefirah.GEVURAH]: 0,
-    [Sefirah.CHESED]: 0,
-    [Sefirah.BINAH]: 0,
-    [Sefirah.CHOKMAH]: 0,
-    [Sefirah.KETHER]: 0,
-    [Sefirah.DAAT]: 0,
+    [Layer.EMBEDDING]: 0,
+    [Layer.EXECUTOR]: 0,
+    [Layer.CLASSIFIER]: 0,
+    [Layer.GENERATIVE]: 0,
+    [Layer.ATTENTION]: 0,
+    [Layer.DISCRIMINATOR]: 0,
+    [Layer.EXPANSION]: 0,
+    [Layer.ENCODER]: 0,
+    [Layer.REASONING]: 0,
+    [Layer.META_CORE]: 0,
+    [Layer.SYNTHESIS]: 0,
   }
 }

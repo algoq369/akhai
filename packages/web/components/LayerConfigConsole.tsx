@@ -8,11 +8,11 @@
  */
 
 import { useState } from 'react'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
+import { useLayerStore } from '@/lib/stores/layer-store'
 import { useSettingsStore } from '@/lib/stores/settings-store'
-import { Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
 import { AI_LAYERS, MODEL_CONFIGS, type ModelConfigName } from '@/lib/ai-terminology'
-import { PRESET_NAMES, getPresetWeights, type PresetName } from '@/lib/sefirot-presets'
+import { PRESET_NAMES, getPresetWeights, type PresetName } from '@/lib/layer-presets'
 
 interface LayerConfigConsoleProps {
   onTest?: (query: string) => Promise<void>
@@ -21,7 +21,7 @@ interface LayerConfigConsoleProps {
 }
 
 export default function LayerConfigConsole({ onTest, testResult, className = '' }: LayerConfigConsoleProps) {
-  const { weights, activePreset, applyPreset, setWeight, processingMode, setProcessingMode } = useSefirotStore()
+  const { weights, activePreset, applyPreset, setWeight, processingMode, setProcessingMode } = useLayerStore()
   const { settings } = useSettingsStore()
   const showOrigins = settings.appearance.showLayerOrigins
 
@@ -32,8 +32,8 @@ export default function LayerConfigConsole({ onTest, testResult, className = '' 
 
   // Find dominant layer (highest weight)
   const dominantLayer = Object.entries(weights).reduce(
-    (max, [id, weight]) => (weight > max.weight ? { id: parseInt(id) as Sefirah, weight } : max),
-    { id: Sefirah.MALKUTH, weight: 0 }
+    (max, [id, weight]) => (weight > max.weight ? { id: parseInt(id) as Layer, weight } : max),
+    { id: Layer.EMBEDDING, weight: 0 }
   )
 
   const handlePresetClick = (name: PresetName) => {
@@ -53,9 +53,9 @@ export default function LayerConfigConsole({ onTest, testResult, className = '' 
 
   // Layer order for display (top to bottom: meta-core to embedding)
   const layerOrder = [
-    Sefirah.KETHER, Sefirah.CHOKMAH, Sefirah.BINAH, Sefirah.DAAT,
-    Sefirah.CHESED, Sefirah.GEVURAH, Sefirah.TIFERET,
-    Sefirah.NETZACH, Sefirah.HOD, Sefirah.YESOD, Sefirah.MALKUTH
+    Layer.META_CORE, Layer.REASONING, Layer.ENCODER, Layer.SYNTHESIS,
+    Layer.EXPANSION, Layer.DISCRIMINATOR, Layer.ATTENTION,
+    Layer.GENERATIVE, Layer.CLASSIFIER, Layer.EXECUTOR, Layer.EMBEDDING
   ]
 
   return (
@@ -151,13 +151,13 @@ export default function LayerConfigConsole({ onTest, testResult, className = '' 
 
         {showWeights && (
           <div className="ml-4 mt-3 space-y-2">
-            {layerOrder.map((sefirah) => {
-              const layer = AI_LAYERS[sefirah]
-              const weight = weights[sefirah] ?? 0.5
+            {layerOrder.map((layerNode) => {
+              const layer = AI_LAYERS[layerNode]
+              const weight = weights[layerNode] ?? 0.5
               const pct = Math.round(weight * 100)
 
               return (
-                <div key={sefirah} className="flex items-center gap-2">
+                <div key={layerNode} className="flex items-center gap-2">
                   <span
                     className="text-[10px] w-4"
                     style={{ color: layer?.color || '#94a3b8' }}
@@ -172,7 +172,7 @@ export default function LayerConfigConsole({ onTest, testResult, className = '' 
                     min="0"
                     max="100"
                     value={pct}
-                    onChange={(e) => setWeight(sefirah, parseInt(e.target.value) / 100)}
+                    onChange={(e) => setWeight(layerNode, parseInt(e.target.value) / 100)}
                     className="flex-1 h-1 bg-relic-mist dark:bg-relic-slate/30 rounded appearance-none cursor-pointer
                       [&::-webkit-slider-thumb]:appearance-none
                       [&::-webkit-slider-thumb]:w-2.5
@@ -185,7 +185,7 @@ export default function LayerConfigConsole({ onTest, testResult, className = '' 
                   />
                   <span className="text-[8px] text-relic-silver w-8 text-right">{pct}%</span>
                   <span
-                    onClick={() => setWeight(sefirah, weight > 0.1 ? 0 : 0.5)}
+                    onClick={() => setWeight(layerNode, weight > 0.1 ? 0 : 0.5)}
                     className="text-[9px] cursor-pointer"
                     style={{ color: weight > 0.1 ? (layer?.color || '#94a3b8') : '#94a3b8' }}
                   >

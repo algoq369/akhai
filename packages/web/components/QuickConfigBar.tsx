@@ -11,8 +11,8 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sefirah } from '@/lib/ascent-tracker'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
+import { Layer } from '@/lib/layer-registry'
+import { useLayerStore } from '@/lib/stores/layer-store'
 
 // ═══════════════════════════════════════════════════════════
 // TYPES & CONSTANTS
@@ -29,40 +29,40 @@ const PRESETS: Preset[] = [
     id: 'fast',
     name: 'fast',
     weights: {
-      [Sefirah.KETHER]: 0.4, [Sefirah.CHOKMAH]: 0.5, [Sefirah.BINAH]: 0.6,
-      [Sefirah.DAAT]: 0.4, [Sefirah.CHESED]: 0.3, [Sefirah.GEVURAH]: 0.5,
-      [Sefirah.TIFERET]: 0.5, [Sefirah.NETZACH]: 0.4, [Sefirah.HOD]: 0.7,
-      [Sefirah.YESOD]: 0.6, [Sefirah.MALKUTH]: 0.8,
+      [Layer.META_CORE]: 0.4, [Layer.REASONING]: 0.5, [Layer.ENCODER]: 0.6,
+      [Layer.SYNTHESIS]: 0.4, [Layer.EXPANSION]: 0.3, [Layer.DISCRIMINATOR]: 0.5,
+      [Layer.ATTENTION]: 0.5, [Layer.GENERATIVE]: 0.4, [Layer.CLASSIFIER]: 0.7,
+      [Layer.EXECUTOR]: 0.6, [Layer.EMBEDDING]: 0.8,
     }
   },
   {
     id: 'balanced',
     name: 'balanced',
     weights: {
-      [Sefirah.KETHER]: 0.5, [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.6,
-      [Sefirah.DAAT]: 0.5, [Sefirah.CHESED]: 0.6, [Sefirah.GEVURAH]: 0.6,
-      [Sefirah.TIFERET]: 0.7, [Sefirah.NETZACH]: 0.6, [Sefirah.HOD]: 0.6,
-      [Sefirah.YESOD]: 0.6, [Sefirah.MALKUTH]: 0.6,
+      [Layer.META_CORE]: 0.5, [Layer.REASONING]: 0.6, [Layer.ENCODER]: 0.6,
+      [Layer.SYNTHESIS]: 0.5, [Layer.EXPANSION]: 0.6, [Layer.DISCRIMINATOR]: 0.6,
+      [Layer.ATTENTION]: 0.7, [Layer.GENERATIVE]: 0.6, [Layer.CLASSIFIER]: 0.6,
+      [Layer.EXECUTOR]: 0.6, [Layer.EMBEDDING]: 0.6,
     }
   },
   {
     id: 'thorough',
     name: 'thorough',
     weights: {
-      [Sefirah.KETHER]: 0.6, [Sefirah.CHOKMAH]: 0.85, [Sefirah.BINAH]: 0.8,
-      [Sefirah.DAAT]: 0.7, [Sefirah.CHESED]: 0.5, [Sefirah.GEVURAH]: 0.85,
-      [Sefirah.TIFERET]: 0.7, [Sefirah.NETZACH]: 0.7, [Sefirah.HOD]: 0.75,
-      [Sefirah.YESOD]: 0.8, [Sefirah.MALKUTH]: 0.75,
+      [Layer.META_CORE]: 0.6, [Layer.REASONING]: 0.85, [Layer.ENCODER]: 0.8,
+      [Layer.SYNTHESIS]: 0.7, [Layer.EXPANSION]: 0.5, [Layer.DISCRIMINATOR]: 0.85,
+      [Layer.ATTENTION]: 0.7, [Layer.GENERATIVE]: 0.7, [Layer.CLASSIFIER]: 0.75,
+      [Layer.EXECUTOR]: 0.8, [Layer.EMBEDDING]: 0.75,
     }
   },
   {
     id: 'creative',
     name: 'creative',
     weights: {
-      [Sefirah.KETHER]: 0.7, [Sefirah.CHOKMAH]: 0.6, [Sefirah.BINAH]: 0.5,
-      [Sefirah.DAAT]: 0.85, [Sefirah.CHESED]: 0.9, [Sefirah.GEVURAH]: 0.3,
-      [Sefirah.TIFERET]: 0.8, [Sefirah.NETZACH]: 0.85, [Sefirah.HOD]: 0.5,
-      [Sefirah.YESOD]: 0.55, [Sefirah.MALKUTH]: 0.65,
+      [Layer.META_CORE]: 0.7, [Layer.REASONING]: 0.6, [Layer.ENCODER]: 0.5,
+      [Layer.SYNTHESIS]: 0.85, [Layer.EXPANSION]: 0.9, [Layer.DISCRIMINATOR]: 0.3,
+      [Layer.ATTENTION]: 0.8, [Layer.GENERATIVE]: 0.85, [Layer.CLASSIFIER]: 0.5,
+      [Layer.EXECUTOR]: 0.55, [Layer.EMBEDDING]: 0.65,
     }
   },
 ]
@@ -70,7 +70,7 @@ const PRESETS: Preset[] = [
 // Critical layers mapping (Top 3 most impactful)
 const CRITICAL_LAYERS = [
   { 
-    id: Sefirah.CHOKMAH, 
+    id: Layer.REASONING, 
     name: 'reasoning', 
     concept: 'problem decomposition',
     color: '#818cf8',
@@ -78,7 +78,7 @@ const CRITICAL_LAYERS = [
     max: 'deep'
   },
   { 
-    id: Sefirah.BINAH, 
+    id: Layer.ENCODER, 
     name: 'knowledge', 
     concept: 'fact retrieval',
     color: '#6366f1',
@@ -86,7 +86,7 @@ const CRITICAL_LAYERS = [
     max: 'broad'
   },
   { 
-    id: Sefirah.DAAT, 
+    id: Layer.SYNTHESIS, 
     name: 'verification', 
     concept: 'self-checking',
     color: '#22d3ee',
@@ -97,17 +97,17 @@ const CRITICAL_LAYERS = [
 
 // All layers for expanded view
 const ALL_LAYERS = [
-  { id: Sefirah.KETHER, name: 'meta-cognition', color: '#a78bfa' },
-  { id: Sefirah.CHOKMAH, name: 'reasoning', color: '#818cf8' },
-  { id: Sefirah.BINAH, name: 'knowledge', color: '#6366f1' },
-  { id: Sefirah.DAAT, name: 'verification', color: '#22d3ee' },
-  { id: Sefirah.CHESED, name: 'expansion', color: '#34d399' },
-  { id: Sefirah.GEVURAH, name: 'critical-analysis', color: '#f87171' },
-  { id: Sefirah.TIFERET, name: 'synthesis', color: '#fbbf24' },
-  { id: Sefirah.NETZACH, name: 'persistence', color: '#fb923c' },
-  { id: Sefirah.HOD, name: 'communication', color: '#facc15' },
-  { id: Sefirah.YESOD, name: 'foundation', color: '#a3a3a3' },
-  { id: Sefirah.MALKUTH, name: 'manifestation', color: '#78716c' },
+  { id: Layer.META_CORE, name: 'meta-cognition', color: '#a78bfa' },
+  { id: Layer.REASONING, name: 'reasoning', color: '#818cf8' },
+  { id: Layer.ENCODER, name: 'knowledge', color: '#6366f1' },
+  { id: Layer.SYNTHESIS, name: 'verification', color: '#22d3ee' },
+  { id: Layer.EXPANSION, name: 'expansion', color: '#34d399' },
+  { id: Layer.DISCRIMINATOR, name: 'critical-analysis', color: '#f87171' },
+  { id: Layer.ATTENTION, name: 'synthesis', color: '#fbbf24' },
+  { id: Layer.GENERATIVE, name: 'persistence', color: '#fb923c' },
+  { id: Layer.CLASSIFIER, name: 'communication', color: '#facc15' },
+  { id: Layer.EXECUTOR, name: 'foundation', color: '#a3a3a3' },
+  { id: Layer.EMBEDDING, name: 'manifestation', color: '#78716c' },
 ]
 
 // ═══════════════════════════════════════════════════════════
@@ -119,27 +119,27 @@ interface QuickConfigBarProps {
 }
 
 export function QuickConfigBar({ className = '' }: QuickConfigBarProps) {
-  const { weights, setWeight } = useSefirotStore()
+  const { weights, setWeight } = useLayerStore()
   const [activePreset, setActivePreset] = useState<string>('balanced')
   const [isExpanded, setIsExpanded] = useState(false)
 
   // Apply preset
   const handlePresetSelect = (preset: Preset) => {
     setActivePreset(preset.id)
-    Object.entries(preset.weights).forEach(([sefirah, weight]) => {
-      setWeight(parseInt(sefirah) as Sefirah, weight)
+    Object.entries(preset.weights).forEach(([layerNode, weight]) => {
+      setWeight(parseInt(layerNode) as Layer, weight)
     })
   }
 
   // Handle weight change
-  const handleWeightChange = (sefirah: Sefirah, value: number) => {
-    setWeight(sefirah, value)
+  const handleWeightChange = (layerNode: Layer, value: number) => {
+    setWeight(layerNode, value)
     setActivePreset('custom')
   }
 
   // Get weight
-  const getWeight = (sefirah: Sefirah): number => {
-    return weights[sefirah] ?? 0.5
+  const getWeight = (layerNode: Layer): number => {
+    return weights[layerNode] ?? 0.5
   }
 
   return (

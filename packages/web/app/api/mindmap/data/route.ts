@@ -13,8 +13,8 @@ import { db } from '@/lib/database'
 import { getUserFromSession } from '@/lib/auth'
 
 // Configuration
-const MAX_CONVERSATION_SIZE = 50 // Exclude topics from conversations with more than this many messages
-const MAX_TOPICS_DISPLAY = 5000  // Maximum topics to show in mind map (increased from 100)
+// NOTE: Removed conversation size filter - all topics should display regardless of conversation length
+const MAX_TOPICS_DISPLAY = 10000  // Maximum topics to show in mind map (increased for full history)
 const CLUSTER_THRESHOLD = 0.3   // Similarity threshold for clustering
 
 // Invalid topic patterns (prompts, malformed data)
@@ -48,12 +48,7 @@ export async function GET(request: NextRequest) {
     const user = token ? getUserFromSession(token) : null
     const userId = user?.id || null
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
+    const effectiveUserId = userId || 'anonymous'
 
     // Check if topics table exists
     const tablesCheck = db.prepare(`
@@ -76,7 +71,7 @@ export async function GET(request: NextRequest) {
         UPDATE topics
         SET user_id = ?, updated_at = ?
         WHERE user_id IS NULL
-      `).run(userId, Math.floor(Date.now() / 1000))
+      `).run(effectiveUserId, Math.floor(Date.now() / 1000))
     } catch (migrationError) {
       console.error('Migration error (non-fatal):', migrationError)
     }
@@ -98,24 +93,8 @@ export async function GET(request: NextRequest) {
     }> = []
 
     try {
-      // Query that filters out topics linked to conversations with >50 messages
+      // Query all topics for the user (no conversation size filtering)
       topics = db.prepare(`
-        WITH topic_conversation_sizes AS (
-          SELECT
-            qt.topic_id,
-            MAX(conversation_sizes.msg_count) as max_conversation_size
-          FROM query_topics qt
-          LEFT JOIN (
-            SELECT
-              q.id as query_id,
-              COUNT(e.id) as msg_count
-            FROM queries q
-            LEFT JOIN events e ON q.id = e.query_id
-            WHERE q.user_id = ?
-            GROUP BY q.id
-          ) conversation_sizes ON qt.query_id = conversation_sizes.query_id
-          GROUP BY qt.topic_id
-        )
         SELECT
           t.id,
           t.name,
@@ -127,16 +106,14 @@ export async function GET(request: NextRequest) {
           t.ai_instructions,
           t.created_at,
           COUNT(DISTINCT qt.query_id) as query_count,
-          COALESCE(tcs.max_conversation_size, 0) as max_conversation_size
+          0 as max_conversation_size
         FROM topics t
         LEFT JOIN query_topics qt ON t.id = qt.topic_id
-        LEFT JOIN topic_conversation_sizes tcs ON t.id = tcs.topic_id
-        WHERE t.user_id = ?
-          AND (t.pinned = 1 OR COALESCE(tcs.max_conversation_size, 0) <= ?)
+        WHERE (t.user_id = ? OR t.user_id IS NULL)
         GROUP BY t.id
         ORDER BY t.pinned DESC, query_count DESC, t.created_at DESC
         LIMIT ?
-      `).all(userId, userId, MAX_CONVERSATION_SIZE, MAX_TOPICS_DISPLAY) as Array<{
+      `).all(effectiveUserId, MAX_TOPICS_DISPLAY) as Array<{
         id: string
         name: string
         description: string | null
@@ -170,8 +147,8 @@ export async function GET(request: NextRequest) {
           relationship_type,
           strength
         FROM topic_relationships
-        WHERE user_id = ?
-      `).all(userId) as Array<{
+        WHERE (user_id = ? OR user_id IS NULL)
+      `).all(effectiveUserId) as Array<{
         topic_from: string
         topic_to: string
         relationship_type: string
@@ -228,7 +205,6 @@ export async function GET(request: NextRequest) {
       clusters,
       meta: {
         totalTopics: topics.length,
-        filteredByConversationSize: MAX_CONVERSATION_SIZE,
         clusterCount: clusters.length,
       },
     }
@@ -239,8 +215,7 @@ export async function GET(request: NextRequest) {
       nodesCount: nodes.length,
       linksCount: links.length,
       clustersCount: clusters.length,
-      maxTopicsLimit: MAX_TOPICS_DISPLAY,
-      conversationSizeFilter: MAX_CONVERSATION_SIZE
+      maxTopicsLimit: MAX_TOPICS_DISPLAY
     })
 
     return NextResponse.json(responseData)

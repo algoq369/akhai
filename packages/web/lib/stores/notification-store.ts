@@ -20,7 +20,7 @@ export interface Notification {
   metadata?: {
     category?: string
     source?: string
-    sefirah?: number
+    layerNode?: number
     guardScore?: number
   }
 }
@@ -141,12 +141,12 @@ export function createGuardAlert(title: string, message: string, guardScore?: nu
 /**
  * Helper to create insight notification
  */
-export function createInsightNotification(title: string, message: string, sefirah?: number) {
+export function createInsightNotification(title: string, message: string, layerNode?: number) {
   useNotificationStore.getState().addNotification({
     type: 'insight',
     title,
     message,
-    metadata: { sefirah }
+    metadata: { layerNode }
   })
 }
 

@@ -46,25 +46,73 @@ const METHODOLOGY_COLORS: Record<string, string> = {
   auto: '#8B5CF6',
 }
 
+const PAGE_SIZE = 50
+
 export default function HistoryPage() {
   const router = useRouter()
   const [queries, setQueries] = useState<QueryHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
+  const [darkMode, setDarkMode] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [offset, setOffset] = useState(0)
+
+  // Load dark mode preference
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('akhai-dark-mode')
+      if (saved) setDarkMode(saved === 'true')
+    }
+  }, [])
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    const newValue = !darkMode
+    setDarkMode(newValue)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('akhai-dark-mode', String(newValue))
+    }
+  }
+
+  // Fetch with pagination
+  const fetchQueries = async (reset: boolean = false) => {
+    const currentOffset = reset ? 0 : offset
+    if (reset) {
+      setLoading(true)
+    } else {
+      setLoadingMore(true)
+    }
+
+    try {
+      const res = await fetch(`/api/history?limit=${PAGE_SIZE}&offset=${currentOffset}`)
+      const data = await res.json()
+      const newQueries = data.queries || []
+
+      console.log('[History] API returned:', newQueries.length, 'conversations (offset:', currentOffset, ')')
+
+      if (reset) {
+        setQueries(newQueries)
+        setOffset(PAGE_SIZE)
+      } else {
+        setQueries(prev => [...prev, ...newQueries])
+        setOffset(prev => prev + PAGE_SIZE)
+      }
+
+      setHasMore(newQueries.length === PAGE_SIZE)
+    } catch (error) {
+      console.error('[History] Fetch failed:', error)
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }
 
   useEffect(() => {
-    fetch('/api/history')
-      .then(res => res.json())
-      .then(data => {
-        const queries = data.queries || []
-        console.log('[History] API returned:', queries.length, 'conversations')
-        setQueries(queries)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    fetchQueries(true)
   }, [])
 
   // Filter by time
@@ -161,66 +209,103 @@ export default function HistoryPage() {
   const totalTokens = filteredBySearch.reduce((sum, q) => sum + (q.tokens_used || 0), 0)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className={`min-h-screen ${darkMode ? 'bg-relic-void' : 'bg-gradient-to-b from-slate-50 to-white'}`}>
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/50">
+      <header className={`sticky top-0 z-40 backdrop-blur-md border-b ${
+        darkMode ? 'bg-relic-void/80 border-relic-slate/30' : 'bg-white/80 border-slate-200/50'
+      }`}>
         <div className="max-w-6xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <a href="/" className="text-[9px] uppercase tracking-[0.3em] text-slate-400 hover:text-slate-600 transition-colors">
+              <a href="/" className={`text-[9px] uppercase tracking-[0.3em] transition-colors ${
+                darkMode ? 'text-relic-ghost/60 hover:text-white' : 'text-slate-400 hover:text-slate-600'
+              }`}>
                 ← akhai
               </a>
-              <div className="h-3 w-px bg-slate-200" />
-              <h1 className="text-sm font-medium text-slate-700">History</h1>
+              <div className={`h-3 w-px ${darkMode ? 'bg-relic-slate/30' : 'bg-slate-200'}`} />
+              <h1 className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-700'}`}>History</h1>
             </div>
-            
-            {/* View mode toggle */}
-            <div className="flex items-center gap-1 bg-slate-100 rounded-md p-0.5">
+
+            {/* Controls */}
+            <div className="flex items-center gap-3">
+              {/* Dark mode toggle */}
               <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-slate-700' : 'text-slate-400 hover:text-slate-600'}`}
+                onClick={toggleDarkMode}
+                className={`p-1.5 rounded transition-all ${
+                  darkMode ? 'text-relic-ghost hover:text-white' : 'text-slate-400 hover:text-slate-600'
+                }`}
               >
-                <Squares2X2Icon className="w-3.5 h-3.5" />
+                {darkMode ? '☀️' : '🌙'}
               </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-slate-700' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                <ListBulletIcon className="w-3.5 h-3.5" />
-              </button>
+
+              {/* View mode toggle */}
+              <div className={`flex items-center gap-1 rounded-md p-0.5 ${
+                darkMode ? 'bg-relic-slate/30' : 'bg-slate-100'
+              }`}>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded transition-all ${
+                    viewMode === 'grid'
+                      ? darkMode ? 'bg-relic-slate text-white shadow-sm' : 'bg-white shadow-sm text-slate-700'
+                      : darkMode ? 'text-relic-ghost hover:text-white' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <Squares2X2Icon className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded transition-all ${
+                    viewMode === 'list'
+                      ? darkMode ? 'bg-relic-slate text-white shadow-sm' : 'bg-white shadow-sm text-slate-700'
+                      : darkMode ? 'text-relic-ghost hover:text-white' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <ListBulletIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       {/* Toolbar */}
-      <div className="sticky top-[49px] z-30 bg-white/60 backdrop-blur-md border-b border-slate-100">
+      <div className={`sticky top-[49px] z-30 backdrop-blur-md border-b ${
+        darkMode ? 'bg-relic-void/60 border-relic-slate/20' : 'bg-white/60 border-slate-100'
+      }`}>
         <div className="max-w-6xl mx-auto px-6 py-2">
           <div className="flex items-center justify-between gap-3">
             {/* Search */}
             <div className="relative flex-1 max-w-sm">
-              <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <MagnifyingGlassIcon className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${
+                darkMode ? 'text-relic-ghost/50' : 'text-slate-400'
+              }`} />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-slate-100 border-0 rounded-md text-xs text-slate-600 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                className={`w-full pl-8 pr-3 py-1.5 border-0 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/30 ${
+                  darkMode
+                    ? 'bg-relic-slate/30 text-white placeholder:text-relic-ghost/50'
+                    : 'bg-slate-100 text-slate-600 placeholder:text-slate-400'
+                }`}
               />
             </div>
 
             {/* Filters */}
             <div className="flex items-center gap-2">
               {/* Time filter */}
-              <div className="flex items-center bg-slate-100 rounded-md p-0.5">
+              <div className={`flex items-center rounded-md p-0.5 ${
+                darkMode ? 'bg-relic-slate/30' : 'bg-slate-100'
+              }`}>
                 {(['all', 'today', 'week', 'month'] as TimeFilter[]).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setTimeFilter(filter)}
                     className={`px-2 py-1 text-[9px] font-medium rounded transition-all capitalize ${
-                      timeFilter === filter 
-                        ? 'bg-white shadow-sm text-slate-700' 
-                        : 'text-slate-400 hover:text-slate-600'
+                      timeFilter === filter
+                        ? darkMode ? 'bg-relic-slate text-white shadow-sm' : 'bg-white shadow-sm text-slate-700'
+                        : darkMode ? 'text-relic-ghost hover:text-white' : 'text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     {filter}
@@ -232,7 +317,9 @@ export default function HistoryPage() {
           </div>
 
           {/* Stats bar */}
-          <div className="flex items-center gap-4 mt-2 text-[9px] text-slate-400">
+          <div className={`flex items-center gap-4 mt-2 text-[9px] ${
+            darkMode ? 'text-relic-ghost/60' : 'text-slate-400'
+          }`}>
             <span className="flex items-center gap-1">
               <DocumentTextIcon className="w-3 h-3" />
               {totalQueries} conversations
@@ -245,6 +332,19 @@ export default function HistoryPage() {
               <CurrencyDollarIcon className="w-3 h-3" />
               ${totalCost.toFixed(4)}
             </span>
+            {hasMore && (
+              <button
+                onClick={() => fetchQueries(false)}
+                disabled={loadingMore}
+                className={`ml-auto px-2 py-0.5 rounded text-[8px] transition-colors ${
+                  darkMode
+                    ? 'bg-relic-slate/30 text-relic-ghost hover:bg-relic-slate/50'
+                    : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                }`}
+              >
+                {loadingMore ? 'Loading...' : 'Load more'}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -253,10 +353,12 @@ export default function HistoryPage() {
       <main className="max-w-6xl mx-auto px-6 py-6">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
+            <div className={`w-5 h-5 border-2 rounded-full animate-spin ${
+              darkMode ? 'border-relic-slate border-t-white' : 'border-slate-200 border-t-slate-500'
+            }`} />
           </div>
         ) : clusters.length === 0 ? (
-          <div className="text-center py-16 text-slate-400">
+          <div className={`text-center py-16 ${darkMode ? 'text-relic-ghost/60' : 'text-slate-400'}`}>
             <DocumentTextIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
             <p className="text-xs">No conversations found</p>
           </div>
@@ -267,10 +369,12 @@ export default function HistoryPage() {
               <button
                 key={cluster.topic}
                 onClick={() => setSelectedTopic(selectedTopic === cluster.topic ? null : cluster.topic)}
-                className={`group relative bg-white rounded-xl border transition-all duration-200 text-left overflow-hidden ${
-                  selectedTopic === cluster.topic 
-                    ? 'border-blue-400 shadow-md scale-[1.02]' 
-                    : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                className={`group relative rounded-xl border transition-all duration-200 text-left overflow-hidden ${
+                  selectedTopic === cluster.topic
+                    ? 'border-blue-400 shadow-md scale-[1.02]'
+                    : darkMode
+                      ? 'bg-relic-slate/20 border-relic-slate/30 hover:border-relic-slate/50 hover:shadow-sm'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
                 }`}
               >
                 {/* Preview area */}

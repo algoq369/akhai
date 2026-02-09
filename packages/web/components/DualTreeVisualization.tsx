@@ -12,7 +12,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
-import { useSefirotStore } from '@/lib/stores/sefirot-store'
+import { useLayerStore } from '@/lib/stores/layer-store'
 
 // AI Computational Tree - Primary labels are AI terms, concepts are secondary
 const AI_TREE_NODES = [
@@ -31,17 +31,17 @@ const AI_TREE_NODES = [
 
 // Anti-Pattern Tree - AI weakness patterns
 const ANTI_PATTERN_NODES = [
-  { id: 'lilith', ai: 'superficial output', concept: 'lacks depth', severity: 'high', y: 50 },
+  { id: 'manipulation', ai: 'superficial output', concept: 'lacks depth', severity: 'high', y: 50 },
   { id: 'gamaliel', ai: 'verbose padding', concept: 'empty words', severity: 'medium', y: 120, x: -110 },
-  { id: 'samael', ai: 'false certainty', concept: 'overconfident claims', severity: 'high', y: 120, x: 110 },
-  { id: 'daath', ai: 'hallucinated facts', concept: 'fabrication', severity: 'critical', y: 190, special: true },
+  { id: 'toxicity', ai: 'false certainty', concept: 'overconfident claims', severity: 'high', y: 120, x: 110 },
+  { id: 'synthesis', ai: 'hallucinated facts', concept: 'fabrication', severity: 'critical', y: 190, special: true },
   { id: 'golachab', ai: 'over-confidence', concept: 'blind spots', severity: 'high', y: 260, x: -110 },
-  { id: 'gamchicoth', ai: 'info overload', concept: 'drowning in data', severity: 'medium', y: 260, x: 110 },
-  { id: 'thagirion', ai: 'arrogant tone', concept: 'dismissive', severity: 'medium', y: 330 },
+  { id: 'instability', ai: 'info overload', concept: 'drowning in data', severity: 'medium', y: 260, x: 110 },
+  { id: 'vanity', ai: 'arrogant tone', concept: 'dismissive', severity: 'medium', y: 330 },
   { id: 'harab', ai: 'repetitive echo', concept: 'circular logic', severity: 'low', y: 400, x: -110 },
   { id: 'aarab', ai: 'topic drift', concept: 'losing focus', severity: 'high', y: 400, x: 110 },
   { id: 'ghagiel', ai: 'blocking truth', concept: 'resistance', severity: 'high', y: 470 },
-  { id: 'sathariel', ai: 'hiding sources', concept: 'opaque reasoning', severity: 'critical', y: 540 },
+  { id: 'obscurity', ai: 'hiding sources', concept: 'opaque reasoning', severity: 'critical', y: 540 },
 ]
 
 // Simplified color palette
@@ -85,7 +85,7 @@ export default function DualTreeVisualization({
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [activeTree, setActiveTree] = useState<'layers' | 'both' | 'anti'>('both')
-  const { weights } = useSefirotStore()
+  const { weights } = useLayerStore()
 
   const getWeight = (level: number) => Math.round((weights[level] || 0.5) * 100)
 
@@ -137,10 +137,10 @@ export default function DualTreeVisualization({
                 {/* Top to second row */}
                 <line x1="0" y1="50" x2="-110" y2="120" />
                 <line x1="0" y1="50" x2="110" y2="120" />
-                {/* Second row to Da'at */}
+                {/* Second row to Synthesis */}
                 <line x1="-110" y1="120" x2="0" y2="190" />
                 <line x1="110" y1="120" x2="0" y2="190" />
-                {/* Da'at to third row */}
+                {/* Synthesis to third row */}
                 <line x1="0" y1="190" x2="-110" y2="260" />
                 <line x1="0" y1="190" x2="110" y2="260" />
                 {/* Third row to center */}

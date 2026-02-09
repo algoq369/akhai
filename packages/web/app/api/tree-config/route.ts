@@ -57,12 +57,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, description, sephirothWeights, qliphothSuppression, pillarBalance, processingMode } = body
+    const { name, description, layerWeights, antipatternSuppression, pillarBalance, processingMode } = body
 
     // Validate required fields
-    if (!name || !sephirothWeights) {
+    if (!name || !layerWeights) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, sephirothWeights' },
+        { error: 'Missing required fields: name, layerWeights' },
         { status: 400 }
       )
     }
@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
       userId,
       name,
       description || '',
-      sephirothWeights,
-      qliphothSuppression || {},
+      layerWeights,
+      antipatternSuppression || {},
       pillarBalance || { left: 0.33, middle: 0.34, right: 0.33 },
       processingMode || 'weighted'
     )
@@ -133,8 +133,8 @@ export async function PATCH(request: NextRequest) {
       updateTreeConfiguration(configId, {
         name: updates.name,
         description: updates.description,
-        sephirothWeights: updates.sephirothWeights,
-        qliphothSuppression: updates.qliphothSuppression,
+        layerWeights: updates.layerWeights,
+        antipatternSuppression: updates.antipatternSuppression,
         pillarBalance: updates.pillarBalance,
         processingMode: updates.processingMode,
       })

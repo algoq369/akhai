@@ -33,39 +33,39 @@ export interface Message {
   // GNOSTIC SOVEREIGN INTELLIGENCE METADATA
   // ============================================================================
   gnostic?: {
-    ketherState: {
+    metaCoreState: {
       intent: string
       boundary: string
       reflectionMode: boolean
       ascentLevel: number
     } | null
-    ascentState: {
+    progressState: {
       currentLevel: number
       levelName: string
       velocity: number
       totalQueries: number
       nextElevation: string | null
     } | null
-    sephirothAnalysis: {
+    layerAnalysis: {
       activations: Record<number, number>
       dominant: string
       averageLevel: number
-      daatInsight: {
+      synthesisInsight: {
         insight: string
         confidence: number
       } | null
     }
-    qliphothPurified: boolean
-    qliphothType: string
-    qliphothCritique?: {
+    antipatternPurified: boolean
+    antipatternType: string
+    antipatternCritique?: {
       severity: number
       triggers: {
         patterns: string[]
         count: number
       }
       audit: {
-        sefirotAdjustments: Array<{
-          sefirah: string
+        layerAdjustments: Array<{
+          layerNode: string
           currentWeight: number
           suggestedWeight: number
           rationale: string
@@ -93,7 +93,7 @@ export interface Message {
           replacement: string
         }>
       } | null
-      qliphothEducation: {
+      antipatternEducation: {
         name: string
         description: string
         commonCauses: string[]
@@ -111,13 +111,13 @@ export interface Message {
       queryType: string
       keywords: string[]
     }
-    sefirotActivations: Array<{
-      sefirah: number
+    layerActivations: Array<{
+      layerNode: number
       name: string
       activation: number
       effectiveWeight: number
     }>
-    dominantSefirot: string[]
+    dominantLayers: string[]
     pathActivations: Array<{
       from: number
       to: number

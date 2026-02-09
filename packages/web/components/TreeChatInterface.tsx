@@ -31,7 +31,7 @@ export default function TreeChatInterface({
   const [messages, setMessages] = useState<TreeChatMessage[]>([
     {
       role: 'tree',
-      content: 'Greetings. I am the Tree of Life. Ask me about Sephiroth, Qliphoth, or how to configure your cognitive patterns. What would you like to know?',
+      content: 'Greetings. I am the Tree of Life. Ask me about Layers, Antipatterns, or how to configure your cognitive patterns. What would you like to know?',
       timestamp: Date.now(),
     },
   ])
@@ -101,7 +101,7 @@ export default function TreeChatInterface({
   const quickActions = [
     'Explain current config',
     'What is Satariel?',
-    'What is Binah?',
+    'What is Encoder?',
     'Increase compassion',
     'Make me more analytical',
     'Balance all nodes',
@@ -211,7 +211,7 @@ export default function TreeChatInterface({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask the tree... (e.g., 'What is Binah?' or 'Increase compassion')"
+            placeholder="Ask the tree... (e.g., 'What is Encoder?' or 'Increase compassion')"
             className="flex-1 text-[10px] font-mono border border-relic-mist px-2 py-1 focus:outline-none focus:border-purple-300 bg-white"
             disabled={sending}
           />

@@ -2,11 +2,11 @@
  * Tree Configuration Database Functions
  *
  * Handles loading, saving, and managing tree configurations
- * for both Sephiroth and Qliphoth weight settings
+ * for both Layers and Antipatterns weight settings
  */
 
 import { db } from './database'
-import { Sefirah } from './ascent-tracker'
+import { Layer } from './layer-registry'
 
 export interface TreeConfiguration {
   id: number
@@ -14,14 +14,14 @@ export interface TreeConfiguration {
   name: string
   description: string
   is_active: boolean
-  sephiroth_weights: Record<number, number>
-  qliphoth_suppression: Record<number, number>
+  layer_weights: Record<number, number>
+  antipattern_suppression: Record<number, number>
   pillar_balance: {
     left: number
     middle: number
     right: number
   }
-  processing_mode?: 'weighted' | 'parallel' | 'adaptive' // Sefirot processing mode
+  processing_mode?: 'weighted' | 'parallel' | 'adaptive' // Layers processing mode
   created_at: number
   updated_at: number
 }
@@ -58,8 +58,8 @@ export function getAllTreeConfigurations(userId?: string | null): TreeConfigurat
     name: string
     description: string
     is_active: number
-    sephiroth_weights: string
-    qliphoth_suppression: string
+    layer_weights: string
+    antipattern_suppression: string
     pillar_balance: string
     created_at: number
     updated_at: number
@@ -71,8 +71,8 @@ export function getAllTreeConfigurations(userId?: string | null): TreeConfigurat
     name: c.name,
     description: c.description,
     is_active: Boolean(c.is_active),
-    sephiroth_weights: JSON.parse(c.sephiroth_weights),
-    qliphoth_suppression: JSON.parse(c.qliphoth_suppression || '{}'),
+    layer_weights: JSON.parse(c.layer_weights),
+    antipattern_suppression: JSON.parse(c.antipattern_suppression || '{}'),
     pillar_balance: JSON.parse(c.pillar_balance || '{"left":0.33,"middle":0.34,"right":0.33}'),
     created_at: c.created_at,
     updated_at: c.updated_at,
@@ -112,8 +112,8 @@ export function getActiveTreeConfiguration(userId?: string | null): TreeConfigur
         name: string
         description: string
         is_active: number
-        sephiroth_weights: string
-        qliphoth_suppression: string
+        layer_weights: string
+        antipattern_suppression: string
         pillar_balance: string
         created_at: number
         updated_at: number
@@ -128,8 +128,8 @@ export function getActiveTreeConfiguration(userId?: string | null): TreeConfigur
     name: config.name,
     description: config.description,
     is_active: Boolean(config.is_active),
-    sephiroth_weights: JSON.parse(config.sephiroth_weights),
-    qliphoth_suppression: JSON.parse(config.qliphoth_suppression || '{}'),
+    layer_weights: JSON.parse(config.layer_weights),
+    antipattern_suppression: JSON.parse(config.antipattern_suppression || '{}'),
     pillar_balance: JSON.parse(config.pillar_balance || '{"left":0.33,"middle":0.34,"right":0.33}'),
     created_at: config.created_at,
     updated_at: config.updated_at,
@@ -153,8 +153,8 @@ export function getTreeConfiguration(configId: number): TreeConfiguration | null
         name: string
         description: string
         is_active: number
-        sephiroth_weights: string
-        qliphoth_suppression: string
+        layer_weights: string
+        antipattern_suppression: string
         pillar_balance: string
         created_at: number
         updated_at: number
@@ -169,8 +169,8 @@ export function getTreeConfiguration(configId: number): TreeConfiguration | null
     name: config.name,
     description: config.description,
     is_active: Boolean(config.is_active),
-    sephiroth_weights: JSON.parse(config.sephiroth_weights),
-    qliphoth_suppression: JSON.parse(config.qliphoth_suppression || '{}'),
+    layer_weights: JSON.parse(config.layer_weights),
+    antipattern_suppression: JSON.parse(config.antipattern_suppression || '{}'),
     pillar_balance: JSON.parse(config.pillar_balance || '{"left":0.33,"middle":0.34,"right":0.33}'),
     created_at: config.created_at,
     updated_at: config.updated_at,
@@ -184,15 +184,15 @@ export function saveTreeConfiguration(
   userId: string | null,
   name: string,
   description: string,
-  sephirothWeights: Record<number, number>,
-  qliphothSuppression: Record<number, number>,
+  layerWeights: Record<number, number>,
+  antipatternSuppression: Record<number, number>,
   pillarBalance: { left: number; middle: number; right: number },
   processingMode: 'weighted' | 'parallel' | 'adaptive' = 'weighted'
 ): number {
   const stmt = db.prepare(`
     INSERT INTO tree_configurations (
       user_id, name, description, is_active,
-      sephiroth_weights, qliphoth_suppression, pillar_balance, processing_mode
+      layer_weights, antipattern_suppression, pillar_balance, processing_mode
     ) VALUES (?, ?, ?, 0, ?, ?, ?, ?)
   `)
 
@@ -200,8 +200,8 @@ export function saveTreeConfiguration(
     userId,
     name,
     description,
-    JSON.stringify(sephirothWeights),
-    JSON.stringify(qliphothSuppression),
+    JSON.stringify(layerWeights),
+    JSON.stringify(antipatternSuppression),
     JSON.stringify(pillarBalance),
     processingMode
   )
@@ -217,8 +217,8 @@ export function updateTreeConfiguration(
   updates: {
     name?: string
     description?: string
-    sephirothWeights?: Record<number, number>
-    qliphothSuppression?: Record<number, number>
+    layerWeights?: Record<number, number>
+    antipatternSuppression?: Record<number, number>
     pillarBalance?: { left: number; middle: number; right: number }
     processingMode?: 'weighted' | 'parallel' | 'adaptive'
   }
@@ -234,13 +234,13 @@ export function updateTreeConfiguration(
     fields.push('description = ?')
     values.push(updates.description)
   }
-  if (updates.sephirothWeights !== undefined) {
-    fields.push('sephiroth_weights = ?')
-    values.push(JSON.stringify(updates.sephirothWeights))
+  if (updates.layerWeights !== undefined) {
+    fields.push('layer_weights = ?')
+    values.push(JSON.stringify(updates.layerWeights))
   }
-  if (updates.qliphothSuppression !== undefined) {
-    fields.push('qliphoth_suppression = ?')
-    values.push(JSON.stringify(updates.qliphothSuppression))
+  if (updates.antipatternSuppression !== undefined) {
+    fields.push('antipattern_suppression = ?')
+    values.push(JSON.stringify(updates.antipatternSuppression))
   }
   if (updates.pillarBalance !== undefined) {
     fields.push('pillar_balance = ?')
@@ -316,11 +316,11 @@ export function getDefaultConfiguration(): TreeConfiguration {
     name: 'Balanced',
     description: 'Default balanced configuration',
     is_active: false,
-    sephiroth_weights: {
+    layer_weights: {
       1: 0.5, 2: 0.5, 3: 0.5, 4: 0.5, 5: 0.5,
       6: 0.5, 7: 0.5, 8: 0.5, 9: 0.5, 10: 0.5, 11: 0.5,
     },
-    qliphoth_suppression: {
+    antipattern_suppression: {
       1: 0.5, 2: 0.5, 3: 0.5, 4: 0.5, 5: 0.5, 6: 0.5,
       7: 0.5, 8: 0.5, 9: 0.5, 10: 0.5, 11: 0.5, 12: 0.5,
     },
@@ -342,48 +342,48 @@ export const QUICK_ADJUSTMENTS = {
     name: 'Reduce Info Hiding',
     description: 'Diminish Satariel (Concealers) to reveal more sources',
     changes: {
-      qliphothSuppression: { 3: 0.8 },
+      antipatternSuppression: { 3: 0.8 },
     },
   },
-  augmentBinah: {
+  augmentEncoder: {
     name: 'Augment Understanding',
-    description: 'Increase Binah (Understanding) for deeper analysis',
+    description: 'Increase Encoder (Understanding) for deeper analysis',
     changes: {
-      sephirothWeights: { 3: 0.9 },
+      layerWeights: { 3: 0.9 },
     },
   },
   suppressThaumiel: {
     name: 'Reduce Overconfidence',
     description: 'Suppress Thaumiel (False Certainty)',
     changes: {
-      qliphothSuppression: { 1: 0.9 },
+      antipatternSuppression: { 1: 0.9 },
     },
   },
   balanceLogicIntuition: {
     name: 'Logic + Intuition Balance',
-    description: 'Equal weight to Chokmah (Wisdom) and Yesod (Foundation)',
+    description: 'Equal weight to Reasoning (Wisdom) and Executor (Foundation)',
     changes: {
-      sephirothWeights: { 2: 0.7, 9: 0.7 },
+      layerWeights: { 2: 0.7, 9: 0.7 },
     },
   },
   increaseCompassion: {
     name: 'Increase Compassion',
-    description: 'Boost Chesed (Mercy) for empathetic responses',
+    description: 'Boost Expansion (Mercy) for empathetic responses',
     changes: {
-      sephirothWeights: { 4: 0.9 },
+      layerWeights: { 4: 0.9 },
     },
   },
   suppressA8: {
     name: 'Reduce Rigidity',
     description: 'Suppress A8/Samael (Excessive Severity)',
     changes: {
-      qliphothSuppression: { 8: 0.85 },
+      antipatternSuppression: { 8: 0.85 },
     },
   },
 }
 
 /**
- * Sefirot Configuration Presets
- * Re-exported from shared lib/sefirot-presets.ts for backwards compatibility
+ * Layers Configuration Presets
+ * Re-exported from shared lib/layer-presets.ts for backwards compatibility
  */
-export { SEFIROT_PRESETS, PRESET_NAMES, getPresetWeights, getDefaultWeights, type PresetName } from './sefirot-presets'
+export { LAYER_PRESETS, PRESET_NAMES, getPresetWeights, getDefaultWeights, type PresetName } from './layer-presets'

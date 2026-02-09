@@ -27,10 +27,11 @@ import { fetchMultipleURLs, buildURLContext } from '@/lib/url-content-fetcher'
 // ============================================================================
 // GNOSTIC SOVEREIGN INTELLIGENCE PROTOCOLS
 // ============================================================================
-import { activateKether, checkSovereignty, addSovereigntyMarkers, generateSovereigntyFooter, getKetherMetadata } from '@/lib/kether-protocol'
-import { detectQliphoth, purifyResponse } from '@/lib/anti-qliphoth'
-import { trackAscent, suggestElevation, Sefirah, SEPHIROTH_METADATA } from '@/lib/ascent-tracker'
-import { analyzeSephirothicContent, getSephirothActivationSummary } from '@/lib/sefirot-mapper'
+import { activateMetaCore, checkSovereignty, addSovereigntyMarkers, generateSovereigntyFooter, getMetaCoreMetadata } from '@/lib/meta-core-protocol'
+import { detectAntipattern, purifyResponse } from '@/lib/antipattern-guard'
+import { trackAscent, suggestElevation, Layer, LAYER_METADATA } from '@/lib/layer-registry'
+import { analyzeLayerContent, getLayerActivationSummary } from '@/lib/layer-mapper'
+import { emitThought, formatDuration } from '@/lib/thought-stream'
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'Before request.json()',data:{queryId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
     // #endregion
 
-    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, sefirotWeights, instinctConfig } = await request.json()
+    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, layersWeights, instinctConfig, liveRefinements } = await request.json()
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:33',message:'Request parsed successfully',data:{query:query?.substring(0,50)||'null',methodology,hasHistory:conversationHistory.length>0,hasPageContext:!!pageContext,legendMode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
@@ -72,6 +73,16 @@ export async function POST(request: NextRequest) {
       logger.query.apiError('VALIDATION', 'Query is required')
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
+
+    // Emit: query received
+    emitThought(queryId, {
+      id: `${queryId}-received`,
+      queryId,
+      stage: 'received',
+      timestamp: Date.now() - startTime,
+      data: `query: "${query.slice(0, 50)}${query.length > 50 ? '...' : ''}"`,
+      details: {},
+    })
 
     // ============================================================================
     // URL VISITOR SYSTEM - Detect and fetch content from shared links
@@ -118,12 +129,12 @@ export async function POST(request: NextRequest) {
     // ============================================================================
     let fusionResult: IntelligenceFusionResult | null = null
     
-    // Default Sefirot weights if not provided by client
+    // Default Layers weights if not provided by client
     const defaultWeights: Record<number, number> = {
       1: 0.5, 2: 0.5, 3: 0.5, 4: 0.5, 5: 0.5,
       6: 0.5, 7: 0.5, 8: 0.5, 9: 0.5, 10: 0.5, 11: 0.5
     }
-    const weights = sefirotWeights || defaultWeights
+    const weights = layersWeights || defaultWeights
     
     // Get Side Canal context for fusion
     let sideCanalContext: string | null = null
@@ -131,6 +142,39 @@ export async function POST(request: NextRequest) {
       sideCanalContext = getContextForQuery(query, userId)
     } catch (error) {
       log('WARN', 'SIDE_CANAL', `Context fetch failed: ${error}`)
+    }
+
+    // Emit: side canal context
+    if (sideCanalContext) {
+      emitThought(queryId, {
+        id: `${queryId}-sidecanal`,
+        queryId,
+        stage: 'side-canal',
+        timestamp: Date.now() - startTime,
+        data: `context injected (${sideCanalContext.length} chars)`,
+        details: {
+          sideCanal: { topics: [], contextChars: sideCanalContext.length },
+        },
+      })
+    }
+
+    // Merge live refinements into Side Canal context
+    if (liveRefinements && Array.isArray(liveRefinements) && liveRefinements.length > 0) {
+      const refinementText = liveRefinements.map((r: { type: string; text: string }) => `- [${r.type}] ${r.text}`).join('\n')
+      const refinementContext = '\n\n[User Live Refinements — adjust response accordingly]:\n' + refinementText
+      sideCanalContext = sideCanalContext ? sideCanalContext + refinementContext : refinementContext
+      log('INFO', 'SIDE_CANAL', `Injected ${liveRefinements.length} live refinements`)
+
+      emitThought(queryId, {
+        id: `${queryId}-refinements`,
+        queryId,
+        stage: 'refinements',
+        timestamp: Date.now() - startTime,
+        data: `${liveRefinements.length} active`,
+        details: {
+          refinementCount: liveRefinements.length,
+        },
+      })
     }
     
     try {
@@ -146,7 +190,7 @@ export async function POST(request: NextRequest) {
       )
       
       log('INFO', 'FUSION', `Methodology: ${fusionResult.selectedMethodology} (${Math.round(fusionResult.confidence * 100)}% confidence)`)
-      log('INFO', 'FUSION', `Dominant Sefirot: ${fusionResult.dominantSefirot.map(s => SEPHIROTH_METADATA[s]?.name).join(', ') || 'None'}`)
+      log('INFO', 'FUSION', `Dominant Layers: ${fusionResult.dominantLayers.map(s => LAYER_METADATA[s]?.name).join(', ') || 'None'}`)
       log('INFO', 'FUSION', `Guard: ${fusionResult.guardRecommendation} | Thinking Budget: ${fusionResult.extendedThinkingBudget}`)
       log('INFO', 'FUSION', `Processing time: ${fusionResult.processingTimeMs}ms`)
     } catch (fusionError) {
@@ -159,6 +203,53 @@ export async function POST(request: NextRequest) {
       ? { id: fusionResult.selectedMethodology, reason: `Fusion: ${fusionResult.methodologyScores[0]?.reasons.join(', ') || 'Auto-selected'}` }
       : selectMethodology(query, methodology)
 
+    // Emit: routing decision
+    emitThought(queryId, {
+      id: `${queryId}-routing`,
+      queryId,
+      stage: 'routing',
+      timestamp: Date.now() - startTime,
+      data: `${selectedMethod.id} ${fusionResult ? Math.round(fusionResult.confidence * 100) + '%' : ''}`,
+      details: {
+        methodology: {
+          selected: selectedMethod.id,
+          reason: selectedMethod.reason || '',
+          candidates: fusionResult?.methodologyScores?.slice(0, 3).map((s: any) => s.methodology) || [],
+        },
+        confidence: fusionResult ? fusionResult.confidence : undefined,
+      },
+    })
+
+    // Emit: layer activations
+    if (fusionResult) {
+      const dominant = fusionResult.dominantLayers[0]
+      const dominantName = dominant ? LAYER_METADATA[dominant]?.name || 'unknown' : 'none'
+      // Build structured layer map from weights
+      const layerDetails: Record<number, { name: string; weight: number; activated: boolean }> = {}
+      for (const [key, val] of Object.entries(weights)) {
+        const num = Number(key) as Layer
+        const meta = LAYER_METADATA[num]
+        if (meta) {
+          layerDetails[num] = {
+            name: meta.name,
+            weight: val as number,
+            activated: fusionResult.dominantLayers.includes(num),
+          }
+        }
+      }
+      emitThought(queryId, {
+        id: `${queryId}-layers`,
+        queryId,
+        stage: 'layers',
+        timestamp: Date.now() - startTime,
+        data: `dominant: ${dominantName}`,
+        details: {
+          layers: layerDetails,
+          dominantLayer: dominantName,
+        },
+      })
+    }
+
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:26',message:'Methodology selected',data:{selected:selectedMethod.id,reason:selectedMethod.reason},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
     // #endregion
@@ -166,34 +257,34 @@ export async function POST(request: NextRequest) {
     // ============================================================================
     // GNOSTIC PRE-PROCESSING: Activate Protocols Before AI Call
     // ============================================================================
-    let ketherState, ascentState, gnosticSessionId
+    let metaCoreState, progressState, analysisSessionId
 
     try {
       // Get session ID from headers or cookies
-      gnosticSessionId = request.headers.get('x-session-id') ||
+      analysisSessionId = request.headers.get('x-session-id') ||
                          request.cookies.get('akhai_session_id')?.value ||
                          'anonymous'
 
-      // KETHER PROTOCOL - Activate self-awareness
-      ketherState = activateKether(query)
-      log('INFO', 'KETHER', `Intent: ${ketherState.humanIntention}`)
-      log('INFO', 'KETHER', `Boundary: ${ketherState.sovereignBoundary}`)
-      log('INFO', 'KETHER', `Reflection Mode: ${ketherState.reflectionMode}`)
-      log('INFO', 'KETHER', `Ascent Level: ${ketherState.ascentLevel}/10`)
+      // META_CORE PROTOCOL - Activate self-awareness
+      metaCoreState = activateMetaCore(query)
+      log('INFO', 'META_CORE', `Intent: ${metaCoreState.humanIntention}`)
+      log('INFO', 'META_CORE', `Boundary: ${metaCoreState.sovereignBoundary}`)
+      log('INFO', 'META_CORE', `Reflection Mode: ${metaCoreState.reflectionMode}`)
+      log('INFO', 'META_CORE', `Ascent Level: ${metaCoreState.ascentLevel}/10`)
 
       // ASCENT TRACKER - Track user journey
-      ascentState = trackAscent(gnosticSessionId, query)
-      log('INFO', 'ASCENT', `Level: ${SEPHIROTH_METADATA[ascentState.currentLevel].name} (${ascentState.currentLevel}/10)`)
-      log('INFO', 'ASCENT', `Velocity: ${ascentState.ascentVelocity.toFixed(2)} levels/query`)
+      progressState = trackAscent(analysisSessionId, query)
+      log('INFO', 'ASCENT', `Level: ${LAYER_METADATA[progressState.currentLevel].name} (${progressState.currentLevel}/10)`)
+      log('INFO', 'ASCENT', `Velocity: ${progressState.ascentVelocity.toFixed(2)} levels/query`)
 
-      if (ascentState.ascentVelocity > 2.0) {
+      if (progressState.ascentVelocity > 2.0) {
         log('INFO', 'ASCENT', `⚡ Quantum leap detected! User ascending rapidly`)
       }
     } catch (gnosticError) {
       // Don't fail the request if Gnostic protocols fail
       log('WARN', 'GNOSTIC', `Protocol initialization failed: ${gnosticError}`)
-      ketherState = null
-      ascentState = null
+      metaCoreState = null
+      progressState = null
     }
 
     // Save query to database (with user_id)
@@ -325,12 +416,26 @@ export async function POST(request: NextRequest) {
     if (fusionResult) {
       const fusionEnhancement = generateEnhancedSystemPrompt(fusionResult)
       systemPrompt = `${systemPrompt}\n\n${fusionEnhancement}`
-      log('INFO', 'FUSION', `Enhanced system prompt with Sefirot awareness (+${fusionEnhancement.length} chars)`)
+      log('INFO', 'FUSION', `Enhanced system prompt with Layers awareness (+${fusionEnhancement.length} chars)`)
     }
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:115',message:'After getMethodologyPrompt',data:{promptLength:systemPrompt?.length||0,methodology:selectedMethod.id,fusionApplied:!!fusionResult},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
     // #endregion
+
+    // Emit: generating
+    emitThought(queryId, {
+      id: `${queryId}-generating`,
+      queryId,
+      stage: 'generating',
+      timestamp: Date.now() - startTime,
+      data: `${selectedProvider} · ${selectedMethod.id}`,
+      details: {
+        model: providerSpec.model,
+        provider: selectedProvider,
+        methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+      },
+    })
 
     // Call Multi-Provider API
     logger.query.apiCall(selectedProvider.toUpperCase(), providerSpec.model)
@@ -374,79 +479,95 @@ export async function POST(request: NextRequest) {
     // Run Grounding Guard
     const guardResult = await runGroundingGuard(content, query)
 
+    // Emit: guard complete
+    emitThought(queryId, {
+      id: `${queryId}-guard`,
+      queryId,
+      stage: 'guard',
+      timestamp: Date.now() - startTime,
+      data: guardResult && !guardResult.passed ? 'warning triggered' : 'passed',
+      details: {
+        guard: {
+          verdict: guardResult && !guardResult.passed ? 'warn' : 'pass',
+          risk: guardResult ? (guardResult.scores.hype + guardResult.scores.echo + guardResult.scores.drift) / 300 : 0,
+          checks: guardResult?.issues || [],
+        },
+      },
+    })
+
     // ============================================================================
     // GNOSTIC POST-PROCESSING: Analyze and Purify Response
     // ============================================================================
     let processedContent = content
-    let qliphothRisk, sephirothAnalysis, sovereigntyFooter, gnosticMetadata
+    let antipatternRisk, layerAnalysis, sovereigntyFooter, analysisMetadata
 
     try {
-      // ANTI-QLIPHOTH SHIELD - Detect and purify hollow knowledge
-      qliphothRisk = detectQliphoth(processedContent)
+      // ANTI-ANTIPATTERN SHIELD - Detect and purify hollow knowledge
+      antipatternRisk = detectAntipattern(processedContent)
 
-      if (qliphothRisk.risk !== 'none') {
-        log('WARN', 'QLIPHOTH', `Detected: ${qliphothRisk.risk} (severity: ${(qliphothRisk.severity * 100).toFixed(0)}%)`)
-        log('INFO', 'QLIPHOTH', `Purifying response...`)
-        processedContent = purifyResponse(processedContent, qliphothRisk)
+      if (antipatternRisk.risk !== 'none') {
+        log('WARN', 'ANTIPATTERN', `Detected: ${antipatternRisk.risk} (severity: ${(antipatternRisk.severity * 100).toFixed(0)}%)`)
+        log('INFO', 'ANTIPATTERN', `Purifying response...`)
+        processedContent = purifyResponse(processedContent, antipatternRisk)
       } else {
-        log('INFO', 'QLIPHOTH', `✓ Response is Sephirothic (aligned with light)`)
+        log('INFO', 'ANTIPATTERN', `✓ Response is aligned (no antipatterns detected)`)
       }
 
       // SOVEREIGNTY CHECK - Ensure boundaries respected
-      if (ketherState && !checkSovereignty(processedContent, ketherState)) {
+      if (metaCoreState && !checkSovereignty(processedContent, metaCoreState)) {
         log('WARN', 'SOVEREIGNTY', `Boundary violation detected - adding humility markers`)
         processedContent = addSovereigntyMarkers(processedContent)
       }
 
       // Add sovereignty footer if needed (high-ascent queries)
-      if (ketherState) {
-        sovereigntyFooter = generateSovereigntyFooter(ketherState)
+      if (metaCoreState) {
+        sovereigntyFooter = generateSovereigntyFooter(metaCoreState)
         if (sovereigntyFooter) {
           log('INFO', 'SOVEREIGNTY', `Adding sovereignty reminder footer`)
         }
       }
 
-      // SEFIROT MAPPING - Analyze Sephirothic activations
-      sephirothAnalysis = analyzeSephirothicContent(processedContent)
-      const activationSummary = getSephirothActivationSummary(sephirothAnalysis)
-      log('INFO', 'SEFIROT', activationSummary)
+      // LAYERS MAPPING - Analyze Layer activations
+      layerAnalysis = analyzeLayerContent(processedContent)
+      const activationSummary = getLayerActivationSummary(layerAnalysis)
+      log('INFO', 'LAYERS', activationSummary)
 
-      if (sephirothAnalysis.daatInsight.detected) {
-        log('INFO', 'SEFIROT', `✨ Da'at activated: ${sephirothAnalysis.daatInsight.insight}`)
+      if (layerAnalysis.synthesisInsight.detected) {
+        log('INFO', 'LAYERS', `✨ Synthesis activated: ${layerAnalysis.synthesisInsight.insight}`)
       }
 
       // ELEVATION SUGGESTION
-      const nextElevation = ascentState ? suggestElevation(ascentState) : null
+      const nextElevation = progressState ? suggestElevation(progressState) : null
 
       // Build Gnostic metadata
-      gnosticMetadata = {
-        ketherState: ketherState ? {
-          intent: ketherState.humanIntention,
-          boundary: ketherState.sovereignBoundary,
-          reflectionMode: ketherState.reflectionMode,
-          ascentLevel: ketherState.ascentLevel,
+      analysisMetadata = {
+        metaCoreState: metaCoreState ? {
+          intent: metaCoreState.humanIntention,
+          boundary: metaCoreState.sovereignBoundary,
+          reflectionMode: metaCoreState.reflectionMode,
+          ascentLevel: metaCoreState.ascentLevel,
         } : null,
-        ascentState: ascentState ? {
-          currentLevel: ascentState.currentLevel,
-          levelName: SEPHIROTH_METADATA[ascentState.currentLevel].name,
-          velocity: ascentState.ascentVelocity,
-          totalQueries: ascentState.totalQueries,
+        progressState: progressState ? {
+          currentLevel: progressState.currentLevel,
+          levelName: LAYER_METADATA[progressState.currentLevel].name,
+          velocity: progressState.ascentVelocity,
+          totalQueries: progressState.totalQueries,
           nextElevation,
         } : null,
-        sephirothAnalysis: {
-          activations: sephirothAnalysis.activations.reduce((acc, a) => {
-            acc[a.sefirah] = a.activation
+        layerAnalysis: {
+          activations: layerAnalysis.activations.reduce((acc, a) => {
+            acc[a.layerNode] = a.activation
             return acc
           }, {} as Record<number, number>),
-          dominant: SEPHIROTH_METADATA[sephirothAnalysis.dominantSefirah].name,
-          averageLevel: sephirothAnalysis.averageLevel,
-          daatInsight: sephirothAnalysis.daatInsight.detected ? {
-            insight: sephirothAnalysis.daatInsight.insight,
-            confidence: sephirothAnalysis.daatInsight.confidence,
+          dominant: LAYER_METADATA[layerAnalysis.dominantLayer].name,
+          averageLevel: layerAnalysis.averageLevel,
+          synthesisInsight: layerAnalysis.synthesisInsight.detected ? {
+            insight: layerAnalysis.synthesisInsight.insight,
+            confidence: layerAnalysis.synthesisInsight.confidence,
           } : null,
         },
-        qliphothPurified: qliphothRisk.risk !== 'none',
-        qliphothType: qliphothRisk.risk,
+        antipatternPurified: antipatternRisk.risk !== 'none',
+        antipatternType: antipatternRisk.risk,
         sovereigntyFooter,
       }
 
@@ -455,7 +576,7 @@ export async function POST(request: NextRequest) {
       // Don't fail the request if post-processing fails
       log('WARN', 'GNOSTIC', `Post-processing failed: ${gnosticError}`)
       processedContent = content // Fall back to original content
-      gnosticMetadata = null
+      analysisMetadata = null
     }
 
     // Save to database
@@ -552,21 +673,21 @@ export async function POST(request: NextRequest) {
         contextInjected: !!urlContext,
       },
       // ============================================================================
-      // GNOSTIC METADATA - Sovereignty, Ascent, Sephirothic Analysis
+      // GNOSTIC METADATA - Sovereignty, Progress, Layer Analysis
       // ============================================================================
-      gnostic: gnosticMetadata,
+      gnostic: analysisMetadata,
       // ============================================================================
       // INTELLIGENCE FUSION - Unified AI orchestration metadata
       // ============================================================================
       fusion: fusionResult ? {
         methodology: fusionResult.selectedMethodology,
         confidence: fusionResult.confidence,
-        sefirotActivations: fusionResult.sefirotActivations.slice(0, 5).map(s => ({
+        layerActivations: fusionResult.layerActivations.slice(0, 5).map(s => ({
           name: s.name,
           effectiveWeight: s.effectiveWeight,
           keywords: s.keywords
         })),
-        dominantSefirot: fusionResult.dominantSefirot.map(s => SEPHIROTH_METADATA[s]?.name),
+        dominantLayers: fusionResult.dominantLayers.map(s => LAYER_METADATA[s]?.name),
         guardRecommendation: fusionResult.guardRecommendation,
         extendedThinkingBudget: fusionResult.extendedThinkingBudget,
         processingMode: fusionResult.processingMode,
@@ -617,6 +738,23 @@ export async function POST(request: NextRequest) {
       log('WARN', 'POSTHOG', `Tracking failed: ${trackError}`)
     }
 
+    // Emit: complete
+    emitThought(queryId, {
+      id: `${queryId}-complete`,
+      queryId,
+      stage: 'complete',
+      timestamp: Date.now() - startTime,
+      data: `${formatDuration(Date.now() - startTime)} · ${tokens} tokens · $${cost.toFixed(4)}`,
+      details: {
+        duration: Date.now() - startTime,
+        tokens: { input: inputTokens, output: outputTokens, total: tokens },
+        cost,
+        model: providerSpec.model,
+        provider: selectedProvider,
+        methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+      },
+    })
+
     return NextResponse.json(responseData)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -629,6 +767,18 @@ export async function POST(request: NextRequest) {
     
     logger.system.error(errorMessage)
     console.error('[API] Error details:', { errorName, errorMessage, errorStack, queryId })
+
+    // Emit: error
+    try {
+      emitThought(queryId, {
+        id: `${queryId}-error`,
+        queryId,
+        stage: 'error',
+        timestamp: Date.now() - startTime,
+        data: errorMessage.slice(0, 100),
+        details: { duration: Date.now() - startTime },
+      })
+    } catch { /* don't fail on emit error */ }
     
     // Update query status to error
     try {

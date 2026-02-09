@@ -3,14 +3,14 @@
 /**
  * Tree Configuration Panel
  *
- * Interactive configuration UI for adjusting Sephiroth and Qliphoth weights
+ * Interactive configuration UI for adjusting Layers and Antipatterns weights
  * Allows users to customize AI response style through tree manipulation
  */
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { SEPHIROTH_METADATA, Sefirah } from '@/lib/ascent-tracker'
-import { QLIPHOTH_METADATA } from '@/lib/anti-qliphoth'
+import { LAYER_METADATA, Layer } from '@/lib/layer-registry'
+import { ANTIPATTERN_METADATA } from '@/lib/antipattern-guard'
 import { TreeConfiguration, QUICK_ADJUSTMENTS } from '@/lib/tree-configuration'
 
 interface TreeConfigurationPanelProps {
@@ -52,28 +52,28 @@ export default function TreeConfigurationPanel({
     }
   }
 
-  // Update Sefirah weight
-  const updateSefirahWeight = (sefirah: number, value: number) => {
+  // Update Layer weight
+  const updateLayerWeight = (layerNode: number, value: number) => {
     if (!editingConfig) return
 
     setEditingConfig({
       ...editingConfig,
-      sephiroth_weights: {
-        ...editingConfig.sephiroth_weights,
-        [sefirah]: value / 100,
+      layer_weights: {
+        ...editingConfig.layer_weights,
+        [layerNode]: value / 100,
       },
     })
   }
 
   // Update Qliphah suppression
-  const updateQliphahSuppression = (qliphah: number, value: number) => {
+  const updateQliphahSuppression = (antipatternId: number, value: number) => {
     if (!editingConfig) return
 
     setEditingConfig({
       ...editingConfig,
-      qliphoth_suppression: {
-        ...editingConfig.qliphoth_suppression,
-        [qliphah]: value / 100,
+      antipattern_suppression: {
+        ...editingConfig.antipattern_suppression,
+        [antipatternId]: value / 100,
       },
     })
   }
@@ -126,8 +126,8 @@ export default function TreeConfigurationPanel({
         body: JSON.stringify({
           name,
           description,
-          sephirothWeights: editingConfig.sephiroth_weights,
-          qliphothSuppression: editingConfig.qliphoth_suppression,
+          layerWeights: editingConfig.layer_weights,
+          antipatternSuppression: editingConfig.antipattern_suppression,
           pillarBalance: editingConfig.pillar_balance,
         }),
       })
@@ -151,21 +151,21 @@ export default function TreeConfigurationPanel({
 
     // Use optional chaining and type checking
     const changes = adjustment.changes as {
-      sephirothWeights?: Record<number, number>
-      qliphothSuppression?: Record<number, number>
+      layerWeights?: Record<number, number>
+      antipatternSuppression?: Record<number, number>
     }
 
-    if (changes.sephirothWeights) {
-      newConfig.sephiroth_weights = {
-        ...newConfig.sephiroth_weights,
-        ...changes.sephirothWeights,
+    if (changes.layerWeights) {
+      newConfig.layer_weights = {
+        ...newConfig.layer_weights,
+        ...changes.layerWeights,
       }
     }
 
-    if (changes.qliphothSuppression) {
-      newConfig.qliphoth_suppression = {
-        ...newConfig.qliphoth_suppression,
-        ...changes.qliphothSuppression,
+    if (changes.antipatternSuppression) {
+      newConfig.antipattern_suppression = {
+        ...newConfig.antipattern_suppression,
+        ...changes.antipatternSuppression,
       }
     }
 
@@ -232,18 +232,18 @@ export default function TreeConfigurationPanel({
           </div>
         ) : (
           <>
-            {/* Sephiroth Weights */}
+            {/* Layers Weights */}
             <div className="p-3 border-b border-relic-mist">
               <div className="text-xs font-mono uppercase tracking-wider text-relic-slate mb-2">
-                ▸ Sephiroth Weights
+                ▸ Layers Weights
               </div>
               <div className="space-y-2">
-                {Object.entries(SEPHIROTH_METADATA).map(([key, meta]) => {
-                  const sefirah = parseInt(key) as Sefirah
-                  const weight = editingConfig.sephiroth_weights[sefirah] || 0.5
+                {Object.entries(LAYER_METADATA).map(([key, meta]) => {
+                  const layerNode = parseInt(key) as Layer
+                  const weight = editingConfig.layer_weights[layerNode] || 0.5
 
                   return (
-                    <div key={sefirah} className="space-y-1">
+                    <div key={layerNode} className="space-y-1">
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-relic-void">{meta.name}</span>
                         <span className="text-relic-silver font-mono">
@@ -255,7 +255,7 @@ export default function TreeConfigurationPanel({
                         min="0"
                         max="100"
                         value={weight * 100}
-                        onChange={(e) => updateSefirahWeight(sefirah, parseInt(e.target.value))}
+                        onChange={(e) => updateLayerWeight(layerNode, parseInt(e.target.value))}
                         className="w-full h-1 appearance-none cursor-pointer"
                         style={{
                           background: `linear-gradient(to right, #a855f7 0%, #a855f7 ${weight * 100}%, #E8E8E8 ${weight * 100}%, #E8E8E8 100%)`,
@@ -267,18 +267,18 @@ export default function TreeConfigurationPanel({
               </div>
             </div>
 
-            {/* Qliphoth Suppression */}
+            {/* Antipatterns Suppression */}
             <div className="p-3 border-b border-relic-mist">
               <div className="text-xs font-mono uppercase tracking-wider text-relic-slate mb-2">
-                ▸ Qliphoth Suppression
+                ▸ Antipatterns Suppression
               </div>
               <div className="space-y-2">
-                {Object.entries(QLIPHOTH_METADATA).map(([key, meta]) => {
-                  const qliphah = parseInt(key)
-                  const suppression = editingConfig.qliphoth_suppression[qliphah] || 0.5
+                {Object.entries(ANTIPATTERN_METADATA).map(([key, meta]) => {
+                  const antipatternId = parseInt(key)
+                  const suppression = editingConfig.antipattern_suppression[antipatternId] || 0.5
 
                   return (
-                    <div key={qliphah} className="space-y-1">
+                    <div key={antipatternId} className="space-y-1">
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-relic-void">{meta.name}</span>
                         <span className="text-relic-silver font-mono">
@@ -291,7 +291,7 @@ export default function TreeConfigurationPanel({
                         max="100"
                         value={suppression * 100}
                         onChange={(e) =>
-                          updateQliphahSuppression(qliphah, parseInt(e.target.value))
+                          updateQliphahSuppression(antipatternId, parseInt(e.target.value))
                         }
                         className="w-full h-1 appearance-none cursor-pointer"
                         style={{
@@ -374,33 +374,33 @@ export default function TreeConfigurationPanel({
  * Generate response style preview based on configuration
  */
 function getResponseStylePreview(config: TreeConfiguration): string {
-  // Find top 3 Sephiroth by weight
-  const topSephiroth = Object.entries(config.sephiroth_weights)
+  // Find top 3 Layers by weight
+  const topLayers = Object.entries(config.layer_weights)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
-    .map(([sefirah, weight]) => ({
-      sefirah: parseInt(sefirah) as Sefirah,
+    .map(([layerNode, weight]) => ({
+      layerNode: parseInt(layerNode) as Layer,
       weight,
     }))
 
-  const emphases = topSephiroth.map((s) => {
-    const meta = SEPHIROTH_METADATA[s.sefirah]
+  const emphases = topLayers.map((s) => {
+    const meta = LAYER_METADATA[s.layerNode]
     return `${meta.name} (${(s.weight * 100).toFixed(0)}%)`
   })
 
-  // Find top suppressed Qliphoth
-  const topSuppressed = Object.entries(config.qliphoth_suppression)
+  // Find top suppressed Antipatterns
+  const topSuppressed = Object.entries(config.antipattern_suppression)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 2)
-    .map(([qliphah, level]) => ({
-      qliphah: parseInt(qliphah),
+    .map(([antipatternId, level]) => ({
+      antipatternId: parseInt(antipatternId),
       level,
     }))
 
   const suppressions = topSuppressed
     .filter((q) => q.level > 0.6)
     .map((q) => {
-      const meta = QLIPHOTH_METADATA[q.qliphah as keyof typeof QLIPHOTH_METADATA]
+      const meta = ANTIPATTERN_METADATA[q.antipatternId as keyof typeof ANTIPATTERN_METADATA]
       return meta ? `${meta.name} (${(q.level * 100).toFixed(0)}%)` : ''
     })
     .filter(Boolean)

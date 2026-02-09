@@ -1,12 +1,48 @@
 import { NextRequest } from 'next/server';
 import { queries, loadQuery } from '@/lib/query-store';
 import { subscribeToQuery, clearQuerySubscribers } from '@/lib/event-emitter';
+import { validateSession, getQuery } from '@/lib/database';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  // Security: Authentication check
+  // Get session token from cookie or Authorization header
+  const sessionToken = request.cookies.get('session')?.value ||
+    request.headers.get('Authorization')?.replace('Bearer ', '');
+
+  // Validate query ownership
+  const dbQuery = getQuery(id) as { user_id?: string | null } | undefined;
+
+  // If query has a user_id, require authentication and verify ownership
+  if (dbQuery?.user_id) {
+    if (!sessionToken) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const user = validateSession(sessionToken);
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Invalid session' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify user owns this query
+    if (dbQuery.user_id !== user.id) {
+      return new Response(JSON.stringify({ error: 'Access denied' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+  // If query has no user_id (anonymous), allow access for backward compatibility
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
