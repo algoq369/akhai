@@ -2475,8 +2475,7 @@ function HomePage() {
 
         {/* Input Section */}
         <div className={`transition-all duration-500 ease-out ${isExpanded ? 'pb-4 pt-2 border-t border-relic-mist/30 dark:border-relic-slate/30 bg-white dark:bg-relic-void sticky bottom-0' : 'pb-8'}`}>
-          {/* Pipeline History Panel — toggleable */}
-          <PipelineHistoryPanel isOpen={historyPanelOpen} onClose={() => setHistoryPanelOpen(false)} />
+          {/* Pipeline History Panel — fixed drawer, rendered at top level */}
           <LiveRefinementCanal isVisible={isExpanded && messages.length > 0} isLoading={isLoading} />
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto px-6">
             {/* Input Box */}
@@ -2595,8 +2594,6 @@ function HomePage() {
                 onSideCanalChange={setSideCanalEnabled}
                 pipelineEnabled={pipelineEnabled}
                 onPipelineChange={setPipelineEnabled}
-                historyPanelOpen={historyPanelOpen}
-                onHistoryPanelToggle={() => setHistoryPanelOpen(!historyPanelOpen)}
                 selectedModel={selectedModel}
                 onModelChange={setSelectedModel}
                 visualizationMode={globalVizMode}
@@ -3127,6 +3124,9 @@ function HomePage() {
       <Suspense fallback={null}>
         <ContinueParamWatcher onContinue={loadConversation} />
       </Suspense>
+
+      {/* Pipeline History — fixed right-side drawer */}
+      <PipelineHistoryPanel isOpen={historyPanelOpen} onToggle={() => setHistoryPanelOpen(!historyPanelOpen)} />
     </div>
   )
 }
