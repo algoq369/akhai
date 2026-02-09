@@ -965,6 +965,16 @@ function HomePage() {
       const assistantMsgId = generateId()
       const frontendQueryId = Math.random().toString(36).slice(2, 10)
 
+      // Add placeholder assistant message so MetadataStrip can render live
+      const placeholderMessage: Message = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+        isStreaming: true,
+      }
+      setMessages(prev => [...prev, placeholderMessage])
+
       // Connect Metadata Thought Stream (SSE) BEFORE fetch so we catch live events
       let evtSource: EventSource | null = null
       try {
@@ -1092,7 +1102,7 @@ function HomePage() {
           gnosticData: assistantMessage.gnostic,
         })
 
-        setMessages(prev => [...prev, assistantMessage])
+        setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...assistantMessage, isStreaming: false } : m))
 
         // Extract topics for mindmap (async, non-blocking)
         extractTopicsForMessage(
@@ -1117,13 +1127,13 @@ function HomePage() {
       }
     } catch (error) {
       console.error('Query error:', error)
-      const errorMessage: Message = {
-        id: generateId(),
-        role: 'assistant',
-        content: 'Sorry, there was an error processing your query. Please try again.',
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, errorMessage])
+      setMessages(prev => prev.map(m =>
+        m.isStreaming ? {
+          ...m,
+          content: 'Sorry, there was an error processing your query. Please try again.',
+          isStreaming: false,
+        } : m
+      ))
 
       // Track failed query
       const responseTime = Date.now() - startTime
@@ -1208,7 +1218,14 @@ function HomePage() {
             }
           } : undefined,
           }
-          setMessages(prev => [...prev, assistantMessage])
+          // Replace placeholder if it exists, otherwise append
+          setMessages(prev => {
+            const hasPlaceholder = prev.some(m => m.id === assistantMessage.id)
+            if (hasPlaceholder) {
+              return prev.map(m => m.id === assistantMessage.id ? { ...assistantMessage, isStreaming: false } : m)
+            }
+            return [...prev, assistantMessage]
+          })
           setIsLoading(false)
 
           // Extract topics for mindmap (async, non-blocking)
@@ -2079,8 +2096,13 @@ function HomePage() {
                             </div>
                           )}
 
-                          {/* TEXT - Always shown after visualizations */}
-                          {depthConfig.enabled && messageAnnotations[message.id] && messageAnnotations[message.id].length > 0 ? (
+                          {/* TEXT - Always shown after visualizations (skip if streaming with no content) */}
+                          {message.isStreaming && !message.content ? (
+                            <div className="flex items-center gap-2 py-1">
+                              <div className="w-3 h-3 border border-relic-mist border-t-relic-slate rounded-full animate-spin" />
+                              <span className="text-[10px] font-mono text-relic-silver">processing...</span>
+                            </div>
+                          ) : depthConfig.enabled && messageAnnotations[message.id] && messageAnnotations[message.id].length > 0 ? (
                             <DepthText
                               text={message.content}
                               annotations={messageAnnotations[message.id]}
@@ -2417,17 +2439,7 @@ function HomePage() {
                 </div>
               ))}
 
-              {/* Loading indicator */}
-              {isLoading && (
-                <div className="animate-fade-in">
-                  <div className="border-l-2 border-relic-slate/30 pl-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border border-relic-mist border-t-relic-slate rounded-full animate-spin" />
-                      <span className="text-xs text-relic-silver">thinking...</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Loading indicator — now handled inline by streaming placeholder message */}
 
               <div ref={messagesEndRef} />
             </div>

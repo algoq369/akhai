@@ -29,6 +29,7 @@ export interface Message {
   guardAction?: 'pending' | 'accepted' | 'refined' | 'pivoted'
   guardActionQuery?: string
   isHidden?: boolean
+  isStreaming?: boolean
   // ============================================================================
   // GNOSTIC SOVEREIGN INTELLIGENCE METADATA
   // ============================================================================
