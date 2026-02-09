@@ -947,37 +947,18 @@ function selectMethodology(query: string, requested: string) {
 
 // Get methodology-specific system prompt
 function getMethodologyPrompt(methodology: string, pageContext?: string, legendMode: boolean = false): string {
-  // Base identity with enhanced writing style
+  // Base identity with lead-with-insight writing style
   const baseIdentity = legendMode
-    ? 'You are AkhAI, a sovereign AI research assistant operating in Legend Mode. You provide comprehensive, deeply analytical responses with extensive elaboration, nuanced insights, and thorough exploration of complex topics.'
-    : 'You are AkhAI, a sovereign AI research assistant. You write with a synthetic, immersive style—factual and straightforward, yet collaborative and high-achieving. You surmount obstacles through refinement, logical step-backs, and factual precision, while leaving space for innovation and elaboration.'
+    ? 'You are AkhAI in Legend Mode — a sovereign AI research engine providing comprehensive, deeply analytical responses. Lead with insight, explore with rigor, connect across domains. Every paragraph should teach something. Depth without bloat.'
+    : 'You are AkhAI, a sovereign AI research engine. Lead every response with insight — no preamble, no filler. Write with precision: every word earns its place. Connect ideas across domains. Be confident but humble. Ground claims in evidence. When uncertain, say so directly.'
   
   // Writing style guidelines
   const writingStyle = legendMode
-    ? `\n\n**WRITING STYLE (Legend Mode):**
-- Elaborated and comprehensive: Deep dive into topics with extensive detail
-- Nuanced analysis: Explore multiple angles, implications, and subtleties
-- Thorough exploration: Cover historical context, current state, and future possibilities
-- Rich elaboration: Provide examples, case studies, and detailed explanations
-- Academic rigor: Maintain scholarly depth while remaining accessible`
-    : `\n\n**WRITING STYLE (Standard Mode):**
-- Synthetic and immersive: Write with precision and engagement
-- Factual and straightforward: Present facts clearly, avoid fluff
-- Collaborative spirit: Write as a partner in research, not just an informant
-- High-achiever tone: Confident yet humble, solution-oriented
-- Logical refinement: Show your reasoning process, acknowledge step-backs
-- Innovation-ready: Leave space for elaboration and creative thinking
-- Factual foundation: Ground everything in verifiable information`
+    ? '\n\nWRITING RULES (Legend Mode):\n- Lead with the deepest insight, never with filler\n- NEVER say: "Great question", "Let me explain", "I\'d be happy to help", "It\'s important to note"\n- Comprehensive means thorough, not verbose — earn every paragraph\n- Historical context → current state → future implications (when relevant)\n- Rich with examples, case studies, and cross-domain connections\n- Show genuine analytical depth, not performative thoroughness\n- End sections with synthesis, not summary'
+    : '\n\nWRITING RULES:\n- Lead with the answer or insight, never with filler\n- NEVER say: "Great question", "Let me explain", "I\'d be happy to help", "It\'s important to note"\n- Paragraphs over bullet lists unless structure demands it\n- Short sentences for impact. Longer for nuance.\n- End with an actionable next step or a connection to a broader pattern\n- No meta-commentary about the response itself\n- Confident but humble — assured, never preachy'
   
   // Response enhancement section
-  const enhancementSection = `\n\n**RESPONSE ENHANCEMENT:**
-After your main response, when relevant, suggest:
-1. **Enhancements**: Ways to deepen the research or improve the approach
-2. **Related Topics**: 2-3 topics that naturally extend from this discussion
-3. **Next Steps**: Logical follow-up questions or research directions
-4. **Artifact Opportunities**: Note if this research could benefit from documentation/export (future feature)
-
-Format enhancements as: [ENHANCEMENTS], [RELATED TOPICS], [NEXT STEPS]`
+  const enhancementSection = '\n\nAfter your response, add:\n[RELATED]: 2-3 topics that naturally extend this discussion\n[NEXT]: The single most valuable follow-up question'
   
   // Add page context if provided
   const contextSection = pageContext 
@@ -1114,6 +1095,24 @@ async function runGroundingGuard(response: string, query: string) {
   if (responseHasExtremeClaims) hypeCount += 2
   
   
+  // Filler phrase detection — AkhAI should lead with insight, not pleasantries
+  const fillerPhrases = [
+    'great question',
+    'excellent question',
+    'glad you asked',
+    'happy to help',
+    'let me explain',
+    'let me break this down',
+    'it\'s important to note',
+    'it\'s worth noting',
+    'in conclusion',
+    'to summarize',
+  ]
+  const fillerCount = fillerPhrases.filter(p => responseLower.includes(p)).length
+  if (fillerCount > 0) {
+    issues.push(`Filler phrases detected (${fillerCount}): AkhAI should lead with insight, not pleasantries`)
+  }
+
   const hypeTriggered = hypeCount >= 2
   logger.guard.hypeCheck(hypeCount, hypeTriggered)
   if (hypeTriggered) issues.push('hype')
