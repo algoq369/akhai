@@ -7,12 +7,15 @@
  * After completion: shows expandable PipelineTimeline with full history.
  */
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { STAGE_META, formatDuration } from '@/lib/thought-stream'
 import type { ThoughtEvent } from '@/lib/thought-stream'
 import { useSideCanalStore } from '@/lib/stores/side-canal-store'
 import PipelineTimeline from '@/components/PipelineTimeline'
+
+// Stable empty array to prevent Zustand infinite re-render loop
+const EMPTY_TIMELINE: ThoughtEvent[] = []
 
 interface MetadataStripProps {
   messageId: string
@@ -23,7 +26,7 @@ export default function MetadataStrip({ messageId }: MetadataStripProps) {
     (s) => s.currentMetadata?.[messageId] ?? null
   )
   const messageTimeline = useSideCanalStore(
-    (s) => s.messageMetadata?.[messageId] ?? []
+    (s) => s.messageMetadata?.[messageId] ?? EMPTY_TIMELINE
   )
 
   const [phase, setPhase] = useState<'live' | 'summary' | 'hidden'>('live')
