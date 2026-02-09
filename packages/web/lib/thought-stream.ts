@@ -16,6 +16,8 @@ export type ThoughtStage =
   | 'refinements'
   | 'generating'
   | 'streaming'
+  | 'reasoning'
+  | 'analysis'
   | 'complete'
   | 'error'
 
@@ -37,6 +39,25 @@ export interface ThoughtDetails {
 
   // refinements
   refinementCount?: number
+
+  // reasoning (AI's live thinking)
+  reasoning?: {
+    intent: string
+    approach: string
+    reflectionMode: string
+    ascentLevel: number
+    providerReason: string
+  }
+
+  // analysis (post-processing insights)
+  analysis?: {
+    antipatternRisk: string
+    sovereigntyCheck: boolean
+    purified: boolean
+    synthesisInsight: string
+    dominantLayer: string
+    averageLevel: number
+  }
 
   // generating / streaming / complete
   model?: string
@@ -66,6 +87,8 @@ export const STAGE_META: Record<
   guard: { symbol: '\u2298', label: 'guard', color: '#10b981' },
   'side-canal': { symbol: '\u27f3', label: 'side canal', color: '#06b6d4' },
   refinements: { symbol: '\u21bb', label: 'refinements', color: '#6366f1' },
+  reasoning: { symbol: '\u2235', label: 'reasoning', color: '#818cf8' },
+  analysis: { symbol: '\u2234', label: 'analysis', color: '#c084fc' },
   generating: { symbol: '\u25b3', label: 'fusion', color: '#f59e0b' },
   streaming: { symbol: '\u2726', label: 'streaming', color: '#e2e8f0' },
   complete: { symbol: '\u25c7', label: 'complete', color: '#10b981' },

@@ -373,6 +373,26 @@ export async function POST(request: NextRequest) {
     log('INFO', 'PROVIDER', `Methodology: ${selectedMethod.id} → Provider: ${selectedProvider} (${providerSpec.model})`)
     log('INFO', 'PROVIDER', `Reasoning: ${providerSpec.reasoning}`)
 
+    // Emit: AI reasoning — what the system is thinking
+    emitAndPersist(queryId, {
+      id: `${queryId}-reasoning`,
+      queryId,
+      stage: 'reasoning',
+      timestamp: Date.now() - startTime,
+      data: metaCoreState
+        ? `${metaCoreState.humanIntention}`
+        : `${selectedMethod.reason || 'Processing query'}`,
+      details: {
+        reasoning: {
+          intent: metaCoreState?.humanIntention || 'Analyzing query',
+          approach: selectedMethod.reason || `Using ${selectedMethod.id} methodology`,
+          reflectionMode: metaCoreState?.reflectionMode ? 'active' : 'standard',
+          ascentLevel: metaCoreState?.ascentLevel || 1,
+          providerReason: providerSpec.reasoning || `${selectedProvider} selected for ${selectedMethod.id}`,
+        },
+      },
+    })
+
     // Side Canal context already fetched above in fusion layer
     // Log if context was found
     if (sideCanalContext) {
@@ -556,6 +576,27 @@ export async function POST(request: NextRequest) {
       }
 
       log('INFO', 'GNOSTIC', `✓ All protocols completed successfully`)
+
+      // Emit: analysis — post-processing reasoning
+      emitAndPersist(queryId, {
+        id: `${queryId}-analysis`,
+        queryId,
+        stage: 'analysis',
+        timestamp: Date.now() - startTime,
+        data: antipatternRisk.risk !== 'none'
+          ? `purified: ${antipatternRisk.risk} antipatterns`
+          : `clean · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.name || 'balanced' : 'standard'} dominant`,
+        details: {
+          analysis: {
+            antipatternRisk: antipatternRisk.risk,
+            sovereigntyCheck: metaCoreState ? checkSovereignty(processedContent, metaCoreState) : true,
+            purified: antipatternRisk.risk !== 'none',
+            synthesisInsight: layerAnalysis?.synthesisInsight?.detected ? layerAnalysis.synthesisInsight.insight : '',
+            dominantLayer: layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.name || 'unknown' : '',
+            averageLevel: layerAnalysis?.averageLevel || 0,
+          },
+        },
+      })
     } catch (gnosticError) {
       // Don't fail the request if post-processing fails
       log('WARN', 'GNOSTIC', `Post-processing failed: ${gnosticError}`)
