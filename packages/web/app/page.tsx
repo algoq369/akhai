@@ -3126,7 +3126,7 @@ function HomePage() {
       </Suspense>
 
       {/* Pipeline History — fixed right-side drawer */}
-      <PipelineHistoryPanel isOpen={historyPanelOpen} onToggle={() => setHistoryPanelOpen(!historyPanelOpen)} />
+      <PipelineHistoryPanel isOpen={historyPanelOpen} onToggle={() => setHistoryPanelOpen(!historyPanelOpen)} messages={messages} />
     </div>
   )
 }
