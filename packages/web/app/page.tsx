@@ -723,7 +723,21 @@ function HomePage() {
             timestamp: new Date(msg.timestamp * 1000),
             methodology: msg.methodology,
             gnostic: msg.gnostic || null,
+            pipelineEvents: msg.pipelineEvents || null,
           }))
+
+          // Restore pipeline metadata into Zustand store for MetadataStrip
+          loadedMessages.forEach((msg: any) => {
+            if (msg.role === 'assistant' && msg.pipelineEvents?.length > 0) {
+              msg.pipelineEvents.forEach((ev: any) => {
+                useSideCanalStore.getState().pushMetadata({
+                  ...ev,
+                  messageId: msg.id,
+                })
+              })
+            }
+          })
+
           console.log('[History] Setting messages:', loadedMessages.length)
           setMessages(loadedMessages)
           setContinuingConversation(queryId)

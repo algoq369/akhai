@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { logger, log } from '@/lib/logger'
-import { createQuery, updateQuery, trackUsage } from '@/lib/database'
+import { createQuery, updateQuery, trackUsage, addEvent } from '@/lib/database'
 import { getUserFromSession } from '@/lib/auth'
 import { getContextForQuery } from '@/lib/side-canal'
 import { getProviderForMethodology, validateProviderApiKey, getFallbackProvider, type CoreMethodology } from '@/lib/provider-selector'
@@ -33,6 +33,22 @@ import { trackAscent, suggestElevation, Layer, LAYER_METADATA } from '@/lib/laye
 import { analyzeLayerContent, getLayerActivationSummary } from '@/lib/layer-mapper'
 import { emitThought, formatDuration } from '@/lib/thought-stream'
 
+/** Emit thought to SSE AND persist to DB for history replay */
+function emitAndPersist(queryId: string, event: import('@/lib/thought-stream').ThoughtEvent) {
+  emitThought(queryId, event)
+  try {
+    addEvent(queryId, `pipeline:${event.stage}`, {
+      id: event.id,
+      stage: event.stage,
+      timestamp: event.timestamp,
+      data: event.data,
+      details: event.details || null,
+    })
+  } catch (e) {
+    // DB write failure is non-critical — SSE already delivered
+  }
+}
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   const queryId = Math.random().toString(36).slice(2, 10)
@@ -57,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Emit: query received
-    emitThought(queryId, {
+    emitAndPersist(queryId, {
       id: `${queryId}-received`,
       queryId,
       stage: 'received',
@@ -128,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     // Emit: side canal context
     if (sideCanalContext) {
-      emitThought(queryId, {
+      emitAndPersist(queryId, {
         id: `${queryId}-sidecanal`,
         queryId,
         stage: 'side-canal',
@@ -147,7 +163,7 @@ export async function POST(request: NextRequest) {
       sideCanalContext = sideCanalContext ? sideCanalContext + refinementContext : refinementContext
       log('INFO', 'SIDE_CANAL', `Injected ${liveRefinements.length} live refinements`)
 
-      emitThought(queryId, {
+      emitAndPersist(queryId, {
         id: `${queryId}-refinements`,
         queryId,
         stage: 'refinements',
@@ -186,7 +202,7 @@ export async function POST(request: NextRequest) {
       : selectMethodology(query, methodology)
 
     // Emit: routing decision
-    emitThought(queryId, {
+    emitAndPersist(queryId, {
       id: `${queryId}-routing`,
       queryId,
       stage: 'routing',
@@ -219,7 +235,7 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-      emitThought(queryId, {
+      emitAndPersist(queryId, {
         id: `${queryId}-layers`,
         queryId,
         stage: 'layers',
@@ -392,7 +408,7 @@ export async function POST(request: NextRequest) {
 
 
     // Emit: generating
-    emitThought(queryId, {
+    emitAndPersist(queryId, {
       id: `${queryId}-generating`,
       queryId,
       stage: 'generating',
@@ -445,7 +461,7 @@ export async function POST(request: NextRequest) {
     const guardResult = await runGroundingGuard(content, query)
 
     // Emit: guard complete
-    emitThought(queryId, {
+    emitAndPersist(queryId, {
       id: `${queryId}-guard`,
       queryId,
       stage: 'guard',
@@ -705,7 +721,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Emit: complete
-    emitThought(queryId, {
+    emitAndPersist(queryId, {
       id: `${queryId}-complete`,
       queryId,
       stage: 'complete',
@@ -733,7 +749,7 @@ export async function POST(request: NextRequest) {
 
     // Emit: error
     try {
-      emitThought(queryId, {
+      emitAndPersist(queryId, {
         id: `${queryId}-error`,
         queryId,
         stage: 'error',

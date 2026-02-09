@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
+import { db, getEvents } from '@/lib/database'
 import { getUserFromSession } from '@/lib/auth'
 
 export async function GET(
@@ -100,7 +100,7 @@ export async function GET(
     }
 
     // Build conversation messages
-    const messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: number; methodology?: string; gnostic?: any }> = []
+    const messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: number; methodology?: string; gnostic?: any; pipelineEvents?: any[] }> = []
 
     sessionQueries.forEach((q) => {
       // Add user query
@@ -123,6 +123,20 @@ export async function GET(
           }
         }
 
+        // Fetch pipeline events for this query
+        let pipelineEvents: any[] = []
+        try {
+          const rawEvents = getEvents(q.id)
+          pipelineEvents = rawEvents
+            .filter((ev: any) => ev.type.startsWith('pipeline:'))
+            .map((ev: any) => {
+              try { return JSON.parse(ev.data) } catch { return null }
+            })
+            .filter(Boolean)
+        } catch {
+          // Pipeline events are non-critical
+        }
+
         try {
           const result = JSON.parse(q.result)
           const response = result.finalAnswer || result.response || ''
@@ -132,7 +146,8 @@ export async function GET(
               content: response,
               timestamp: q.created_at,
               methodology: q.flow,
-              gnostic: gnosticData
+              gnostic: gnosticData,
+              pipelineEvents: pipelineEvents.length > 0 ? pipelineEvents : undefined
             })
           }
         } catch (e) {
@@ -143,7 +158,8 @@ export async function GET(
               content: q.result,
               timestamp: q.created_at,
               methodology: q.flow,
-              gnostic: gnosticData
+              gnostic: gnosticData,
+              pipelineEvents: pipelineEvents.length > 0 ? pipelineEvents : undefined
             })
           }
         }
