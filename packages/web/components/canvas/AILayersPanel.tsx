@@ -23,6 +23,8 @@
 
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLayerStore } from '@/lib/stores/layer-store'
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
@@ -356,6 +358,106 @@ function LayersTreeView({ insights }: { insights: AIInsight[] }) {
   )
 }
 
+/**
+ * Layer Weight Color Map (matching tree-of-life colors)
+ */
+const LAYER_BAR_COLORS: Record<number, string> = {
+  [Layer.EMBEDDING]: '#f59e0b',    // amber
+  [Layer.EXECUTOR]: '#a855f7',     // purple
+  [Layer.CLASSIFIER]: '#f97316',   // orange
+  [Layer.GENERATIVE]: '#22c55e',   // green
+  [Layer.ATTENTION]: '#eab308',    // yellow
+  [Layer.DISCRIMINATOR]: '#ef4444', // red
+  [Layer.EXPANSION]: '#3b82f6',    // blue
+  [Layer.ENCODER]: '#6366f1',      // indigo
+  [Layer.REASONING]: '#9ca3af',    // gray
+  [Layer.META_CORE]: '#e5e7eb',    // white/light
+  [Layer.SYNTHESIS]: '#06b6d4',    // cyan
+}
+
+/**
+ * AI Layer Names (short, for compact display)
+ */
+const LAYER_SHORT_NAMES: Record<number, string> = {
+  [Layer.EMBEDDING]: 'Embed',
+  [Layer.EXECUTOR]: 'Exec',
+  [Layer.CLASSIFIER]: 'Class',
+  [Layer.GENERATIVE]: 'Gen',
+  [Layer.ATTENTION]: 'Attn',
+  [Layer.DISCRIMINATOR]: 'Discr',
+  [Layer.EXPANSION]: 'Expan',
+  [Layer.ENCODER]: 'Enc',
+  [Layer.REASONING]: 'Reas',
+  [Layer.META_CORE]: 'Meta',
+  [Layer.SYNTHESIS]: 'Synth',
+}
+
+/**
+ * Live Layer Weights Section
+ * Shows horizontal bars for all 11 layers from the Zustand store
+ */
+function LayerWeightsSection() {
+  const { weights, processingMode, activePreset } = useLayerStore()
+
+  const sortedLayers = useMemo(() => {
+    return Object.entries(weights)
+      .map(([id, weight]) => ({ id: Number(id), weight }))
+      .sort((a, b) => b.weight - a.weight)
+  }, [weights])
+
+  return (
+    <div className="px-3 py-2 border-b border-neutral-100 dark:border-relic-slate/20">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-mono text-[8px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+          Live Weights
+        </span>
+        <span className="font-mono text-[8px] text-neutral-400 dark:text-neutral-500">
+          {activePreset || 'custom'} · {processingMode}
+        </span>
+      </div>
+
+      {/* Weight Bars */}
+      <div className="space-y-1">
+        {sortedLayers.map(({ id, weight }) => {
+          const pct = Math.round(weight * 100)
+          const color = LAYER_BAR_COLORS[id] || '#9ca3af'
+          const name = LAYER_SHORT_NAMES[id] || `L${id}`
+          const isActive = weight > 0.1
+
+          return (
+            <div key={id} className="flex items-center gap-1.5">
+              <span
+                className={`font-mono text-[8px] w-8 text-right ${
+                  isActive ? 'text-neutral-600 dark:text-neutral-300' : 'text-neutral-300 dark:text-neutral-600'
+                }`}
+              >
+                {name}
+              </span>
+              <div className="flex-1 h-2 bg-neutral-100 dark:bg-relic-slate/20 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${pct}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: color, opacity: isActive ? 0.85 : 0.3 }}
+                />
+              </div>
+              <span
+                className={`font-mono text-[8px] w-6 ${
+                  isActive ? 'text-neutral-600 dark:text-neutral-300' : 'text-neutral-300 dark:text-neutral-600'
+                }`}
+              >
+                {pct}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════
@@ -471,6 +573,9 @@ export function AILayersPanel({
           </span>
         </div>
       </div>
+
+      {/* Live Layer Weights - only in layers tab */}
+      {activeTab === 'layers' && <LayerWeightsSection />}
 
       {/* Category Filter Pills - only show in layers/insight tabs */}
       {(activeTab === 'layers' || activeTab === 'insight') && (

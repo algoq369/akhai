@@ -8,7 +8,7 @@
  * All panels are draggable with responsive starting positions.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import DraggablePanel from './DraggablePanel'
 import QueryCardsPanel from './QueryCardsPanel'
@@ -19,6 +19,10 @@ import type { AIInsight } from './AILayersPanel'
 import { LayerTreeSVG } from '@/components/tree-workbench/LayerTreeSVG'
 import { AntipatternTreeSVG } from '@/components/tree-workbench/AntipatternTreeSVG'
 import { useLayerStore } from '@/lib/stores/layer-store'
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
+
+// Stable empty arrays to prevent Zustand infinite re-render loop
+const EMPTY_INSIGHTS: AIInsight[] = []
 
 // ═══════════════════════════════════════════════════════════════════
 // RESPONSIVE LAYOUT
@@ -144,7 +148,112 @@ export function CanvasWorkspace({
   const [layoutKey, setLayoutKey] = useState(0) // bumped to force DraggablePanel remount
 
   // Get weights from store
-  const { weights } = useLayerStore()
+  const { weights, processingMode, activePreset, lastMethodologyUsed } = useLayerStore()
+
+  // ── Compute real AI insights from layer weights + query data ──
+  const computedInsights = useMemo<AIInsight[]>(() => {
+    // Only generate insights when we have active layers AND queries
+    const activeLayers = Object.entries(weights)
+      .filter(([, w]) => w > 0.1)
+      .sort(([, a], [, b]) => b - a)
+
+    if (activeLayers.length === 0 && queryCards.length === 0) return EMPTY_INSIGHTS
+
+    const insights: AIInsight[] = []
+
+    // Generate insights from top active layers
+    activeLayers.slice(0, 5).forEach(([layerIdStr, weight], idx) => {
+      const layerNum = Number(layerIdStr) as Layer
+      const meta = LAYER_METADATA[layerNum]
+      if (!meta) return
+
+      const confidence = Math.round(weight * 100)
+      const category: AIInsight['category'] =
+        idx === 0 ? 'strategy' : idx === 1 ? 'insight' : idx === 2 ? 'data' : 'action'
+
+      insights.push({
+        id: `layer-${layerNum}`,
+        text: `${meta.aiRole} — active at ${confidence}% (${meta.name})`,
+        category,
+        confidence,
+        metricsCount: meta.queryCharacteristics.length,
+        dataPercent: Math.round(weight * 80),
+      })
+    })
+
+    // Generate insights from recent queries (methodology distribution)
+    if (queryCards.length > 0) {
+      const methodCounts: Record<string, number> = {}
+      queryCards.forEach((card) => {
+        const m = card.methodology || 'direct'
+        methodCounts[m] = (methodCounts[m] || 0) + 1
+      })
+
+      const topMethod = Object.entries(methodCounts).sort(([, a], [, b]) => b - a)[0]
+      if (topMethod) {
+        insights.push({
+          id: 'methodology-dist',
+          text: `Primary methodology: ${topMethod[0]} (${topMethod[1]}/${queryCards.length} queries)`,
+          category: 'data',
+          confidence: Math.round((topMethod[1] / queryCards.length) * 100),
+          metricsCount: Object.keys(methodCounts).length,
+        })
+      }
+
+      // Query count insight
+      insights.push({
+        id: 'query-count',
+        text: `${queryCards.length} queries processed across ${Object.keys(methodCounts).length} methodologies`,
+        category: 'insight',
+        confidence: 95,
+        metricsCount: queryCards.length,
+      })
+    }
+
+    // Preset/mode insight
+    if (activePreset || processingMode !== 'weighted') {
+      insights.push({
+        id: 'config-mode',
+        text: `Configuration: ${activePreset || 'custom'} preset, ${processingMode} processing mode`,
+        category: 'strategy',
+        confidence: 100,
+        metricsCount: 1,
+      })
+    }
+
+    return insights
+  }, [weights, queryCards, activePreset, processingMode])
+
+  const computedTotalDataPoints = useMemo(() => {
+    return queryCards.length + Object.values(weights).filter((w) => w > 0.1).length
+  }, [queryCards, weights])
+
+  const computedOverallConfidence = useMemo(() => {
+    const activeWeightValues = Object.values(weights).filter((w) => w > 0.1)
+    if (activeWeightValues.length === 0) return 0
+    const avg = activeWeightValues.reduce((s, v) => s + v, 0) / activeWeightValues.length
+    return Math.round(avg * 100)
+  }, [weights])
+
+  const computedSynthesis = useMemo(() => {
+    const active = Object.entries(weights)
+      .filter(([, w]) => w > 0.5)
+      .map(([id]) => {
+        const meta = LAYER_METADATA[Number(id) as Layer]
+        return meta?.name || `L${id}`
+      })
+    if (active.length === 0) return undefined
+    return `Dominant layers: ${active.join(', ')}${lastMethodologyUsed ? ` | Last method: ${lastMethodologyUsed}` : ''}`
+  }, [weights, lastMethodologyUsed])
+
+  // Merge prop insights with computed ones (props take priority)
+  const mergedInsights = useMemo(() => {
+    return aiInsights.length > 0 ? aiInsights : computedInsights
+  }, [aiInsights, computedInsights])
+
+  const mergedDataPoints = aiInsights.length > 0 ? totalDataPoints : computedTotalDataPoints
+  const mergedConfidence = aiInsights.length > 0 ? overallConfidence : computedOverallConfidence
+  const mergedSynthesis = querySynthesis || computedSynthesis
 
   // Tree panel dynamic sizing
   const treePanelRef = useRef<HTMLDivElement>(null)
@@ -331,10 +440,10 @@ export function CanvasWorkspace({
               zIndex={10}
             >
               <AILayersPanel
-                insights={aiInsights}
-                totalDataPoints={totalDataPoints}
-                overallConfidence={overallConfidence}
-                querySynthesis={querySynthesis}
+                insights={mergedInsights}
+                totalDataPoints={mergedDataPoints}
+                overallConfidence={mergedConfidence}
+                querySynthesis={mergedSynthesis}
                 onInsightClick={handleInsightSelect}
                 selectedInsightId={selectedInsightId}
               />
