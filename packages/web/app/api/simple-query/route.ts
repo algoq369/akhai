@@ -37,37 +37,19 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
   const queryId = Math.random().toString(36).slice(2, 10)
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:12',message:'POST endpoint called',data:{queryId,startTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
 
   try {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:20',message:'Entering try block',data:{queryId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
 
     // Get user from session (optional - allows anonymous usage)
     const token = request.cookies.get('session_token')?.value
     const user = token ? getUserFromSession(token) : null
     const userId = user?.id || null
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:26',message:'User session retrieved',data:{hasToken:!!token,hasUser:!!user,userId:userId||'null'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'Before request.json()',data:{queryId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
 
     const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, layersWeights, instinctConfig, liveRefinements } = await request.json()
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:33',message:'Request parsed successfully',data:{query:query?.substring(0,50)||'null',methodology,hasHistory:conversationHistory.length>0,hasPageContext:!!pageContext,legendMode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:16',message:'Request parsed',data:{query,methodology,hasHistory:conversationHistory.length>0,userId:userId||'anonymous'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
 
     if (!query || typeof query !== 'string') {
       logger.query.apiError('VALIDATION', 'Query is required')
@@ -250,9 +232,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:26',message:'Methodology selected',data:{selected:selectedMethod.id,reason:selectedMethod.reason},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
 
     // ============================================================================
     // GNOSTIC PRE-PROCESSING: Activate Protocols Before AI Call
@@ -290,13 +269,7 @@ export async function POST(request: NextRequest) {
     // Save query to database (with user_id)
     try {
       createQuery(queryId, query, selectedMethod.id, userId)
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'Query saved to DB',data:{queryId,userId:userId||'anonymous',success:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
     } catch (dbError) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:29',message:'DB save failed',data:{queryId,error:String(dbError)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
     }
 
     // Check for crypto price queries (real-time data)
@@ -309,7 +282,7 @@ export async function POST(request: NextRequest) {
         tokens_used: cryptoResult.metrics.tokens || 0,
         cost: cryptoResult.metrics.cost || 0,
       }, userId)
-      return NextResponse.json(cryptoResult)
+      return NextResponse.json({ ...cryptoResult, queryId })
     }
 
     // ========================
@@ -347,6 +320,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           ...gtpResult,
           id: queryId,
+          queryId,
           guardResult,
           sideCanal: { contextInjected: false, suggestions: [] },
         })
@@ -399,9 +373,6 @@ export async function POST(request: NextRequest) {
       { role: 'user' as const, content: query },
     ]
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:110',message:'Before getMethodologyPrompt',data:{methodology:selectedMethod.id,hasPageContext:!!pageContext,legendMode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
 
     // Get methodology-specific system prompt
     let systemPrompt = getMethodologyPrompt(selectedMethod.id, pageContext, legendMode)
@@ -419,9 +390,6 @@ export async function POST(request: NextRequest) {
       log('INFO', 'FUSION', `Enhanced system prompt with Layers awareness (+${fusionEnhancement.length} chars)`)
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:115',message:'After getMethodologyPrompt',data:{promptLength:systemPrompt?.length||0,methodology:selectedMethod.id,fusionApplied:!!fusionResult},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
 
     // Emit: generating
     emitThought(queryId, {
@@ -441,9 +409,6 @@ export async function POST(request: NextRequest) {
     logger.query.apiCall(selectedProvider.toUpperCase(), providerSpec.model)
     log('INFO', 'API', `Calling ${selectedProvider} API with model: ${providerSpec.model}`)
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:69',message:'Calling Multi-Provider API',data:{methodology:selectedMethod.id,provider:selectedProvider,model:providerSpec.model},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
 
     let apiResponse
     try {
@@ -642,6 +607,7 @@ export async function POST(request: NextRequest) {
 
     const responseData = {
       id: queryId,
+      queryId,
       query,
       methodology: selectedMethod.id,
       methodologyUsed: selectedMethod.id,
@@ -761,9 +727,6 @@ export async function POST(request: NextRequest) {
     const errorStack = error instanceof Error ? error.stack : 'no stack'
     const errorName = error instanceof Error ? error.name : typeof error
     
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:248',message:'Error caught in catch block',data:{errorName,errorMessage,errorStack:errorStack?.substring(0,500),queryId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
-    // #endregion
     
     logger.system.error(errorMessage)
     console.error('[API] Error details:', { errorName, errorMessage, errorStack, queryId })
@@ -791,17 +754,11 @@ export async function POST(request: NextRequest) {
       }, userId)
     } catch (dbError) {
       console.error('[API] Failed to update query status:', dbError)
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:264',message:'DB update failed in error handler',data:{dbError:String(dbError)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
-      // #endregion
     }
     
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:268',message:'Returning error response',data:{errorMessage,status:500},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'G'})}).catch(()=>{});
-    // #endregion
     
     return NextResponse.json(
-      { error: 'Query processing failed', details: errorMessage },
+      { error: 'Query processing failed', details: errorMessage, queryId },
       { status: 500 }
     )
   }
@@ -1156,9 +1113,6 @@ async function runGroundingGuard(response: string, query: string) {
   if (queryHasExtremeClaims) hypeCount += 3 // Heavy weight for extreme claims in query
   if (responseHasExtremeClaims) hypeCount += 2
   
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:443',message:'Hype detection',data:{query,responseHypeCount,queryHasExtremeClaims,responseHasExtremeClaims,hypeCount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'L'})}).catch(()=>{});
-  // #endregion
   
   const hypeTriggered = hypeCount >= 2
   logger.guard.hypeCheck(hypeCount, hypeTriggered)
