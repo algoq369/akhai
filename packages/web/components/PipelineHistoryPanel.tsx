@@ -74,22 +74,35 @@ export default function PipelineHistoryPanel({ isOpen, onToggle, messages }: Pip
         const complexPct = Math.round(qa.complexity * 100)
         narrativeLines.push(`Detected ${qa.queryType} query (${complexPct}% complexity${traits.length ? ', ' + traits.join(', ') : ''})`)
         if (qa.keywords?.length) narrativeLines.push(`Key signals: ${qa.keywords.join(', ')}`)
+      } else {
+        // Fallback: generate basic analysis from query text
+        const qt = queryLookup[msgId] || receivedText || ''
+        if (qt.length > 0) {
+          const wordCount = qt.split(/\s+/).length
+          const isQuestion = qt.includes('?')
+          const isComplex = wordCount > 12
+          narrativeLines.push(`${isQuestion ? 'Question' : 'Request'} analyzed (${wordCount} words${isComplex ? ', complex query' : ''})`)
+        }
       }
 
       // 2. Methodology selection narrative
       if (selectedScore?.reasons?.length) {
         narrativeLines.push(`Chose ${d.methodology?.selected?.toUpperCase()} because: ${selectedScore.reasons.join(', ')}`)
       } else if (d.methodology?.reason) {
-        narrativeLines.push(`Chose ${d.methodology?.selected?.toUpperCase()}: ${d.methodology.reason}`)
+        narrativeLines.push(`Routed to ${d.methodology?.selected?.toUpperCase()}: ${d.methodology.reason}`)
       }
 
       // 3. Layer activation narrative
       if (activatedLayers.length > 0) {
         const layerNarr = activatedLayers.map(l => {
-          const kw = l.keywords?.length ? ` (triggered by: ${l.keywords.join(', ')})` : ''
+          const kw = l.keywords?.length ? ` (${l.keywords.join(', ')})` : ''
           return `${l.name}${kw}`
         })
-        narrativeLines.push(`Activated layers: ${layerNarr.join(' → ')}`)
+        narrativeLines.push(`Active layers: ${layerNarr.join(' → ')}`)
+      } else if (allLayers.length > 0) {
+        // Fallback: show top weighted layers even without activation data
+        const topLayers = allLayers.slice(0, 3).map(l => `${l.name} ${Math.round(l.weight)}%`)
+        narrativeLines.push(`Layer weights: ${topLayers.join(', ')}`)
       }
 
       // 4. Path activations
@@ -101,13 +114,36 @@ export default function PipelineHistoryPanel({ isOpen, onToggle, messages }: Pip
       // 5. MetaCore intent (new queries)
       const ri = reasoningEv?.details?.reasoning as any
       if (ri?.intent) narrativeLines.push(`Intent: ${ri.intent}`)
-      if (ri?.providerReason) narrativeLines.push(`Model selection: ${ri.providerReason}`)
+      if (ri?.providerReason) narrativeLines.push(`Model: ${ri.providerReason}`)
 
       // 6. Analysis insights (new queries)
       const ai = analysisEv?.details?.analysis as any
       if (ai?.purified) narrativeLines.push(`⚡ Response purified: ${ai.antipatternRisk} antipatterns removed`)
       if (ai?.synthesisInsight) narrativeLines.push(`Synthesis: "${ai.synthesisInsight}"`)
 
+      // 7. Guard narrative (always available)
+      const gv = guardEv?.details?.guard
+      if (gv) {
+        const risk = Math.round((gv.risk || 0) * 100)
+        if (gv.verdict !== 'pass') {
+          narrativeLines.push(`Guard flagged: ${gv.verdict} (${risk}% risk)${gv.checks?.length ? ' — ' + gv.checks.join(', ') : ''}`)
+        } else if (risk > 10) {
+          narrativeLines.push(`Guard passed with ${risk}% risk detected`)
+        }
+      }
+
+      // 8. Model info fallback
+      if (!ri?.providerReason && genEv?.details?.model) {
+        narrativeLines.push(`Model: ${genEv.details.model} via ${genEv.details.provider}`)
+      }
+
+      // 9. Performance insight
+      const dur = completeEv?.details?.duration ?? completeEv?.timestamp
+      const tok = completeEv?.details?.tokens?.total || 0
+      if (dur && tok) {
+        const tps = Math.round(tok / (dur / 1000))
+        narrativeLines.push(`Performance: ${tps} tokens/sec`)
+      }
       return {
         messageId: msgId,
         queryText: queryLookup[msgId] || receivedText || '',
