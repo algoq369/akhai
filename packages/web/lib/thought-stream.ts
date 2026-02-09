@@ -26,10 +26,25 @@ export interface ThoughtDetails {
   // routing
   methodology?: { selected: string; reason: string; candidates?: string[] }
   confidence?: number
+  // Rich fusion data (attached to routing event)
+  queryAnalysis?: {
+    complexity: number
+    queryType: string
+    keywords: string[]
+    requiresTools: boolean
+    requiresMultiPerspective: boolean
+    isMathematical: boolean
+    isCreative: boolean
+  }
+  methodologyScores?: Array<{ methodology: string; score: number; reasons: string[] }>
+  guardReasons?: string[]
+  processingMode?: string
+  activeLenses?: string[]
 
   // layers
-  layers?: Record<number, { name: string; weight: number; activated: boolean }>
+  layers?: Record<number, { name: string; weight: number; activated: boolean; keywords?: string[] }>
   dominantLayer?: string
+  pathActivations?: Array<{ from: string; to: string; weight: number; description: string }>
 
   // guard
   guard?: { verdict: 'pass' | 'warn' | 'flag'; risk: number; checks?: string[] }

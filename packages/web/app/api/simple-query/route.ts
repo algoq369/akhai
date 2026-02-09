@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
       ? { id: fusionResult.selectedMethodology, reason: `Fusion: ${fusionResult.methodologyScores[0]?.reasons.join(', ') || 'Auto-selected'}` }
       : selectMethodology(query, methodology)
 
-    // Emit: routing decision
+    // Emit: routing decision (with rich fusion data)
     emitAndPersist(queryId, {
       id: `${queryId}-routing`,
       queryId,
@@ -218,26 +218,54 @@ export async function POST(request: NextRequest) {
           candidates: fusionResult?.methodologyScores?.slice(0, 3).map((s: any) => s.methodology) || [],
         },
         confidence: fusionResult ? fusionResult.confidence : undefined,
+        // Rich fusion reasoning
+        queryAnalysis: fusionResult ? {
+          complexity: fusionResult.analysis.complexity,
+          queryType: fusionResult.analysis.queryType,
+          keywords: fusionResult.analysis.keywords.slice(0, 8),
+          requiresTools: fusionResult.analysis.requiresTools,
+          requiresMultiPerspective: fusionResult.analysis.requiresMultiPerspective,
+          isMathematical: fusionResult.analysis.isMathematical,
+          isCreative: fusionResult.analysis.isCreative,
+        } : undefined,
+        methodologyScores: fusionResult?.methodologyScores?.slice(0, 4).map((s: any) => ({
+          methodology: s.methodology,
+          score: Math.round(s.score * 100),
+          reasons: s.reasons,
+        })) || [],
+        guardReasons: fusionResult?.guardReasons || [],
+        processingMode: fusionResult?.processingMode,
+        activeLenses: fusionResult?.activeLenses || [],
       },
     })
 
-    // Emit: layer activations
+    // Emit: layer activations (with keywords + path activations)
     if (fusionResult) {
       const dominant = fusionResult.dominantLayers[0]
       const dominantName = dominant ? LAYER_METADATA[dominant]?.name || 'unknown' : 'none'
-      // Build structured layer map from weights
-      const layerDetails: Record<number, { name: string; weight: number; activated: boolean }> = {}
+      // Build structured layer map from weights + fusion activations
+      const layerDetails: Record<number, { name: string; weight: number; activated: boolean; keywords: string[] }> = {}
       for (const [key, val] of Object.entries(weights)) {
         const num = Number(key) as Layer
         const meta = LAYER_METADATA[num]
         if (meta) {
+          const activation = fusionResult.layerActivations.find((a: any) => a.layerNode === num)
           layerDetails[num] = {
             name: meta.name,
             weight: val as number,
             activated: fusionResult.dominantLayers.includes(num),
+            keywords: activation?.keywords?.slice(0, 4) || [],
           }
         }
       }
+      // Build path activations
+      const pathActs = fusionResult.pathActivations?.slice(0, 5).map((p: any) => ({
+        from: LAYER_METADATA[p.from]?.name || String(p.from),
+        to: LAYER_METADATA[p.to]?.name || String(p.to),
+        weight: Math.round(p.weight * 100),
+        description: p.description,
+      })) || []
+      
       emitAndPersist(queryId, {
         id: `${queryId}-layers`,
         queryId,
@@ -247,6 +275,7 @@ export async function POST(request: NextRequest) {
         details: {
           layers: layerDetails,
           dominantLayer: dominantName,
+          pathActivations: pathActs,
         },
       })
     }
