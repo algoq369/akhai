@@ -540,6 +540,7 @@ function HomePage() {
   const [suggestionsEnabled, setSuggestionsEnabled] = useState(true)
   const [auditEnabled, setAuditEnabled] = useState(false)
   const [mindmapConnectorEnabled, setMindmapConnectorEnabled] = useState(false)
+  const [pipelineEnabled, setPipelineEnabled] = useState(true)
   const [selectedModel, setSelectedModel] = useState('claude')
   const [globalVizMode, setGlobalVizMode] = useState<'off' | 'synthesis' | 'insight'>('synthesis')
 
@@ -960,6 +961,27 @@ function HomePage() {
       const currentChatId = activeChatId || 'main'
       const pageContext = getPageContext()
       const { liveRefinements } = useSideCanalStore.getState()
+      // Pre-generate IDs so SSE can connect BEFORE the fetch
+      const assistantMsgId = generateId()
+      const frontendQueryId = Math.random().toString(36).slice(2, 10)
+
+      // Connect Metadata Thought Stream (SSE) BEFORE fetch so we catch live events
+      let evtSource: EventSource | null = null
+      try {
+        evtSource = new EventSource(`/api/thought-stream?queryId=${frontendQueryId}`)
+        evtSource.onmessage = (ev) => {
+          try {
+            const thought = JSON.parse(ev.data) as import('@/lib/thought-stream').ThoughtEvent
+            thought.messageId = assistantMsgId
+            useSideCanalStore.getState().pushMetadata(thought)
+            if (thought.stage === 'complete' || thought.stage === 'error') {
+              evtSource?.close()
+            }
+          } catch { /* ignore parse errors */ }
+        }
+        evtSource.onerror = () => { evtSource?.close(); evtSource = null }
+      } catch { /* SSE not critical */ }
+
       const res = await fetch('/api/simple-query', {
         method: 'POST',
         headers: {
@@ -980,7 +1002,8 @@ function HomePage() {
           instinctConfig,
           liveRefinements: liveRefinements.length > 0 ? liveRefinements : undefined,
           attachments: processedFiles.length > 0 ? processedFiles : undefined,
-          fileUrls: currentFileUrls.length > 0 ? currentFileUrls : undefined
+          fileUrls: currentFileUrls.length > 0 ? currentFileUrls : undefined,
+          queryId: frontendQueryId
         })
       })
 
@@ -988,27 +1011,6 @@ function HomePage() {
       if (!res.ok) throw new Error('Failed to get response')
 
       const data = await res.json()
-
-      // Pre-generate assistant message ID for metadata stream binding
-      const assistantMsgId = generateId()
-
-      // Connect Metadata Thought Stream (SSE) if queryId available
-      if (data.queryId) {
-        try {
-          const evtSource = new EventSource(`/api/thought-stream?queryId=${data.queryId}`)
-          evtSource.onmessage = (ev) => {
-            try {
-              const thought = JSON.parse(ev.data) as import('@/lib/thought-stream').ThoughtEvent
-              thought.messageId = assistantMsgId
-              useSideCanalStore.getState().pushMetadata(thought)
-              if (thought.stage === 'complete' || thought.stage === 'error') {
-                evtSource.close()
-              }
-            } catch { /* ignore parse errors */ }
-          }
-          evtSource.onerror = () => evtSource.close()
-        } catch { /* SSE not critical */ }
-      }
 
       // Handle Side Canal suggestions - refresh from store
       if (data.sideCanal?.suggestions && data.sideCanal.suggestions.length > 0) {
@@ -2112,7 +2114,7 @@ function HomePage() {
                           )}
 
                           {/* Metadata Thought Stream — real-time pipeline stage */}
-                          {message.role === 'assistant' && (
+                          {message.role === 'assistant' && pipelineEnabled && (
                             <MetadataStrip messageId={message.id} />
                           )}
 
@@ -2550,6 +2552,8 @@ function HomePage() {
                 onMindmapConnectorChange={setMindmapConnectorEnabled}
                 sideCanalEnabled={sideCanalEnabled}
                 onSideCanalChange={setSideCanalEnabled}
+                pipelineEnabled={pipelineEnabled}
+                onPipelineChange={setPipelineEnabled}
                 selectedModel={selectedModel}
                 onModelChange={setSelectedModel}
                 visualizationMode={globalVizMode}

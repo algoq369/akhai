@@ -51,7 +51,7 @@ function emitAndPersist(queryId: string, event: import('@/lib/thought-stream').T
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
-  const queryId = Math.random().toString(36).slice(2, 10)
+  let queryId: string = Math.random().toString(36).slice(2, 10)
 
 
   try {
@@ -63,7 +63,10 @@ export async function POST(request: NextRequest) {
 
 
 
-    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, layersWeights, instinctConfig, liveRefinements } = await request.json()
+    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, layersWeights, instinctConfig, liveRefinements, queryId: clientQueryId } = await request.json()
+
+    // Use client-provided queryId if available (enables live SSE), otherwise generate
+    queryId = clientQueryId || Math.random().toString(36).slice(2, 10)
 
 
 

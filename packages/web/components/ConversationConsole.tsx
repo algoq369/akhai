@@ -14,6 +14,8 @@ interface ConversationConsoleProps {
   onMindmapConnectorChange: (enabled: boolean) => void
   sideCanalEnabled: boolean
   onSideCanalChange: (enabled: boolean) => void
+  pipelineEnabled: boolean
+  onPipelineChange: (enabled: boolean) => void
   selectedModel: string
   onModelChange: (model: string) => void
   visualizationMode: 'off' | 'synthesis' | 'insight'
@@ -30,6 +32,7 @@ export default function ConversationConsole({
   audit, onAuditChange,
   mindmapConnector, onMindmapConnectorChange,
   sideCanalEnabled, onSideCanalChange,
+  pipelineEnabled, onPipelineChange,
   selectedModel, onModelChange,
   visualizationMode, onVisualizationChange,
   attachedFilesCount = 0,
@@ -47,6 +50,7 @@ export default function ConversationConsole({
     { key: 'suggest', on: suggestions, set: onSuggestionsChange },
     { key: 'audit', on: audit, set: onAuditChange },
     { key: 'canal', on: sideCanalEnabled, set: onSideCanalChange },
+    { key: 'pipeline', on: pipelineEnabled, set: onPipelineChange },
   ]
 
   const activeCount = features.filter(f => f.on).length
