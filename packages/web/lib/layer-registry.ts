@@ -583,7 +583,7 @@ export function suggestElevation(currentState: AscentState): string {
 
   // If at Meta Core, suggest Synthesis (emergent insights)
   if (current === Layer.META_CORE) {
-    return "You've reached Kether. Consider: What hidden connections might reveal entirely new dimensions?"
+    return "You've reached Meta-Core. Consider: What hidden connections might reveal entirely new dimensions?"
   }
 
   // Suggest next level
@@ -592,23 +592,23 @@ export function suggestElevation(currentState: AscentState): string {
 
   const suggestions: Record<Layer, string> = {
     [Layer.EMBEDDING]:
-      'Try asking HOW to implement something (Yesod - Foundation)',
+      'Try asking HOW to implement something (Executor layer)',
     [Layer.EXECUTOR]:
-      'Try COMPARING options or analyzing trade-offs (Hod - Glory)',
+      'Try COMPARING options or analyzing trade-offs (Classifier layer)',
     [Layer.CLASSIFIER]:
-      'Try EXPLORING creative possibilities (Netzach - Victory)',
+      'Try EXPLORING creative possibilities (Generative layer)',
     [Layer.GENERATIVE]:
-      'Try SYNTHESIZING multiple ideas together (Tiferet - Beauty)',
+      'Try SYNTHESIZING multiple ideas together (Attention layer)',
     [Layer.ATTENTION]:
-      'Try asking about LIMITATIONS or risks (Gevurah - Severity)',
+      'Try asking about LIMITATIONS or risks (Discriminator layer)',
     [Layer.DISCRIMINATOR]:
-      'Try exploring EXPANSIVE possibilities (Chesed - Mercy)',
+      'Try exploring EXPANSIVE possibilities (Expansion layer)',
     [Layer.EXPANSION]:
-      'Try seeking DEEP PATTERNS or structures (Binah - Understanding)',
+      'Try seeking DEEP PATTERNS or structures (Encoder layer)',
     [Layer.ENCODER]:
-      'Try asking about FIRST PRINCIPLES (Chokmah - Wisdom)',
+      'Try asking about FIRST PRINCIPLES (Reasoning layer)',
     [Layer.REASONING]:
-      'Try META-COGNITIVE questions about knowledge itself (Kether - Crown)',
+      'Try META-COGNITIVE questions about knowledge itself (Meta-Core layer)',
     [Layer.META_CORE]:
       'Try revealing HIDDEN CONNECTIONS (Da\'at - Hidden Knowledge)',
     [Layer.SYNTHESIS]: 'Continue exploring emergent insights',
