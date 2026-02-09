@@ -71,22 +71,63 @@ export default function MetadataStrip({ messageId }: MetadataStripProps) {
           transition={{ duration: 0.3 }}
           className="pl-4 border-l-2 border-relic-ghost dark:border-relic-slate/20 mt-1"
         >
-          <div className="flex items-center gap-1.5 font-mono text-[9px] text-relic-silver dark:text-relic-slate">
-            <span style={{ color: meta.color }}>{meta.symbol}</span>
-            <span className="uppercase tracking-wider" style={{ color: meta.color }}>
-              {meta.label}
-            </span>
-            {currentMetadata.data && (
-              <>
-                <span className="text-relic-ghost dark:text-relic-slate/30">&middot;</span>
-                <span>{currentMetadata.data}</span>
-              </>
+          <div className="space-y-0.5 font-mono text-[9px] text-relic-silver dark:text-relic-slate">
+            <div className="flex items-center gap-1.5">
+              <span style={{ color: meta.color }}>{meta.symbol}</span>
+              <span className="uppercase tracking-wider" style={{ color: meta.color }}>
+                {meta.label}
+              </span>
+              {currentMetadata.data && (
+                <>
+                  <span className="text-relic-ghost dark:text-relic-slate/30">&middot;</span>
+                  <span>{currentMetadata.data}</span>
+                </>
+              )}
+              {currentMetadata.timestamp > 0 && (
+                <span className="ml-auto text-relic-ghost dark:text-relic-slate/40">+{formatDuration(currentMetadata.timestamp)}</span>
+              )}
+            </div>
+            {/* Rich detail line for routing stage */}
+            {currentMetadata.details?.methodology?.reason && (
+              <div className="pl-4 text-[8px] text-relic-silver/60 dark:text-relic-slate/50">
+                reason: {currentMetadata.details.methodology.reason}
+                {currentMetadata.details.methodology.candidates && currentMetadata.details.methodology.candidates.length > 0 && (
+                  <span> · alt: {currentMetadata.details.methodology.candidates.join(', ')}</span>
+                )}
+              </div>
             )}
-            {currentMetadata.timestamp > 0 && (
-              <>
-                <span className="text-relic-ghost dark:text-relic-slate/30">&middot;</span>
-                <span>+{formatDuration(currentMetadata.timestamp)}</span>
-              </>
+            {/* Rich detail line for layers stage */}
+            {currentMetadata.details?.layers && currentMetadata.details?.dominantLayer && (
+              <div className="pl-4 text-[8px] text-relic-silver/60 dark:text-relic-slate/50">
+                {Object.values(currentMetadata.details.layers).filter((l: any) => l.activated).length} activated
+                {Object.values(currentMetadata.details.layers)
+                  .filter((l: any) => l.activated)
+                  .sort((a: any, b: any) => b.weight - a.weight)
+                  .slice(0, 3)
+                  .map((l: any) => ` · ${l.name}: ${Math.round(l.weight * 100)}%`)
+                  .join('')}
+              </div>
+            )}
+            {/* Rich detail line for generating/fusion stage */}
+            {currentMetadata.details?.model && (
+              <div className="pl-4 text-[8px] text-relic-silver/60 dark:text-relic-slate/50">
+                model: {currentMetadata.details.model} · {currentMetadata.details.provider || 'unknown'}
+              </div>
+            )}
+            {/* Rich detail line for guard stage */}
+            {currentMetadata.details?.guard && (
+              <div className="pl-4 text-[8px] text-relic-silver/60 dark:text-relic-slate/50">
+                risk: {((currentMetadata.details.guard.risk || 0) * 100).toFixed(0)}%
+                {currentMetadata.details.guard.checks && currentMetadata.details.guard.checks.length > 0 && (
+                  <span> · flags: {currentMetadata.details.guard.checks.join(', ')}</span>
+                )}
+              </div>
+            )}
+            {/* Rich detail line for complete stage */}
+            {currentMetadata.details?.tokens && (
+              <div className="pl-4 text-[8px] text-relic-silver/60 dark:text-relic-slate/50">
+                {currentMetadata.details.tokens.input} in / {currentMetadata.details.tokens.output} out · ${(currentMetadata.details.cost || 0).toFixed(4)}
+              </div>
             )}
           </div>
         </motion.div>

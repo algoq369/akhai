@@ -32,7 +32,12 @@ export default function PipelineTimeline({ events }: PipelineTimelineProps) {
   for (const ev of events) {
     stageMap.set(ev.stage, ev)
   }
-  const dedupedEvents = Array.from(stageMap.values())
+  const allEvents = Array.from(stageMap.values())
+
+  // Split: pipeline stages vs side-canal stages
+  const CANAL_STAGES = new Set(['side-canal', 'refinements'])
+  const dedupedEvents = allEvents.filter(ev => !CANAL_STAGES.has(ev.stage))
+  const canalEvents = allEvents.filter(ev => CANAL_STAGES.has(ev.stage))
 
   const lastEvent = dedupedEvents[dedupedEvents.length - 1]
   const isComplete = lastEvent?.stage === 'complete' || lastEvent?.stage === 'error'
@@ -92,6 +97,31 @@ export default function PipelineTimeline({ events }: PipelineTimelineProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Side Canal section — separate from pipeline */}
+      {canalEvents.length > 0 && (
+        <div className="mt-1.5 pt-1.5 border-t border-relic-mist/10 dark:border-relic-slate/10">
+          <div className="flex items-center gap-1 mb-1">
+            <span className="text-[8px] uppercase tracking-wider text-cyan-500/70">side canal</span>
+            {canalEvents.map((ev) => {
+              const meta = STAGE_META[ev.stage] || STAGE_META.received
+              return (
+                <button
+                  key={ev.id}
+                  type="button"
+                  onClick={() => setExpandedStage(expandedStage === ev.stage ? null : ev.stage)}
+                  className="flex items-center gap-0.5 hover:opacity-100 transition-opacity cursor-pointer"
+                  style={{ opacity: expandedStage && expandedStage !== ev.stage ? 0.4 : 0.85 }}
+                  title={`${meta.label}: ${ev.data}`}
+                >
+                  <span style={{ color: meta.color, fontSize: '10px' }}>{meta.symbol}</span>
+                  <span className="text-[8px] text-relic-silver/60">{ev.data}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

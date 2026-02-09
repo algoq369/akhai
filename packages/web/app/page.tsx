@@ -541,6 +541,15 @@ function HomePage() {
   const [auditEnabled, setAuditEnabled] = useState(false)
   const [mindmapConnectorEnabled, setMindmapConnectorEnabled] = useState(false)
   const [pipelineEnabled, setPipelineEnabled] = useState(true)
+  const [hiddenPipelines, setHiddenPipelines] = useState<Set<string>>(new Set())
+  const toggleMsgPipeline = (msgId: string) => {
+    setHiddenPipelines(prev => {
+      const next = new Set(prev)
+      if (next.has(msgId)) next.delete(msgId)
+      else next.add(msgId)
+      return next
+    })
+  }
   const [selectedModel, setSelectedModel] = useState('claude')
   const [globalVizMode, setGlobalVizMode] = useState<'off' | 'synthesis' | 'insight'>('synthesis')
 
@@ -2136,8 +2145,24 @@ function HomePage() {
                           )}
 
                           {/* Metadata Thought Stream — real-time pipeline stage */}
-                          {message.role === 'assistant' && pipelineEnabled && (
-                            <MetadataStrip messageId={message.id} />
+                          {message.role === 'assistant' && (
+                            <div className="relative">
+                              {/* Per-message toggle */}
+                              <button
+                                onClick={() => toggleMsgPipeline(message.id)}
+                                className={`absolute -right-6 top-0 w-4 h-4 flex items-center justify-center text-[8px] font-mono rounded transition-all ${
+                                  pipelineEnabled && !hiddenPipelines.has(message.id)
+                                    ? 'text-relic-silver hover:text-relic-slate'
+                                    : 'text-relic-ghost hover:text-relic-silver'
+                                }`}
+                                title={hiddenPipelines.has(message.id) ? 'Show pipeline' : 'Hide pipeline'}
+                              >
+                                &#9671;
+                              </button>
+                              {pipelineEnabled && !hiddenPipelines.has(message.id) && (
+                                <MetadataStrip messageId={message.id} />
+                              )}
+                            </div>
                           )}
 
                           {/* Inline Visualize Button */}
