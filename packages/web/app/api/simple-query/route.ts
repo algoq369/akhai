@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
       details: {
         methodology: {
           selected: selectedMethod.id,
-          reason: selectedMethod.reason || '',
+          reason: selectedMethod.reason || (methodology !== 'auto' ? `user selected ${selectedMethod.id}` : 'auto-detected'),
           candidates: fusionResult?.methodologyScores?.slice(0, 3).map((s: any) => s.methodology) || [],
         },
         confidence: fusionResult ? fusionResult.confidence : undefined,

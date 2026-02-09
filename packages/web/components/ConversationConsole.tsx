@@ -16,6 +16,8 @@ interface ConversationConsoleProps {
   onSideCanalChange: (enabled: boolean) => void
   pipelineEnabled: boolean
   onPipelineChange: (enabled: boolean) => void
+  historyPanelOpen?: boolean
+  onHistoryPanelToggle?: () => void
   selectedModel: string
   onModelChange: (model: string) => void
   visualizationMode: 'off' | 'synthesis' | 'insight'
@@ -33,6 +35,7 @@ export default function ConversationConsole({
   mindmapConnector, onMindmapConnectorChange,
   sideCanalEnabled, onSideCanalChange,
   pipelineEnabled, onPipelineChange,
+  historyPanelOpen, onHistoryPanelToggle,
   selectedModel, onModelChange,
   visualizationMode, onVisualizationChange,
   attachedFilesCount = 0,
@@ -89,6 +92,17 @@ export default function ConversationConsole({
       >
         files{attachedFilesCount > 0 && ` (${attachedFilesCount})`}
       </button>
+
+      {/* Pipeline History Toggle */}
+      {onHistoryPanelToggle && (
+        <button
+          onClick={onHistoryPanelToggle}
+          className={`transition-colors ${historyPanelOpen ? 'text-amber-500 font-medium' : 'hover:text-relic-void'}`}
+          title="Pipeline history"
+        >
+          &#9671; history
+        </button>
+      )}
 
       <span className="text-relic-mist">│</span>
 

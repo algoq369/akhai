@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSideCanalStore, type RefinementType } from '@/lib/stores/side-canal-store'
-import { STAGE_META, formatDuration } from '@/lib/thought-stream'
 
 interface LiveRefinementCanalProps {
   isVisible: boolean
@@ -25,22 +24,6 @@ export default function LiveRefinementCanal({ isVisible, isLoading }: LiveRefine
   const liveRefinements = useSideCanalStore((s) => s.liveRefinements)
   const addRefinement = useSideCanalStore((s) => s.addRefinement)
   const clearRefinements = useSideCanalStore((s) => s.clearRefinements)
-  const messageMetadata = useSideCanalStore((s) => s.messageMetadata)
-
-  // Build per-message groups from messageMetadata, sorted newest first
-  const messageGroups = useMemo(() => {
-    const entries = Object.entries(messageMetadata || {})
-    if (entries.length === 0) return []
-    return entries
-      .map(([msgId, events]) => ({
-        messageId: msgId,
-        events,
-        lastTimestamp: events[events.length - 1]?.timestamp ?? 0,
-        isComplete: events.some((e) => e.stage === 'complete' || e.stage === 'error'),
-      }))
-      .sort((a, b) => b.lastTimestamp - a.lastTimestamp)
-      .slice(0, 5) // Show last 5 messages max
-  }, [messageMetadata])
 
   // Auto-scroll to bottom when new refinements added
   useEffect(() => {
@@ -123,39 +106,6 @@ export default function LiveRefinementCanal({ isVisible, isLoading }: LiveRefine
                           </div>
                         )
                       })}
-                    </div>
-                  )}
-
-                  {/* Per-Message Pipeline History */}
-                  {messageGroups.length > 0 && (
-                    <div className="px-3 py-1 border-t border-relic-mist/10 dark:border-relic-slate/10">
-                      <div className="text-[8px] font-mono uppercase tracking-wider text-relic-silver/60 dark:text-relic-slate/60 mb-0.5">
-                        pipeline log
-                      </div>
-                      <div className="max-h-[100px] overflow-y-auto space-y-1.5 scrollbar-thin">
-                        {messageGroups.map((group) => (
-                          <div key={group.messageId} className="space-y-0">
-                            {/* Message group header */}
-                            <div className="flex items-center gap-1 text-[7px] font-mono text-relic-silver/40 dark:text-relic-slate/40 uppercase tracking-wider">
-                              <span>{group.isComplete ? '\u25c7' : '\u25cb'}</span>
-                              <span>{group.messageId.slice(0, 8)}</span>
-                              <span className="ml-auto">{group.events.length} stages</span>
-                            </div>
-                            {/* Stage events */}
-                            {group.events.map((ev) => {
-                              const meta = STAGE_META[ev.stage] || STAGE_META.received
-                              return (
-                                <div key={ev.id} className="flex items-center gap-1 text-[8px] font-mono text-relic-silver/70 dark:text-relic-slate/70">
-                                  <span style={{ color: meta.color }}>{meta.symbol}</span>
-                                  <span style={{ color: meta.color }}>{meta.label}</span>
-                                  {ev.data && <span className="truncate max-w-[180px]">{ev.data}</span>}
-                                  <span className="ml-auto flex-shrink-0">+{formatDuration(ev.timestamp)}</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        ))}
-                      </div>
                     </div>
                   )}
 

@@ -38,6 +38,7 @@ import { LayerTreeFull } from '@/components/LayerTreeFull'
 import AntipatternBadge from '@/components/AntipatternBadge'
 import IntelligenceBadge from '@/components/IntelligenceBadge'
 import MetadataStrip from '@/components/MetadataStrip'
+import PipelineHistoryPanel from '@/components/PipelineHistoryPanel'
 import DarkModeToggle from '@/components/DarkModeToggle'
 import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
 import { useSession } from '@/lib/session-manager'
@@ -541,6 +542,7 @@ function HomePage() {
   const [auditEnabled, setAuditEnabled] = useState(false)
   const [mindmapConnectorEnabled, setMindmapConnectorEnabled] = useState(false)
   const [pipelineEnabled, setPipelineEnabled] = useState(true)
+  const [historyPanelOpen, setHistoryPanelOpen] = useState(false)
   const [hiddenPipelines, setHiddenPipelines] = useState<Set<string>>(new Set())
   const toggleMsgPipeline = (msgId: string) => {
     setHiddenPipelines(prev => {
@@ -2473,6 +2475,8 @@ function HomePage() {
 
         {/* Input Section */}
         <div className={`transition-all duration-500 ease-out ${isExpanded ? 'pb-4 pt-2 border-t border-relic-mist/30 dark:border-relic-slate/30 bg-white dark:bg-relic-void sticky bottom-0' : 'pb-8'}`}>
+          {/* Pipeline History Panel — toggleable */}
+          <PipelineHistoryPanel isOpen={historyPanelOpen} onClose={() => setHistoryPanelOpen(false)} />
           <LiveRefinementCanal isVisible={isExpanded && messages.length > 0} isLoading={isLoading} />
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto px-6">
             {/* Input Box */}
@@ -2591,6 +2595,8 @@ function HomePage() {
                 onSideCanalChange={setSideCanalEnabled}
                 pipelineEnabled={pipelineEnabled}
                 onPipelineChange={setPipelineEnabled}
+                historyPanelOpen={historyPanelOpen}
+                onHistoryPanelToggle={() => setHistoryPanelOpen(!historyPanelOpen)}
                 selectedModel={selectedModel}
                 onModelChange={setSelectedModel}
                 visualizationMode={globalVizMode}
