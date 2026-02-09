@@ -129,6 +129,8 @@ out/
 # Environment files
 *.env
 *.env.local
+*.env.bak
+.env.bak
 !.env.example
 
 # Database files
