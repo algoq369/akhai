@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
       )
       
       log('INFO', 'FUSION', `Methodology: ${fusionResult.selectedMethodology} (${Math.round(fusionResult.confidence * 100)}% confidence)`)
-      log('INFO', 'FUSION', `Dominant Layers: ${fusionResult.dominantLayers.map(s => LAYER_METADATA[s]?.name).join(', ') || 'None'}`)
+      log('INFO', 'FUSION', `Dominant Layers: ${fusionResult.dominantLayers.map(s => LAYER_METADATA[s]?.aiName).join(', ') || 'None'}`)
       log('INFO', 'FUSION', `Guard: ${fusionResult.guardRecommendation} | Thinking Budget: ${fusionResult.extendedThinkingBudget}`)
       log('INFO', 'FUSION', `Processing time: ${fusionResult.processingTimeMs}ms`)
     } catch (fusionError) {
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
     // Emit: layer activations (with keywords + path activations)
     if (fusionResult) {
       const dominant = fusionResult.dominantLayers[0]
-      const dominantName = dominant ? LAYER_METADATA[dominant]?.name || 'unknown' : 'none'
+      const dominantName = dominant ? LAYER_METADATA[dominant]?.aiName || 'unknown' : 'none'
       // Build structured layer map from weights + fusion activations
       const layerDetails: Record<number, { name: string; weight: number; activated: boolean; keywords: string[] }> = {}
       for (const [key, val] of Object.entries(weights)) {
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
         if (meta) {
           const activation = fusionResult.layerActivations.find((a: any) => a.layerNode === num)
           layerDetails[num] = {
-            name: meta.name,
+            name: meta.aiName,
             weight: activation ? Math.round(activation.effectiveWeight * 100) : Math.round((val as number) * 100),
             activated: fusionResult.dominantLayers.includes(num),
             keywords: activation?.keywords?.slice(0, 4) || [],
@@ -260,8 +260,8 @@ export async function POST(request: NextRequest) {
       }
       // Build path activations
       const pathActs = fusionResult.pathActivations?.slice(0, 5).map((p: any) => ({
-        from: LAYER_METADATA[p.from as Layer]?.name || String(p.from),
-        to: LAYER_METADATA[p.to as Layer]?.name || String(p.to),
+        from: LAYER_METADATA[p.from as Layer]?.aiName || String(p.from),
+        to: LAYER_METADATA[p.to as Layer]?.aiName || String(p.to),
         weight: Math.round(p.weight * 100),
         description: p.description,
       })) || []
@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
 
       // ASCENT TRACKER - Track user journey
       progressState = trackAscent(analysisSessionId, query)
-      log('INFO', 'ASCENT', `Level: ${LAYER_METADATA[progressState.currentLevel].name} (${progressState.currentLevel}/10)`)
+      log('INFO', 'ASCENT', `Level: ${LAYER_METADATA[progressState.currentLevel].aiName} (${progressState.currentLevel}/10)`)
       log('INFO', 'ASCENT', `Velocity: ${progressState.ascentVelocity.toFixed(2)} levels/query`)
 
       if (progressState.ascentVelocity > 2.0) {
@@ -459,7 +459,7 @@ export async function POST(request: NextRequest) {
       // Log the layer configuration being applied
       const layerSummary = Object.entries(weights).map(([k, v]) => {
         const pct = Math.round((v as number) * 100)
-        const name = LAYER_METADATA[Number(k) as Layer]?.name || k
+        const name = LAYER_METADATA[Number(k) as Layer]?.aiName || k
         return `${name}:${pct}%`
       }).join(', ')
       log('INFO', 'FUSION', `Layer config: ${layerSummary}`)
@@ -593,7 +593,7 @@ export async function POST(request: NextRequest) {
         } : null,
         progressState: progressState ? {
           currentLevel: progressState.currentLevel,
-          levelName: LAYER_METADATA[progressState.currentLevel].name,
+          levelName: LAYER_METADATA[progressState.currentLevel].aiName,
           velocity: progressState.ascentVelocity,
           totalQueries: progressState.totalQueries,
           nextElevation,
@@ -603,7 +603,7 @@ export async function POST(request: NextRequest) {
             acc[a.layerNode] = a.activation
             return acc
           }, {} as Record<number, number>),
-          dominant: LAYER_METADATA[layerAnalysis.dominantLayer].name,
+          dominant: LAYER_METADATA[layerAnalysis.dominantLayer].aiName,
           averageLevel: layerAnalysis.averageLevel,
           synthesisInsight: layerAnalysis.synthesisInsight.detected ? {
             insight: layerAnalysis.synthesisInsight.insight,
@@ -626,15 +626,15 @@ export async function POST(request: NextRequest) {
         data: antipatternRisk.risk !== 'none' && antipatternRisk.severity >= 0.4
           ? `purified: ${antipatternRisk.risk} antipatterns`
           : antipatternRisk.risk !== 'none'
-            ? `low ${antipatternRisk.risk} (${(antipatternRisk.severity * 100).toFixed(0)}%) · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.name || 'balanced' : 'standard'} dominant`
-            : `clean · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.name || 'balanced' : 'standard'} dominant`,
+            ? `low ${antipatternRisk.risk} (${(antipatternRisk.severity * 100).toFixed(0)}%) · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.aiName || 'balanced' : 'standard'} dominant`
+            : `clean · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.aiName || 'balanced' : 'standard'} dominant`,
         details: {
           analysis: {
             antipatternRisk: antipatternRisk.risk,
             sovereigntyCheck: metaCoreState ? checkSovereignty(processedContent, metaCoreState) : true,
             purified: antipatternRisk.risk !== 'none' && antipatternRisk.severity >= 0.4,
             synthesisInsight: layerAnalysis?.synthesisInsight?.detected ? layerAnalysis.synthesisInsight.insight : '',
-            dominantLayer: layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.name || 'unknown' : '',
+            dominantLayer: layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.aiName || 'unknown' : '',
             averageLevel: layerAnalysis?.averageLevel || 0,
           },
         },
@@ -755,7 +755,7 @@ export async function POST(request: NextRequest) {
           effectiveWeight: s.effectiveWeight,
           keywords: s.keywords
         })),
-        dominantLayers: fusionResult.dominantLayers.map(s => LAYER_METADATA[s]?.name),
+        dominantLayers: fusionResult.dominantLayers.map(s => LAYER_METADATA[s]?.aiName),
         guardRecommendation: fusionResult.guardRecommendation,
         extendedThinkingBudget: fusionResult.extendedThinkingBudget,
         processingMode: fusionResult.processingMode,

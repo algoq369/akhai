@@ -330,7 +330,7 @@ export function calculateLayersActivations(
 
     activations.push({
       layerNode,
-      name: meta.name,
+      name: meta.aiName,
       activation,
       weight,
       effectiveWeight,
@@ -804,7 +804,10 @@ export function generateEnhancedSystemPrompt(
   if (fusionResult.dominantLayers.length > 0) {
     const dominantNames = fusionResult.layerActivations
       .filter(s => fusionResult.dominantLayers.includes(s.layerNode))
-      .map(s => `${s.name} (${Math.round(s.effectiveWeight * 100)}%)`)
+      .map(s => {
+        const aiName = LAYER_BEHAVIORS[s.layerNode]?.name || s.name
+        return `${aiName} (${Math.round(s.effectiveWeight * 100)}%)`
+      })
     lines.push(`PRIMARY FOCUS: ${dominantNames.join(', ')}`)
     lines.push('')
   }

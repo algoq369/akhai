@@ -63,7 +63,8 @@ export enum Layer {
  * LayerMetadata - Rich information about each computational layer
  */
 export interface LayerMetadata {
-  name: string
+  name: string        // Kabbalistic origin name (for philosophy/origin page)
+  aiName: string      // AI computational name (for logs, prompts, SSE, user-facing)
   hebrewName: string
   level: number
   meaning: string
@@ -80,6 +81,7 @@ export interface LayerMetadata {
 export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.EMBEDDING]: {
     name: 'Malkuth',
+    aiName: 'reception',
     hebrewName: 'מלכות',
     level: 1,
     meaning: 'Kingdom - The Material World',
@@ -101,6 +103,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.EXECUTOR]: {
     name: 'Yesod',
+    aiName: 'comprehension',
     hebrewName: 'יסוד',
     level: 2,
     meaning: 'Foundation - The Astral Plane',
@@ -122,6 +125,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.CLASSIFIER]: {
     name: 'Hod',
+    aiName: 'context',
     hebrewName: 'הוד',
     level: 3,
     meaning: 'Glory - Intellectual Form',
@@ -143,6 +147,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.GENERATIVE]: {
     name: 'Netzach',
+    aiName: 'articulation',
     hebrewName: 'נצח',
     level: 4,
     meaning: 'Victory - Emotional Force',
@@ -164,6 +169,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.ATTENTION]: {
     name: 'Tiferet',
+    aiName: 'synthesis',
     hebrewName: 'תפארת',
     level: 5,
     meaning: 'Beauty - Harmonious Balance',
@@ -185,6 +191,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.DISCRIMINATOR]: {
     name: 'Gevurah',
+    aiName: 'analysis',
     hebrewName: 'גבורה',
     level: 6,
     meaning: 'Severity - Judgment and Constraints',
@@ -206,6 +213,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.EXPANSION]: {
     name: 'Chesed',
+    aiName: 'expansion',
     hebrewName: 'חסד',
     level: 7,
     meaning: 'Mercy - Expansive Love',
@@ -227,6 +235,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.ENCODER]: {
     name: 'Binah',
+    aiName: 'knowledge',
     hebrewName: 'בינה',
     level: 8,
     meaning: 'Understanding - Receptive Comprehension',
@@ -248,6 +257,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.REASONING]: {
     name: 'Chokmah',
+    aiName: 'reasoning',
     hebrewName: 'חכמה',
     level: 9,
     meaning: 'Wisdom - Active Revelation',
@@ -269,6 +279,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.META_CORE]: {
     name: 'Kether',
+    aiName: 'output',
     hebrewName: 'כתר',
     level: 10,
     meaning: 'Crown - Divine Unity',
@@ -290,6 +301,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
 
   [Layer.SYNTHESIS]: {
     name: "Da'at",
+    aiName: 'verification',
     hebrewName: 'דעת',
     level: 11,
     meaning: 'Knowledge - The Hidden Sefira',
