@@ -453,9 +453,17 @@ export async function POST(request: NextRequest) {
 
     // Inject Intelligence Fusion enhancement if available
     if (fusionResult) {
-      const fusionEnhancement = generateEnhancedSystemPrompt(fusionResult)
+      const fusionEnhancement = generateEnhancedSystemPrompt(fusionResult, weights)
       systemPrompt = `${systemPrompt}\n\n${fusionEnhancement}`
-      log('INFO', 'FUSION', `Enhanced system prompt with Layers awareness (+${fusionEnhancement.length} chars)`)
+
+      // Log the layer configuration being applied
+      const layerSummary = Object.entries(weights).map(([k, v]) => {
+        const pct = Math.round((v as number) * 100)
+        const name = LAYER_METADATA[Number(k) as Layer]?.name || k
+        return `${name}:${pct}%`
+      }).join(', ')
+      log('INFO', 'FUSION', `Layer config: ${layerSummary}`)
+      log('INFO', 'FUSION', `Enhanced system prompt with Layer behaviors (+${fusionEnhancement.length} chars)`)
     }
 
 
