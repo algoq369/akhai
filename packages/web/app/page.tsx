@@ -8,6 +8,7 @@ import { generateId, Message } from '@/lib/chat-store'
 import { trackQuery } from '@/lib/analytics'
 import { useSideCanalStore } from '@/lib/stores/side-canal-store'
 import { useSettingsStore } from '@/lib/stores/settings-store'
+import { useLayerStore } from '@/lib/stores/layer-store'
 import GuardWarning from '@/components/GuardWarning'
 import { InstinctModeConsole } from '@/components/InstinctModeConsole'
 import LayerConsole from '@/components/LayerConsole'
@@ -1021,6 +1022,7 @@ function HomePage() {
           pageContext,
           instinctMode,
           instinctConfig,
+          layersWeights: useLayerStore.getState().weights,
           liveRefinements: liveRefinements.length > 0 ? liveRefinements : undefined,
           attachments: processedFiles.length > 0 ? processedFiles : undefined,
           fileUrls: currentFileUrls.length > 0 ? currentFileUrls : undefined,
@@ -1378,7 +1380,8 @@ function HomePage() {
             chatId: activeChatId || 'main',
             pageContext,
             instinctMode,
-            instinctConfig
+            instinctConfig,
+            layersWeights: useLayerStore.getState().weights,
           })
         })
 
