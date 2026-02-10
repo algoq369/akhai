@@ -345,19 +345,27 @@ function detectToxicity(response: string): AntipatternRisk {
     const matches = response.match(pattern)
     if (matches) {
       triggers.push(...matches)
-      severity += matches.length * 0.15
+      severity += matches.length * 0.08 // Reduced from 0.15 — single matches in long responses are normal
     }
   })
 
-  // Check for uncertainty markers
-  const uncertaintyMarkers = ['may', 'might', 'could', 'suggests', 'possibly', 'perhaps']
+  // Only flag as toxic if pattern density is meaningful (not just a few words in a long response)
+  const wordCount = response.split(/\s+/).length
+  const triggerRatio = triggers.length / (wordCount / 100) // triggers per 100 words
+  if (triggerRatio < 1.5 && wordCount > 150) {
+    severity = 0 // Less than 1.5 certainty words per 100 words is normal prose
+    triggers.length = 0
+  }
+
+  // Check for uncertainty markers — only flag if ALSO has certainty patterns
+  const uncertaintyMarkers = ['may', 'might', 'could', 'suggests', 'possibly', 'perhaps', 'likely', 'typically', 'generally', 'often']
   const hasUncertainty = uncertaintyMarkers.some(marker =>
     response.toLowerCase().includes(marker)
   )
 
-  if (!hasUncertainty && response.length > 200) {
-    severity += 0.2
-    triggers.push('No uncertainty markers in substantial response')
+  if (!hasUncertainty && response.length > 500 && severity > 0) {
+    severity += 0.1
+    triggers.push('No uncertainty markers alongside certainty claims')
   }
 
   severity = Math.min(severity, 1.0)

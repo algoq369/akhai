@@ -176,74 +176,172 @@ async function searchWeb(searchQuery: string): Promise<Array<{ url: string; titl
   try {
     const encodedQuery = encodeURIComponent(searchQuery)
 
-    // Try DuckDuckGo lite (more reliable than HTML version)
+    // Try DuckDuckGo HTML version (more structured than lite)
     const response = await fetch(
-      `https://lite.duckduckgo.com/lite/?q=${encodedQuery}`,
+      `https://html.duckduckgo.com/html/?q=${encodedQuery}`,
       {
+        method: 'POST',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Referer': 'https://html.duckduckgo.com/',
         },
-        signal: AbortSignal.timeout(8000) // 8 second timeout
+        body: `q=${encodedQuery}&b=`,
+        signal: AbortSignal.timeout(10000)
       }
     )
 
     if (!response.ok) {
-      console.warn(`[EnhancedLinks] DDG returned status ${response.status}, trying fallback`)
-      return buildSmartFallback(searchQuery)
+      console.warn(`[EnhancedLinks] DDG returned status ${response.status}, trying lite`)
+      return await searchWebLite(searchQuery)
     }
 
     const html = await response.text()
     const results: Array<{ url: string; title: string; snippet: string }> = []
 
-    // Parse DuckDuckGo Lite format - much simpler structure
-    // Pattern: <a href="URL">TITLE</a> followed by <td class="result-snippet">SNIPPET</td>
-    const linkPattern = /<a\s+rel="nofollow"\s+href="([^"]+)">([^<]+)<\/a>/gi
-    const snippetPattern = /<td\s+class="result-snippet">([^<]+)</gi
+    // Log first 300 chars for debugging
+    console.log(`[EnhancedLinks] DDG HTML response (first 300): ${html.substring(0, 300).replace(/\n/g, ' ')}`)
+
+    // Parse DuckDuckGo HTML format — result blocks
+    // Pattern 1: <a rel="nofollow" class="result__a" href="URL">TITLE</a>
+    const resultLinkPattern = /<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>/gi
+    // Pattern 2: Fallback — any <a rel="nofollow" href="http..."> that's not internal
+    const fallbackLinkPattern = /<a[^>]*rel="nofollow"[^>]*href="(https?:\/\/[^"]+)"[^>]*>([^<]+)<\/a>/gi
+    // Snippet: <a class="result__snippet" ...>SNIPPET</a> or <td class="result-snippet">
+    const snippetPattern = /class="result__snippet"[^>]*>([^<]+(?:<[^>]*>[^<]*)*?)<\/a>/gi
+    const snippetAltPattern = /<td\s+class="result-snippet">([^<]+)/gi
 
     const links: Array<{ url: string; title: string }> = []
+
+    // Try primary pattern first
     let linkMatch
-    while ((linkMatch = linkPattern.exec(html)) !== null && links.length < 8) {
+    while ((linkMatch = resultLinkPattern.exec(html)) !== null && links.length < 8) {
       const url = linkMatch[1]
       const title = linkMatch[2]?.trim()
+      if (isValidResultUrl(url, title)) {
+        links.push({ url: decodeURIComponent(url), title })
+      }
+    }
 
-      // Filter out DDG internal links and ads
-      if (url && title &&
-          !url.includes('duckduckgo.com') &&
-          !url.includes('//ad.') &&
-          !url.startsWith('//') &&
-          url.startsWith('http')) {
-        links.push({ url, title })
+    // Fallback to broader pattern if no results
+    if (links.length === 0) {
+      while ((linkMatch = fallbackLinkPattern.exec(html)) !== null && links.length < 8) {
+        const url = linkMatch[1]
+        const title = linkMatch[2]?.trim()
+        if (isValidResultUrl(url, title)) {
+          links.push({ url: decodeURIComponent(url), title })
+        }
+      }
+    }
+
+    // Extract snippets
+    const snippets: string[] = []
+    let snippetMatch
+    while ((snippetMatch = snippetPattern.exec(html)) !== null && snippets.length < 8) {
+      const raw = snippetMatch[1]?.replace(/<[^>]*>/g, '').trim()
+      if (raw && raw.length > 10) snippets.push(raw)
+    }
+    // Try alt snippet pattern
+    if (snippets.length === 0) {
+      while ((snippetMatch = snippetAltPattern.exec(html)) !== null && snippets.length < 8) {
+        const raw = snippetMatch[1]?.trim()
+        if (raw && raw.length > 10) snippets.push(raw)
+      }
+    }
+
+    console.log(`[EnhancedLinks] Parsed ${links.length} links, ${snippets.length} snippets from DDG`)
+
+    // Match links with snippets (snippets may be fewer)
+    for (let i = 0; i < Math.min(links.length, 5); i++) {
+      results.push({
+        url: links[i].url,
+        title: links[i].title,
+        snippet: snippets[i] || `Search result for: ${searchQuery.substring(0, 60)}`
+      })
+    }
+
+    if (results.length > 0) {
+      console.log(`[EnhancedLinks] Found ${results.length} real search results`)
+      return results
+    }
+
+    // Try lite as secondary fallback
+    console.warn('[EnhancedLinks] No results from DDG HTML, trying lite...')
+    return await searchWebLite(searchQuery)
+  } catch (error) {
+    console.error('[EnhancedLinks] Web search error:', error)
+    return buildSmartFallback(searchQuery)
+  }
+}
+
+/**
+ * Check if a URL is a valid search result (not DDG internal, not an ad)
+ */
+function isValidResultUrl(url: string | undefined, title: string | undefined): boolean {
+  if (!url || !title || title.length < 3) return false
+  if (url.includes('duckduckgo.com')) return false
+  if (url.includes('//ad.') || url.includes('/ad/')) return false
+  if (url.startsWith('//')) return false
+  if (!url.startsWith('http')) return false
+  return true
+}
+
+/**
+ * Fallback: DuckDuckGo Lite version
+ */
+async function searchWebLite(searchQuery: string): Promise<Array<{ url: string; title: string; snippet: string }>> {
+  try {
+    const encodedQuery = encodeURIComponent(searchQuery)
+    const response = await fetch(
+      `https://lite.duckduckgo.com/lite/?q=${encodedQuery}`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+        },
+        signal: AbortSignal.timeout(8000)
+      }
+    )
+
+    if (!response.ok) return buildSmartFallback(searchQuery)
+
+    const html = await response.text()
+    const results: Array<{ url: string; title: string; snippet: string }> = []
+
+    // DDG Lite: links in <a rel="nofollow" href="...">
+    const linkPattern = /<a[^>]*rel="nofollow"[^>]*href="(https?:\/\/[^"]+)"[^>]*>([^<]+)<\/a>/gi
+    const snippetPattern = /<td[^>]*class="result-snippet"[^>]*>([^<]+)/gi
+
+    const links: Array<{ url: string; title: string }> = []
+    let m
+    while ((m = linkPattern.exec(html)) !== null && links.length < 8) {
+      if (isValidResultUrl(m[1], m[2])) {
+        links.push({ url: m[1], title: m[2].trim() })
       }
     }
 
     const snippets: string[] = []
-    let snippetMatch
-    while ((snippetMatch = snippetPattern.exec(html)) !== null && snippets.length < 8) {
-      const snippet = snippetMatch[1]?.trim()
-      if (snippet) {
-        snippets.push(snippet)
-      }
+    while ((m = snippetPattern.exec(html)) !== null && snippets.length < 8) {
+      if (m[1]?.trim()) snippets.push(m[1].trim())
     }
 
-    // Match links with snippets
-    for (let i = 0; i < Math.min(links.length, snippets.length, 5); i++) {
+    for (let i = 0; i < Math.min(links.length, 5); i++) {
       results.push({
         url: links[i].url,
         title: links[i].title,
-        snippet: snippets[i]
+        snippet: snippets[i] || `Result for: ${searchQuery.substring(0, 60)}`
       })
     }
 
-    console.log(`[EnhancedLinks] Found ${results.length} real search results`)
-
     if (results.length > 0) {
+      console.log(`[EnhancedLinks] Found ${results.length} results from DDG Lite`)
       return results
     }
 
-    console.warn('[EnhancedLinks] No results parsed from DDG, using smart fallback')
+    console.warn('[EnhancedLinks] No results from DDG Lite either, using smart fallback')
     return buildSmartFallback(searchQuery)
-  } catch (error) {
-    console.error('[EnhancedLinks] Web search error:', error)
+  } catch {
     return buildSmartFallback(searchQuery)
   }
 }

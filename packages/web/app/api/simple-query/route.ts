@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
           const activation = fusionResult.layerActivations.find((a: any) => a.layerNode === num)
           layerDetails[num] = {
             name: meta.name,
-            weight: val as number,
+            weight: activation ? Math.round(activation.effectiveWeight * 100) : Math.round((val as number) * 100),
             activated: fusionResult.dominantLayers.includes(num),
             keywords: activation?.keywords?.slice(0, 4) || [],
           }
@@ -260,8 +260,8 @@ export async function POST(request: NextRequest) {
       }
       // Build path activations
       const pathActs = fusionResult.pathActivations?.slice(0, 5).map((p: any) => ({
-        from: LAYER_METADATA[p.from]?.name || String(p.from),
-        to: LAYER_METADATA[p.to]?.name || String(p.to),
+        from: LAYER_METADATA[p.from as Layer]?.name || String(p.from),
+        to: LAYER_METADATA[p.to as Layer]?.name || String(p.to),
         weight: Math.round(p.weight * 100),
         description: p.description,
       })) || []
@@ -538,10 +538,13 @@ export async function POST(request: NextRequest) {
       // ANTI-ANTIPATTERN SHIELD - Detect and purify hollow knowledge
       antipatternRisk = detectAntipattern(processedContent)
 
-      if (antipatternRisk.risk !== 'none') {
-        log('WARN', 'ANTIPATTERN', `Detected: ${antipatternRisk.risk} (severity: ${(antipatternRisk.severity * 100).toFixed(0)}%)`)
-        log('INFO', 'ANTIPATTERN', `Purifying response...`)
+      if (antipatternRisk.risk !== 'none' && antipatternRisk.severity >= 0.4) {
+        // Only purify at 40%+ severity — below that, single keyword matches in long responses are normal
+        log('WARN', 'ANTIPATTERN', `Detected: ${antipatternRisk.risk} (severity: ${(antipatternRisk.severity * 100).toFixed(0)}%) — purifying`)
         processedContent = purifyResponse(processedContent, antipatternRisk)
+      } else if (antipatternRisk.risk !== 'none') {
+        // Low severity — log but don't purify (avoids false positives on business/strategy content)
+        log('INFO', 'ANTIPATTERN', `Low-severity ${antipatternRisk.risk} (${(antipatternRisk.severity * 100).toFixed(0)}%) — skipping purification`)
       } else {
         log('INFO', 'ANTIPATTERN', `✓ Response is aligned (no antipatterns detected)`)
       }
@@ -599,7 +602,7 @@ export async function POST(request: NextRequest) {
             confidence: layerAnalysis.synthesisInsight.confidence,
           } : null,
         },
-        antipatternPurified: antipatternRisk.risk !== 'none',
+        antipatternPurified: antipatternRisk.risk !== 'none' && antipatternRisk.severity >= 0.4,
         antipatternType: antipatternRisk.risk,
         sovereigntyFooter,
       }
@@ -612,14 +615,16 @@ export async function POST(request: NextRequest) {
         queryId,
         stage: 'analysis',
         timestamp: Date.now() - startTime,
-        data: antipatternRisk.risk !== 'none'
+        data: antipatternRisk.risk !== 'none' && antipatternRisk.severity >= 0.4
           ? `purified: ${antipatternRisk.risk} antipatterns`
-          : `clean · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.name || 'balanced' : 'standard'} dominant`,
+          : antipatternRisk.risk !== 'none'
+            ? `low ${antipatternRisk.risk} (${(antipatternRisk.severity * 100).toFixed(0)}%) · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.name || 'balanced' : 'standard'} dominant`
+            : `clean · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.name || 'balanced' : 'standard'} dominant`,
         details: {
           analysis: {
             antipatternRisk: antipatternRisk.risk,
             sovereigntyCheck: metaCoreState ? checkSovereignty(processedContent, metaCoreState) : true,
-            purified: antipatternRisk.risk !== 'none',
+            purified: antipatternRisk.risk !== 'none' && antipatternRisk.severity >= 0.4,
             synthesisInsight: layerAnalysis?.synthesisInsight?.detected ? layerAnalysis.synthesisInsight.insight : '',
             dominantLayer: layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.name || 'unknown' : '',
             averageLevel: layerAnalysis?.averageLevel || 0,
