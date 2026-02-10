@@ -1,200 +1,221 @@
-# AkhAI — Master TODO & System Wiring Plan
-## Day 36/150 — Post-Audit Action Plan
+# AkhAI — UPDATED Master Plan v2
+## Day 37/150 — Priority: Layer Calibration + Depth Annotations + Canvas
 
 ---
 
-## CURRENT STATE (Verified Feb 10, 2026)
+## 🔴 THE 3 CRITICAL DISCONNECTIONS FOUND
 
-**System Health: 85%** (up from 82% after P0 fix)
-- Backend: 95% production-ready
-- Frontend integration: 75% (layer weights now wired ✅)
-- 6 commits today: reasoning panel, 4 bug fixes, audit doc, P0 fix
+### 1. Layer Config = Cosmetic Behavioral Impact
+**Status:** Weights now flow to API ✅ BUT `generateEnhancedSystemPrompt()` only says:
+```
+ACTIVE LAYERS: Netzach (80%)
+Apply these computational layers with emphasis.
+```
+This is useless — the AI doesn't know WHAT "apply Netzach" means. When user slides creativity to 90%, the AI should get specific instructions like: "Prioritize creative exploration, use metaphors, explore unconventional angles, surprise the user."
 
-### What's Working ✅
-1. **Intelligence Fusion** — methodology scoring, layer activations, query classification
-2. **SSE Pipeline** — all 11 stages, DB persistence, live streaming
-3. **Guard System** — 5 checks (hype/echo/drift/sanity/fact), purification at 40%+
-4. **Side Canal** — topic extraction, suggestions, context injection
-5. **Mind Map** — React Flow visualization, topic nodes
-6. **Writing Style** — Normal/Legend modes with forbidden patterns
-7. **Insight Analysis** — data points, metrics, confidence scoring
-8. **Multi-AI Consensus** — GTP 3-round consensus across 4 providers
-9. **Token Tracking** — per-query and cumulative, cost calculation
-10. **AI Reasoning Panel** — rich narratives, method comparison, layer visualization
-11. **Layer Config → API** — weights now flow from sliders to fusion engine ✅
+**Root cause:** `intelligence-fusion.ts` line 634 — generic "Apply with emphasis" prompt
+**Each layer needs behavioral instructions** mapped from `aiRole` in layer-registry.ts
 
-### What Needs Fixing 🔧
+### 2. Depth Annotations = Built but Never Rendered
+**Status:** 1403-line library (`lib/depth-annotations.ts`) + React component (`DepthAnnotation.tsx` + `DepthSigil.tsx`) both exist and are imported in page.tsx... but `<DepthText>` is never actually used in the render tree.
 
----
+**Root cause:** page.tsx imports `DepthText` (line 48) and `useDepthAnnotations` (line 49) but the message rendering uses raw markdown — never wraps content in `<DepthText>`
 
-## PHASE 1: Critical Wiring Fixes (Days 37-38)
-*Goal: Get every existing feature actually connected end-to-end*
-
-### 1.1 Live Refinement Re-Query [P1] — ~2hrs
-**Problem:** Clicking refine/enhance/correct only stores refinement for NEXT query. No re-query.
-**Files:** `components/LiveRefinementCanal.tsx`, `app/page.tsx`
-**Steps:**
-1. Read `LiveRefinementCanal.tsx` — understand how refinement actions emit
-2. In `page.tsx`, add a `handleRefinementSubmit()` that:
-   - Takes current message + accumulated refinements
-   - Re-calls `/api/simple-query` with original query + refinements array
-   - Replaces current assistant message with refined response
-3. Wire "Submit Refinement" button in LiveRefinementCanal to trigger re-query
-4. Show visual diff badge: "Refined ×2" on refined messages
-5. Preserve original response in message metadata for "Show Original" toggle
-
-### 1.2 DDG Search Production Verification [P2] — ~30min
-**Problem:** Rewritten this session, needs real-world testing
-**Files:** `app/api/enhanced-links/route.ts`
-**Steps:**
-1. Send 5 diverse queries and check backend logs for DDG results
-2. Verify `result__a` parsing returns real URLs
-3. Verify DDG Lite fallback triggers when main parser fails
-4. Check enhanced links appear in left sidebar
-
-### 1.3 Guard Badge Visibility [P1] — ~1hr
-**Problem:** AntipatternBadge renders but only under gnostic section which may be collapsed
-**Files:** `app/page.tsx` (line 2260)
-**Steps:**
-1. Verify gnostic section visibility toggle defaults to open
-2. Add inline purification indicator on message strip (e.g., small ⚡ icon)
-3. Add guard verdict line in PipelineHistoryPanel reasoning section
-4. Test: send query that triggers purification → verify badge visible
-
-### 1.4 Side Canal Deduplication [P3] — ~30min
-**Problem:** Server + client both extract topics = 2x API calls
-**Files:** `app/page.tsx` (lines 564-593), `app/api/simple-query/route.ts` (lines 654-700)
-**Steps:**
-1. Remove client-side topic extraction in page.tsx (server already handles it)
-2. Keep client-side Zustand update from SSE side-canal event
-3. Verify topics still appear in left sidebar after removing client extraction
+### 3. Canvas ↔ Text Mode = One-Way
+**Status:** Canvas renders when toggled ✅ BUT:
+- `onQuerySelect` → `console.log` (does nothing)
+- `onNodeSelect` → `console.log` (does nothing)
+- No data flows FROM canvas back to text mode
+- Queries in text mode don't auto-populate canvas cards
 
 ---
 
-## PHASE 2: Feature Completion (Days 38-42)
-*Goal: Polish existing features to 100%*
+## PHASE 1: LAYER CALIBRATION (Day 37) — THE DIFFERENTIATOR
+*"When I increase creativity, output MUST be more creative"*
 
-### 2.1 Layer Config End-to-End Verification — ~1hr
-**Steps:**
-1. Open AI Config panel → adjust Binah slider to 90%
-2. Send analytical query → check backend logs for weight=0.9 on Binah
-3. Verify fusion scores change: higher Binah weight should boost analytical methods
-4. Check reasoning panel shows new weights
-5. Reset sliders → verify defaults restore to 0.5
+### Step 1.1: Define Behavioral Instructions per Layer
+**File:** `lib/intelligence-fusion.ts` — `generateEnhancedSystemPrompt()`
 
-### 2.2 Mind Map Real-Time Updates — ~1hr
-**Problem:** Must close/reopen modal to see new topics
-**Files:** `components/MindMap.tsx`, `components/MindMapDiagramView.tsx`
-**Steps:**
-1. Add Zustand subscription to topic store changes
-2. When new topics extracted, auto-append nodes to existing graph
-3. Animate new node appearance
+Add a `LAYER_BEHAVIORS` map that translates each layer + weight into specific AI instructions:
 
-### 2.3 Writing Style Zustand Migration — ~30min
-**Problem:** `legendMode` uses raw localStorage instead of settings store
-**Files:** `app/page.tsx`
-**Steps:**
-1. Move `legendMode` state to `useSettingsStore`
-2. Remove direct localStorage calls
-3. Verify persistence still works
+```typescript
+const LAYER_BEHAVIORS: Record<number, { low: string; high: string }> = {
+  1: { // Embedding — Facts
+    low: 'Minimize raw facts. Focus on synthesis over data.',
+    high: 'Ground response in verified facts, data points, specific numbers. Cite sources.'
+  },
+  2: { // Executor — How-to
+    low: 'Stay conceptual. Avoid step-by-step.',
+    high: 'Be extremely practical. Give step-by-step instructions, CLI commands, code snippets.'
+  },
+  3: { // Classifier — Logic
+    low: 'Avoid comparisons. Give direct answer.',
+    high: 'Compare systematically. Use pros/cons, trade-off tables, decision matrices.'
+  },
+  4: { // Generative — Creativity ← THIS IS THE KEY ONE
+    low: 'Stay conventional. Use standard approaches.',
+    high: 'Be highly creative. Use metaphors, analogies, unconventional angles. Explore surprising connections. Think like an inventor.'
+  },
+  5: { // Attention — Integration
+    low: 'Focus narrowly on the specific question.',
+    high: 'Synthesize across domains. Connect ideas from different fields. Show big picture.'
+  },
+  6: { // Discriminator — Critical
+    low: 'Be supportive. Minimize criticism.',
+    high: 'Be critically rigorous. Challenge assumptions. Point out flaws, risks, and blind spots.'
+  },
+  7: { // Expansion — Possibilities
+    low: 'Give the single best answer.',
+    high: 'Explore multiple possibilities. Branch into scenarios. "What if" analysis.'
+  },
+  8: { // Encoder — Patterns
+    low: 'Focus on surface level.',
+    high: 'Identify deep patterns. Show structural similarities across systems. Reveal hidden structures.'
+  },
+  9: { // Reasoning — First Principles
+    low: 'Accept premises at face value.',
+    high: 'Reason from first principles. Question assumptions. Build arguments from fundamentals.'
+  },
+  10: { // Meta Core — Meta-cognition
+    low: 'Just answer directly.',
+    high: 'Reflect on the thinking process itself. Explain WHY you approached it this way. Show metacognitive awareness.'
+  },
+  11: { // Synthesis — Emergence
+    low: 'Stay within established frameworks.',
+    high: 'Seek emergent insights. Find the non-obvious truth. Deliver epiphanies.'
+  }
+}
+```
 
----
+### Step 1.2: Modify `generateEnhancedSystemPrompt()`
+Instead of "Apply these computational layers with emphasis", generate specific instructions based on weight values:
 
-## PHASE 3: Milestones 3-9 (Days 42-100)
+```typescript
+// For each layer with weight > 0.6 → inject HIGH instruction
+// For each layer with weight < 0.3 → inject LOW instruction
+// Middle weights (0.3-0.6) → no instruction (default behavior)
+```
 
-### M3: Query Source Separation [High] — Days 42-45
-**What:** Distinguish user queries, refinements, system context in pipeline
-**Why:** Clean separation enables better debugging, analytics, and refinement tracking
-**Steps:**
-1. Add `querySource` field to SSE events: 'user' | 'refinement' | 'system' | 'continuation'
-2. Color-code in reasoning panel by source type
-3. Track refinement chains per message
-4. Add refinement count to message metadata
+### Step 1.3: Verification Test Matrix
+Send SAME query with different layer configs and compare outputs:
 
-### M4: Selection Tool (Cmd+Shift+4) [Medium] — Days 45-48
-**What:** Screenshot-based query input for visual intelligence
-**Steps:**
-1. Implement keyboard shortcut listener for Cmd+Shift+4
-2. Screen capture API → canvas → base64
-3. Send as attachment to `/api/simple-query` with `attachments` field
-4. AI processes image with vision model
+| Test | Query | Config | Expected Output Change |
+|------|-------|--------|----------------------|
+| A | "How to start a business?" | Creativity=90% | Metaphors, unconventional ideas |
+| B | "How to start a business?" | Creativity=10% | Standard conventional advice |
+| C | "How to start a business?" | Facts=90% | Data-heavy, statistics, citations |
+| D | "How to start a business?" | Critical=90% | Risk warnings, challenges, flaws |
+| E | "How to start a business?" | Reasoning=90% | First principles decomposition |
 
-### M5: Mini Chat Code Agent [High] — Days 48-55
-**What:** Grimoire execution layer with code tools
-**Steps:**
-1. Design mini-chat panel UI (slide-out from right)
-2. Code execution sandbox (Web Worker or server-side)
-3. File read/write capabilities for project workspace
-4. Integration with main query pipeline
-
-### M6: Depth Annotations + Sigils [Medium] — Days 55-60
-**What:** Visual markers for reasoning depth in responses
-**Steps:**
-1. Define depth scale (1-10) with visual sigils
-2. AI self-reports depth level per paragraph
-3. Render sigils inline in response text
-4. Depth histogram in reasoning panel
-
-### M7: Grimoire System [High] — Days 60-75
-**What:** Full project workspace with objectives, deadlines
-**Steps:**
-1. Project schema: name, objectives, deadlines, files, queries
-2. CRUD API for projects
-3. Project context injection into queries
-4. Dashboard view with project status
-
-### M8: Deploy + Testing [Critical] — Days 75-100
-**What:** Production deployment with test suite
-**Steps:**
-1. FlokiNET Iceland server setup
-2. Docker containerization
-3. CI/CD pipeline (GitHub Actions)
-4. E2E test suite (Playwright)
-5. Load testing
-6. SSL + domain setup
-
-### M9: Social Launch Prep [High] — Days 100-121
-**What:** Launch materials and community
-**Steps:**
-1. Landing page design + build
-2. Demo video (2-3 min walkthrough)
-3. Documentation site
-4. Twitter/X launch thread
-5. Discord/community setup
-6. Beta invite system
+Each test: send query → capture response → compare tone/style/content.
 
 ---
 
-## PHASE 4: Post-Launch (Days 121-150)
+## PHASE 2: DEPTH ANNOTATIONS (Day 37-38)
+*"Sigils and annotations visible on every response"*
 
-### Sovereign Transition Planning
-- Self-hosted model evaluation (Qwen 2.5-72B, Mistral)
+### Step 2.1: Wire DepthText into Message Rendering
+**File:** `app/page.tsx` — find where `message.content` is rendered as markdown
+
+Replace raw markdown rendering with `<DepthText>` wrapper that:
+1. Parses response text through `buildAnnotatedSegments()`
+2. Renders inline sigils (ᶠ ᵐ ᶜ ᵈ ˢ) next to annotated terms
+3. Shows grey subtitle on hover/click
+
+### Step 2.2: Enable Depth Processing in Pipeline
+**File:** `app/api/simple-query/route.ts`
+
+After AI response received, run depth analysis:
+1. Call `analyzeForAnnotations(responseText)` from depth-annotations.ts
+2. Store annotations in response metadata
+3. Send via SSE to frontend
+
+### Step 2.3: Depth Config UI
+Add depth toggle in AI Config panel:
+- Density: minimal / standard / maximum
+- Types: fact ᶠ / metric ᵐ / connection ᶜ / detail ᵈ / source ˢ
+- Show by default: on/off
+
+---
+
+## PHASE 3: CANVAS ↔ TEXT CONNECTION (Day 38-39)
+*"Switching between text and canvas preserves everything"*
+
+### Step 3.1: Query Cards Auto-Population
+When query completes in text mode:
+1. Auto-create QueryCard in canvas store
+2. Card shows: query text, methodology, key insights
+3. Cards are draggable on canvas
+
+### Step 3.2: Canvas → Text Navigation
+When user clicks query card on canvas:
+1. Switch to text mode
+2. Scroll to that query/response
+3. Highlight the message
+
+### Step 3.3: Visual Nodes from Side Canal
+Topics extracted by Side Canal → auto-create visual nodes on canvas
+Connected by relationship edges
+
+---
+
+## PHASE 4: EXISTING FIXES (Day 39-40)
+
+### 4.1 Live Refinement Re-Query [P1]
+- Clicking refine/enhance/correct re-sends current query with refinements
+- Show "Refined ×2" badge on refined responses
+
+### 4.2 DDG Search Verification [P2]
+- Send 5 test queries, verify real results (not fallback)
+
+### 4.3 Side Canal Deduplication [P3]
+- Remove client-side extraction (server handles it)
+
+---
+
+## PHASE 5: MILESTONES 3-9 (Days 42-100)
+
+| # | Milestone | Days | Description |
+|---|-----------|------|-------------|
+| M3 | Query Source Separation | 42-45 | Tag queries as user/refinement/system/continuation |
+| M4 | Selection Tool (Cmd+Shift+4) | 45-48 | Screenshot-based visual query input |
+| M5 | Mini Chat Code Agent | 48-55 | Code execution in mini-chat panel |
+| M6 | Grimoire System | 55-75 | Project workspace with objectives/deadlines |
+| M7 | Deploy + Testing | 75-100 | FlokiNET, Docker, CI/CD, E2E tests |
+| M8 | Social Launch Prep | 100-121 | Landing page, demo video, community |
+
+---
+
+## PHASE 6: POST-LAUNCH (Days 121-150)
+- Self-hosted model migration (Qwen 2.5-72B, Mistral)
 - Hetzner GEX131 server procurement
-- Vercel AI SDK abstraction layer
-- Cost modeling: API vs self-hosted breakeven
-
-### Revenue & Growth
-- Stripe payment integration testing
-- Free/Pro/Legend tier enforcement
-- Usage analytics dashboard
-- User feedback collection system
+- Stripe payments, tier enforcement
+- User analytics dashboard
 
 ---
 
-## DAILY EXECUTION PATTERN
+## IMMEDIATE NEXT ACTIONS (Day 37 Morning)
 
 ```
-Morning (2hrs):  Fix 1 wiring issue from Phase 1
-Afternoon (3hrs): Work on current milestone
-Evening (1hr):   Test, commit, update progress
+1. Add LAYER_BEHAVIORS map to intelligence-fusion.ts
+2. Rewrite generateEnhancedSystemPrompt() to use behavioral instructions
+3. Test: same query, different layer configs → verify output changes
+4. Wire <DepthText> into message rendering in page.tsx
+5. Test: depth sigils appear on response text
+6. Wire canvas onQuerySelect/onNodeSelect to actual navigation
+7. Commit + push
 ```
 
-## VERIFICATION CHECKLIST (Run after each session)
+---
 
+## VERIFICATION CHECKLIST
+
+- [ ] Creativity slider HIGH → response is creative/metaphorical
+- [ ] Creativity slider LOW → response is conventional/practical  
+- [ ] Facts slider HIGH → response has data points and numbers
+- [ ] Critical slider HIGH → response challenges assumptions
+- [ ] Depth sigils (ᶠ ᵐ ᶜ) visible on response text
+- [ ] Canvas shows query cards from text mode queries
+- [ ] Clicking canvas card navigates to text response
 - [ ] `npx next dev --turbopack` compiles clean
-- [ ] Send test query → response streams
-- [ ] AI Reasoning panel shows narrative
-- [ ] Side Canal extracts topics
-- [ ] Layer config values flow to API (check backend logs)
-- [ ] Guard runs post-response checks
-- [ ] Git commit + push
+- [ ] AI Reasoning panel reflects layer config changes
