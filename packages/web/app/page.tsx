@@ -1041,8 +1041,81 @@ function HomePage() {
         // by the extractTopicsForMessage callback
       }
 
-      // Poll for the result if we got a queryId
-      if (data.queryId) {
+      // Connect to SSE thought stream for live pipeline updates
+      const queryId = data.id || data.queryId
+      if (queryId) {
+        const assistantMsgId = generateId()
+
+        // Map queryId to messageId for SSE events
+        usePipelineStore.getState().mapQueryToMessage(queryId, assistantMsgId)
+
+        // Create placeholder assistant message for streaming updates
+        const placeholderMessage: Message = {
+          id: assistantMsgId,
+          role: 'assistant',
+          content: '', // Will be updated when response arrives
+          methodology: data.methodology || methodology,
+          timestamp: new Date(),
+        }
+        setMessages(prev => [...prev, placeholderMessage])
+
+        // Start SSE connection for live metadata
+        const eventSource = new EventSource(`/api/thought-stream?queryId=${queryId}`)
+
+        eventSource.onmessage = (event) => {
+          try {
+            const eventData = JSON.parse(event.data)
+            if (eventData.type === 'heartbeat') return
+
+            const thoughtEvent = createThoughtEvent(
+              eventData.stage || eventData.type || 'reasoning',
+              eventData.message || ''
+            )
+
+            usePipelineStore.getState().setCurrentMetadata(assistantMsgId, thoughtEvent)
+            usePipelineStore.getState().addMetadataEvent(assistantMsgId, thoughtEvent)
+
+            if (eventData.stage === 'complete' || eventData.stage === 'error') {
+              setTimeout(() => eventSource.close(), 2000)
+            }
+          } catch (e) {
+            console.error('[SSE] Parse error:', e)
+          }
+        }
+
+        eventSource.onerror = () => {
+          console.error('[SSE] Connection error')
+          eventSource.close()
+        }
+
+        // Safety timeout
+        setTimeout(() => {
+          if (eventSource.readyState !== EventSource.CLOSED) {
+            eventSource.close()
+          }
+        }, 60000)
+
+        // Update the placeholder message with actual content
+        setMessages(prev => prev.map(msg =>
+          msg.id === assistantMsgId
+            ? {
+                ...msg,
+                content: data.response || data.finalDecision || 'No response',
+                metrics: data.metrics,
+                guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
+                guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
+                isHidden: data.guardResult?.passed === false,
+                gnostic: data.gnostic,
+                intelligence: data.intelligence,
+              }
+            : msg
+        ))
+
+        setCurrentConversationId(queryId)
+      }
+
+      // Poll for the result if we got a queryId (legacy flow)
+      if (data.queryId && !data.response) {
         // Set conversation ID for sharing
         setCurrentConversationId(data.queryId)
         await pollForResult(data.queryId, startTime, assistantMsgId)
@@ -2462,6 +2535,12 @@ function HomePage() {
                             )}
                             </div>
                           )}
+
+                          {/* Pipeline Metadata Strip - Live stages during processing */}
+                          <MetadataStrip
+                            messageId={message.id}
+                            isStreaming={isLoading && messages[messages.length - 1]?.id === message.id}
+                          />
                         </div>
                       )}
                     </div>
