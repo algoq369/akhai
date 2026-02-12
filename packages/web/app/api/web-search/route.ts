@@ -21,14 +21,22 @@ export async function POST(request: NextRequest) {
 
     console.log(`[WebSearch] Searching for: "${query}"`)
 
-    // Fetch DuckDuckGo HTML results
+    // Fetch DuckDuckGo HTML results with proper browser headers
     const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`
 
     const response = await fetch(searchUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
       },
     })
 
@@ -72,52 +80,81 @@ function parseSearchResults(html: string, maxResults: number): SearchResult[] {
   const results: SearchResult[] = []
 
   try {
-    // DuckDuckGo HTML structure: results are in divs with class "result"
-    const resultMatches = html.matchAll(/<div class="result[^"]*"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/g)
+    // DDG HTML format parsing - multiple patterns for robustness
+    // Pattern 1: result__a links with href containing uddg redirect
+    const resultPattern = /<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi
+    const snippetPattern = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/gi
 
-    for (const match of resultMatches) {
-      if (results.length >= maxResults) break
+    const links: Array<{ url: string; title: string }> = []
+    let linkMatch
 
-      const resultHtml = match[1]
+    // Extract links
+    while ((linkMatch = resultPattern.exec(html)) !== null && links.length < maxResults + 5) {
+      let url = linkMatch[1]
+      const title = stripHtml(linkMatch[2])?.trim()
 
-      // Extract title and URL from <a class="result__a" href="...">title</a>
-      const titleMatch = resultHtml.match(/<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/)
-
-      // Extract snippet from <a class="result__snippet">snippet</a>
-      const snippetMatch = resultHtml.match(/<a[^>]*class="result__snippet"[^>]*>(.*?)<\/a>/)
-
-      if (titleMatch) {
-        const url = decodeURIComponent(titleMatch[1]).replace(/^\/\/duckduckgo\.com\/l\/\?uddg=/, '').split('&')[0]
-        const title = stripHtml(titleMatch[2])
-        const snippet = snippetMatch ? stripHtml(snippetMatch[1]) : ''
-
-        // Only add if we have valid URL and title
-        if (url.startsWith('http') && title) {
-          results.push({
-            title,
-            snippet,
-            url,
-          })
+      // Decode DDG redirect URL
+      if (url.includes('uddg=')) {
+        const uddgMatch = url.match(/uddg=([^&]+)/)
+        if (uddgMatch) {
+          url = decodeURIComponent(uddgMatch[1])
         }
       }
+
+      // Filter out DDG internal links and ads
+      if (url && title && title.length > 3 &&
+          !url.includes('duckduckgo.com') &&
+          !url.includes('//ad.') &&
+          url.startsWith('http')) {
+        links.push({ url, title })
+      }
+    }
+
+    // Extract snippets
+    const snippets: string[] = []
+    let snippetMatch
+    while ((snippetMatch = snippetPattern.exec(html)) !== null && snippets.length < maxResults + 5) {
+      const snippet = stripHtml(snippetMatch[1])?.trim()
+      if (snippet && snippet.length > 10) {
+        snippets.push(snippet)
+      }
+    }
+
+    // Match links with snippets
+    for (let i = 0; i < Math.min(links.length, maxResults); i++) {
+      results.push({
+        title: links[i].title,
+        snippet: snippets[i] || 'Search result',
+        url: links[i].url,
+      })
     }
 
     // Fallback: Try alternative parsing if no results found
     if (results.length === 0) {
-      const linkMatches = html.matchAll(/<a[^>]*class="result__url"[^>]*href="([^"]+)"[^>]*>.*?<\/a>/g)
-      for (const match of linkMatches) {
-        if (results.length >= maxResults) break
+      const altPattern = /<a[^>]*href="(\/l\/\?uddg=[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi
+      while ((linkMatch = altPattern.exec(html)) !== null && results.length < maxResults) {
+        let url = linkMatch[1]
+        const title = stripHtml(linkMatch[2])?.trim()
 
-        const url = decodeURIComponent(match[1])
-        if (url.startsWith('http')) {
+        if (url.startsWith('/l/?uddg=')) {
+          const uddgMatch = url.match(/uddg=([^&]+)/)
+          if (uddgMatch) {
+            url = decodeURIComponent(uddgMatch[1])
+          }
+        }
+
+        if (url && title && url.startsWith('http') && title.length > 3 &&
+            !url.includes('duckduckgo.com')) {
           results.push({
-            title: url,
+            title,
             snippet: 'Search result',
             url,
           })
         }
       }
     }
+
+    console.log(`[WebSearch] Parsed ${results.length} results from ${links.length} links`)
   } catch (error) {
     console.error('[WebSearch] Parsing error:', error)
   }

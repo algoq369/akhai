@@ -176,14 +176,24 @@ async function searchWeb(searchQuery: string): Promise<Array<{ url: string; titl
   try {
     const encodedQuery = encodeURIComponent(searchQuery)
 
-    // Try DuckDuckGo lite (more reliable than HTML version)
+    // Try DuckDuckGo HTML version with proper headers
     const response = await fetch(
-      `https://lite.duckduckgo.com/lite/?q=${encodedQuery}`,
+      `https://html.duckduckgo.com/html/?q=${encodedQuery}`,
       {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
         },
-        signal: AbortSignal.timeout(8000) // 8 second timeout
+        signal: AbortSignal.timeout(10000) // 10 second timeout
       }
     )
 
@@ -195,46 +205,92 @@ async function searchWeb(searchQuery: string): Promise<Array<{ url: string; titl
     const html = await response.text()
     const results: Array<{ url: string; title: string; snippet: string }> = []
 
-    // Parse DuckDuckGo Lite format - much simpler structure
-    // Pattern: <a href="URL">TITLE</a> followed by <td class="result-snippet">SNIPPET</td>
-    const linkPattern = /<a\s+rel="nofollow"\s+href="([^"]+)">([^<]+)<\/a>/gi
-    const snippetPattern = /<td\s+class="result-snippet">([^<]+)</gi
+    // DDG HTML format parsing - multiple patterns for robustness
+    // Pattern 1: result__a links with href containing uddg redirect
+    const resultPattern = /<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi
+    const snippetPattern = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/gi
+
+    // Alternative pattern: result links with data-* attributes
+    const altLinkPattern = /<a[^>]*href="(\/l\/\?uddg=[^"]+|https?:\/\/[^"]+)"[^>]*class="[^"]*result[^"]*"[^>]*>([\s\S]*?)<\/a>/gi
 
     const links: Array<{ url: string; title: string }> = []
     let linkMatch
-    while ((linkMatch = linkPattern.exec(html)) !== null && links.length < 8) {
-      const url = linkMatch[1]
-      const title = linkMatch[2]?.trim()
+
+    // Try primary pattern first
+    while ((linkMatch = resultPattern.exec(html)) !== null && links.length < 10) {
+      let url = linkMatch[1]
+      const title = stripHtmlTags(linkMatch[2])?.trim()
+
+      // Decode DDG redirect URL
+      if (url.includes('uddg=')) {
+        const uddgMatch = url.match(/uddg=([^&]+)/)
+        if (uddgMatch) {
+          url = decodeURIComponent(uddgMatch[1])
+        }
+      }
 
       // Filter out DDG internal links and ads
-      if (url && title &&
+      if (url && title && title.length > 3 &&
           !url.includes('duckduckgo.com') &&
           !url.includes('//ad.') &&
-          !url.startsWith('//') &&
+          !url.includes('ad-domain') &&
           url.startsWith('http')) {
         links.push({ url, title })
       }
     }
 
+    // If primary pattern failed, try alternative
+    if (links.length === 0) {
+      while ((linkMatch = altLinkPattern.exec(html)) !== null && links.length < 10) {
+        let url = linkMatch[1]
+        const title = stripHtmlTags(linkMatch[2])?.trim()
+
+        if (url.startsWith('/l/?uddg=')) {
+          const uddgMatch = url.match(/uddg=([^&]+)/)
+          if (uddgMatch) {
+            url = decodeURIComponent(uddgMatch[1])
+          }
+        }
+
+        if (url && title && title.length > 3 &&
+            !url.includes('duckduckgo.com') &&
+            url.startsWith('http')) {
+          links.push({ url, title })
+        }
+      }
+    }
+
+    // Extract snippets
     const snippets: string[] = []
     let snippetMatch
-    while ((snippetMatch = snippetPattern.exec(html)) !== null && snippets.length < 8) {
-      const snippet = snippetMatch[1]?.trim()
-      if (snippet) {
+    while ((snippetMatch = snippetPattern.exec(html)) !== null && snippets.length < 10) {
+      const snippet = stripHtmlTags(snippetMatch[1])?.trim()
+      if (snippet && snippet.length > 10) {
         snippets.push(snippet)
       }
     }
 
+    // If no snippets found, try alternative snippet patterns
+    if (snippets.length === 0) {
+      const altSnippetPattern = /<td[^>]*class="[^"]*result-snippet[^"]*"[^>]*>([\s\S]*?)<\/td>/gi
+      while ((snippetMatch = altSnippetPattern.exec(html)) !== null && snippets.length < 10) {
+        const snippet = stripHtmlTags(snippetMatch[1])?.trim()
+        if (snippet && snippet.length > 10) {
+          snippets.push(snippet)
+        }
+      }
+    }
+
     // Match links with snippets
-    for (let i = 0; i < Math.min(links.length, snippets.length, 5); i++) {
+    for (let i = 0; i < Math.min(links.length, 5); i++) {
       results.push({
         url: links[i].url,
         title: links[i].title,
-        snippet: snippets[i]
+        snippet: snippets[i] || `Search result for: ${searchQuery.substring(0, 50)}`
       })
     }
 
-    console.log(`[EnhancedLinks] Found ${results.length} real search results`)
+    console.log(`[EnhancedLinks] Found ${results.length} real search results (${links.length} links, ${snippets.length} snippets)`)
 
     if (results.length > 0) {
       return results
@@ -246,6 +302,23 @@ async function searchWeb(searchQuery: string): Promise<Array<{ url: string; titl
     console.error('[EnhancedLinks] Web search error:', error)
     return buildSmartFallback(searchQuery)
   }
+}
+
+/**
+ * Strip HTML tags from text
+ */
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 /**

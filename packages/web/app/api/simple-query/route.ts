@@ -11,6 +11,17 @@ import { getContextForQuery } from '@/lib/side-canal'
 import { getProviderForMethodology, validateProviderApiKey, getFallbackProvider, type CoreMethodology } from '@/lib/provider-selector'
 import { callProvider, isProviderAvailable } from '@/lib/multi-provider-api'
 import { trackServerQuerySubmitted, trackServerGuardTriggered, getAnonymousDistinctId } from '@/lib/posthog-events'
+import { emitQueryEvent } from '@/lib/event-emitter'
+
+// Helper to emit pipeline events
+function emitPipeline(queryId: string, stage: string, message: string, data?: Record<string, unknown>) {
+  emitQueryEvent(queryId, {
+    stage,
+    message,
+    data,
+    timestamp: Date.now()
+  })
+}
 
 // ============================================================================
 // INTELLIGENCE FUSION LAYER - Unified AI orchestration
@@ -72,6 +83,9 @@ export async function POST(request: NextRequest) {
       logger.query.apiError('VALIDATION', 'Query is required')
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
+
+    // PIPELINE: Query received
+    emitPipeline(queryId, 'received', query.substring(0, 100))
 
     // ============================================================================
     // URL VISITOR SYSTEM - Detect and fetch content from shared links
@@ -158,6 +172,13 @@ export async function POST(request: NextRequest) {
     const selectedMethod = fusionResult && methodology === 'auto'
       ? { id: fusionResult.selectedMethodology, reason: `Fusion: ${fusionResult.methodologyScores[0]?.reasons.join(', ') || 'Auto-selected'}` }
       : selectMethodology(query, methodology)
+
+    // PIPELINE: Routing selected
+    emitPipeline(queryId, 'routing', `${selectedMethod.id} ${fusionResult ? `${Math.round(fusionResult.confidence * 100)}%` : ''}`, {
+      methodology: selectedMethod.id,
+      reason: selectedMethod.reason,
+      confidence: fusionResult?.confidence
+    })
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:26',message:'Methodology selected',data:{selected:selectedMethod.id,reason:selectedMethod.reason},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
@@ -332,9 +353,21 @@ export async function POST(request: NextRequest) {
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:115',message:'After getMethodologyPrompt',data:{promptLength:systemPrompt?.length||0,methodology:selectedMethod.id,fusionApplied:!!fusionResult},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
     // #endregion
 
+    // PIPELINE: Layers activated
+    emitPipeline(queryId, 'layers', `dominant: ${fusionResult?.dominantSefirot?.[0] ? SEPHIROTH_METADATA[fusionResult.dominantSefirot[0]]?.name : 'knowledge'}`, {
+      dominant: fusionResult?.dominantSefirot?.[0] ? SEPHIROTH_METADATA[fusionResult.dominantSefirot[0]]?.name : 'knowledge',
+      activations: fusionResult?.sefirotActivations?.slice(0, 3).map(s => s.name)
+    })
+
     // Call Multi-Provider API
     logger.query.apiCall(selectedProvider.toUpperCase(), providerSpec.model)
     log('INFO', 'API', `Calling ${selectedProvider} API with model: ${providerSpec.model}`)
+
+    // PIPELINE: Generating
+    emitPipeline(queryId, 'generating', `${selectedProvider} · ${providerSpec.model}`, {
+      provider: selectedProvider,
+      model: providerSpec.model
+    })
 
     // #region agent log
     fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'simple-query/route.ts:69',message:'Calling Multi-Provider API',data:{methodology:selectedMethod.id,provider:selectedProvider,model:providerSpec.model},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
@@ -373,6 +406,13 @@ export async function POST(request: NextRequest) {
 
     // Run Grounding Guard
     const guardResult = await runGroundingGuard(content, query)
+
+    // PIPELINE: Guard check
+    emitPipeline(queryId, 'guard', guardResult.passed ? 'passed' : `issues: ${guardResult.issues.join(', ')}`, {
+      passed: guardResult.passed,
+      issues: guardResult.issues,
+      scores: guardResult.scores
+    })
 
     // ============================================================================
     // GNOSTIC POST-PROCESSING: Analyze and Purify Response
@@ -577,6 +617,22 @@ export async function POST(request: NextRequest) {
     
     log('INFO', 'SIDE_CANAL', `Response includes ${suggestions.length} suggestions`)
 
+    // PIPELINE: Analysis complete
+    emitPipeline(queryId, 'analysis', `Sefirot: ${gnosticMetadata?.sephirothAnalysis?.dominant || 'N/A'}`, {
+      dominant: gnosticMetadata?.sephirothAnalysis?.dominant,
+      qliphothPurified: gnosticMetadata?.qliphothPurified
+    })
+
+    // PIPELINE: Complete
+    emitPipeline(queryId, 'complete', `${(latency / 1000).toFixed(1)}s · ${tokens} tokens · $${cost.toFixed(4)}`, {
+      tokens,
+      latency,
+      cost,
+      provider: selectedProvider,
+      model: providerSpec.model,
+      methodology: selectedMethod.id
+    })
+
     // Track query submission in PostHog (server-side)
     try {
       const distinctId = userId || getAnonymousDistinctId(request)
@@ -629,7 +685,10 @@ export async function POST(request: NextRequest) {
     
     logger.system.error(errorMessage)
     console.error('[API] Error details:', { errorName, errorMessage, errorStack, queryId })
-    
+
+    // PIPELINE: Error
+    emitPipeline(queryId, 'error', errorMessage, { errorName, errorMessage })
+
     // Update query status to error
     try {
       const token = request.cookies.get('session_token')?.value
