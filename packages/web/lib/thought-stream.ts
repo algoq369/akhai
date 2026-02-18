@@ -121,8 +121,24 @@ export function formatLayerBar(name: string, value: number): string {
 
 // ── Server-side SSE connection registry ──────────────────────────────
 
+// globalThis singletons — survive Next.js HMR module reloading.
+// Without this, simple-query/route.ts and thought-stream/route.ts
+// get separate Map instances and events never reach SSE subscribers.
+const CONN_KEY = '__akhai_sse_connections__'
+const TBUF_KEY = '__akhai_sse_thought_buffer__'
+
+if (!(globalThis as any)[CONN_KEY]) {
+  ;(globalThis as any)[CONN_KEY] = new Map<string, Set<ReadableStreamDefaultController>>()
+}
+if (!(globalThis as any)[TBUF_KEY]) {
+  ;(globalThis as any)[TBUF_KEY] = new Map<string, ThoughtEvent[]>()
+}
+
 /** Global connection registry: queryId → set of stream controllers */
-export const connections = new Map<string, Set<ReadableStreamDefaultController>>()
+export const connections: Map<string, Set<ReadableStreamDefaultController>> = (globalThis as any)[CONN_KEY]
+
+/** Event buffer: queryId → events emitted before SSE connected */
+export const thoughtBuffer: Map<string, ThoughtEvent[]> = (globalThis as any)[TBUF_KEY]
 
 /**
  * Emit a thought event to all connected clients for a given queryId.
@@ -130,28 +146,49 @@ export const connections = new Map<string, Set<ReadableStreamDefaultController>>
  */
 export function emitThought(queryId: string, event: ThoughtEvent) {
   const controllers = connections.get(queryId)
-  if (!controllers || controllers.size === 0) return
+  const controllerCount = controllers ? controllers.size : 0
+  console.log(`[SSE] emit ${event.stage} for ${queryId} → ${controllerCount} controller(s)`)
 
-  const data = `data: ${JSON.stringify(event)}\n\n`
-  const deadControllers: ReadableStreamDefaultController[] = []
+  // Always buffer so late-connecting SSE clients can replay
+  if (!thoughtBuffer.has(queryId)) {
+    thoughtBuffer.set(queryId, [])
+  }
+  thoughtBuffer.get(queryId)!.push(event)
 
-  for (const controller of controllers) {
-    try {
-      controller.enqueue(new TextEncoder().encode(data))
-    } catch {
-      deadControllers.push(controller)
+  // Deliver to live controllers
+  if (controllers && controllers.size > 0) {
+    const data = `data: ${JSON.stringify(event)}\n\n`
+    const deadControllers: ReadableStreamDefaultController[] = []
+
+    for (const controller of controllers) {
+      try {
+        controller.enqueue(new TextEncoder().encode(data))
+      } catch {
+        deadControllers.push(controller)
+      }
+    }
+
+    // Clean up dead connections
+    for (const dead of deadControllers) {
+      controllers.delete(dead)
     }
   }
 
-  // Clean up dead connections
-  for (const dead of deadControllers) {
-    controllers.delete(dead)
-  }
-
-  // Auto-close on terminal stages
+  // Auto-clean on terminal stages
   if (event.stage === 'complete' || event.stage === 'error') {
     setTimeout(() => {
       connections.delete(queryId)
-    }, 2000)
+      thoughtBuffer.delete(queryId)
+    }, 60000) // Keep buffer 60s for late-connecting clients
   }
+}
+
+/**
+ * Get buffered events for a queryId (for SSE replay on connect).
+ */
+export function getBufferedThoughts(queryId: string): ThoughtEvent[] {
+  const events = thoughtBuffer.get(queryId)
+  if (!events || events.length === 0) return []
+  console.log(`[SSE] replay ${events.length} buffered thought(s) for ${queryId}`)
+  return [...events]
 }
