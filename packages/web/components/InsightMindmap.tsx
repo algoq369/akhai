@@ -251,6 +251,7 @@ function extractInsights(content: string, query: string): ConceptNode[] {
 async function discoverResearchLinks(query: string, content: string): Promise<{
   links: ResearchLink[]
   metacognition: { confidence: number; reasoning: string } | null
+  searchUnavailable: boolean
 }> {
   try {
     const capitalizedWords = content.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/g) || []
@@ -278,14 +279,15 @@ async function discoverResearchLinks(query: string, content: string): Promise<{
             relevance: link.relevance,
             source: link.source
           })),
-          metacognition: data.metacognition || null
+          metacognition: data.metacognition || null,
+          searchUnavailable: data.searchUnavailable || false
         }
       }
     }
 
-    return { links: [], metacognition: null }
+    return { links: [], metacognition: null, searchUnavailable: false }
   } catch {
-    return { links: [], metacognition: null }
+    return { links: [], metacognition: null, searchUnavailable: false }
   }
 }
 
@@ -308,14 +310,16 @@ export default function InsightMindmap({ content, query, onSwitchToLayers, onOpe
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [selectedNode, setSelectedNode] = useState<ConceptNode | null>(null)
   const [researchLinks, setResearchLinks] = useState<ResearchLink[]>([])
+  const [searchUnavailable, setSearchUnavailable] = useState(false)
 
   const nodes = useMemo(() => extractInsights(content, query), [content, query])
   const queryInsight = useMemo(() => generateQueryInsight(query, content, nodes), [query, content, nodes])
 
   // Discover research links
   useEffect(() => {
-    discoverResearchLinks(query, content).then(({ links }) => {
+    discoverResearchLinks(query, content).then(({ links, searchUnavailable: unavailable }) => {
       setResearchLinks(links)
+      setSearchUnavailable(unavailable)
     })
   }, [query, content])
 
@@ -548,6 +552,11 @@ export default function InsightMindmap({ content, query, onSwitchToLayers, onOpe
                         {link.url}
                       </a>
                     ))}
+                  </div>
+                )}
+                {searchUnavailable && researchLinks.length === 0 && (
+                  <div className="mb-2">
+                    <div className="text-[8px] text-slate-400 dark:text-slate-500 italic">search unavailable</div>
                   </div>
                 )}
 

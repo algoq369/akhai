@@ -168,25 +168,99 @@ Return ONLY valid JSON:
 }
 
 /**
- * Search web using multiple approaches for best results
+ * Unwrap DDG redirect URLs to get the real destination URL.
+ * GET requests wrap URLs as //duckduckgo.com/l/?uddg=ENCODED_URL&rut=...
+ * POST requests usually return direct URLs but may still wrap them.
+ */
+function unwrapDDGUrl(rawUrl: string): string {
+  // Handle HTML entity encoded ampersands
+  const url = rawUrl.replace(/&amp;/g, '&')
+
+  // DDG redirect format: //duckduckgo.com/l/?uddg=REAL_URL
+  if (url.includes('duckduckgo.com/l/?uddg=')) {
+    try {
+      const queryString = url.split('?')[1]
+      const params = new URLSearchParams(queryString)
+      const realUrl = params.get('uddg')
+      if (realUrl) return decodeURIComponent(realUrl)
+    } catch { /* fall through */ }
+  }
+
+  return rawUrl
+}
+
+/**
+ * Detect DDG CAPTCHA/bot-detection pages
+ */
+function isCaptchaResponse(html: string): boolean {
+  return html.includes('anomaly-modal') || html.includes('bots use DuckDuckGo')
+}
+
+/**
+ * Check if a URL is a valid search result (not DDG internal, not an ad)
+ * Returns the cleaned URL if valid.
+ */
+function isValidResultUrl(rawUrl: string | undefined, title: string | undefined): { valid: boolean; url: string } {
+  if (!rawUrl || !title || title.length < 3) return { valid: false, url: '' }
+
+  // Unwrap DDG redirect first
+  const url = unwrapDDGUrl(rawUrl)
+
+  // Reject DDG ad tracking links
+  if (url.includes('duckduckgo.com/y.js')) return { valid: false, url: '' }
+  // Reject DDG internal pages (but not unwrapped real URLs)
+  if (url.includes('duckduckgo.com') && !url.startsWith('http')) return { valid: false, url: '' }
+  // Reject ad URLs
+  if (url.includes('//ad.') || url.includes('/ad/')) return { valid: false, url: '' }
+  // Must be a proper http(s) URL
+  if (!url.startsWith('http')) return { valid: false, url: '' }
+
+  return { valid: true, url }
+}
+
+// Simple in-memory cache to avoid hitting DDG repeatedly for the same query
+const ddgCache = new Map<string, { results: Array<{ url: string; title: string; snippet: string }>; ts: number }>()
+const DDG_CACHE_TTL = 10 * 60 * 1000 // 10 minutes — longer to reduce DDG hits
+
+// Track CAPTCHA state to avoid hammering DDG when rate-limited
+let ddgRateLimitedUntil = 0
+const DDG_RATE_LIMIT_BACKOFF = 3 * 60 * 1000 // 3 minutes backoff after CAPTCHA
+
+/**
+ * Search web using DuckDuckGo HTML with POST method.
+ * POST is more reliable than GET (less aggressive bot detection).
  */
 async function searchWeb(searchQuery: string): Promise<Array<{ url: string; title: string; snippet: string }>> {
-  console.log(`[EnhancedLinks] Searching for: "${searchQuery.substring(0, 60)}..."`)
+  console.log(`[DDG] Searching: "${searchQuery.substring(0, 80)}"`)
+
+  // Check cache first
+  const cached = ddgCache.get(searchQuery)
+  if (cached && Date.now() - cached.ts < DDG_CACHE_TTL) {
+    console.log(`[DDG] Cache hit: "${searchQuery.substring(0, 40)}" → ${cached.results.length} results`)
+    return cached.results
+  }
+
+  // Skip DDG if we were recently rate-limited (avoid wasting requests)
+  if (Date.now() < ddgRateLimitedUntil) {
+    const secsLeft = Math.round((ddgRateLimitedUntil - Date.now()) / 1000)
+    console.warn(`[DDG] Skipping — rate-limited, ${secsLeft}s remaining`)
+    return []
+  }
 
   try {
     const encodedQuery = encodeURIComponent(searchQuery)
 
-    // Try DuckDuckGo HTML version (more structured than lite)
     const response = await fetch(
       `https://html.duckduckgo.com/html/?q=${encodedQuery}`,
       {
         method: 'POST',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
           'Content-Type': 'application/x-www-form-urlencoded',
           'Referer': 'https://html.duckduckgo.com/',
+          'Connection': 'close',
         },
         body: `q=${encodedQuery}&b=`,
         signal: AbortSignal.timeout(10000)
@@ -194,306 +268,88 @@ async function searchWeb(searchQuery: string): Promise<Array<{ url: string; titl
     )
 
     if (!response.ok) {
-      console.warn(`[EnhancedLinks] DDG returned status ${response.status}, trying lite`)
-      return await searchWebLite(searchQuery)
+      console.warn(`[DDG] Failed: "${searchQuery.substring(0, 40)}" → status: ${response.status}`)
+      return []
     }
 
     const html = await response.text()
+
+    // Detect CAPTCHA/bot-detection
+    if (isCaptchaResponse(html)) {
+      ddgRateLimitedUntil = Date.now() + DDG_RATE_LIMIT_BACKOFF
+      console.warn(`[DDG] CAPTCHA detected for: "${searchQuery.substring(0, 40)}" — backing off ${DDG_RATE_LIMIT_BACKOFF / 1000}s`)
+      return []
+    }
+
     const results: Array<{ url: string; title: string; snippet: string }> = []
 
-    // Log first 300 chars for debugging
-    console.log(`[EnhancedLinks] DDG HTML response (first 300): ${html.substring(0, 300).replace(/\n/g, ' ')}`)
-
-    // Parse DuckDuckGo HTML format — result blocks
-    // Pattern 1: <a rel="nofollow" class="result__a" href="URL">TITLE</a>
+    // Parse result__a links: <a rel="nofollow" class="result__a" href="URL">Title</a>
     const resultLinkPattern = /<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>/gi
-    // Pattern 2: Fallback — any <a rel="nofollow" href="http..."> that's not internal
-    const fallbackLinkPattern = /<a[^>]*rel="nofollow"[^>]*href="(https?:\/\/[^"]+)"[^>]*>([^<]+)<\/a>/gi
-    // Snippet: <a class="result__snippet" ...>SNIPPET</a> or <td class="result-snippet">
-    const snippetPattern = /class="result__snippet"[^>]*>([^<]+(?:<[^>]*>[^<]*)*?)<\/a>/gi
-    const snippetAltPattern = /<td\s+class="result-snippet">([^<]+)/gi
+    // Parse snippets: <a class="result__snippet" href="URL">text with <b>bold</b> words</a>
+    const snippetPattern = /class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi
 
     const links: Array<{ url: string; title: string }> = []
-
-    // Try primary pattern first
     let linkMatch
-    while ((linkMatch = resultLinkPattern.exec(html)) !== null && links.length < 8) {
-      const url = linkMatch[1]
+    while ((linkMatch = resultLinkPattern.exec(html)) !== null && links.length < 10) {
+      const rawUrl = linkMatch[1]
       const title = linkMatch[2]?.trim()
-      if (isValidResultUrl(url, title)) {
-        links.push({ url: decodeURIComponent(url), title })
+      const check = isValidResultUrl(rawUrl, title)
+      if (check.valid) {
+        links.push({ url: check.url, title })
       }
     }
 
-    // Fallback to broader pattern if no results
-    if (links.length === 0) {
-      while ((linkMatch = fallbackLinkPattern.exec(html)) !== null && links.length < 8) {
-        const url = linkMatch[1]
-        const title = linkMatch[2]?.trim()
-        if (isValidResultUrl(url, title)) {
-          links.push({ url: decodeURIComponent(url), title })
-        }
-      }
-    }
-
-    // Extract snippets
+    // Extract snippets (may contain <b> tags for highlighted terms)
     const snippets: string[] = []
     let snippetMatch
-    while ((snippetMatch = snippetPattern.exec(html)) !== null && snippets.length < 8) {
-      const raw = snippetMatch[1]?.replace(/<[^>]*>/g, '').trim()
+    while ((snippetMatch = snippetPattern.exec(html)) !== null && snippets.length < 10) {
+      // Strip HTML tags from snippet, decode entities
+      const raw = snippetMatch[1]
+        ?.replace(/<[^>]*>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&#x27;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim()
+      // Skip ad snippets (they're typically long marketing copy)
       if (raw && raw.length > 10) snippets.push(raw)
     }
-    // Try alt snippet pattern
-    if (snippets.length === 0) {
-      while ((snippetMatch = snippetAltPattern.exec(html)) !== null && snippets.length < 8) {
-        const raw = snippetMatch[1]?.trim()
-        if (raw && raw.length > 10) snippets.push(raw)
-      }
-    }
 
-    console.log(`[EnhancedLinks] Parsed ${links.length} links, ${snippets.length} snippets from DDG`)
+    // Filter out ad snippets (first N snippets may be ads)
+    // Ad result__a links were already filtered by isValidResultUrl (duckduckgo.com/y.js check)
 
-    // Match links with snippets (snippets may be fewer)
-    for (let i = 0; i < Math.min(links.length, 5); i++) {
+    // Match links with their corresponding snippets
+    // Snippets include ads, so we need to offset: skip ad snippets
+    const adCount = html.match(/result--ad/g)?.length || 0
+    const organicSnippets = snippets.slice(adCount)
+
+    for (let i = 0; i < Math.min(links.length, 8); i++) {
       results.push({
         url: links[i].url,
         title: links[i].title,
-        snippet: snippets[i] || `Search result for: ${searchQuery.substring(0, 60)}`
+        snippet: organicSnippets[i] || `Search result for: ${searchQuery.substring(0, 60)}`
       })
     }
 
+    console.log(`[DDG] Searching: "${searchQuery.substring(0, 40)}" → ${results.length} results`)
+
+    // Cache successful results
     if (results.length > 0) {
-      console.log(`[EnhancedLinks] Found ${results.length} real search results`)
-      return results
+      ddgCache.set(searchQuery, { results, ts: Date.now() })
     }
 
-    // Try lite as secondary fallback
-    console.warn('[EnhancedLinks] No results from DDG HTML, trying lite...')
-    return await searchWebLite(searchQuery)
+    return results
   } catch (error) {
-    console.error('[EnhancedLinks] Web search error:', error)
-    return buildSmartFallback(searchQuery)
+    console.error(`[DDG] Failed: "${searchQuery.substring(0, 40)}" → ${error instanceof Error ? error.message : 'Unknown error'}`)
+    return []
   }
 }
 
-/**
- * Check if a URL is a valid search result (not DDG internal, not an ad)
- */
-function isValidResultUrl(url: string | undefined, title: string | undefined): boolean {
-  if (!url || !title || title.length < 3) return false
-  if (url.includes('duckduckgo.com')) return false
-  if (url.includes('//ad.') || url.includes('/ad/')) return false
-  if (url.startsWith('//')) return false
-  if (!url.startsWith('http')) return false
-  return true
-}
-
-/**
- * Fallback: DuckDuckGo Lite version
- */
-async function searchWebLite(searchQuery: string): Promise<Array<{ url: string; title: string; snippet: string }>> {
-  try {
-    const encodedQuery = encodeURIComponent(searchQuery)
-    const response = await fetch(
-      `https://lite.duckduckgo.com/lite/?q=${encodedQuery}`,
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
-        },
-        signal: AbortSignal.timeout(8000)
-      }
-    )
-
-    if (!response.ok) return buildSmartFallback(searchQuery)
-
-    const html = await response.text()
-    const results: Array<{ url: string; title: string; snippet: string }> = []
-
-    // DDG Lite: links in <a rel="nofollow" href="...">
-    const linkPattern = /<a[^>]*rel="nofollow"[^>]*href="(https?:\/\/[^"]+)"[^>]*>([^<]+)<\/a>/gi
-    const snippetPattern = /<td[^>]*class="result-snippet"[^>]*>([^<]+)/gi
-
-    const links: Array<{ url: string; title: string }> = []
-    let m
-    while ((m = linkPattern.exec(html)) !== null && links.length < 8) {
-      if (isValidResultUrl(m[1], m[2])) {
-        links.push({ url: m[1], title: m[2].trim() })
-      }
-    }
-
-    const snippets: string[] = []
-    while ((m = snippetPattern.exec(html)) !== null && snippets.length < 8) {
-      if (m[1]?.trim()) snippets.push(m[1].trim())
-    }
-
-    for (let i = 0; i < Math.min(links.length, 5); i++) {
-      results.push({
-        url: links[i].url,
-        title: links[i].title,
-        snippet: snippets[i] || `Result for: ${searchQuery.substring(0, 60)}`
-      })
-    }
-
-    if (results.length > 0) {
-      console.log(`[EnhancedLinks] Found ${results.length} results from DDG Lite`)
-      return results
-    }
-
-    console.warn('[EnhancedLinks] No results from DDG Lite either, using smart fallback')
-    return buildSmartFallback(searchQuery)
-  } catch {
-    return buildSmartFallback(searchQuery)
-  }
-}
-
-/**
- * Build smart fallback with curated authoritative sources
- */
-function buildSmartFallback(query: string): Array<{ url: string; title: string; snippet: string }> {
-  const encodedQuery = encodeURIComponent(query)
-  const queryLower = query.toLowerCase()
-
-  const results: Array<{ url: string; title: string; snippet: string }> = []
-
-  // Detect query type and provide relevant sources
-  const isAI = queryLower.includes('ai') || queryLower.includes('machine learning') || queryLower.includes('deep learning')
-  const isCode = queryLower.includes('code') || queryLower.includes('programming') || queryLower.includes('development')
-  const isHardware = queryLower.includes('computer') || queryLower.includes('gpu') || queryLower.includes('hardware') || queryLower.includes('workstation')
-  const isResearch = queryLower.includes('research') || queryLower.includes('paper') || queryLower.includes('academic')
-
-  // Economic/Finance query detection
-  const isEconomic = queryLower.includes('economic') || queryLower.includes('economy') ||
-    queryLower.includes('financial') || queryLower.includes('finance') ||
-    queryLower.includes('world bank') || queryLower.includes('imf') ||
-    queryLower.includes('world economic forum') || queryLower.includes('wef') ||
-    queryLower.includes('gdp') || queryLower.includes('trillion') ||
-    queryLower.includes('market') || queryLower.includes('trade') ||
-    queryLower.includes('currency') || queryLower.includes('monetary') ||
-    queryLower.includes('fiscal') || queryLower.includes('banking')
-
-  // Add World Economic Forum for economic queries
-  if (isEconomic) {
-    results.push({
-      url: `https://www.weforum.org/search?query=${encodedQuery}`,
-      title: `${query.substring(0, 50)} - World Economic Forum`,
-      snippet: 'Global economic insights, reports, and analysis from world leaders and experts'
-    })
-    results.push({
-      url: `https://www.imf.org/en/Search#q=${encodedQuery}&sort=relevancy`,
-      title: `${query.substring(0, 50)} - IMF Research`,
-      snippet: 'International Monetary Fund data, research papers, and economic forecasts'
-    })
-    results.push({
-      url: `https://data.worldbank.org/indicator?q=${encodedQuery}`,
-      title: `${query.substring(0, 50)} - World Bank Data`,
-      snippet: 'Open data and indicators on global development and economic metrics'
-    })
-    results.push({
-      url: `https://www.federalreserve.gov/searchResults.htm?q=${encodedQuery}`,
-      title: `${query.substring(0, 50)} - Federal Reserve`,
-      snippet: 'US central bank research, monetary policy analysis, and economic data'
-    })
-    results.push({
-      url: `https://www.oecd.org/en/search.html?q=${encodedQuery}`,
-      title: `${query.substring(0, 50)} - OECD Reports`,
-      snippet: 'Economic analysis and policy recommendations from OECD member countries'
-    })
-  }
-
-  // Add GitHub for code-related queries
-  if (isCode || isAI) {
-    results.push({
-      url: `https://github.com/search?q=${encodedQuery}&type=repositories&s=stars&o=desc`,
-      title: `${query.substring(0, 60)} - Top GitHub Repositories`,
-      snippet: 'Most starred and actively maintained open-source projects related to your query'
-    })
-  }
-
-  // Add Papers with Code for AI research
-  if (isAI || isResearch) {
-    results.push({
-      url: `https://paperswithcode.com/search?q=${encodedQuery}`,
-      title: `${query.substring(0, 60)} - Papers with Code`,
-      snippet: 'Latest ML research papers with reproducible code implementations and benchmarks'
-    })
-  }
-
-  // Add Hugging Face for AI models
-  if (isAI) {
-    results.push({
-      url: `https://huggingface.co/search/full-text?q=${encodedQuery}`,
-      title: `${query.substring(0, 60)} - Hugging Face Models`,
-      snippet: 'Pre-trained AI models, datasets, and practical implementations'
-    })
-  }
-
-  // Add PCPartPicker for hardware queries
-  if (isHardware) {
-    results.push({
-      url: `https://pcpartpicker.com/search/?q=${encodedQuery}`,
-      title: `${query.substring(0, 60)} - Hardware & Build Guides`,
-      snippet: 'Complete workstation builds with compatibility checks and price comparisons'
-    })
-  }
-
-  // Add Stack Overflow for technical questions
-  if (isCode || isAI) {
-    results.push({
-      url: `https://stackoverflow.com/search?q=${encodedQuery}`,
-      title: `${query.substring(0, 60)} - Stack Overflow Discussions`,
-      snippet: 'Community solutions and technical discussions from experienced developers'
-    })
-  }
-
-  // Add arXiv for research papers
-  if (isResearch || isAI) {
-    results.push({
-      url: `https://arxiv.org/search/?query=${encodedQuery}&searchtype=all&source=header`,
-      title: `${query.substring(0, 60)} - arXiv Research Papers`,
-      snippet: 'Open-access research papers and pre-prints in computer science and AI'
-    })
-  }
-
-  // Always add Google Scholar as final fallback
-  if (results.length < 3) {
-    results.push({
-      url: `https://scholar.google.com/scholar?q=${encodedQuery}&hl=en&as_sdt=0,5`,
-      title: `${query.substring(0, 60)} - Academic Research`,
-      snippet: 'Peer-reviewed academic papers and scholarly articles'
-    })
-  }
-
-  // GUARANTEE: Always return at least 3 results with general sources
-  if (results.length < 3) {
-    // Wikipedia for general knowledge
-    results.push({
-      url: `https://en.wikipedia.org/w/index.php?search=${encodedQuery}`,
-      title: `${query.substring(0, 60)} - Wikipedia`,
-      snippet: 'Encyclopedia article with comprehensive background information'
-    })
-  }
-
-  if (results.length < 3) {
-    // Add a curated news source
-    results.push({
-      url: `https://news.google.com/search?q=${encodedQuery}`,
-      title: `${query.substring(0, 60)} - Latest News`,
-      snippet: 'Recent news and developments from verified sources'
-    })
-  }
-
-  if (results.length < 3) {
-    // Add general research
-    results.push({
-      url: `https://www.britannica.com/search?query=${encodedQuery}`,
-      title: `${query.substring(0, 60)} - Britannica`,
-      snippet: 'Expert-reviewed encyclopedia articles and educational content'
-    })
-  }
-
-  console.log(`[EnhancedLinks] Built ${results.length} smart fallback links (Economic:${isEconomic}, AI:${isAI}, Code:${isCode}, Hardware:${isHardware})`)
-
-  return results.slice(0, 5) // Return max 5
+// Small delay helper to avoid DDG rate-limiting between consecutive requests
+function ddgDelay(ms: number = 1500): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 /**
@@ -594,20 +450,18 @@ export async function POST(request: NextRequest) {
       reasoning: reasoning.substring(0, 150)
     })
 
-    // Step 2: Search for each query
+    // Step 2: Search DDG — limit to 1 query per type to avoid rate-limiting
+    // DDG aggressively rate-limits: 6 requests triggers CAPTCHA
     const allLinks: DiscoveredLink[] = []
     const seenUrls = new Set<string>()
 
-    // Search for Insight links
-    for (const searchQuery of insightQueries) {
-      const results = await searchWeb(searchQuery)
-
+    // Search for Insight links (use first query only)
+    if (insightQueries.length > 0) {
+      const results = await searchWeb(insightQueries[0])
       for (const result of results) {
         if (seenUrls.has(result.url)) continue
         seenUrls.add(result.url)
-
         const relevance = await calculateRelevance(result, query, conversationContext)
-
         allLinks.push({
           id: `insight-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           url: result.url,
@@ -616,21 +470,21 @@ export async function POST(request: NextRequest) {
           relevance,
           source: extractDomain(result.url),
           type: 'insight',
-          searchQuery
+          searchQuery: insightQueries[0]
         })
       }
     }
 
-    // Search for MiniChat links
-    for (const searchQuery of minichatQueries) {
-      const results = await searchWeb(searchQuery)
+    // Delay between DDG requests to avoid rate-limiting
+    await ddgDelay(1500)
 
+    // Search for MiniChat links (use first query only)
+    if (minichatQueries.length > 0) {
+      const results = await searchWeb(minichatQueries[0])
       for (const result of results) {
         if (seenUrls.has(result.url)) continue
         seenUrls.add(result.url)
-
         const relevance = await calculateRelevance(result, query, conversationContext)
-
         allLinks.push({
           id: `minichat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           url: result.url,
@@ -639,73 +493,42 @@ export async function POST(request: NextRequest) {
           relevance,
           source: extractDomain(result.url),
           type: 'minichat',
-          searchQuery
+          searchQuery: minichatQueries[0]
         })
       }
     }
 
     // Step 3: Sort by relevance and take top 3 for each type
-    let insightLinks = allLinks
+    const insightLinks = allLinks
       .filter(l => l.type === 'insight')
       .sort((a, b) => b.relevance - a.relevance)
       .slice(0, 3)
 
-    let minichatLinks = allLinks
+    const minichatLinks = allLinks
       .filter(l => l.type === 'minichat')
       .sort((a, b) => b.relevance - a.relevance)
       .slice(0, 3)
 
-    // SAFETY NET: If we have no links, generate fallback directly from original query
-    if (insightLinks.length === 0 && minichatLinks.length === 0) {
-      console.warn('[EnhancedLinks] No links found through search, using direct fallback')
-      const fallbackResults = buildSmartFallback(query)
-
-      // Split fallback results between insight and minichat
-      for (let i = 0; i < fallbackResults.length; i++) {
-        const result = fallbackResults[i]
-        const type = i % 2 === 0 ? 'insight' : 'minichat'
-        const relevance = await calculateRelevance(result, query, conversationContext)
-
-        const link: DiscoveredLink = {
-          id: `${type}-fallback-${Date.now()}-${i}`,
-          url: result.url,
-          title: result.title,
-          snippet: result.snippet,
-          relevance: Math.max(relevance, 0.75), // Ensure minimum relevance for fallback
-          source: extractDomain(result.url),
-          type: type as 'insight' | 'minichat',
-          searchQuery: query
-        }
-
-        if (type === 'insight') {
-          insightLinks.push(link)
-        } else {
-          minichatLinks.push(link)
-        }
-      }
-
-      // Ensure both have at least some links
-      insightLinks = insightLinks.slice(0, 3)
-      minichatLinks = minichatLinks.slice(0, 3)
+    const searchUnavailable = insightLinks.length === 0 && minichatLinks.length === 0
+    if (searchUnavailable) {
+      console.warn('[DDG] Search unavailable — 0 results for all queries (likely rate-limited)')
     }
 
     console.log('[EnhancedLinks] Results:', {
       insightCount: insightLinks.length,
       minichatCount: minichatLinks.length,
-      avgRelevance: {
-        insight: insightLinks.length > 0 ? insightLinks.reduce((a, b) => a + b.relevance, 0) / insightLinks.length : 0,
-        minichat: minichatLinks.length > 0 ? minichatLinks.reduce((a, b) => a + b.relevance, 0) / minichatLinks.length : 0
-      }
+      searchUnavailable
     })
 
     return NextResponse.json({
       success: true,
       insightLinks,
       minichatLinks,
+      searchUnavailable,
       query,
       searchQueries: {
-        insight: insightQueries,
-        minichat: minichatQueries
+        insight: insightQueries.slice(0, 1),
+        minichat: minichatQueries.slice(0, 1)
       },
       metacognition: {
         confidence,

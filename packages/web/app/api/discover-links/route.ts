@@ -1,6 +1,7 @@
 /**
  * Dynamic Link Discovery API
  * Server-side endpoint for web search and link discovery
+ * Uses DDG HTML POST method (not Instant Answer API) for reliable results.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -78,94 +79,116 @@ function calculateRelevance(query: string, title: string, snippet: string): numb
 }
 
 /**
- * Search using DuckDuckGo Instant Answer API
+ * Strip HTML tags and decode entities
+ */
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#x27;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Unwrap DDG redirect URLs
+ */
+function unwrapDDGUrl(rawUrl: string): string {
+  const url = rawUrl.replace(/&amp;/g, '&')
+  if (url.includes('duckduckgo.com/l/?uddg=')) {
+    try {
+      const queryString = url.split('?')[1]
+      const params = new URLSearchParams(queryString)
+      const realUrl = params.get('uddg')
+      if (realUrl) return decodeURIComponent(realUrl)
+    } catch { /* fall through */ }
+  }
+  return rawUrl
+}
+
+/**
+ * Search using DuckDuckGo HTML POST (reliable, not Instant Answer API)
  */
 async function searchDuckDuckGo(query: string): Promise<SearchResult[]> {
   try {
     const encodedQuery = encodeURIComponent(query)
-    const url = `https://api.duckduckgo.com/?q=${encodedQuery}&format=json&no_html=1&skip_disambig=1`
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'AkhAI/1.0'
+    const response = await fetch(
+      `https://html.duckduckgo.com/html/?q=${encodedQuery}`,
+      {
+        method: 'POST',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Referer': 'https://html.duckduckgo.com/',
+        },
+        body: `q=${encodedQuery}&b=`,
+        signal: AbortSignal.timeout(10000)
       }
-    })
+    )
 
     if (!response.ok) {
+      console.warn(`[DDG] Failed: "${query.substring(0, 40)}" → status: ${response.status}`)
       return []
     }
 
-    const data = await response.json()
-    const links: SearchResult[] = []
+    const html = await response.text()
 
-    // Extract from RelatedTopics
-    if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
-      for (const topic of data.RelatedTopics) {
-        if (topic.FirstURL && topic.Text) {
-          links.push({
-            id: `ddg-${Date.now()}-${Math.random()}`,
-            url: topic.FirstURL,
-            title: topic.Text.substring(0, 150),
-            snippet: topic.Text,
-            relevance: calculateRelevance(query, topic.Text, topic.Text),
-            source: extractDomain(topic.FirstURL),
-            category: categorizeLink(topic.FirstURL, topic.Text, topic.Text)
-          })
-        }
-      }
+    // Detect CAPTCHA
+    if (html.includes('anomaly-modal') || html.includes('bots use DuckDuckGo')) {
+      console.warn(`[DDG] CAPTCHA detected for: "${query.substring(0, 40)}"`)
+      return []
     }
 
+    const links: SearchResult[] = []
+    const linkPattern = /<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>/gi
+    const snippetPattern = /class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi
+
+    const rawLinks: Array<{ url: string; title: string }> = []
+    let match
+    while ((match = linkPattern.exec(html)) !== null && rawLinks.length < 10) {
+      const url = unwrapDDGUrl(match[1])
+      const title = match[2]?.trim()
+      if (!title || title.length < 3) continue
+      if (url.includes('duckduckgo.com/y.js')) continue
+      if (!url.startsWith('http')) continue
+      rawLinks.push({ url, title })
+    }
+
+    const snippets: string[] = []
+    while ((match = snippetPattern.exec(html)) !== null && snippets.length < 10) {
+      const raw = stripHtml(match[1])
+      if (raw && raw.length > 10) snippets.push(raw)
+    }
+
+    const adCount = (html.match(/result--ad/g) || []).length
+    const organicSnippets = snippets.slice(adCount)
+
+    for (let i = 0; i < rawLinks.length; i++) {
+      const snippet = organicSnippets[i] || ''
+      links.push({
+        id: `ddg-${Date.now()}-${Math.random()}`,
+        url: rawLinks[i].url,
+        title: rawLinks[i].title,
+        snippet,
+        relevance: calculateRelevance(query, rawLinks[i].title, snippet),
+        source: extractDomain(rawLinks[i].url),
+        category: categorizeLink(rawLinks[i].url, rawLinks[i].title, snippet)
+      })
+    }
+
+    console.log(`[DDG] Searching: "${query.substring(0, 40)}" → ${links.length} results`)
     return links
   } catch (error) {
-    console.error('[DiscoverLinks] DuckDuckGo error:', error)
+    console.error(`[DDG] Failed: "${query.substring(0, 40)}" → ${error instanceof Error ? error.message : 'Unknown error'}`)
     return []
   }
-}
-
-/**
- * Fallback search links
- */
-function generateFallback(query: string): SearchResult[] {
-  const encodedQuery = encodeURIComponent(query)
-
-  return [
-    {
-      id: `fallback-scholar-${Date.now()}`,
-      url: `https://scholar.google.com/scholar?q=${encodedQuery}`,
-      title: `${query} - Academic Research`,
-      snippet: 'Peer-reviewed academic papers and scholarly articles',
-      relevance: 0.90,
-      source: 'Google Scholar',
-      category: 'research'
-    },
-    {
-      id: `fallback-arxiv-${Date.now()}`,
-      url: `https://arxiv.org/search/?query=${encodedQuery}&searchtype=all&order=-announced_date_first`,
-      title: `${query} - Scientific Papers`,
-      snippet: 'Open-access scientific research papers',
-      relevance: 0.88,
-      source: 'ArXiv',
-      category: 'research'
-    },
-    {
-      id: `fallback-github-${Date.now()}`,
-      url: `https://github.com/search?q=${encodedQuery}&type=repositories&s=stars&o=desc`,
-      title: `${query} - Code Repositories`,
-      snippet: 'Top open source projects and implementations',
-      relevance: 0.85,
-      source: 'GitHub',
-      category: 'code'
-    },
-    {
-      id: `fallback-wiki-${Date.now()}`,
-      url: `https://en.wikipedia.org/wiki/Special:Search?search=${encodedQuery}`,
-      title: `${query} - Encyclopedia`,
-      snippet: 'Comprehensive background and overview',
-      relevance: 0.82,
-      source: 'Wikipedia',
-      category: 'media'
-    }
-  ]
 }
 
 export async function POST(request: NextRequest) {
@@ -185,45 +208,24 @@ export async function POST(request: NextRequest) {
       maxLinks
     })
 
-    // Build search queries
-    const searchQueries = [query]
-    if (topics && Array.isArray(topics)) {
-      searchQueries.push(...topics.slice(0, 2))
-    }
-
-    // Search for each query
-    const allLinks: SearchResult[] = []
-
-    for (const searchQuery of searchQueries.slice(0, 3)) {
-      const links = await searchDuckDuckGo(searchQuery)
-      allLinks.push(...links)
-    }
+    // Search DDG with main query only (avoid rate-limiting)
+    const results = await searchDuckDuckGo(query)
 
     // Deduplicate by URL
     const uniqueLinks = new Map<string, SearchResult>()
-    for (const link of allLinks) {
+    for (const link of results) {
       if (!uniqueLinks.has(link.url) || link.relevance > uniqueLinks.get(link.url)!.relevance) {
         uniqueLinks.set(link.url, link)
       }
     }
 
-    // Sort by relevance
-    let results = Array.from(uniqueLinks.values())
-      .sort((a, b) => b.relevance - a.relevance)
-
-    // If no results from DDG, use fallback
-    if (results.length === 0) {
-      console.log('[DiscoverLinks] No DDG results, using fallback')
-      results = generateFallback(query)
-    }
-
-    // Ensure category diversity (max 2 per category)
+    // Sort by relevance with category diversity (max 2 per category)
+    const sorted = Array.from(uniqueLinks.values()).sort((a, b) => b.relevance - a.relevance)
     const finalResults: SearchResult[] = []
     const categoryCount: Record<string, number> = {}
 
-    for (const link of results) {
+    for (const link of sorted) {
       if (finalResults.length >= maxLinks) break
-
       const count = categoryCount[link.category] || 0
       if (count < 2) {
         finalResults.push(link)
@@ -231,23 +233,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const searchUnavailable = finalResults.length === 0
+    if (searchUnavailable) {
+      console.warn(`[DDG] Search unavailable for: "${query.substring(0, 40)}"`)
+    }
+
     console.log('[DiscoverLinks] Results:', {
-      totalFound: allLinks.length,
+      totalFound: results.length,
       unique: uniqueLinks.size,
       returned: finalResults.length,
-      categories: Object.keys(categoryCount)
+      searchUnavailable
     })
 
     return NextResponse.json({
       success: true,
       links: finalResults,
+      searchUnavailable,
       query,
-      searchedTopics: searchQueries.slice(0, 3)
+      searchedTopics: [query]
     })
   } catch (error) {
     console.error('[DiscoverLinks] Error:', error)
     return NextResponse.json(
-      { error: 'Link discovery failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Link discovery failed', searchUnavailable: true, details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

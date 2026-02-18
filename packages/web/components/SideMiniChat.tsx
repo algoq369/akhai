@@ -369,14 +369,15 @@ export default function SideMiniChat({ isVisible = true, messages = [], onSendQu
                 category: 'code' // MiniChat focuses on practical links
               }))
 
-            console.log('[MiniChat] AI-powered links discovered with metacognition:', {
+            if (data.searchUnavailable && linkInsights.length === 0) {
+              console.warn('[MiniChat] Search unavailable — DDG rate-limited')
+            }
+
+            console.log('[MiniChat] AI-powered links discovered:', {
               query: userQuery.substring(0, 60),
-              searchQueries: data.searchQueries?.minichat,
               linksFound: minichatLinks.length,
               linksShown: linkInsights.length,
-              avgRelevance: minichatLinks.reduce((a: any, b: any) => a + b.relevance, 0) / minichatLinks.length,
-              confidence: data.metacognition?.confidence ? `${(data.metacognition.confidence * 100).toFixed(0)}%` : 'unknown',
-              reasoning: data.metacognition?.reasoning?.substring(0, 100) || 'none'
+              searchUnavailable: data.searchUnavailable || false
             })
 
             // Store metacognitive awareness
