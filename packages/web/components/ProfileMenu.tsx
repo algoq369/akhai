@@ -40,7 +40,7 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
   }, [])
 
   // Use fetched user data or fallback to props
-  const userName = user?.username || userNameProp || 'algoq369'
+  const userName = user?.username || userNameProp || null
   const userEmail = user?.email || userEmailProp
   const avatarUrl = user?.avatar_url || avatarUrlProp
 
@@ -141,7 +141,7 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
           aria-label="Open profile menu"
         >
           <User className="w-4 h-4" />
-          <span>algoq369</span>
+          <span>{userName || 'sign in'}</span>
         </button>
       </div>
 

@@ -2851,26 +2851,17 @@ function HomePage() {
                   <span className={showLayerDashboard ? 'text-relic-void dark:text-white' : ''}>ai config</span>
                 </button>
 
-                {user ? (
-                  <NavigationMenu
-                    user={user}
-                    onMindMapClick={() => {
-                      setMindMapInitialView('graph')
-                      setShowMindMap(true)
-                    }}
-                    onHistoryClick={() => {
-                      setMindMapInitialView('history')
-                      setShowMindMap(true)
-                    }}
-                  />
-                ) : (
-                  <button
-                    onClick={() => setShowAuthModal(true)}
-                    className="text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors"
-                  >
-                    create profile
-                  </button>
-                )}
+                <NavigationMenu
+                  user={user}
+                  onMindMapClick={() => {
+                    setMindMapInitialView('graph')
+                    setShowMindMap(true)
+                  }}
+                  onHistoryClick={() => {
+                    setMindMapInitialView('history')
+                    setShowMindMap(true)
+                  }}
+                />
               </div>
             </div>
           </div>
