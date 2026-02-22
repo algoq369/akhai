@@ -1757,6 +1757,16 @@ function HomePage() {
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-blink-green" />
                   <span className="text-[9px] uppercase tracking-wider text-relic-silver dark:text-relic-silver/70 font-medium">guard active</span>
                 </div>
+                {/* Quick Nav — accessible from chat view */}
+                <span className="text-relic-mist dark:text-relic-slate/30">|</span>
+                <button
+                  onClick={() => { setMindMapInitialView('graph'); setShowMindMap(true) }}
+                  className="text-[9px] uppercase tracking-wider text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost transition-colors"
+                >mindmap</button>
+                <button
+                  onClick={() => { setMindMapInitialView('history'); setShowMindMap(true) }}
+                  className="text-[9px] uppercase tracking-wider text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost transition-colors"
+                >history</button>
               </div>
             </div>
           </div>
