@@ -42,7 +42,7 @@ export function generateAntipatternReport(
   const processingPath: ProcessingPath = {
     inputComplexity: calculateComplexity(content || ''),
     dominantSephirah: layersResult
-      ? LAYER_METADATA[layersResult.dominantLayer]?.name || 'Unknown'
+      ? LAYER_METADATA[layersResult.dominantLayer]?.aiName || 'Unknown'
       : 'None',
     activeLenses: getActiveLenses(layersResult),
     methodologyUsed: layersResult?.methodologySuggestion || 'direct',
@@ -113,7 +113,7 @@ function getActiveLenses(result: LayersProcessingResult | null): string[] {
 
   return result.perspectives
     .filter((p) => p.weight > 0.3)
-    .map((p) => LAYER_METADATA[p.layerNode]?.name || 'Unknown')
+    .map((p) => LAYER_METADATA[p.layerNode]?.aiName || 'Unknown')
 }
 
 /**
@@ -382,7 +382,7 @@ function generateRecommendations(
     const balancer = getBalancingLayer(antipattern.sephirah)
     if (balancer && shadow.intensity > SHADOW_THRESHOLDS.mild) {
       recommendations.push({
-        suggestion: `Increase ${LAYER_METADATA[balancer]?.name} to balance ${antipattern.layerName}`,
+        suggestion: `Increase ${LAYER_METADATA[balancer]?.aiName} to balance ${antipattern.layerName}`,
         adjustWeight: {
           sephirah: balancer,
           delta: 0.1,

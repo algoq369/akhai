@@ -440,7 +440,7 @@ function extractKeywords(layerNode: Layer, content: string): string[] {
 export function getLayerActivationSummary(analysis: LayerAnalysis): string {
   const dominant = LAYER_METADATA[analysis.dominantLayer]
 
-  let summary = `Dominant: ${dominant.name} (${dominant.aiRole}). `
+  let summary = `Dominant: ${dominant.aiName} (${dominant.aiRole}). `
 
   if (analysis.synthesisInsight.detected) {
     summary += `Synthesis activated - ${analysis.synthesisInsight.insight} `
@@ -450,7 +450,7 @@ export function getLayerActivationSummary(analysis: LayerAnalysis): string {
 
   const topActivations = analysis.activations.slice(0, 3).map(a => {
     const meta = LAYER_METADATA[a.layerNode]
-    return `${meta.name} (${(a.activation * 100).toFixed(0)}%)`
+    return `${meta.aiName} (${(a.activation * 100).toFixed(0)}%)`
   })
 
   summary += `Top activations: ${topActivations.join(', ')}.`
