@@ -401,6 +401,8 @@ function HomePage() {
   const [deepDiveQuery, setDeepDiveQuery] = useState<string>('')  // NEW: For Deep Dive → Mini Chat
   const [messageAnnotations, setMessageAnnotations] = useState<Record<string, any[]>>({})  // Store annotations per message
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(undefined)  // NEW: For sharing conversation
+  const [refinementCounts, setRefinementCounts] = useState<Record<string, number>>({})  // Track refinement count per re-queried response
+  const pendingRefinementCount = useRef(0)  // Pending count to apply to next assistant response
 
   // Canvas Mode State
   const [isCanvasMode, setIsCanvasMode] = useState(false)
@@ -521,6 +523,20 @@ function HomePage() {
       setMessageAnnotations(newAnnotations)
     }
   }, [depthConfig.density, depthConfig.enabled, messages, processText])
+
+  // Apply pending refinement count to new assistant messages
+  useEffect(() => {
+    if (pendingRefinementCount.current > 0) {
+      const lastMessage = messages[messages.length - 1]
+      if (lastMessage && lastMessage.role === 'assistant' && !lastMessage.isStreaming && !refinementCounts[lastMessage.id]) {
+        setRefinementCounts(prev => ({
+          ...prev,
+          [lastMessage.id]: pendingRefinementCount.current
+        }))
+        pendingRefinementCount.current = 0
+      }
+    }
+  }, [messages])
 
   // Clear Deep Dive query after Mini Chat receives it
   useEffect(() => {
@@ -902,6 +918,32 @@ function HomePage() {
   const triggerFileSelect = () => {
     fileInputRef.current?.click()
   }
+
+  // Refinement handler — adds refinement instruction to side canal, then re-submits the user's original query
+  const handleRefinement = useCallback((type: string, _originalContent: string) => {
+    const { addRefinement } = useSideCanalStore.getState()
+
+    const refinementText = type === 'refine' ? 'Please refine and improve this response'
+      : type === 'enhance' ? 'Please enhance with more depth and detail'
+      : type === 'correct' ? 'Please verify accuracy and correct any issues'
+      : 'Please expand on the key points'
+
+    addRefinement(refinementText)
+
+    // Increment pending count — will be applied to the next assistant response
+    pendingRefinementCount.current += 1
+
+    // Re-submit the original user query (refinements auto-included via pipeline at line ~991)
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop()
+    if (lastUserMessage) {
+      setQuery(lastUserMessage.content)
+      // Trigger submit after query state updates
+      setTimeout(() => {
+        const form = document.querySelector('form')
+        if (form) form.requestSubmit()
+      }, 100)
+    }
+  }, [messages])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -2225,6 +2267,26 @@ function HomePage() {
                                     </button>
                                   ))}
                                 </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Refinement Action Buttons */}
+                          {message.role === 'assistant' && !isLoading && !message.isStreaming && (
+                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-relic-mist/20 dark:border-relic-slate/20">
+                              {(['refine', 'enhance', 'correct', 'expand'] as const).map(action => (
+                                <button
+                                  key={action}
+                                  onClick={() => handleRefinement(action, message.content)}
+                                  className="text-[8px] font-mono text-relic-silver/50 hover:text-relic-slate dark:hover:text-relic-ghost transition-colors"
+                                >
+                                  {action}
+                                </button>
+                              ))}
+                              {refinementCounts[message.id] > 0 && (
+                                <span className="text-[7px] font-mono text-indigo-400 ml-2">
+                                  refined &times;{refinementCounts[message.id]}
+                                </span>
                               )}
                             </div>
                           )}
