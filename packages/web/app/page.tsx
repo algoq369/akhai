@@ -409,7 +409,7 @@ function HomePage() {
   const { sessionId, isClient } = useSession()
 
   // Depth Annotations Hook
-  const { processText, reset: resetDepthAnnotations, config: depthConfig } = useDepthAnnotations()
+  const { processText, reset: resetDepthAnnotations, config: depthConfig, setConfig: setDepthConfig } = useDepthAnnotations()
 
   // Instinct Mode Settings
   const { settings } = useSettingsStore()
@@ -505,6 +505,22 @@ function HomePage() {
       }
     }
   }, [messages, depthConfig.enabled, processText])
+
+  // Re-process all annotations when density changes
+  const prevDensityRef = useRef(depthConfig.density)
+  useEffect(() => {
+    if (prevDensityRef.current !== depthConfig.density) {
+      prevDensityRef.current = depthConfig.density
+      if (!depthConfig.enabled) return
+      // Clear and reprocess all assistant messages
+      const newAnnotations: Record<string, any[]> = {}
+      messages.filter(m => m.role === 'assistant' && m.content).forEach(m => {
+        const anns = processText(m.content)
+        newAnnotations[m.id] = anns
+      })
+      setMessageAnnotations(newAnnotations)
+    }
+  }, [depthConfig.density, depthConfig.enabled, messages, processText])
 
   // Clear Deep Dive query after Mini Chat receives it
   useEffect(() => {
@@ -2176,6 +2192,39 @@ function HomePage() {
                               </button>
                               {pipelineEnabled && !hiddenPipelines.has(message.id) && (
                                 <MetadataStrip messageId={message.id} />
+                              )}
+                            </div>
+                          )}
+
+                          {/* Depth Annotations Toggle + Density */}
+                          {message.role === 'assistant' && !message.isStreaming && (
+                            <div className="flex items-center gap-3 mt-1">
+                              <button
+                                onClick={() => setDepthConfig({ ...depthConfig, enabled: !depthConfig.enabled })}
+                                className={`text-[8px] font-mono transition-colors ${
+                                  depthConfig.enabled
+                                    ? 'text-relic-silver/70 hover:text-relic-slate'
+                                    : 'text-relic-silver/30 hover:text-relic-silver/50'
+                                }`}
+                              >
+                                {depthConfig.enabled ? 'ᶠ depth on' : 'ᶠ depth off'}
+                              </button>
+                              {depthConfig.enabled && (
+                                <div className="flex items-center gap-1">
+                                  {(['minimal', 'standard', 'maximum'] as const).map(level => (
+                                    <button
+                                      key={level}
+                                      onClick={() => setDepthConfig({ ...depthConfig, density: level })}
+                                      className={`text-[7px] font-mono px-1 py-0.5 rounded transition-colors ${
+                                        depthConfig.density === level
+                                          ? 'text-relic-slate bg-relic-ghost dark:text-relic-ghost dark:bg-relic-slate/20'
+                                          : 'text-relic-silver/40 hover:text-relic-silver/60'
+                                      }`}
+                                    >
+                                      {level}
+                                    </button>
+                                  ))}
+                                </div>
                               )}
                             </div>
                           )}
