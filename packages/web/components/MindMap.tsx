@@ -62,6 +62,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
   const [viewMode, setViewMode] = useState<ViewMode>(initialView)
   const [searchQuery, setSearchQuery] = useState('')
   const [connections, setConnections] = useState<Connection[]>([])
+  const [topicLinks, setTopicLinks] = useState<{ source: string; target: string; type: string; strength: number }[]>([])
   const [showConnections, setShowConnections] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showPinned, setShowPinned] = useState(false)
@@ -91,10 +92,15 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
       }
       const data = await res.json()
       setNodes(data.nodes || [])
-      const conns = (data.connections || []).map((c: any) => ({
-        ...c,
-        fromName: data.nodes?.find((n: Node) => n.id === c.from)?.name,
-        toName: data.nodes?.find((n: Node) => n.id === c.to)?.name,
+      const rawLinks = data.links || []
+      setTopicLinks(rawLinks)
+      const conns = rawLinks.map((c: any) => ({
+        from: c.source,
+        to: c.target,
+        type: c.type,
+        strength: c.strength,
+        fromName: data.nodes?.find((n: Node) => n.id === c.source)?.name,
+        toName: data.nodes?.find((n: Node) => n.id === c.target)?.name,
       }))
       setConnections(conns)
     } catch (err) {
@@ -106,9 +112,9 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
   }
 
   useEffect(() => {
-    if (!isOpen || !userId) return
+    if (!isOpen) return
     fetchData()
-  }, [isOpen, userId])
+  }, [isOpen])
 
   const categories = useMemo(() => {
     const cats = new Map<string, number>()
@@ -310,6 +316,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                 searchQuery={searchQuery}
                 onNodeSelect={handleNodeSelect}
                 onNodeAction={(query, nodeId) => handleSendQuery(query)}
+                propTopicLinks={topicLinks}
               />
               
               <div className="absolute bottom-4 left-4 z-50">

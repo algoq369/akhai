@@ -31,12 +31,6 @@ interface Topic {
   color?: string
 }
 
-interface Connection {
-  from: string
-  to: string
-  fromName?: string
-  toName?: string
-}
 
 export default function MindMapPage() {
   const router = useRouter()
@@ -45,7 +39,7 @@ export default function MindMapPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [user, setUser] = useState<any>(null)
   const [topics, setTopics] = useState<Topic[]>([])
-  const [connections, setConnections] = useState<Connection[]>([])
+  const [topicLinks, setTopicLinks] = useState<{ source: string; target: string; type: string; strength: number }[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Check session
@@ -73,7 +67,7 @@ export default function MindMapPage() {
         if (res.ok) {
           const data = await res.json()
           setTopics(data.nodes || [])
-          setConnections(data.connections || [])
+          setTopicLinks(data.links || [])
         }
       } catch (error) {
         console.error('Mind map data fetch error:', error)
@@ -179,6 +173,7 @@ export default function MindMapPage() {
               userId={user?.id || null}
               nodes={filteredTopics as any}
               searchQuery={searchTerm}
+              propTopicLinks={topicLinks}
             />
           )
         )}

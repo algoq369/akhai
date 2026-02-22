@@ -154,7 +154,7 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
-                  alt={userName}
+                  alt={userName || undefined}
                   className="w-10 h-10 rounded-full"
                 />
               ) : (

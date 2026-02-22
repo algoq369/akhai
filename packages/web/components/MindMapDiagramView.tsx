@@ -10,6 +10,7 @@ interface MindMapDiagramViewProps {
   searchQuery?: string
   onNodeSelect?: (node: { id: string; name: string; category?: string } | null) => void
   onNodeAction?: (query: string, nodeId: string) => void
+  propTopicLinks?: TopicLink[]
 }
 
 interface Discussion {
@@ -49,7 +50,8 @@ export default function MindMapDiagramView({
   nodes: propNodes,
   searchQuery = '',
   onNodeSelect,
-  onNodeAction
+  onNodeAction,
+  propTopicLinks
 }: MindMapDiagramViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -106,9 +108,25 @@ export default function MindMapDiagramView({
   useEffect(() => {
     if (propNodes && propNodes.length > 0) {
       setAllNodes(propNodes)
+      // Use parent-provided links if available, otherwise fetch
+      if (propTopicLinks && propTopicLinks.length > 0) {
+        setTopicLinks(propTopicLinks)
+      } else {
+        const fetchLinks = async () => {
+          try {
+            const res = await fetch('/api/mindmap/data')
+            if (res.ok) {
+              const data = await res.json()
+              setTopicLinks(data.links || [])
+            }
+          } catch (error) {
+            console.error('Failed to fetch links:', error)
+          }
+        }
+        fetchLinks()
+      }
       return
     }
-    if (!userId) return
 
     const fetchData = async () => {
       try {
@@ -122,7 +140,7 @@ export default function MindMapDiagramView({
       }
     }
     fetchData()
-  }, [userId, propNodes])
+  }, [userId, propNodes, propTopicLinks])
 
   // Resize handler (only updates dims, not zoom/pan)
   useEffect(() => {

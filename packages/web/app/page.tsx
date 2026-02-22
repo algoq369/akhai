@@ -999,10 +999,10 @@ function HomePage() {
             if (thought.stage === 'complete' || thought.stage === 'error') {
               evtSource?.close()
             }
-          } catch { /* ignore parse errors */ }
+          } catch (e) { console.warn('Thought stream parse error:', e) }
         }
         evtSource.onerror = () => { evtSource?.close(); evtSource = null }
-      } catch { /* SSE not critical */ }
+      } catch (e) { console.warn('Thought stream connection failed:', e) }
 
       const res = await fetch('/api/simple-query', {
         method: 'POST',
@@ -1175,7 +1175,7 @@ function HomePage() {
     const poll = async () => {
       try {
         const res = await fetch(`/api/query/${queryId}`)
-        if (!res.ok) return
+        if (!res.ok) { console.warn('Poll failed:', res.status); return }
 
         const data = await res.json()
 
