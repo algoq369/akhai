@@ -1,39 +1,40 @@
-'use client'
+'use client';
 
 /**
  * QUERY CARDS PANEL
- * 
+ *
  * Displays conversation history as expandable cards.
  * Preview mode by default, expand on click for full content.
  */
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export interface QueryCard {
-  id: string
-  query: string
-  response: string
-  timestamp: Date
-  methodology?: string
-  layerNode?: string
-  guardWarnings?: string[]
+  id: string;
+  query: string;
+  response: string;
+  timestamp: Date;
+  methodology?: string;
+  layerNode?: string;
+  guardWarnings?: string[];
 }
 
 interface QueryCardItemProps {
-  card: QueryCard
-  isExpanded: boolean
-  onToggle: () => void
-  onSelect: () => void
-  isSelected: boolean
+  card: QueryCard;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onSelect: () => void;
+  isSelected: boolean;
 }
 
 function QueryCardItem({ card, isExpanded, onToggle, onSelect, isSelected }: QueryCardItemProps) {
-  const previewLength = 120
-  const queryPreview = card.query.length > 60 ? card.query.slice(0, 60) + '...' : card.query
-  const responsePreview = card.response.length > previewLength 
-    ? card.response.slice(0, previewLength) + '...' 
-    : card.response
+  const previewLength = 120;
+  const queryPreview = card.query.length > 60 ? card.query.slice(0, 60) + '...' : card.query;
+  const responsePreview =
+    card.response.length > previewLength
+      ? card.response.slice(0, previewLength) + '...'
+      : card.response;
 
   return (
     <motion.div
@@ -42,8 +43,8 @@ function QueryCardItem({ card, isExpanded, onToggle, onSelect, isSelected }: Que
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.15 }}
       className={`border rounded-lg overflow-hidden transition-all cursor-pointer ${
-        isSelected 
-          ? 'border-purple-400 bg-purple-50/50' 
+        isSelected
+          ? 'border-purple-400 bg-purple-50/50'
           : 'border-relic-mist hover:border-relic-slate/30 bg-white'
       }`}
       onClick={onSelect}
@@ -117,41 +118,52 @@ function QueryCardItem({ card, isExpanded, onToggle, onSelect, isSelected }: Que
           <span className="text-[8px] text-relic-silver">
             {card.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggle()
-            }}
-            className="text-[8px] text-purple-500 hover:text-purple-700"
-          >
-            {isExpanded ? '▲ Collapse' : '▼ Expand'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect();
+              }}
+              className="text-[8px] text-relic-silver/60 hover:text-relic-slate"
+            >
+              view in chat
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              className="text-[8px] text-purple-500 hover:text-purple-700"
+            >
+              {isExpanded ? '▲ Collapse' : '▼ Expand'}
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
-  )
+  );
 }
 
 interface QueryCardsPanelProps {
-  cards: QueryCard[]
-  onCardSelect?: (cardId: string) => void
-  selectedCardId?: string | null
+  cards: QueryCard[];
+  onCardSelect?: (cardId: string) => void;
+  selectedCardId?: string | null;
 }
 
 export function QueryCardsPanel({ cards, onCardSelect, selectedCardId }: QueryCardsPanelProps) {
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const toggleExpand = (cardId: string) => {
-    setExpandedCards(prev => {
-      const next = new Set(prev)
+    setExpandedCards((prev) => {
+      const next = new Set(prev);
       if (next.has(cardId)) {
-        next.delete(cardId)
+        next.delete(cardId);
       } else {
-        next.add(cardId)
+        next.add(cardId);
       }
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
   return (
     <div className="p-2 space-y-1.5">
@@ -172,7 +184,7 @@ export function QueryCardsPanel({ cards, onCardSelect, selectedCardId }: QueryCa
         ))
       )}
     </div>
-  )
+  );
 }
 
-export default QueryCardsPanel
+export default QueryCardsPanel;
