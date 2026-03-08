@@ -112,6 +112,7 @@ export default function MindMapDiagramView({
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null)
   const [hoveredPreview, setHoveredPreview] = useState<{ id: string; x: number; y: number; name: string } | null>(null)
   const [hoveredCluster, setHoveredCluster] = useState<string | null>(null)
+  const [expandedBubble, setExpandedBubble] = useState<string | null>(null)
 
   // Discussion panel
   const [discussions, setDiscussions] = useState<Discussion[]>([])
@@ -666,20 +667,10 @@ export default function MindMapDiagramView({
                   </text>
                   {cluster.nodes.slice(0, 5).map((pn, pi) => {
                     const a = (pi / 5) * Math.PI * 2 - Math.PI / 2, px = cluster.cx + Math.cos(a) * cluster.ry * 0.35, py = cluster.cy + Math.sin(a) * cluster.ry * 0.35
-                    return <circle key={`pv-${pn.id}`} cx={px} cy={py} r={8} fill={color.text + '70'} stroke={color.text + '40'} strokeWidth={1} onMouseEnter={() => setHoveredPreview({ id: pn.id, x: px, y: py, name: pn.name })} onMouseLeave={() => setHoveredPreview(null)} style={{ cursor: 'pointer' }} />
+                    return <circle key={`pv-${pn.id}`} cx={px} cy={py} r={8} fill={color.text + '70'} stroke={color.text + '40'} strokeWidth={1} onMouseEnter={() => setHoveredPreview({ id: pn.id, x: px, y: py, name: pn.name })} onMouseLeave={() => setHoveredPreview(null)} onClick={(e) => { e.stopPropagation(); setExpandedBubble(cluster.category) }} style={{ cursor: 'pointer' }} />
                   })}
                 </g>
               )
-            })}
-
-            {/* Cluster-to-cluster interconnection lines on hover */}
-            {hoveredCluster && clusters.map((cl) => {
-              if (cl.category === hoveredCluster) return null
-              const hc = clusters.find(c => c.category === hoveredCluster); if (!hc) return null
-              const hasLink = topicLinks.some(l => { const sn = filteredNodes.find(n => n.id === l.source); const tn = filteredNodes.find(n => n.id === l.target); return (sn?.category === hoveredCluster && tn?.category === cl.category) || (tn?.category === hoveredCluster && sn?.category === cl.category) })
-              if (!hasLink) return null
-              const hcc = getClusterColor(hoveredCluster, clusters.indexOf(hc))
-              return <line key={`cc-${cl.category}`} x1={hc.cx} y1={hc.cy} x2={cl.cx} y2={cl.cy} stroke={hcc.text + '4D'} strokeWidth={2} strokeDasharray="8 4" className="transition-all duration-300" />
             })}
 
             {/* Cross-cluster connection lines */}
@@ -900,6 +891,33 @@ export default function MindMapDiagramView({
             </svg>
           </div></div>
         )
+      })()}
+
+      {/* Bubble click — 10-topic popup */}
+      {expandedBubble && (() => {
+        const cl = clusters.find(c => c.category === expandedBubble); if (!cl) return null; const cc = getClusterColor(cl.category, clusters.indexOf(cl))
+        const top10 = [...cl.nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0)).slice(0, 10)
+        const bLinks = topicLinks.filter(l => top10.some(n => n.id === l.source) && top10.some(n => n.id === l.target))
+        return (<div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedBubble(null)}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} />
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: '70vw', height: '60vh', background: 'white', borderRadius: 16, boxShadow: '0 24px 48px rgba(0,0,0,0.15)', overflow: 'hidden', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px', borderBottom: '1px solid #e2e8f0' }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: cc.text }} /><span style={{ fontWeight: 700, fontSize: 14 }}>{expandedBubble}</span>
+              <span style={{ color: '#94a3b8', fontSize: 11 }}>{top10.length} of {cl.nodes.length}</span>
+              <button onClick={() => setExpandedBubble(null)} style={{ marginLeft: 'auto', fontSize: 16, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>&#x2715;</button>
+            </div>
+            <svg width="100%" height="calc(100% - 48px)" viewBox="0 0 600 400">
+              {bLinks.map((link, li) => { const si = top10.findIndex(n => n.id === link.source), ti = top10.findIndex(n => n.id === link.target); if (si < 0 || ti < 0) return null; const sa = (si / top10.length) * Math.PI * 2 - Math.PI / 2, ta = (ti / top10.length) * Math.PI * 2 - Math.PI / 2; return <line key={`bl-${li}`} x1={300 + Math.cos(sa)*150} y1={200 + Math.sin(sa)*150} x2={300 + Math.cos(ta)*150} y2={200 + Math.sin(ta)*150} stroke={cc.text + '20'} strokeWidth={1} /> })}
+              {top10.map((node, ni) => { const a = (ni / top10.length) * Math.PI * 2 - Math.PI / 2, nx = 300 + Math.cos(a)*150, ny = 200 + Math.sin(a)*150, nr = getNodeRadius(node.queryCount || 0), isHov = hoveredNode === node.id
+                const rn = topicLinks.filter(l => l.source === node.id || l.target === node.id).slice(0, 3).map(l => filteredNodes.find(n => n.id === (l.source === node.id ? l.target : l.source))?.name).filter(Boolean)
+                return (<g key={node.id} transform={`translate(${nx}, ${ny})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedBubble(null) }} style={{ cursor: 'pointer' }}>
+                  <circle r={nr} fill={cc.text + '90'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
+                  <text y={nr + 12} textAnchor="middle" fill={isHov ? '#1e293b' : '#64748b'} fontSize={9} fontWeight={isHov ? 600 : 400}>{node.name}</text>
+                  {isHov && <text y={-nr - 6} textAnchor="middle" fill="#94a3b8" fontSize={8}>{node.queryCount || 0} queries · {connectionCounts[node.id] || 0} conn{rn.length > 0 ? ` · ${rn.join(', ')}` : ''}</text>}
+                </g>)
+              })}
+            </svg>
+          </div></div>)
       })()}
 
       {/* Analyse popup (modal overlay) */}
