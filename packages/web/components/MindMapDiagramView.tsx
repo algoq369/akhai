@@ -29,10 +29,46 @@ interface TopicLink {
   strength: number
 }
 
-// Minimal monochrome palette - elegant slate grays
-function getCategoryStyle(category: string): { accent: string; bg: string } {
-  // All categories use unified monochrome style
-  return { accent: '#64748b', bg: '#f8fafc' }
+interface ClusterData {
+  category: string
+  nodes: Node[]
+  cx: number
+  cy: number
+  rx: number
+  ry: number
+}
+
+interface LayoutNode {
+  id: string
+  x: number
+  y: number
+  isShared: boolean
+  sharedCategories: string[]
+  queryCount: number
+  connections: number
+}
+
+// Golden angle in radians
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
+
+// Cluster palette — muted, professional
+const CLUSTER_COLORS: Record<string, { fill: string; stroke: string; text: string }> = {}
+const PALETTE = [
+  { fill: 'rgba(99,102,241,0.06)', stroke: 'rgba(99,102,241,0.25)', text: '#6366f1' },
+  { fill: 'rgba(16,185,129,0.06)', stroke: 'rgba(16,185,129,0.25)', text: '#10b981' },
+  { fill: 'rgba(245,158,11,0.06)', stroke: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
+  { fill: 'rgba(239,68,68,0.06)', stroke: 'rgba(239,68,68,0.25)', text: '#ef4444' },
+  { fill: 'rgba(139,92,246,0.06)', stroke: 'rgba(139,92,246,0.25)', text: '#8b5cf6' },
+  { fill: 'rgba(6,182,212,0.06)', stroke: 'rgba(6,182,212,0.25)', text: '#06b6d4' },
+  { fill: 'rgba(236,72,153,0.06)', stroke: 'rgba(236,72,153,0.25)', text: '#ec4899' },
+  { fill: 'rgba(107,114,128,0.06)', stroke: 'rgba(107,114,128,0.25)', text: '#6b7280' },
+]
+
+function getClusterColor(category: string, idx: number) {
+  if (!CLUSTER_COLORS[category]) {
+    CLUSTER_COLORS[category] = PALETTE[idx % PALETTE.length]
+  }
+  return CLUSTER_COLORS[category]
 }
 
 function formatTimeAgo(timestamp: number): string {
@@ -60,30 +96,19 @@ export default function MindMapDiagramView({
   const [allNodes, setAllNodes] = useState<Node[]>([])
   const [dims, setDims] = useState({ width: 800, height: 600 })
 
-  // Pan/Zoom (transform-based) — start zoomed out to see full graph
-  const [zoom, setZoom] = useState(0.75)
+  // Pan/Zoom
+  const [zoom, setZoom] = useState(0.85)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isPanning, setIsPanning] = useState(false)
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
   const hasInitialized = useRef(false)
-
-  // Auto-center graph on first meaningful render
-  useEffect(() => {
-    if (hasInitialized.current || dims.width <= 100) return
-    if (allNodes.length === 0 && (!propNodes || propNodes.length === 0)) return
-    hasInitialized.current = true
-    // Center: at zoom z, position (cx,cy) maps to (cx*z + panX, cy*z + panY)
-    // We want it at (w/2, h/2), so panX = w/2 - cx*z = w/2*(1-z)
-    const panX = (dims.width / 2) * (1 - 0.75)
-    const panY = (dims.height / 2) * (1 - 0.75)
-    setPan({ x: panX, y: panY })
-  }, [dims, allNodes, propNodes])
 
   // Node interaction
   const [nodePositions, setNodePositions] = useState<Record<string, { x: number; y: number }>>({})
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [selectedTopic, setSelectedTopic] = useState<Node | null>(null)
+  const [analyseOpen, setAnalyseOpen] = useState(false)
 
   // Discussion panel
   const [discussions, setDiscussions] = useState<Discussion[]>([])
@@ -91,15 +116,13 @@ export default function MindMapDiagramView({
   const [discussionError, setDiscussionError] = useState<string | null>(null)
   const [discussionTotal, setDiscussionTotal] = useState(0)
 
-  // Hover discussion cache (avoid re-fetching)
-  const [hoverCache, setHoverCache] = useState<Record<string, Discussion[]>>({})
-  const [hoverLoading, setHoverLoading] = useState<string | null>(null)
-
   // Topic-to-topic correlation links
   const [topicLinks, setTopicLinks] = useState<TopicLink[]>([])
 
-  // Expanded panel visibility
-  const [expandedPanelOpen, setExpandedPanelOpen] = useState(false)
+  // Living graph
+  const [isLive, setIsLive] = useState(false)
+  const [pulsingClusters, setPulsingClusters] = useState<Set<string>>(new Set())
+  const prevNodeCountRef = useRef(0)
 
   // Search
   const [localSearch, setLocalSearch] = useState('')
@@ -108,7 +131,6 @@ export default function MindMapDiagramView({
   useEffect(() => {
     if (propNodes && propNodes.length > 0) {
       setAllNodes(propNodes)
-      // Use parent-provided links if available, otherwise fetch
       if (propTopicLinks && propTopicLinks.length > 0) {
         setTopicLinks(propTopicLinks)
       } else {
@@ -142,29 +164,64 @@ export default function MindMapDiagramView({
     fetchData()
   }, [userId, propNodes, propTopicLinks])
 
-  // Resize handler (only updates dims, not zoom/pan)
+  // Living graph — poll every 30s
   useEffect(() => {
-    const updateDims = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setDims({ width: rect.width, height: rect.height })
+    const poll = async () => {
+      try {
+        const res = await fetch('/api/mindmap/data')
+        if (!res.ok) return
+        const data = await res.json()
+        const newNodes: Node[] = data.nodes || []
+        setTopicLinks(data.links || [])
+
+        if (prevNodeCountRef.current > 0 && newNodes.length > prevNodeCountRef.current) {
+          // Find new nodes and pulse their clusters
+          const oldIds = new Set(allNodes.map(n => n.id))
+          const newCats = new Set<string>()
+          newNodes.forEach(n => {
+            if (!oldIds.has(n.id)) newCats.add(n.category || 'other')
+          })
+          if (newCats.size > 0) {
+            setPulsingClusters(newCats)
+            setTimeout(() => setPulsingClusters(new Set()), 2000)
+          }
+          setAllNodes(newNodes)
+        }
+        prevNodeCountRef.current = newNodes.length
+        setIsLive(true)
+      } catch {
+        setIsLive(false)
       }
     }
-    updateDims()
-    window.addEventListener('resize', updateDims)
-    return () => window.removeEventListener('resize', updateDims)
+
+    // Don't poll if using prop nodes
+    if (propNodes && propNodes.length > 0) return
+    prevNodeCountRef.current = allNodes.length
+
+    const interval = setInterval(poll, 30000)
+    return () => clearInterval(interval)
+  }, [propNodes, allNodes])
+
+  // Resize observer
+  useEffect(() => {
+    if (!containerRef.current) return
+    const obs = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setDims({ width: entry.contentRect.width, height: entry.contentRect.height })
+      }
+    })
+    obs.observe(containerRef.current)
+    return () => obs.disconnect()
   }, [])
 
   // Native wheel listener for zoom (passive: false)
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
       setZoom(z => Math.min(2.5, Math.max(0.3, z - e.deltaY * 0.001)))
     }
-
     container.addEventListener('wheel', handleWheel, { passive: false })
     return () => container.removeEventListener('wheel', handleWheel)
   }, [])
@@ -183,134 +240,149 @@ export default function MindMapDiagramView({
     )
   }, [displayNodes, effectiveSearch])
 
-  const MAX_VISIBLE_PER_CATEGORY = 3
-  const MAX_CATEGORIES = 6
+  // Build connection counts per node
+  const connectionCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    topicLinks.forEach(link => {
+      counts[link.source] = (counts[link.source] || 0) + 1
+      counts[link.target] = (counts[link.target] || 0) + 1
+    })
+    return counts
+  }, [topicLinks])
 
-  // TreePosition interface for tree hierarchy
-  interface TreePosition {
-    x: number
-    y: number
-    level: 0 | 1 | 2  // 0=root, 1=category, 2=topic
-    parentId: string | null
-    childCount?: number
-  }
+  // Detect shared nodes: connected to 2+ different categories
+  const sharedNodeInfo = useMemo(() => {
+    const nodeCatMap: Record<string, string> = {}
+    filteredNodes.forEach(n => { nodeCatMap[n.id] = n.category || 'other' })
 
-  // Build visible groups: top N topics per category + overflow count
-  const visibleGroups = useMemo(() => {
-    const groups = new Map<string, { visible: Node[]; overflow: number; total: number }>()
+    const shared: Record<string, string[]> = {}
+    filteredNodes.forEach(n => {
+      const connectedCats = new Set<string>()
+      connectedCats.add(n.category || 'other')
+      topicLinks.forEach(link => {
+        if (link.source === n.id && nodeCatMap[link.target]) connectedCats.add(nodeCatMap[link.target])
+        if (link.target === n.id && nodeCatMap[link.source]) connectedCats.add(nodeCatMap[link.source])
+      })
+      if (connectedCats.size >= 2) {
+        shared[n.id] = Array.from(connectedCats)
+      }
+    })
+    return shared
+  }, [filteredNodes, topicLinks])
+
+  // CLUSPLOT layout — golden-angle ellipse clusters
+  const { clusters, layoutNodes } = useMemo(() => {
+    const cx = dims.width / 2
+    const cy = dims.height / 2
+
+    // Group by category
+    const catGroups = new Map<string, Node[]>()
     filteredNodes.forEach(n => {
       const cat = n.category || 'other'
-      if (!groups.has(cat)) groups.set(cat, { visible: [], overflow: 0, total: 0 })
-      groups.get(cat)!.total++
-      groups.get(cat)!.visible.push(n)
+      if (!catGroups.has(cat)) catGroups.set(cat, [])
+      catGroups.get(cat)!.push(n)
     })
-    // Sort each category by queryCount desc, keep top N
-    groups.forEach((group) => {
-      group.visible.sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
-      if (group.visible.length > MAX_VISIBLE_PER_CATEGORY) {
-        group.overflow = group.visible.length - MAX_VISIBLE_PER_CATEGORY
-        group.visible = group.visible.slice(0, MAX_VISIBLE_PER_CATEGORY)
-      }
-    })
-    return groups
-  }, [filteredNodes])
 
-  // Calculate positions (tree hierarchy layout: ROOT → CATEGORIES → TOPICS)
-  const positions = useMemo((): Record<string, TreePosition> => {
-    const cx = dims.width / 2
-    const result: Record<string, TreePosition> = {}
+    // Sort categories by total query count
+    const sortedCats = Array.from(catGroups.entries())
+      .sort(([, a], [, b]) => {
+        const sumA = a.reduce((s, n) => s + (n.queryCount || 0), 0)
+        const sumB = b.reduce((s, n) => s + (n.queryCount || 0), 0)
+        return sumB - sumA
+      })
 
-    // Sort categories by total queryCount, limit to MAX_CATEGORIES
-    const sortedCategories = Array.from(visibleGroups.entries())
-      .map(([cat, group]) => ({
-        cat,
-        totalQueries: group.visible.reduce((sum, n) => sum + (n.queryCount || 0), 0),
-        group
-      }))
-      .filter(c => c.group.visible.length > 0)  // Skip empty categories
-      .sort((a, b) => b.totalQueries - a.totalQueries)
-      .slice(0, MAX_CATEGORIES)
+    const catCount = sortedCats.length
+    if (catCount === 0) return { clusters: [], layoutNodes: {} as Record<string, LayoutNode> }
 
-    // LEVEL 0: Root node at top center
-    const rootY = 80
-    result['root'] = { x: cx, y: rootY, level: 0, parentId: null }
+    // Position cluster centers using golden angle
+    const clusterRadius = Math.min(dims.width, dims.height) * 0.28
+    const clusterList: ClusterData[] = []
+    const nodeLayout: Record<string, LayoutNode> = {}
 
-    if (sortedCategories.length === 0) {
-      return result
-    }
+    sortedCats.forEach(([cat, nodes], catIdx) => {
+      // Golden angle placement for cluster centers
+      const angle = catIdx * GOLDEN_ANGLE
+      const dist = catCount === 1 ? 0 : clusterRadius * (0.6 + 0.4 * (catIdx / Math.max(catCount - 1, 1)))
+      const clusterCx = cx + Math.cos(angle) * dist
+      const clusterCy = cy + Math.sin(angle) * dist
 
-    // LEVEL 1: Category nodes in horizontal arc below root
-    const categoryY = 200
-    const catCount = sortedCategories.length
-    const categorySpread = Math.min(dims.width - 200, catCount * 150)
-    const categoryStartX = cx - categorySpread / 2
+      // Sort nodes by queryCount
+      const sorted = [...nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
 
-    sortedCategories.forEach((catData, idx) => {
-      const catX = catCount === 1
-        ? cx
-        : categoryStartX + (idx / Math.max(catCount - 1, 1)) * categorySpread
+      // Place nodes within cluster using golden angle
+      let maxDx = 0, maxDy = 0
+      sorted.forEach((node, nIdx) => {
+        const nAngle = nIdx * GOLDEN_ANGLE * 2.4
+        const nDist = 30 + Math.sqrt(nIdx) * 28
+        const nx = clusterCx + Math.cos(nAngle) * nDist
+        const ny = clusterCy + Math.sin(nAngle) * nDist * 0.75
 
-      result[`cat-${catData.cat}`] = {
-        x: catX,
-        y: categoryY,
-        level: 1,
-        parentId: 'root',
-        childCount: Math.min(catData.group.visible.length, MAX_VISIBLE_PER_CATEGORY)
-      }
+        maxDx = Math.max(maxDx, Math.abs(nx - clusterCx))
+        maxDy = Math.max(maxDy, Math.abs(ny - clusterCy))
 
-      // LEVEL 2: Topic nodes in VERTICAL COLUMN below each category
-      const topics = catData.group.visible.slice(0, MAX_VISIBLE_PER_CATEGORY)
-      const topicStartY = 320
-      const topicSpacingY = 60
-
-      topics.forEach((node, tIdx) => {
-        // Slight horizontal offset for visual interest (zigzag)
-        const xOffset = (tIdx % 2 === 0 ? -15 : 15) * (tIdx > 0 ? 1 : 0)
-
-        result[node.id] = {
-          x: catX + xOffset,
-          y: topicStartY + tIdx * topicSpacingY,  // 320, 380, 440
-          level: 2,
-          parentId: `cat-${catData.cat}`
+        const isShared = !!sharedNodeInfo[node.id]
+        nodeLayout[node.id] = {
+          id: node.id,
+          x: nx,
+          y: ny,
+          isShared,
+          sharedCategories: sharedNodeInfo[node.id] || [cat],
+          queryCount: node.queryCount || 0,
+          connections: connectionCounts[node.id] || 0,
         }
+      })
+
+      clusterList.push({
+        category: cat,
+        nodes: sorted,
+        cx: clusterCx,
+        cy: clusterCy,
+        rx: Math.max(maxDx + 50, 80),
+        ry: Math.max(maxDy + 40, 60),
       })
     })
 
-    return result
-  }, [visibleGroups, dims])
+    // Reposition shared nodes to midpoint between their cluster centers
+    Object.entries(sharedNodeInfo).forEach(([nodeId, cats]) => {
+      if (!nodeLayout[nodeId]) return
+      const relevantClusters = clusterList.filter(c => cats.includes(c.category))
+      if (relevantClusters.length < 2) return
 
-  // Get position with user override - returns TreePosition | null
-  const getPos = useCallback((id: string): TreePosition | null => {
-    if (nodePositions[id]) {
-      // Merge user override with existing TreePosition data
-      const base = positions[id]
-      return base ? { ...base, x: nodePositions[id].x, y: nodePositions[id].y } : null
-    }
-    return positions[id] || null
-  }, [nodePositions, positions])
-
-  // Category groups for rendering (uses visibleGroups)
-  const categoryGroups = useMemo(() => {
-    const groups = new Map<string, Node[]>()
-    visibleGroups.forEach((group, cat) => {
-      groups.set(cat, group.visible)
+      const midX = relevantClusters.reduce((s, c) => s + c.cx, 0) / relevantClusters.length
+      const midY = relevantClusters.reduce((s, c) => s + c.cy, 0) / relevantClusters.length
+      nodeLayout[nodeId].x = midX + (Math.random() - 0.5) * 30
+      nodeLayout[nodeId].y = midY + (Math.random() - 0.5) * 20
     })
-    return groups
-  }, [visibleGroups])
 
-  // Only show links between currently visible topics
+    return { clusters: clusterList, layoutNodes: nodeLayout }
+  }, [filteredNodes, dims, sharedNodeInfo, connectionCounts])
+
+  // Auto-center on first render
+  useEffect(() => {
+    if (hasInitialized.current || dims.width <= 100) return
+    if (Object.keys(layoutNodes).length === 0) return
+    hasInitialized.current = true
+    const z = 0.85
+    setPan({
+      x: (dims.width / 2) * (1 - z),
+      y: (dims.height / 2) * (1 - z),
+    })
+  }, [dims, layoutNodes])
+
+  // Get node position with user drag override
+  const getPos = useCallback((id: string): { x: number; y: number } | null => {
+    if (nodePositions[id]) return nodePositions[id]
+    const ln = layoutNodes[id]
+    return ln ? { x: ln.x, y: ln.y } : null
+  }, [nodePositions, layoutNodes])
+
+  // Visible cross-cluster links
   const visibleLinks = useMemo(() => {
-    const visibleTopicIds = new Set(
-      Object.entries(positions)
-        .filter(([, pos]) => pos.level === 2)
-        .map(([id]) => id)
-    )
-    return topicLinks.filter(link =>
-      visibleTopicIds.has(link.source) && visibleTopicIds.has(link.target)
-    )
-  }, [topicLinks, positions])
+    const nodeIds = new Set(Object.keys(layoutNodes))
+    return topicLinks.filter(link => nodeIds.has(link.source) && nodeIds.has(link.target))
+  }, [topicLinks, layoutNodes])
 
-  // Topics connected to the currently hovered topic
+  // Connected topics for hover highlight
   const connectedTopicIds = useMemo(() => {
     if (!hoveredNode) return new Set<string>()
     const connected = new Set<string>()
@@ -338,23 +410,7 @@ export default function MindMapDiagramView({
     }
   }, [discussions])
 
-  // Fetch hover discussions (for tooltip, limited to 5)
-  const fetchHoverDiscussions = useCallback(async (topicId: string) => {
-    if (hoverCache[topicId]) return  // Already cached
-    setHoverLoading(topicId)
-    try {
-      const res = await fetch(`/api/mindmap/topics/${topicId}/queries?limit=5`)
-      if (!res.ok) return
-      const data = await res.json()
-      setHoverCache(prev => ({ ...prev, [topicId]: data.discussions || [] }))
-    } catch (err) {
-      console.error('Hover fetch failed:', err)
-    } finally {
-      setHoverLoading(null)
-    }
-  }, [hoverCache])
-
-  // Event handlers
+  // Event handlers — pan/zoom/drag
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     if (e.target === svgRef.current || (e.target as Element).closest('svg') === svgRef.current && !(e.target as Element).closest('g[data-node]')) {
       setIsPanning(true)
@@ -388,23 +444,22 @@ export default function MindMapDiagramView({
 
   const handleNodeClick = (e: React.MouseEvent, node: Node) => {
     e.stopPropagation()
-    if (draggedNode) return // Don't select if just finished dragging
+    if (draggedNode) return
 
-    // Toggle off if clicking same node
     if (selectedTopic?.id === node.id) {
-      closePanel()
+      closeAnalyse()
       return
     }
 
     setSelectedTopic(node)
-    setExpandedPanelOpen(true)
+    setAnalyseOpen(true)
     fetchDiscussions(node.id)
     onNodeSelect?.({ id: node.id, name: node.name, category: node.category || undefined })
   }
 
-  const closePanel = () => {
+  const closeAnalyse = () => {
     setSelectedTopic(null)
-    setExpandedPanelOpen(false)
+    setAnalyseOpen(false)
     setDiscussions([])
     setDiscussionError(null)
     onNodeSelect?.(null)
@@ -414,28 +469,78 @@ export default function MindMapDiagramView({
   const zoomIn = () => setZoom(z => Math.min(2.5, z + 0.2))
   const zoomOut = () => setZoom(z => Math.max(0.3, z - 0.2))
   const fitView = () => {
-    setZoom(0.75)
+    setZoom(0.85)
     setPan({
-      x: (dims.width / 2) * (1 - 0.75),
-      y: (dims.height / 2) * (1 - 0.75)
+      x: (dims.width / 2) * (1 - 0.85),
+      y: (dims.height / 2) * (1 - 0.85)
     })
     setNodePositions({})
   }
 
-  // Stats - tree-based counts
-  const displayedTopics = Object.values(positions).filter(p => p.level === 2).length
-  const displayedCategories = Object.values(positions).filter(p => p.level === 1).length
+  // Stats
   const totalTopics = filteredNodes.length
+  const totalClusters = clusters.length
+  const sharedCount = Object.keys(sharedNodeInfo).length
+
+  // Node size from queryCount
+  const getNodeRadius = (qc: number) => Math.max(6, Math.min(18, 6 + Math.sqrt(qc) * 2.5))
+
+  // Build analyse modal data
+  const analyseData = useMemo(() => {
+    if (!selectedTopic) return null
+    const node = layoutNodes[selectedTopic.id]
+    if (!node) return null
+
+    const conns = visibleLinks.filter(l => l.source === selectedTopic.id || l.target === selectedTopic.id)
+    const connectedNodes = conns.map(l => {
+      const otherId = l.source === selectedTopic.id ? l.target : l.source
+      const otherNode = filteredNodes.find(n => n.id === otherId)
+      return otherNode ? { id: otherId, name: otherNode.name, category: otherNode.category || 'other', strength: l.strength } : null
+    }).filter(Boolean) as { id: string; name: string; category: string; strength: number }[]
+
+    // Cluster breakdown
+    const clusterBreakdown: Record<string, number> = {}
+    clusterBreakdown[selectedTopic.category || 'other'] = (clusterBreakdown[selectedTopic.category || 'other'] || 0)
+    connectedNodes.forEach(cn => {
+      clusterBreakdown[cn.category] = (clusterBreakdown[cn.category] || 0) + 1
+    })
+
+    const internalConns = connectedNodes.filter(cn => cn.category === (selectedTopic.category || 'other')).length
+    const crossConns = connectedNodes.length - internalConns
+
+    return {
+      queryCount: selectedTopic.queryCount || 0,
+      connections: connectedNodes.length,
+      clusters: Object.keys(clusterBreakdown).length,
+      clusterBreakdown,
+      internalConns,
+      crossConns,
+      topConnections: connectedNodes.sort((a, b) => b.strength - a.strength).slice(0, 5),
+      bridges: connectedNodes
+        .filter(cn => cn.category !== (selectedTopic.category || 'other'))
+        .map(cn => cn.category)
+        .filter((v, i, a) => a.indexOf(v) === i),
+    }
+  }, [selectedTopic, layoutNodes, visibleLinks, filteredNodes])
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden bg-[#fafbfc]">
       {/* Header toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200">
         <div className="flex items-center gap-3">
-          <span className="text-xs font-medium text-slate-700">knowledge graph</span>
-          <span className="text-sm text-neutral-400 font-mono tracking-wide">
-            {displayedTopics} topics · {displayedCategories} categories
+          <span className="text-xs font-medium text-slate-700" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+            knowledge graph
           </span>
+          <span className="text-sm text-neutral-400 font-mono tracking-wide">
+            {totalTopics} topics · {totalClusters} clusters
+            {sharedCount > 0 && ` · ${sharedCount} shared`}
+          </span>
+          {isLive && (
+            <span className="flex items-center gap-1 text-[10px] text-emerald-500 font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              live
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -450,6 +555,7 @@ export default function MindMapDiagramView({
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               className="w-32 pl-7 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-slate-300 text-slate-700"
+              style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}
             />
           </div>
 
@@ -479,7 +585,7 @@ export default function MindMapDiagramView({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {/* Fixed dot grid background (doesn't pan/zoom) */}
+        {/* Dot grid background */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -495,7 +601,6 @@ export default function MindMapDiagramView({
           style={{ overflow: 'visible' }}
         >
           <defs>
-            {/* Glow filter */}
             <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="2" result="blur" />
               <feMerge>
@@ -503,329 +608,247 @@ export default function MindMapDiagramView({
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
-
-            {/* Shadow filter */}
             <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
               <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.08" />
             </filter>
+            <filter id="pulse-glow" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="8" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            {/* Radial gradients for clusters */}
+            {clusters.map((cluster, idx) => {
+              const color = getClusterColor(cluster.category, idx)
+              return (
+                <radialGradient key={`grad-${cluster.category}`} id={`cluster-grad-${idx}`} cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor={color.fill} stopOpacity={0.12} />
+                  <stop offset="70%" stopColor={color.fill} stopOpacity={0.06} />
+                  <stop offset="100%" stopColor={color.fill} stopOpacity={0.01} />
+                </radialGradient>
+              )
+            })}
           </defs>
 
           {/* Transform group for pan/zoom */}
           <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-            {/* Connection Lines - render FIRST for z-order (behind nodes) */}
-            <g className="connections" style={{ pointerEvents: 'none' }}>
-              {/* Root to Categories - subtle gray */}
-              {Array.from(visibleGroups.keys()).slice(0, MAX_CATEGORIES).map(cat => {
-                const rootPos = getPos('root')
-                const catPos = getPos(`cat-${cat}`)
-                if (!rootPos || !catPos) return null
 
-                const isHovered = hoveredNode === `cat-${cat}`
-                const midY = (rootPos.y + catPos.y) / 2
+            {/* Cluster ellipses */}
+            {clusters.map((cluster, idx) => {
+              const color = getClusterColor(cluster.category, idx)
+              const isPulsing = pulsingClusters.has(cluster.category)
 
-                return (
-                  <path
-                    key={`root-to-${cat}`}
-                    d={`M ${rootPos.x} ${rootPos.y + 42}
-                        C ${rootPos.x} ${midY},
-                          ${catPos.x} ${midY},
-                          ${catPos.x} ${catPos.y - 32}`}
-                    fill="none"
-                    stroke="#cbd5e1"
-                    strokeWidth={isHovered ? 1.5 : 1}
-                    strokeDasharray="4 4"
-                    opacity={isHovered ? 0.6 : 0.3}
-                    className="transition-all duration-200"
+              return (
+                <g key={`cluster-${cluster.category}`}>
+                  <ellipse
+                    cx={cluster.cx}
+                    cy={cluster.cy}
+                    rx={cluster.rx}
+                    ry={cluster.ry}
+                    fill={`url(#cluster-grad-${idx})`}
+                    stroke={color.stroke}
+                    strokeWidth={isPulsing ? 2 : 1}
+                    strokeDasharray={isPulsing ? 'none' : '6 4'}
+                    opacity={isPulsing ? 0.9 : 0.7}
+                    filter={isPulsing ? 'url(#pulse-glow)' : undefined}
+                    className="transition-all duration-500"
                   />
-                )
-              })}
+                  {/* Cluster label */}
+                  <text
+                    x={cluster.cx}
+                    y={cluster.cy - cluster.ry + 14}
+                    textAnchor="middle"
+                    fill={color.text}
+                    fontSize={10}
+                    fontWeight={500}
+                    fontFamily="'JetBrains Mono', ui-monospace, monospace"
+                    opacity={0.7}
+                    className="select-none pointer-events-none"
+                  >
+                    {cluster.category}
+                  </text>
+                </g>
+              )
+            })}
 
-              {/* Categories to Topics - lighter gray */}
-              {Array.from(visibleGroups.entries()).slice(0, MAX_CATEGORIES).map(([cat, { visible }]) => {
-                const catPos = getPos(`cat-${cat}`)
-                if (!catPos) return null
-
-                return visible.slice(0, MAX_VISIBLE_PER_CATEGORY).map(topic => {
-                  const topicPos = getPos(topic.id)
-                  if (!topicPos || topicPos.level !== 2) return null
-
-                  const isActive = hoveredNode === topic.id || selectedTopic?.id === topic.id
-                  const controlOffset = 20
-
-                  return (
-                    <path
-                      key={`${cat}-to-${topic.id}`}
-                      d={`M ${catPos.x} ${catPos.y + 32}
-                          C ${catPos.x} ${catPos.y + 32 + controlOffset},
-                            ${topicPos.x} ${topicPos.y - 16 - controlOffset},
-                            ${topicPos.x} ${topicPos.y - 16}`}
-                      fill="none"
-                      stroke="#e2e8f0"
-                      strokeWidth={isActive ? 1.2 : 0.8}
-                      strokeDasharray="3 3"
-                      opacity={isActive ? 0.5 : 0.25}
-                      className="transition-all duration-200"
-                    />
-                  )
-                })
-              })}
-            </g>
-
-            {/* Topic-to-Topic Correlation Lines - single muted color */}
-            <g className="correlation-links" style={{ pointerEvents: 'none' }}>
+            {/* Cross-cluster connection lines */}
+            <g className="connections" style={{ pointerEvents: 'none' }}>
               {visibleLinks.map((link, idx) => {
                 const sourcePos = getPos(link.source)
                 const targetPos = getPos(link.target)
                 if (!sourcePos || !targetPos) return null
-                if (sourcePos.x === targetPos.x && sourcePos.y === targetPos.y) return null
 
-                const midX = (sourcePos.x + targetPos.x) / 2
-                const midY = Math.min(sourcePos.y, targetPos.y) - 40
+                // Only draw cross-cluster lines
+                const sourceNode = filteredNodes.find(n => n.id === link.source)
+                const targetNode = filteredNodes.find(n => n.id === link.target)
+                const sameCat = sourceNode?.category === targetNode?.category
 
                 const isHighlighted = hoveredNode === link.source || hoveredNode === link.target
+                const midX = (sourcePos.x + targetPos.x) / 2
+                const midY = (sourcePos.y + targetPos.y) / 2 - 20
 
                 return (
                   <path
                     key={`link-${idx}`}
-                    d={`M ${sourcePos.x} ${sourcePos.y}
-                        Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
+                    d={`M ${sourcePos.x} ${sourcePos.y} Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
                     fill="none"
-                    stroke="#94a3b8"
+                    stroke={isHighlighted ? '#64748b' : '#94a3b8'}
                     strokeWidth={isHighlighted ? 1.5 : 0.5}
-                    strokeDasharray={isHighlighted ? "none" : "2 2"}
-                    opacity={isHighlighted ? 0.5 : 0.15}
+                    strokeDasharray={sameCat ? 'none' : '4 3'}
+                    opacity={isHighlighted ? 0.6 : 0.15}
                     className="transition-all duration-200"
                   />
                 )
               })}
             </g>
 
-            {/* Root node - Minimal dark circle */}
-            {(() => {
-              const rootPos = getPos('root')
-              if (!rootPos) return null
-              const topicCount = Object.values(positions).filter(p => p.level === 2).length
+            {/* Nodes */}
+            {filteredNodes.map((node) => {
+              const pos = getPos(node.id)
+              if (!pos) return null
 
-              return (
-                <g data-node="root" transform={`translate(${rootPos.x}, ${rootPos.y})`}>
-                  {/* Simple circle - no animation */}
-                  <circle
-                    r={42}
-                    fill="#1e293b"
-                    stroke="#334155"
-                    strokeWidth={1}
-                  />
+              const ln = layoutNodes[node.id]
+              const isShared = ln?.isShared || false
+              const isHovered = hoveredNode === node.id
+              const isSelected = selectedTopic?.id === node.id
+              const isConnected = connectedTopicIds.has(node.id)
+              const r = getNodeRadius(node.queryCount || 0)
 
-                  {/* AKHAI text */}
-                  <text
-                    y={-4}
-                    textAnchor="middle"
-                    fill="#f1f5f9"
-                    fontSize={13}
-                    fontWeight={600}
-                    fontFamily="ui-monospace, monospace"
-                    letterSpacing={2}
-                    className="select-none pointer-events-none"
-                  >
-                    AKHAI
-                  </text>
-
-                  {/* Topic count */}
-                  <text
-                    y={14}
-                    textAnchor="middle"
-                    fill="#94a3b8"
-                    fontSize={9}
-                    fontFamily="ui-monospace, monospace"
-                    className="select-none pointer-events-none"
-                  >
-                    {topicCount} topics
-                  </text>
-                </g>
-              )
-            })()}
-
-            {/* Category nodes - Simple circles, no emoji */}
-            {Array.from(visibleGroups.entries()).slice(0, MAX_CATEGORIES).map(([cat, { visible }]) => {
-              const pos = getPos(`cat-${cat}`)
-              if (!pos || pos.level !== 1) return null
-
-              const isHovered = hoveredNode === `cat-${cat}`
-              const topicCount = Math.min(visible.length, MAX_VISIBLE_PER_CATEGORY)
+              const catIdx = clusters.findIndex(c => c.category === (node.category || 'other'))
+              const color = getClusterColor(node.category || 'other', catIdx >= 0 ? catIdx : 0)
 
               return (
                 <g
-                  key={`cat-${cat}`}
-                  data-node={`cat-${cat}`}
+                  key={node.id}
+                  data-node={node.id}
                   transform={`translate(${pos.x}, ${pos.y})`}
-                  onMouseEnter={() => setHoveredNode(`cat-${cat}`)}
+                  onMouseEnter={() => setHoveredNode(node.id)}
                   onMouseLeave={() => setHoveredNode(null)}
-                  onMouseDown={(e) => handleNodeMouseDown(e, `cat-${cat}`)}
+                  onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
+                  onClick={(e) => handleNodeClick(e, node)}
                   style={{ cursor: 'pointer' }}
                 >
-                  {/* Simple circle */}
-                  <circle
-                    r={32}
-                    fill={isHovered ? '#f1f5f9' : '#ffffff'}
-                    stroke={isHovered ? '#64748b' : '#e2e8f0'}
-                    strokeWidth={isHovered ? 1.5 : 1}
-                    className="transition-all duration-150"
-                  />
+                  {/* Node shape: diamond for shared, circle for regular */}
+                  {isShared ? (
+                    <rect
+                      x={-r}
+                      y={-r}
+                      width={r * 2}
+                      height={r * 2}
+                      rx={2}
+                      transform={`rotate(45)`}
+                      fill={isSelected ? color.fill : '#ffffff'}
+                      stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.stroke}
+                      strokeWidth={isSelected || isHovered ? 2 : 1}
+                      className="transition-all duration-150"
+                      filter={isHovered ? 'url(#glow)' : undefined}
+                    />
+                  ) : (
+                    <circle
+                      r={r}
+                      fill={isSelected ? color.fill : '#ffffff'}
+                      stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.stroke}
+                      strokeWidth={isSelected || isHovered ? 2 : 1}
+                      className="transition-all duration-150"
+                      filter={isHovered ? 'url(#glow)' : undefined}
+                    />
+                  )}
 
-                  {/* Category initial letter */}
+                  {/* Node label */}
                   <text
-                    y={-2}
+                    y={r + 12}
                     textAnchor="middle"
-                    fill="#475569"
-                    fontSize={14}
-                    fontWeight={600}
-                    fontFamily="ui-monospace, monospace"
+                    fill={isHovered || isSelected ? '#1e293b' : '#64748b'}
+                    fontSize={9}
+                    fontWeight={isSelected ? 500 : 400}
+                    fontFamily="'JetBrains Mono', ui-monospace, monospace"
                     className="select-none pointer-events-none"
                   >
-                    {cat.charAt(0).toUpperCase()}
+                    {node.name.length > 16 ? node.name.slice(0, 15) + '...' : node.name}
                   </text>
 
-                  {/* Category name */}
-                  <text
-                    y={12}
-                    textAnchor="middle"
-                    fill="#94a3b8"
-                    fontSize={8}
-                    fontFamily="system-ui, sans-serif"
-                    className="select-none pointer-events-none"
-                  >
-                    {cat.length > 8 ? cat.slice(0, 7) + '…' : cat}
-                  </text>
-
-                  {/* Count - subtle, no badge */}
-                  <text
-                    y={24}
-                    textAnchor="middle"
-                    fill="#cbd5e1"
-                    fontSize={8}
-                    className="select-none pointer-events-none"
-                  >
-                    {topicCount}
-                  </text>
+                  {/* Query count badge */}
+                  {(node.queryCount || 0) > 0 && (
+                    <text
+                      y={-r - 4}
+                      textAnchor="middle"
+                      fill="#94a3b8"
+                      fontSize={8}
+                      fontFamily="'JetBrains Mono', ui-monospace, monospace"
+                      className="select-none pointer-events-none"
+                    >
+                      {node.queryCount}
+                    </text>
+                  )}
                 </g>
               )
             })}
 
-            {/* Topic nodes - Clean rounded rectangles */}
-            {Array.from(visibleGroups.entries()).slice(0, MAX_CATEGORIES).map(([cat, { visible }]) => {
-              return visible.slice(0, MAX_VISIBLE_PER_CATEGORY).map((node) => {
-                const pos = getPos(node.id)
-                if (!pos || pos.level !== 2) return null  // Critical level check
-
-                const isHovered = hoveredNode === node.id
-                const isSelected = selectedTopic?.id === node.id
-                const isConnected = connectedTopicIds.has(node.id)
-
-                return (
-                  <g
-                    key={node.id}
-                    data-node={node.id}
-                    transform={`translate(${pos.x}, ${pos.y})`}
-                    onMouseEnter={() => { setHoveredNode(node.id); fetchHoverDiscussions(node.id) }}
-                    onMouseLeave={() => setHoveredNode(null)}
-                    onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
-                    onClick={(e) => handleNodeClick(e, node)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {/* Rounded rectangle instead of ellipse */}
-                    <rect
-                      x={-52}
-                      y={-16}
-                      width={104}
-                      height={32}
-                      rx={6}
-                      ry={6}
-                      fill={isSelected ? '#f8fafc' : '#ffffff'}
-                      stroke={isSelected ? '#475569' : isConnected ? '#94a3b8' : '#e2e8f0'}
-                      strokeWidth={isSelected ? 1.5 : 1}
-                      className="transition-all duration-150"
-                    />
-
-                    {/* Topic name - centered, clean */}
-                    <text
-                      y={4}
-                      textAnchor="middle"
-                      fill={isHovered || isSelected ? '#1e293b' : '#475569'}
-                      fontSize={10}
-                      fontWeight={isSelected ? 500 : 400}
-                      fontFamily="system-ui, sans-serif"
-                      className="select-none pointer-events-none"
-                    >
-                      {node.name.length > 14 ? node.name.slice(0, 13) + '…' : node.name}
-                    </text>
-                  </g>
-                )
-              })
-            })}
-
-            {/* Hover Tooltip */}
-            {hoveredNode && !selectedTopic && (() => {
+            {/* Hover card — foreignObject with interconnection summary */}
+            {hoveredNode && !analyseOpen && (() => {
               const node = displayNodes.find(n => n.id === hoveredNode)
               if (!node) return null
               const pos = getPos(hoveredNode)
               if (!pos) return null
-              const cached = hoverCache[hoveredNode]
-              const isLoading = hoverLoading === hoveredNode
-              const itemCount = cached?.length || 0
-              const height = isLoading ? 44 : itemCount > 0 ? 32 + itemCount * 24 : 44
+              const ln = layoutNodes[hoveredNode]
+              if (!ln) return null
+
+              const conns = visibleLinks.filter(l => l.source === hoveredNode || l.target === hoveredNode)
+              const connCats: Record<string, number> = {}
+              conns.forEach(l => {
+                const otherId = l.source === hoveredNode ? l.target : l.source
+                const otherNode = filteredNodes.find(n => n.id === otherId)
+                const cat = otherNode?.category || 'other'
+                connCats[cat] = (connCats[cat] || 0) + 1
+              })
+
+              const cardW = 200
+              const cardH = 80 + Object.keys(connCats).length * 16
 
               return (
-                <g transform={`translate(${pos.x}, ${pos.y + 40})`} style={{ pointerEvents: 'none' }}>
-                  {/* Arrow */}
-                  <path
-                    d="M -6 0 L 0 -8 L 6 0 Z"
-                    fill="white"
-                    stroke="#e2e8f0"
-                    strokeWidth={1}
-                  />
-
-                  {/* Tooltip background */}
-                  <rect
-                    x={-115}
-                    y={0}
-                    width={230}
-                    height={height}
-                    rx={8}
-                    fill="white"
-                    stroke="#e2e8f0"
-                    filter="url(#shadow)"
-                  />
-
-                  {/* Content */}
-                  {isLoading ? (
-                    <text x={0} y={height / 2 + 4} textAnchor="middle" fill="#94a3b8" fontSize={10}>
-                      loading...
-                    </text>
-                  ) : itemCount > 0 ? (
-                    <g>
-                      {cached.slice(0, 5).map((disc, i) => (
-                        <g key={disc.id} transform={`translate(-105, ${18 + i * 24})`}>
-                          <text fill="#334155" fontSize={10}>
-                            {disc.text.slice(0, 28)}{disc.text.length > 28 ? '…' : ''}
-                          </text>
-                          <text x={210} fill="#94a3b8" fontSize={9} textAnchor="end">
-                            {formatTimeAgo(disc.createdAt)}
-                          </text>
-                        </g>
-                      ))}
-                    </g>
-                  ) : (
-                    <text x={0} y={height / 2 + 4} textAnchor="middle" fill="#94a3b8" fontSize={10}>
-                      no queries yet
-                    </text>
-                  )}
-                </g>
+                <foreignObject
+                  x={pos.x + 20}
+                  y={pos.y - cardH / 2}
+                  width={cardW}
+                  height={cardH}
+                  style={{ pointerEvents: 'none', overflow: 'visible' }}
+                >
+                  <div
+                    style={{
+                      background: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 8,
+                      padding: '10px 12px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                      fontSize: 10,
+                      color: '#334155',
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: 11, marginBottom: 4 }}>{node.name}</div>
+                    <div style={{ color: '#94a3b8', marginBottom: 6 }}>
+                      {node.queryCount || 0} queries · {conns.length} connections
+                    </div>
+                    {Object.entries(connCats).map(([cat, count]) => {
+                      const ci = clusters.findIndex(c => c.category === cat)
+                      const cc = getClusterColor(cat, ci >= 0 ? ci : 0)
+                      return (
+                        <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: cc.text, display: 'inline-block' }} />
+                          <span>{cat}</span>
+                          <span style={{ color: '#cbd5e1', marginLeft: 'auto' }}>{count}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </foreignObject>
               )
             })()}
           </g>
         </svg>
 
-        {/* Minimal correlation indicator */}
+        {/* Connection count indicator */}
         {visibleLinks.length > 0 && (
           <div className="absolute bottom-14 left-4 text-[10px] text-neutral-400 font-mono">
             {visibleLinks.length} connections
@@ -833,116 +856,143 @@ export default function MindMapDiagramView({
         )}
       </div>
 
-      {/* Inline Expanded Panel (below SVG) */}
+      {/* Analyse popup (modal overlay) */}
       <AnimatePresence mode="wait">
-        {expandedPanelOpen && selectedTopic && (
+        {analyseOpen && selectedTopic && analyseData && (
           <motion.div
             key={selectedTopic.id}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="border-t border-slate-200 bg-white overflow-hidden"
+            className="absolute inset-x-0 bottom-10 mx-auto max-w-lg z-50"
           >
-            {/* Header - Minimal */}
-            <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
-              <div>
-                <h3 className="font-semibold text-slate-800">{selectedTopic.name}</h3>
-                <p className="text-xs text-slate-500">{discussionTotal} conversations · {selectedTopic.category || 'other'}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onNodeAction?.(`Tell me more about ${selectedTopic.name}`, selectedTopic.id)}
-                  className="px-3 py-1.5 text-xs font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg transition-colors"
-                >
-                  new query
-                </button>
-                <button
-                  onClick={closePanel}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
+            <div className="bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
+                <div>
+                  <h3 className="font-semibold text-slate-800 text-sm">{selectedTopic.name}</h3>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{selectedTopic.category || 'other'}</p>
+                </div>
+                <button onClick={closeAnalyse} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-            </div>
 
-            {/* Conversations grid */}
-            <div className="max-h-[220px] overflow-y-auto p-4">
-              {discussionError ? (
-                <div className="text-center py-4">
-                  <p className="text-xs text-red-500 mb-2">{discussionError}</p>
-                  <button
-                    onClick={() => fetchDiscussions(selectedTopic.id)}
-                    className="px-3 py-1.5 text-xs text-slate-600 bg-slate-100 rounded"
-                  >
-                    retry
-                  </button>
+              {/* Metrics row */}
+              <div className="grid grid-cols-3 gap-px bg-slate-100">
+                <div className="bg-white px-4 py-3 text-center">
+                  <div className="text-lg font-bold text-slate-800">{analyseData.queryCount}</div>
+                  <div className="text-[9px] text-slate-400 uppercase tracking-wider">queries</div>
                 </div>
-              ) : loadingDiscussions && discussions.length === 0 ? (
-                <div className="flex items-center justify-center py-6">
-                  <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
+                <div className="bg-white px-4 py-3 text-center">
+                  <div className="text-lg font-bold text-slate-800">{analyseData.connections}</div>
+                  <div className="text-[9px] text-slate-400 uppercase tracking-wider">connections</div>
                 </div>
-              ) : discussions.length === 0 ? (
-                <p className="text-center text-sm text-slate-400 py-6">no conversations yet</p>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {discussions.slice(0, 6).map((d, idx) => (
-                      <button
-                        key={d.id}
-                        onClick={() => {
-                          const url = d.conversationId ? `/query/${d.conversationId}` : `/query/${d.id}`
-                          window.open(url, '_blank')
-                        }}
-                        className="text-left p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
-                      >
-                        <div className="flex items-start gap-2">
-                          <span className="text-slate-300 text-xs font-mono">{idx + 1}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-slate-700 font-medium line-clamp-2">{d.text}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] text-slate-400">{formatTimeAgo(d.createdAt)}</span>
-                              {d.methodology && (
-                                <span className="text-[9px] px-1.5 py-0.5 bg-slate-200 text-slate-500 rounded">
-                                  {d.methodology}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                <div className="bg-white px-4 py-3 text-center">
+                  <div className="text-lg font-bold text-slate-800">{analyseData.clusters}</div>
+                  <div className="text-[9px] text-slate-400 uppercase tracking-wider">clusters</div>
+                </div>
+              </div>
+
+              {/* Connection map */}
+              <div className="px-5 py-3 border-t border-slate-100">
+                <div className="flex items-center gap-4 text-[10px] mb-2">
+                  <span className="text-slate-400">internal: <span className="text-slate-700 font-medium">{analyseData.internalConns}</span></span>
+                  <span className="text-slate-400">cross-cluster: <span className="text-slate-700 font-medium">{analyseData.crossConns}</span></span>
+                </div>
+
+                {/* Top connections */}
+                {analyseData.topConnections.length > 0 && (
+                  <div className="space-y-1.5 mb-3">
+                    <div className="text-[9px] text-slate-400 uppercase tracking-wider">top connections</div>
+                    {analyseData.topConnections.map(conn => {
+                      const ci = clusters.findIndex(c => c.category === conn.category)
+                      const cc = getClusterColor(conn.category, ci >= 0 ? ci : 0)
+                      return (
+                        <div key={conn.id} className="flex items-center gap-2 text-[10px]">
+                          <span style={{ width: 5, height: 5, borderRadius: '50%', background: cc.text }} className="inline-block flex-shrink-0" />
+                          <span className="text-slate-600 truncate">{conn.name}</span>
+                          <span className="text-slate-300 ml-auto flex-shrink-0">{conn.category}</span>
                         </div>
-                      </button>
-                    ))}
+                      )
+                    })}
                   </div>
+                )}
 
-                  {/* Load More */}
-                  {discussions.length < discussionTotal && (
-                    <div className="mt-4 text-center">
-                      <button
-                        onClick={() => fetchDiscussions(selectedTopic.id, discussions.length)}
-                        disabled={loadingDiscussions}
-                        className="px-4 py-2 text-xs text-slate-500 hover:text-slate-700 border border-dashed border-slate-300 hover:border-slate-400 rounded-lg disabled:opacity-50"
-                      >
-                        {loadingDiscussions ? 'loading...' : `show ${discussionTotal - discussions.length} more`}
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
+                {/* Bridges */}
+                {analyseData.bridges.length > 0 && (
+                  <div className="text-[10px] text-slate-400">
+                    bridges to: {analyseData.bridges.map((b, i) => {
+                      const ci = clusters.findIndex(c => c.category === b)
+                      const cc = getClusterColor(b, ci >= 0 ? ci : 0)
+                      return (
+                        <span key={b}>
+                          {i > 0 && ', '}
+                          <span style={{ color: cc.text }}>{b}</span>
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Discussions */}
+              {loadingDiscussions && discussions.length === 0 ? (
+                <div className="flex items-center justify-center py-4 border-t border-slate-100">
+                  <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
+                </div>
+              ) : discussions.length > 0 ? (
+                <div className="px-5 py-2 border-t border-slate-100 max-h-[120px] overflow-y-auto">
+                  {discussions.slice(0, 5).map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => {
+                        const url = d.conversationId ? `/query/${d.conversationId}` : `/query/${d.id}`
+                        window.open(url, '_blank')
+                      }}
+                      className="block w-full text-left py-1.5 text-[10px] text-slate-600 hover:text-slate-900 truncate"
+                    >
+                      {d.text}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 px-5 py-3 bg-slate-50 border-t border-slate-100">
+                <button
+                  onClick={closeAnalyse}
+                  className="flex-1 px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg transition-colors text-center"
+                >
+                  &#x25C7; analyse
+                </button>
+                <button
+                  onClick={() => {
+                    onNodeAction?.(`Tell me more about ${selectedTopic.name}`, selectedTopic.id)
+                    closeAnalyse()
+                  }}
+                  className="flex-1 px-3 py-2 text-xs font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg transition-colors text-center"
+                >
+                  &#x2192; continue
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Bottom bar */}
-      <div className="px-4 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-400">
+      <div className="px-4 py-1.5 bg-white border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-400" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
         <div className="flex items-center gap-4">
           <span>drag to pan</span>
           <span>scroll to zoom</span>
-          <span>click topic to see discussions</span>
+          <span>click node to analyse</span>
+          <span>&#x25C7; = shared topic</span>
         </div>
-        <span>akhai knowledge graph</span>
+        <span>akhai clusplot</span>
       </div>
     </div>
   )
