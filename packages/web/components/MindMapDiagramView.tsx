@@ -109,6 +109,8 @@ export default function MindMapDiagramView({
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [selectedTopic, setSelectedTopic] = useState<Node | null>(null)
   const [analyseOpen, setAnalyseOpen] = useState(false)
+  const [expandedCluster, setExpandedCluster] = useState<string | null>(null)
+  const [hoveredPreview, setHoveredPreview] = useState<{ id: string; x: number; y: number; name: string } | null>(null)
 
   // Discussion panel
   const [discussions, setDiscussions] = useState<Discussion[]>([])
@@ -623,9 +625,9 @@ export default function MindMapDiagramView({
               const color = getClusterColor(cluster.category, idx)
               return (
                 <radialGradient key={`grad-${cluster.category}`} id={`cluster-grad-${idx}`} cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor={color.fill} stopOpacity={0.22} />
-                  <stop offset="70%" stopColor={color.fill} stopOpacity={0.12} />
-                  <stop offset="100%" stopColor={color.fill} stopOpacity={0.04} />
+                  <stop offset="0%" stopColor={color.fill} stopOpacity={0.20} />
+                  <stop offset="60%" stopColor={color.fill} stopOpacity={0.12} />
+                  <stop offset="100%" stopColor={color.fill} stopOpacity={0.06} />
                 </radialGradient>
               )
             })}
@@ -640,7 +642,7 @@ export default function MindMapDiagramView({
               const isPulsing = pulsingClusters.has(cluster.category)
 
               return (
-                <g key={`cluster-${cluster.category}`}>
+                <g key={`cluster-${cluster.category}`} onClick={(e) => { e.stopPropagation(); setExpandedCluster(cluster.category) }} style={{ cursor: 'pointer' }}>
                   <ellipse
                     cx={cluster.cx}
                     cy={cluster.cy}
@@ -648,27 +650,23 @@ export default function MindMapDiagramView({
                     ry={cluster.ry}
                     fill={`url(#cluster-grad-${idx})`}
                     stroke={color.stroke}
-                    strokeWidth={isPulsing ? 2 : 1}
+                    strokeWidth={isPulsing ? 2.5 : 2}
                     strokeDasharray={isPulsing ? 'none' : '6 4'}
-                    strokeOpacity={isPulsing ? 0.45 : 0.25}
+                    strokeOpacity={isPulsing ? 0.5 : 0.4}
                     opacity={isPulsing ? 1 : 0.85}
                     filter={isPulsing ? 'url(#pulse-glow)' : undefined}
                     className="transition-all duration-500"
                   />
-                  {/* Cluster label */}
-                  <text
-                    x={cluster.cx}
-                    y={cluster.cy - cluster.ry + 14}
-                    textAnchor="middle"
-                    fill={color.text}
-                    fontSize={10}
-                    fontWeight={500}
-                    fontFamily="'JetBrains Mono', ui-monospace, monospace"
-                    opacity={0.7}
-                    className="select-none pointer-events-none"
-                  >
+                  <text x={cluster.cx} y={cluster.cy - cluster.ry * 0.7} textAnchor="middle" fill={color.text} fontSize={12} fontWeight={800} fontFamily="'JetBrains Mono', ui-monospace, monospace" opacity={0.85} className="select-none pointer-events-none">
                     {cluster.category}
                   </text>
+                  <text x={cluster.cx} y={cluster.cy - cluster.ry * 0.7 + 14} textAnchor="middle" fill="#94a3b8" fontSize={9} fontFamily="'JetBrains Mono', ui-monospace, monospace" className="select-none pointer-events-none">
+                    {cluster.nodes.length} topics
+                  </text>
+                  {cluster.nodes.slice(0, 5).map((pn, pi) => {
+                    const a = (pi / 5) * Math.PI * 2 - Math.PI / 2, px = cluster.cx + Math.cos(a) * cluster.ry * 0.35, py = cluster.cy + Math.sin(a) * cluster.ry * 0.35
+                    return <circle key={`pv-${pn.id}`} cx={px} cy={py} r={8} fill={color.text + '80'} stroke={color.text + '40'} strokeWidth={1} onMouseEnter={() => setHoveredPreview({ id: pn.id, x: px, y: py, name: pn.name })} onMouseLeave={() => setHoveredPreview(null)} style={{ cursor: 'pointer' }} />
+                  })}
                 </g>
               )
             })}
@@ -821,6 +819,12 @@ export default function MindMapDiagramView({
                 </foreignObject>
               )
             })()}
+            {hoveredPreview && (
+              <g transform={`translate(${hoveredPreview.x + 14}, ${hoveredPreview.y - 10})`} style={{ pointerEvents: 'none' }}>
+                <rect x={0} y={-12} rx={4} width={Math.max(hoveredPreview.name.length * 6.5, 60)} height={20} fill="#1e293b" opacity={0.92} />
+                <text x={6} y={2} fill="white" fontSize={10} fontFamily="'JetBrains Mono', ui-monospace, monospace">{hoveredPreview.name}</text>
+              </g>
+            )}
           </g>
         </svg>
 
@@ -831,6 +835,43 @@ export default function MindMapDiagramView({
           </div>
         )}
       </div>
+
+      {/* Expanded cluster detail view */}
+      {expandedCluster && (() => {
+        const cl = clusters.find(c => c.category === expandedCluster)
+        if (!cl) return null
+        const cc = getClusterColor(cl.category, clusters.indexOf(cl))
+        const intLinks = topicLinks.filter(l => cl.nodes.some(n => n.id === l.source) && cl.nodes.some(n => n.id === l.target))
+        const vw = dims.width || 800, vh = dims.height || 600, rad = Math.min(vw, vh) * 0.32
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'white', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', borderBottom: '1px solid #e2e8f0' }}>
+              <button onClick={() => setExpandedCluster(null)} style={{ padding: '4px 12px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6, background: '#f8fafc', cursor: 'pointer' }}>&#x2190; back to graph</button>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: cc.text, display: 'inline-block' }} />
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{expandedCluster}</span>
+              <span style={{ color: '#94a3b8', fontSize: 11 }}>{cl.nodes.length} topics</span>
+            </div>
+            <svg width="100%" height="calc(100% - 52px)" viewBox={`0 0 ${vw} ${vh}`}>
+              {intLinks.map((link, li) => {
+                const si = cl.nodes.findIndex(n => n.id === link.source), ti = cl.nodes.findIndex(n => n.id === link.target)
+                if (si < 0 || ti < 0) return null
+                const sa = (si / cl.nodes.length) * Math.PI * 2 - Math.PI / 2, ta = (ti / cl.nodes.length) * Math.PI * 2 - Math.PI / 2
+                return <line key={`el-${li}`} x1={vw/2 + Math.cos(sa)*rad} y1={vh/2 + Math.sin(sa)*rad} x2={vw/2 + Math.cos(ta)*rad} y2={vh/2 + Math.sin(ta)*rad} stroke={cc.text + '20'} strokeWidth={1} />
+              })}
+              {cl.nodes.map((node, ni) => {
+                const a = (ni / cl.nodes.length) * Math.PI * 2 - Math.PI / 2, nx = vw/2 + Math.cos(a)*rad, ny = vh/2 + Math.sin(a)*rad, nr = getNodeRadius(node.queryCount || 0), isHov = hoveredNode === node.id
+                return (
+                  <g key={node.id} transform={`translate(${nx}, ${ny})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} style={{ cursor: 'pointer' }}>
+                    <circle r={nr} fill={cc.text + '80'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
+                    {isHov && <text y={-nr - 6} textAnchor="middle" fill="#1e293b" fontSize={10} fontWeight={600}>{node.name}</text>}
+                    {isHov && <text y={-nr - 17} textAnchor="middle" fill="#94a3b8" fontSize={8}>{node.queryCount || 0} queries</text>}
+                  </g>
+                )
+              })}
+            </svg>
+          </div>
+        )
+      })()}
 
       {/* Analyse popup (modal overlay) */}
       <AnimatePresence mode="wait">
