@@ -304,7 +304,7 @@ export default function MindMapDiagramView({
     sortedCats.forEach(([cat, nodes], catIdx) => {
       // Golden angle placement for cluster centers
       const angle = catIdx * GOLDEN_ANGLE
-      const dist = catCount === 1 ? 0 : clusterRadius * (0.6 + 0.4 * (catIdx / Math.max(catCount - 1, 1)))
+      const dist = catCount === 1 ? 0 : (220 + catCount * 40) * (0.6 + (catIdx / 80) * 0.55)
       const clusterCx = cx + Math.cos(angle) * dist
       const clusterCy = cy + Math.sin(angle) * dist
 
@@ -663,8 +663,8 @@ export default function MindMapDiagramView({
                   <text x={cluster.cx} y={cluster.cy - cluster.ry * 0.7 + 14} textAnchor="middle" fill="#94a3b8" fontSize={9} fontFamily="'JetBrains Mono', ui-monospace, monospace" className="select-none pointer-events-none">
                     {cluster.nodes.length} topics
                   </text>
-                  {cluster.nodes.slice(0, 10).map((pn, pi) => {
-                    const a = (pi / 10) * Math.PI * 2 - Math.PI / 2, px = cluster.cx + Math.cos(a) * cluster.ry * 0.35, py = cluster.cy + Math.sin(a) * cluster.ry * 0.35
+                  {cluster.nodes.slice(0, 5).map((pn, pi) => {
+                    const a = (pi / 5) * Math.PI * 2 - Math.PI / 2, px = cluster.cx + Math.cos(a) * cluster.ry * 0.35, py = cluster.cy + Math.sin(a) * cluster.ry * 0.35
                     return <circle key={`pv-${pn.id}`} cx={px} cy={py} r={8} fill={color.text + '70'} stroke={color.text + '40'} strokeWidth={1} onMouseEnter={() => setHoveredPreview({ id: pn.id, x: px, y: py, name: pn.name })} onMouseLeave={() => setHoveredPreview(null)} style={{ cursor: 'pointer' }} />
                   })}
                 </g>
@@ -692,18 +692,18 @@ export default function MindMapDiagramView({
                     key={`link-${idx}`}
                     d={`M ${sourcePos.x} ${sourcePos.y} Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
                     fill="none"
-                    stroke={isHighlighted ? '#64748b' : '#94a3b8'}
-                    strokeWidth={isHighlighted ? 1.5 : 0.8}
+                    stroke={isHighlighted ? '#64748b' : 'transparent'}
+                    strokeWidth={isHighlighted ? 1.5 : 0}
                     strokeDasharray={sameCat ? 'none' : '4 3'}
-                    opacity={isHighlighted ? 0.8 : 0.5}
+                    opacity={isHighlighted ? 0.8 : 0}
                     className="transition-all duration-200"
                   />
                 )
               })}
             </g>
 
-            {/* Nodes */}
-            {filteredNodes.map((node) => {
+            {/* Nodes — hidden in overview, visible only in expanded cluster */}
+            {false && filteredNodes.map((node) => {
               const pos = getPos(node.id)
               if (!pos) return null
 
