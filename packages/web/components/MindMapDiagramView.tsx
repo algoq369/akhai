@@ -263,7 +263,7 @@ export default function MindMapDiagramView({
         if (link.source === n.id && nodeCatMap[link.target]) connectedCats.add(nodeCatMap[link.target])
         if (link.target === n.id && nodeCatMap[link.source]) connectedCats.add(nodeCatMap[link.source])
       })
-      if (connectedCats.size >= 2) {
+      if (connectedCats.size >= 3) {
         shared[n.id] = Array.from(connectedCats)
       }
     })
@@ -755,32 +755,7 @@ export default function MindMapDiagramView({
                     />
                   )}
 
-                  {/* Node label */}
-                  <text
-                    y={r + 12}
-                    textAnchor="middle"
-                    fill={isHovered || isSelected ? '#1e293b' : '#64748b'}
-                    fontSize={9}
-                    fontWeight={isSelected ? 500 : 400}
-                    fontFamily="'JetBrains Mono', ui-monospace, monospace"
-                    className="select-none pointer-events-none"
-                  >
-                    {node.name.length > 16 ? node.name.slice(0, 15) + '...' : node.name}
-                  </text>
-
-                  {/* Query count badge */}
-                  {(node.queryCount || 0) > 0 && (
-                    <text
-                      y={-r - 4}
-                      textAnchor="middle"
-                      fill="#94a3b8"
-                      fontSize={8}
-                      fontFamily="'JetBrains Mono', ui-monospace, monospace"
-                      className="select-none pointer-events-none"
-                    >
-                      {node.queryCount}
-                    </text>
-                  )}
+                  {/* Node label + query count: shown in hover card only */}
                 </g>
               )
             })}
