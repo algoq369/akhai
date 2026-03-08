@@ -95,7 +95,7 @@ export default function MindMapPage() {
   const viewModes = [
     { id: 'graph' as ViewMode, icon: MapIcon, label: 'Graph' },
     { id: 'history' as ViewMode, icon: ClockIcon, label: 'History' },
-    { id: 'report' as ViewMode, icon: BookOpenIcon, label: 'Report' }
+    { id: 'report' as ViewMode, icon: BookOpenIcon, label: 'Grimoire' }
   ]
 
   return (

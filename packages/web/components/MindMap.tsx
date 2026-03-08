@@ -201,7 +201,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
             {[
               { id: 'graph', label: 'graph' },
               { id: 'history', label: 'history' },
-              { id: 'report', label: 'report' },
+              { id: 'report', label: 'grimoire' },
             ].map(({ id, label }) => (
               <button
                 key={id}
