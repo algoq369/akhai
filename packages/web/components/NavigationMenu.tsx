@@ -19,6 +19,7 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
     { id: 'intelligence-robot-training', label: 'intelligence & robot training', href: '/idea-factory?tab=customize', isLink: true },
     { id: 'mindmap', label: 'mindmap', onClick: onMindMapClick, isLink: false },
     ...(onHistoryClick ? [{ id: 'history', label: 'history', onClick: onHistoryClick, isLink: false }] : []),
+    { id: 'grimoire', label: 'grimoire', href: '/grimoires', isLink: true },
     { id: 'pricing', label: '₿', href: '/pricing', isLink: true, accent: 'bitcoin' },
     // Only show profile link if user is logged in (use button for client-side navigation)
     ...(user ? [{ id: 'profile', label: 'profile', onClick: () => router.push('/profile'), isLink: false }] : []),
@@ -27,6 +28,7 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
   const isActive = (id: string) => {
     if (id === 'philosophy' && pathname === '/philosophy') return true
     if (id === 'history' && pathname === '/history') return true
+    if (id === 'grimoire' && pathname?.startsWith('/grimoires')) return true
     if (id === 'pricing' && pathname === '/pricing') return true
     if (id === 'profile' && pathname === '/profile') return true
     if (id === 'intelligence-robot-training' && pathname === '/idea-factory') return true

@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
 
 
-    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, layersWeights, instinctConfig, liveRefinements, queryId: clientQueryId } = await request.json()
+    const { query, methodology = 'auto', conversationHistory = [], pageContext, legendMode = false, layersWeights, instinctConfig, liveRefinements, grimoireContext, queryId: clientQueryId } = await request.json()
 
     // Use client-provided queryId if available (enables live SSE), otherwise generate
     queryId = clientQueryId || Math.random().toString(36).slice(2, 10)
@@ -177,11 +177,27 @@ export async function POST(request: NextRequest) {
         },
       })
     }
-    
+
+    // Inject active Grimoire context (instructions + memories)
+    if (grimoireContext && grimoireContext.id) {
+      const parts: string[] = []
+      if (grimoireContext.instructions) {
+        parts.push(`Instructions: ${grimoireContext.instructions}`)
+      }
+      if (grimoireContext.memories && grimoireContext.memories.length > 0) {
+        parts.push(`Memories:\n${grimoireContext.memories.map((m: string) => `- ${m}`).join('\n')}`)
+      }
+      if (parts.length > 0) {
+        const grimoireBlock = `\n\n[Active Grimoire: ${grimoireContext.name}]\n${parts.join('\n')}`
+        sideCanalContext = sideCanalContext ? sideCanalContext + grimoireBlock : grimoireBlock
+        log('INFO', 'GRIMOIRE', `Injected context from "${grimoireContext.name}" (${parts.length} sections)`)
+      }
+    }
+
     try {
       // Create instinct config (auto-detect lenses from query)
       const effectiveInstinctConfig = instinctConfig || createAutoInstinctConfig(query, 0.5, weights)
-      
+
       // Run Intelligence Fusion
       fusionResult = await fuseIntelligence(
         query,

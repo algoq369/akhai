@@ -9,6 +9,7 @@ import { trackQuery } from '@/lib/analytics';
 import { useSideCanalStore } from '@/lib/stores/side-canal-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useLayerStore } from '@/lib/stores/layer-store';
+import { useGrimoireStore } from '@/lib/stores/grimoire-store';
 import GuardWarning from '@/components/GuardWarning';
 import { InstinctModeConsole } from '@/components/InstinctModeConsole';
 import LayerConsole from '@/components/LayerConsole';
@@ -1171,6 +1172,13 @@ function HomePage() {
       const currentChatId = activeChatId || 'main';
       const pageContext = getPageContext();
       const { liveRefinements } = useSideCanalStore.getState();
+      const grimoireState = useGrimoireStore.getState();
+      const activeGrimoire = grimoireState.activeGrimoireId
+        ? grimoireState.getGrimoire(grimoireState.activeGrimoireId)
+        : null;
+      const grimoireMemories = activeGrimoire
+        ? grimoireState.getActiveMemories(activeGrimoire.id).slice(0, 10)
+        : [];
       // Pre-generate IDs so SSE can connect BEFORE the fetch
       const assistantMsgId = generateId();
       const frontendQueryId = Math.random().toString(36).slice(2, 10);
@@ -1229,6 +1237,12 @@ function HomePage() {
           instinctConfig,
           layersWeights: useLayerStore.getState().weights,
           liveRefinements: liveRefinements.length > 0 ? liveRefinements : undefined,
+          grimoireContext: activeGrimoire ? {
+            id: activeGrimoire.id,
+            name: activeGrimoire.name,
+            instructions: activeGrimoire.instructions,
+            memories: grimoireMemories.map(m => m.content),
+          } : undefined,
           attachments: processedFiles.length > 0 ? processedFiles : undefined,
           fileUrls: currentFileUrls.length > 0 ? currentFileUrls : undefined,
           queryId: frontendQueryId,
@@ -2011,6 +2025,12 @@ function HomePage() {
                 >
                   history
                 </button>
+                <a
+                  href="/grimoires"
+                  className="text-[9px] uppercase tracking-wider text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost transition-colors"
+                >
+                  grimoire
+                </a>
               </div>
             </div>
           </div>
