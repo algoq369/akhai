@@ -111,6 +111,7 @@ export default function MindMapDiagramView({
   const [analyseOpen, setAnalyseOpen] = useState(false)
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null)
   const [hoveredPreview, setHoveredPreview] = useState<{ id: string; x: number; y: number; name: string } | null>(null)
+  const [hoveredCluster, setHoveredCluster] = useState<string | null>(null)
 
   // Discussion panel
   const [discussions, setDiscussions] = useState<Discussion[]>([])
@@ -642,7 +643,7 @@ export default function MindMapDiagramView({
               const isPulsing = pulsingClusters.has(cluster.category)
 
               return (
-                <g key={`cluster-${cluster.category}`} onClick={(e) => { e.stopPropagation(); setExpandedCluster(cluster.category) }} style={{ cursor: 'pointer' }}>
+                <g key={`cluster-${cluster.category}`} onClick={(e) => { e.stopPropagation(); setExpandedCluster(cluster.category) }} onMouseEnter={() => setHoveredCluster(cluster.category)} onMouseLeave={() => setHoveredCluster(null)} style={{ cursor: 'pointer' }}>
                   <ellipse
                     cx={cluster.cx}
                     cy={cluster.cy}
@@ -669,6 +670,16 @@ export default function MindMapDiagramView({
                   })}
                 </g>
               )
+            })}
+
+            {/* Cluster-to-cluster interconnection lines on hover */}
+            {hoveredCluster && clusters.map((cl) => {
+              if (cl.category === hoveredCluster) return null
+              const hc = clusters.find(c => c.category === hoveredCluster); if (!hc) return null
+              const hasLink = topicLinks.some(l => { const sn = filteredNodes.find(n => n.id === l.source); const tn = filteredNodes.find(n => n.id === l.target); return (sn?.category === hoveredCluster && tn?.category === cl.category) || (tn?.category === hoveredCluster && sn?.category === cl.category) })
+              if (!hasLink) return null
+              const hcc = getClusterColor(hoveredCluster, clusters.indexOf(hc))
+              return <line key={`cc-${cl.category}`} x1={hc.cx} y1={hc.cy} x2={cl.cx} y2={cl.cy} stroke={hcc.text + '4D'} strokeWidth={2} strokeDasharray="8 4" className="transition-all duration-300" />
             })}
 
             {/* Cross-cluster connection lines */}
@@ -823,12 +834,24 @@ export default function MindMapDiagramView({
                 </foreignObject>
               )
             })()}
-            {hoveredPreview && (
-              <g transform={`translate(${hoveredPreview.x + 14}, ${hoveredPreview.y - 10})`} style={{ pointerEvents: 'none' }}>
-                <rect x={0} y={-12} rx={4} width={Math.max(hoveredPreview.name.length * 6.5, 60)} height={20} fill="#1e293b" opacity={0.92} />
-                <text x={6} y={2} fill="white" fontSize={10} fontFamily="'JetBrains Mono', ui-monospace, monospace">{hoveredPreview.name}</text>
-              </g>
-            )}
+            {hoveredPreview && (() => {
+              const pNode = filteredNodes.find(n => n.id === hoveredPreview.id); if (!pNode) return null
+              const pConns = topicLinks.filter(l => l.source === hoveredPreview.id || l.target === hoveredPreview.id)
+              const pConnNames = pConns.slice(0, 3).map(l => filteredNodes.find(n => n.id === (l.source === hoveredPreview.id ? l.target : l.source))?.name).filter(Boolean)
+              const pCats: Record<string, string> = {}
+              pConns.forEach(l => { const oid = l.source === hoveredPreview.id ? l.target : l.source; const on = filteredNodes.find(n => n.id === oid); if (on) { const ci = clusters.findIndex(c => c.category === (on.category || 'other')); pCats[on.category || 'other'] = getClusterColor(on.category || 'other', ci >= 0 ? ci : 0).text } })
+              return (<>
+                {pConns.map((l, i) => { const oid = l.source === hoveredPreview.id ? l.target : l.source; const op = getPos(oid); if (!op) return null; return <line key={`pl-${i}`} x1={hoveredPreview.x} y1={hoveredPreview.y} x2={op.x} y2={op.y} stroke={(pCats[filteredNodes.find(n => n.id === oid)?.category || 'other'] || '#94a3b8') + '66'} strokeWidth={1.5} className="transition-all duration-200" /> })}
+                <foreignObject x={hoveredPreview.x + 16} y={hoveredPreview.y - 55} width={200} height={130} style={{ pointerEvents: 'none', overflow: 'visible' }}>
+                  <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 10px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10, color: '#334155' }}>
+                    <div style={{ fontWeight: 600, fontSize: 11, marginBottom: 3 }}>{pNode.name}</div>
+                    <div style={{ color: '#94a3b8', marginBottom: 3 }}>{pNode.queryCount || 0} queries · {pConns.length} connections</div>
+                    {Object.keys(pCats).length > 0 && <div style={{ marginBottom: 3 }}>Correlates: {Object.entries(pCats).map(([cat, col]) => <span key={cat} style={{ marginRight: 6 }}><span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: col, marginRight: 2 }} />{cat}</span>)}</div>}
+                    {pConnNames.length > 0 && <div style={{ color: '#64748b', fontSize: 9 }}>Related: {pConnNames.join(', ')}</div>}
+                  </div>
+                </foreignObject>
+              </>)
+            })()}
           </g>
         </svg>
 
@@ -848,9 +871,11 @@ export default function MindMapDiagramView({
         const intLinks = topicLinks.filter(l => cl.nodes.some(n => n.id === l.source) && cl.nodes.some(n => n.id === l.target))
         const vw = dims.width || 800, vh = dims.height || 600, rad = Math.min(vw, vh) * 0.32
         return (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'white', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedCluster(null)}>
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
+            <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: '80%', height: '80%', background: 'white', borderRadius: 16, boxShadow: '0 24px 48px rgba(0,0,0,0.12)', overflow: 'hidden', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', borderBottom: '1px solid #e2e8f0' }}>
-              <button onClick={() => setExpandedCluster(null)} style={{ padding: '4px 12px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6, background: '#f8fafc', cursor: 'pointer' }}>&#x2190; back to graph</button>
+              <button onClick={() => setExpandedCluster(null)} style={{ marginLeft: 'auto', fontSize: 16, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>&#x2715;</button>
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: cc.text, display: 'inline-block' }} />
               <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{expandedCluster}</span>
               <span style={{ color: '#94a3b8', fontSize: 11 }}>{cl.nodes.length} topics</span>
@@ -865,7 +890,7 @@ export default function MindMapDiagramView({
               {cl.nodes.map((node, ni) => {
                 const a = (ni / cl.nodes.length) * Math.PI * 2 - Math.PI / 2, nx = vw/2 + Math.cos(a)*rad, ny = vh/2 + Math.sin(a)*rad, nr = getNodeRadius(node.queryCount || 0), isHov = hoveredNode === node.id
                 return (
-                  <g key={node.id} transform={`translate(${nx}, ${ny})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); handleNodeClick(e, node); setExpandedCluster(null) }} style={{ cursor: 'pointer' }}>
+                  <g key={node.id} transform={`translate(${nx}, ${ny})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedCluster(null) }} style={{ cursor: 'pointer' }}>
                     <circle r={nr} fill={cc.text + '90'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
                     <text y={nr + 14} textAnchor="middle" fill={isHov ? '#1e293b' : '#64748b'} fontSize={isHov ? 11 : 9} fontWeight={isHov ? 600 : 400}>{node.name}</text>
                     {isHov && <text y={-nr - 8} textAnchor="middle" fill="#94a3b8" fontSize={8}>{node.queryCount || 0} queries · {connectionCounts[node.id] || 0} connections</text>}
@@ -873,7 +898,7 @@ export default function MindMapDiagramView({
                 )
               })}
             </svg>
-          </div>
+          </div></div></div>
         )
       })()}
 
