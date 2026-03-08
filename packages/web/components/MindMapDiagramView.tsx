@@ -483,7 +483,7 @@ export default function MindMapDiagramView({
   const sharedCount = Object.keys(sharedNodeInfo).length
 
   // Node size from queryCount
-  const getNodeRadius = (qc: number) => Math.max(6, Math.min(18, 6 + Math.sqrt(qc) * 2.5))
+  const getNodeRadius = (qc: number) => Math.max(4, Math.min(16, 3 + Math.sqrt(qc) * 3))
 
   // Build analyse modal data
   const analyseData = useMemo(() => {
@@ -623,9 +623,9 @@ export default function MindMapDiagramView({
               const color = getClusterColor(cluster.category, idx)
               return (
                 <radialGradient key={`grad-${cluster.category}`} id={`cluster-grad-${idx}`} cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor={color.fill} stopOpacity={0.12} />
-                  <stop offset="70%" stopColor={color.fill} stopOpacity={0.06} />
-                  <stop offset="100%" stopColor={color.fill} stopOpacity={0.01} />
+                  <stop offset="0%" stopColor={color.fill} stopOpacity={0.22} />
+                  <stop offset="70%" stopColor={color.fill} stopOpacity={0.12} />
+                  <stop offset="100%" stopColor={color.fill} stopOpacity={0.04} />
                 </radialGradient>
               )
             })}
@@ -650,7 +650,8 @@ export default function MindMapDiagramView({
                     stroke={color.stroke}
                     strokeWidth={isPulsing ? 2 : 1}
                     strokeDasharray={isPulsing ? 'none' : '6 4'}
-                    opacity={isPulsing ? 0.9 : 0.7}
+                    strokeOpacity={isPulsing ? 0.45 : 0.25}
+                    opacity={isPulsing ? 1 : 0.85}
                     filter={isPulsing ? 'url(#pulse-glow)' : undefined}
                     className="transition-all duration-500"
                   />
@@ -693,10 +694,10 @@ export default function MindMapDiagramView({
                     key={`link-${idx}`}
                     d={`M ${sourcePos.x} ${sourcePos.y} Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
                     fill="none"
-                    stroke={isHighlighted ? '#64748b' : '#94a3b8'}
-                    strokeWidth={isHighlighted ? 1.5 : 0.5}
+                    stroke={isHighlighted ? '#64748b' : '#cbd5e1'}
+                    strokeWidth={isHighlighted ? 1.5 : 0.7}
                     strokeDasharray={sameCat ? 'none' : '4 3'}
-                    opacity={isHighlighted ? 0.6 : 0.15}
+                    opacity={isHighlighted ? 0.7 : 0.35}
                     className="transition-all duration-200"
                   />
                 )
@@ -738,8 +739,8 @@ export default function MindMapDiagramView({
                       height={r * 2}
                       rx={2}
                       transform={`rotate(45)`}
-                      fill={isSelected ? color.fill : '#ffffff'}
-                      stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.stroke}
+                      fill={isSelected ? color.fill : color.text + 'B3'}
+                      stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.text + '80'}
                       strokeWidth={isSelected || isHovered ? 2 : 1}
                       className="transition-all duration-150"
                       filter={isHovered ? 'url(#glow)' : undefined}
@@ -747,8 +748,8 @@ export default function MindMapDiagramView({
                   ) : (
                     <circle
                       r={r}
-                      fill={isSelected ? color.fill : '#ffffff'}
-                      stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.stroke}
+                      fill={isSelected ? color.fill : color.text + '80'}
+                      stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.text + '4D'}
                       strokeWidth={isSelected || isHovered ? 2 : 1}
                       className="transition-all duration-150"
                       filter={isHovered ? 'url(#glow)' : undefined}
