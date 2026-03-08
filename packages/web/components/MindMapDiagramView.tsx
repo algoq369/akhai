@@ -54,14 +54,14 @@ const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
 // Cluster palette — muted, professional
 const CLUSTER_COLORS: Record<string, { fill: string; stroke: string; text: string }> = {}
 const PALETTE = [
-  { fill: 'rgba(99,102,241,0.06)', stroke: 'rgba(99,102,241,0.25)', text: '#6366f1' },
-  { fill: 'rgba(16,185,129,0.06)', stroke: 'rgba(16,185,129,0.25)', text: '#10b981' },
-  { fill: 'rgba(245,158,11,0.06)', stroke: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
-  { fill: 'rgba(239,68,68,0.06)', stroke: 'rgba(239,68,68,0.25)', text: '#ef4444' },
-  { fill: 'rgba(139,92,246,0.06)', stroke: 'rgba(139,92,246,0.25)', text: '#8b5cf6' },
-  { fill: 'rgba(6,182,212,0.06)', stroke: 'rgba(6,182,212,0.25)', text: '#06b6d4' },
-  { fill: 'rgba(236,72,153,0.06)', stroke: 'rgba(236,72,153,0.25)', text: '#ec4899' },
-  { fill: 'rgba(107,114,128,0.06)', stroke: 'rgba(107,114,128,0.25)', text: '#6b7280' },
+  { fill: 'rgba(99,102,241,0.35)', stroke: 'rgba(99,102,241,0.35)', text: '#6366f1' },
+  { fill: 'rgba(16,185,129,0.35)', stroke: 'rgba(16,185,129,0.35)', text: '#10b981' },
+  { fill: 'rgba(245,158,11,0.35)', stroke: 'rgba(245,158,11,0.35)', text: '#f59e0b' },
+  { fill: 'rgba(239,68,68,0.35)', stroke: 'rgba(239,68,68,0.35)', text: '#ef4444' },
+  { fill: 'rgba(139,92,246,0.35)', stroke: 'rgba(139,92,246,0.35)', text: '#8b5cf6' },
+  { fill: 'rgba(6,182,212,0.35)', stroke: 'rgba(6,182,212,0.35)', text: '#06b6d4' },
+  { fill: 'rgba(236,72,153,0.35)', stroke: 'rgba(236,72,153,0.35)', text: '#ec4899' },
+  { fill: 'rgba(107,114,128,0.35)', stroke: 'rgba(107,114,128,0.35)', text: '#6b7280' },
 ]
 
 function getClusterColor(category: string, idx: number) {
@@ -625,9 +625,9 @@ export default function MindMapDiagramView({
               const color = getClusterColor(cluster.category, idx)
               return (
                 <radialGradient key={`grad-${cluster.category}`} id={`cluster-grad-${idx}`} cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor={color.fill} stopOpacity={0.20} />
-                  <stop offset="60%" stopColor={color.fill} stopOpacity={0.12} />
-                  <stop offset="100%" stopColor={color.fill} stopOpacity={0.06} />
+                  <stop offset="0%" stopColor={color.text} stopOpacity={0.18} />
+                  <stop offset="60%" stopColor={color.text} stopOpacity={0.08} />
+                  <stop offset="100%" stopColor={color.text} stopOpacity={0.02} />
                 </radialGradient>
               )
             })}
@@ -663,9 +663,9 @@ export default function MindMapDiagramView({
                   <text x={cluster.cx} y={cluster.cy - cluster.ry * 0.7 + 14} textAnchor="middle" fill="#94a3b8" fontSize={9} fontFamily="'JetBrains Mono', ui-monospace, monospace" className="select-none pointer-events-none">
                     {cluster.nodes.length} topics
                   </text>
-                  {cluster.nodes.slice(0, 5).map((pn, pi) => {
-                    const a = (pi / 5) * Math.PI * 2 - Math.PI / 2, px = cluster.cx + Math.cos(a) * cluster.ry * 0.35, py = cluster.cy + Math.sin(a) * cluster.ry * 0.35
-                    return <circle key={`pv-${pn.id}`} cx={px} cy={py} r={8} fill={color.text + '80'} stroke={color.text + '40'} strokeWidth={1} onMouseEnter={() => setHoveredPreview({ id: pn.id, x: px, y: py, name: pn.name })} onMouseLeave={() => setHoveredPreview(null)} style={{ cursor: 'pointer' }} />
+                  {cluster.nodes.slice(0, 10).map((pn, pi) => {
+                    const a = (pi / 10) * Math.PI * 2 - Math.PI / 2, px = cluster.cx + Math.cos(a) * cluster.ry * 0.35, py = cluster.cy + Math.sin(a) * cluster.ry * 0.35
+                    return <circle key={`pv-${pn.id}`} cx={px} cy={py} r={8} fill={color.text + '70'} stroke={color.text + '40'} strokeWidth={1} onMouseEnter={() => setHoveredPreview({ id: pn.id, x: px, y: py, name: pn.name })} onMouseLeave={() => setHoveredPreview(null)} style={{ cursor: 'pointer' }} />
                   })}
                 </g>
               )
@@ -692,10 +692,10 @@ export default function MindMapDiagramView({
                     key={`link-${idx}`}
                     d={`M ${sourcePos.x} ${sourcePos.y} Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
                     fill="none"
-                    stroke={isHighlighted ? '#64748b' : '#cbd5e1'}
-                    strokeWidth={isHighlighted ? 1.5 : 0.7}
+                    stroke={isHighlighted ? '#64748b' : '#94a3b8'}
+                    strokeWidth={isHighlighted ? 1.5 : 0.8}
                     strokeDasharray={sameCat ? 'none' : '4 3'}
-                    opacity={isHighlighted ? 0.7 : 0.35}
+                    opacity={isHighlighted ? 0.8 : 0.5}
                     className="transition-all duration-200"
                   />
                 )
@@ -737,7 +737,7 @@ export default function MindMapDiagramView({
                       height={r * 2}
                       rx={2}
                       transform={`rotate(45)`}
-                      fill={isSelected ? color.fill : color.text + 'B3'}
+                      fill={isSelected ? color.fill : color.text + 'B0'}
                       stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.text + '80'}
                       strokeWidth={isSelected || isHovered ? 2 : 1}
                       className="transition-all duration-150"
@@ -746,7 +746,7 @@ export default function MindMapDiagramView({
                   ) : (
                     <circle
                       r={r}
-                      fill={isSelected ? color.fill : color.text + '80'}
+                      fill={isSelected ? color.fill : color.text + '90'}
                       stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.text + '4D'}
                       strokeWidth={isSelected || isHovered ? 2 : 1}
                       className="transition-all duration-150"
@@ -777,8 +777,9 @@ export default function MindMapDiagramView({
                 connCats[cat] = (connCats[cat] || 0) + 1
               })
 
-              const cardW = 200
-              const cardH = 80 + Object.keys(connCats).length * 16
+              const connNames = conns.slice(0, 3).map(l => { const oid = l.source === hoveredNode ? l.target : l.source; return filteredNodes.find(n => n.id === oid)?.name }).filter(Boolean)
+              const cardW = 220
+              const cardH = 96 + Object.keys(connCats).length * 16
 
               return (
                 <foreignObject
@@ -800,9 +801,12 @@ export default function MindMapDiagramView({
                       color: '#334155',
                     }}
                   >
-                    <div style={{ fontWeight: 600, fontSize: 11, marginBottom: 4 }}>{node.name}</div>
-                    <div style={{ color: '#94a3b8', marginBottom: 6 }}>
-                      {node.queryCount || 0} queries · {conns.length} connections
+                    <div style={{ fontWeight: 600, fontSize: 11, marginBottom: 3 }}>{node.name}</div>
+                    <div style={{ color: '#94a3b8', marginBottom: 3 }}>
+                      {node.queryCount || 0} queries · {conns.length} connections · {node.category || 'other'}
+                    </div>
+                    <div style={{ color: '#64748b', fontSize: 9, marginBottom: 5, lineHeight: '1.3' }}>
+                      {node.description ? node.description.slice(0, 60) + (node.description.length > 60 ? '...' : '') : connNames.length > 0 ? `Related to: ${connNames.join(', ')}` : ''}
                     </div>
                     {Object.entries(connCats).map(([cat, count]) => {
                       const ci = clusters.findIndex(c => c.category === cat)
@@ -861,10 +865,10 @@ export default function MindMapDiagramView({
               {cl.nodes.map((node, ni) => {
                 const a = (ni / cl.nodes.length) * Math.PI * 2 - Math.PI / 2, nx = vw/2 + Math.cos(a)*rad, ny = vh/2 + Math.sin(a)*rad, nr = getNodeRadius(node.queryCount || 0), isHov = hoveredNode === node.id
                 return (
-                  <g key={node.id} transform={`translate(${nx}, ${ny})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} style={{ cursor: 'pointer' }}>
-                    <circle r={nr} fill={cc.text + '80'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
-                    {isHov && <text y={-nr - 6} textAnchor="middle" fill="#1e293b" fontSize={10} fontWeight={600}>{node.name}</text>}
-                    {isHov && <text y={-nr - 17} textAnchor="middle" fill="#94a3b8" fontSize={8}>{node.queryCount || 0} queries</text>}
+                  <g key={node.id} transform={`translate(${nx}, ${ny})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); handleNodeClick(e, node); setExpandedCluster(null) }} style={{ cursor: 'pointer' }}>
+                    <circle r={nr} fill={cc.text + '90'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
+                    <text y={nr + 14} textAnchor="middle" fill={isHov ? '#1e293b' : '#64748b'} fontSize={isHov ? 11 : 9} fontWeight={isHov ? 600 : 400}>{node.name}</text>
+                    {isHov && <text y={-nr - 8} textAnchor="middle" fill="#94a3b8" fontSize={8}>{node.queryCount || 0} queries · {connectionCounts[node.id] || 0} connections</text>}
                   </g>
                 )
               })}
