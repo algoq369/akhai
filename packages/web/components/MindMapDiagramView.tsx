@@ -898,7 +898,7 @@ export default function MindMapDiagramView({
                 )
               })}
             </svg>
-          </div></div></div>
+          </div></div>
         )
       })()}
 
