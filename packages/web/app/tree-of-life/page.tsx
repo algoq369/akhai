@@ -65,6 +65,7 @@ function SimpleConfigPanel({ onAdvanced }: { onAdvanced: () => void }) {
   return (
     <div className="max-w-xl mx-auto pt-16 pb-12 px-4">
       {/* Header */}
+      <a href="/" className="text-[9px] font-mono text-[#94a3b8] hover:text-[#64748b] transition-colors uppercase tracking-widest mb-6 inline-block">&larr; back to chat</a>
       <h1 className="text-[11px] uppercase tracking-[0.3em] text-[#94a3b8] font-mono mb-1">
         AI CONFIGURATION
       </h1>
