@@ -168,6 +168,13 @@ export default function TreeOfLifePage() {
   const [antipatternCollapsed, setAntipatternCollapsed] = useState(false)
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple')
 
+  // Read URL param to jump to advanced mode
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'advanced') {
+      setViewMode('advanced')
+    }
+  }, [])
+
   // ═══════════════════════════════════════════
   // MODAL STATE
   // ═══════════════════════════════════════════

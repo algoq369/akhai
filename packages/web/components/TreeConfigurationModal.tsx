@@ -124,7 +124,7 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
 
             {/* Advanced link */}
             <button
-              onClick={() => { window.location.href = '/tree-of-life' }}
+              onClick={() => { window.location.href = '/tree-of-life?mode=advanced' }}
               className="font-mono text-[9px] text-neutral-400 hover:text-neutral-700 transition-colors uppercase tracking-[0.15em]"
             >
               advanced &rarr;
