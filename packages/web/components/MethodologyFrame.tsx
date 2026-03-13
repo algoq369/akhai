@@ -111,14 +111,14 @@ export default function MethodologyFrame({
         {/* Vertical separator */}
         <div className="h-6 w-px bg-slate-700 dark:bg-slate-600 mx-3" />
 
-        {/* Tree of Life Console indicator */}
+        {/* AI Config Console indicator */}
         <div
           className="relative"
           onMouseEnter={() => setHoveredConsole(true)}
           onMouseLeave={() => setHoveredConsole(false)}
         >
           <motion.button
-            onClick={onConsoleToggle}
+            onClick={() => window.location.href = "/tree-of-life"}
             className="text-[14px] transition-all duration-200"
             style={{
               color: consoleOpen ? '#a855f7' : '#cbd5e1',
@@ -143,12 +143,12 @@ export default function MethodologyFrame({
                   <span
                     className="text-[10px] font-medium text-purple-400"
                   >
-                    Tree of Life
+                    AI Config
                   </span>
                   <span
                     className="text-[8px] font-mono opacity-60 text-purple-400"
                   >
-                    ✦ configuration
+                    tune your engine
                   </span>
                 </div>
               </motion.div>
