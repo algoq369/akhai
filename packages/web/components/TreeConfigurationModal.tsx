@@ -1,11 +1,11 @@
 'use client'
 
 /**
- * Tree Configuration Modal - Compact 3-Slider View
+ * Tree Configuration Panel - Inline Borderless 3-Slider
  *
- * Simple AI config popup: Reasoning, Attention, Generative sliders.
- * Preset buttons. 'advanced →' links to /tree-of-life full page.
- * Triggered by ✦ button in footer and methodology frame.
+ * Matches InstinctModeConsole style: no box, no backdrop, no border.
+ * Unfolds inline below the ✦ button. Pure raw text + sliders.
+ * 'advanced →' links to /tree-of-life full page.
  */
 
 import { motion, AnimatePresence } from 'framer-motion'
@@ -19,9 +19,9 @@ interface TreeConfigurationModalProps {
 }
 
 const SLIDER_CONFIG = [
-  { layer: Layer.REASONING, label: 'Reasoning', left: 'surface', right: 'deep analysis', color: '#4f46e5' },
-  { layer: Layer.ATTENTION, label: 'Attention', left: 'broad', right: 'laser focus', color: '#22c55e' },
-  { layer: Layer.GENERATIVE, label: 'Generative', left: 'factual', right: 'creative', color: '#f97316' },
+  { layer: Layer.REASONING, label: 'reasoning', left: 'surface', right: 'deep analysis', color: '#4f46e5' },
+  { layer: Layer.ATTENTION, label: 'attention', left: 'broad', right: 'laser focus', color: '#22c55e' },
+  { layer: Layer.GENERATIVE, label: 'generative', left: 'factual', right: 'creative', color: '#f97316' },
 ] as const
 
 const PRESETS: { key: PresetName; label: string }[] = [
@@ -39,97 +39,91 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/20"
-          onClick={onClose}
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+          className="w-full max-w-2xl font-mono text-[9px] mt-1 px-4 overflow-hidden"
         >
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.12 }}
-            className="w-full max-w-[420px] bg-white border border-neutral-200 shadow-lg mx-4 p-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-5">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-400">
-                AI CONFIG
-              </span>
-              <button
-                onClick={onClose}
-                className="font-mono text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
-              >
-                [x]
-              </button>
-            </div>
-
-            {/* Sliders */}
-            <div className="space-y-5 mb-6">
-              {SLIDER_CONFIG.map(({ layer, label, left, right, color }) => {
-                const value = Math.round((weights[layer] ?? 0.5) * 100)
-                return (
-                  <div key={layer}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-neutral-700">
-                        {label}
-                      </span>
-                      <span className="font-mono text-[10px] tabular-nums" style={{ color }}>
-                        {value}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={value}
-                      onChange={(e) => {
-                        useLayerStore.getState().setWeight(layer, Number(e.target.value) / 100)
-                      }}
-                      className="w-full h-1 rounded-full appearance-none cursor-pointer"
-                      style={{
-                        background: `linear-gradient(to right, ${color} ${value}%, #e2e8f0 ${value}%)`,
-                        accentColor: color,
-                      }}
-                    />
-                    <div className="flex justify-between mt-0.5">
-                      <span className="font-mono text-[8px] text-neutral-400">{left}</span>
-                      <span className="font-mono text-[8px] text-neutral-400">{right}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Presets */}
-            <div className="grid grid-cols-4 gap-1.5 mb-5">
-              {PRESETS.map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => {
-                    useLayerStore.getState().applyPreset({ ...LAYER_PRESETS[key] }, key)
-                  }}
-                  className={`py-1.5 font-mono text-[9px] uppercase tracking-[0.1em] border transition-all ${
-                    activePreset === key
-                      ? 'border-neutral-800 text-neutral-800 bg-neutral-50'
-                      : 'border-neutral-200 text-neutral-400 hover:border-neutral-400 hover:text-neutral-600'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Advanced link */}
+          {/* Header */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-zinc-500 uppercase tracking-[0.15em] text-[8px]">
+              ai config
+            </span>
             <button
-              onClick={() => { window.location.href = '/tree-of-life?mode=advanced' }}
-              className="font-mono text-[9px] text-neutral-400 hover:text-neutral-700 transition-colors uppercase tracking-[0.15em]"
+              onClick={onClose}
+              className="text-zinc-400 hover:text-zinc-500 transition-colors text-[8px]"
             >
-              advanced &rarr;
+              [x]
             </button>
-          </motion.div>
+          </div>
+
+          {/* Sliders */}
+          <div className="space-y-2.5 mb-3">
+            {SLIDER_CONFIG.map(({ layer, label, left, right, color }) => {
+              const value = Math.round((weights[layer] ?? 0.5) * 100)
+              return (
+                <div key={layer}>
+                  <div className="flex items-baseline gap-1.5 mb-0.5">
+                    <span
+                      className="uppercase tracking-[0.1em] text-[8px] min-w-[60px]"
+                      style={{ color }}
+                    >
+                      {label}
+                    </span>
+                    <span className="text-[8px] tabular-nums" style={{ color, opacity: 0.7 }}>
+                      {value}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={value}
+                    onChange={(e) => {
+                      useLayerStore.getState().setWeight(layer, Number(e.target.value) / 100)
+                    }}
+                    className="w-full h-px appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, ${color} ${value}%, #d4d4d8 ${value}%)`,
+                      accentColor: color,
+                    }}
+                  />
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500 text-[7px]" style={{ opacity: 0.6 }}>{left}</span>
+                    <span className="text-zinc-500 text-[7px]" style={{ opacity: 0.6 }}>{right}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Presets */}
+          <div className="flex items-center gap-3 mb-2">
+            {PRESETS.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => {
+                  useLayerStore.getState().applyPreset({ ...LAYER_PRESETS[key] }, key)
+                }}
+                className="transition-colors text-[8px] uppercase tracking-[0.1em]"
+                style={{
+                  color: activePreset === key ? '#18181b' : '#a1a1aa',
+                  fontWeight: activePreset === key ? 600 : 400,
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Advanced link */}
+          <button
+            onClick={() => { window.location.href = '/tree-of-life?mode=advanced' }}
+            className="text-zinc-400 hover:text-zinc-500 transition-colors text-[7px] uppercase tracking-[0.1em]"
+          >
+            advanced &rarr;
+          </button>
         </motion.div>
       )}
     </AnimatePresence>
