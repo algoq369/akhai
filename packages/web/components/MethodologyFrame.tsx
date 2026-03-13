@@ -118,7 +118,7 @@ export default function MethodologyFrame({
           onMouseLeave={() => setHoveredConsole(false)}
         >
           <motion.button
-            onClick={() => window.location.href = "/tree-of-life"}
+            onClick={onConsoleToggle}
             className="text-[14px] transition-all duration-200"
             style={{
               color: consoleOpen ? '#a855f7' : '#cbd5e1',

@@ -3343,7 +3343,7 @@ function HomePage() {
 
                 {/* AI Config Console Toggle */}
                 <button
-                  onClick={() => window.location.href = '/tree-of-life'}
+                  onClick={() => setShowLayerDashboard(!showLayerDashboard)}
                   className="flex items-center gap-2 text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
                 >
                   <span
