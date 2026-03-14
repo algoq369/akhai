@@ -405,61 +405,61 @@ export default function MindMapDiagramView({
 
     const sorted = [...cl.nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
     const n = sorted.length
-    const vw = Math.min(1400, Math.max(800, n * 8))
-    const vh = Math.min(1000, Math.max(600, n * 6))
+    const vw = Math.min(1600, Math.max(900, n * 10))
+    const vh = Math.min(1200, Math.max(700, n * 7))
     const ctrX = vw / 2, ctrY = vh / 2
 
-    // Initialize positions using golden angle spiral — wider spread for large clusters
-    const spreadFactor = n > 100 ? 40 : n > 50 ? 30 : 25
+    // Initialize positions in a wider golden angle spiral
+    const spreadFactor = n > 100 ? 50 : n > 50 ? 38 : 28
     const pos = sorted.map((_node, i) => {
       const angle = i * GOLDEN_ANGLE
-      const dist = 50 + Math.sqrt(i) * spreadFactor
+      const dist = 60 + Math.sqrt(i) * spreadFactor
       return { id: sorted[i].id, x: ctrX + Math.cos(angle) * dist, y: ctrY + Math.sin(angle) * dist }
     })
 
-    // Intra-cluster links
     const idSet = new Set(sorted.map(nd => nd.id))
     const intLinks = topicLinks.filter(l => idSet.has(l.source) && idSet.has(l.target))
     const posMap = new Map(pos.map(p => [p.id, p]))
 
-    // Run force iterations — stronger repulsion for large clusters
-    const minDist = n > 100 ? 55 : n > 50 ? 40 : 45
-    const iterations = n > 100 ? 200 : n > 50 ? 150 : 100
-    const repStrength = n > 100 ? 0.7 : 0.5
+    // Force simulation — universal repulsion + edge attraction + gravity
+    const iterations = n > 100 ? 250 : n > 50 ? 180 : 120
+    const idealDist = n > 100 ? 70 : n > 50 ? 55 : 50
     for (let iter = 0; iter < iterations; iter++) {
-      // Repulsion between all pairs
+      const cooling = 1 - iter / iterations // Simulated annealing
+      // Universal repulsion between all node pairs
       for (let i = 0; i < n; i++) {
         for (let j = i + 1; j < n; j++) {
           const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1
-          if (dist < minDist) {
-            const f = (minDist - dist) / dist * repStrength
-            pos[i].x += dx * f; pos[i].y += dy * f
-            pos[j].x -= dx * f; pos[j].y -= dy * f
-          }
+          const distSq = dx * dx + dy * dy
+          const dist = Math.sqrt(distSq) || 1
+          // Coulomb-like repulsion: force = idealDist² / dist
+          const force = (idealDist * idealDist) / dist * 0.15 * cooling
+          const fx = (dx / dist) * force, fy = (dy / dist) * force
+          pos[i].x += fx; pos[i].y += fy
+          pos[j].x -= fx; pos[j].y -= fy
         }
       }
-      // Attraction between connected nodes
-      const attractDist = n > 100 ? 120 : n > 50 ? 100 : 80
+      // Attraction between connected nodes (Hooke's law)
+      const springLen = n > 100 ? 130 : n > 50 ? 100 : 80
       intLinks.forEach(link => {
         const ps = posMap.get(link.source), pt = posMap.get(link.target)
         if (!ps || !pt) return
         const dx = pt.x - ps.x, dy = pt.y - ps.y
         const dist = Math.sqrt(dx * dx + dy * dy) || 1
-        const f = (dist - attractDist) / dist * 0.05
+        const f = (dist - springLen) / dist * 0.08 * cooling
         ps.x += dx * f; ps.y += dy * f
         pt.x -= dx * f; pt.y -= dy * f
       })
-      // Center gravity — stronger for large clusters to prevent drift
-      const gravity = n > 100 ? 0.02 : 0.01
+      // Center gravity — keeps cluster compact
+      const gravity = 0.015
       pos.forEach(p => {
-        p.x += (ctrX - p.x) * gravity
-        p.y += (ctrY - p.y) * gravity
+        p.x += (ctrX - p.x) * gravity * cooling
+        p.y += (ctrY - p.y) * gravity * cooling
       })
     }
 
-    // Clamp to viewport with padding
-    const pad = 60
+    // Clamp to viewport with generous padding
+    const pad = 80
     pos.forEach(p => {
       p.x = Math.max(pad, Math.min(vw - pad, p.x))
       p.y = Math.max(pad, Math.min(vh - pad, p.y))
@@ -774,8 +774,8 @@ export default function MindMapDiagramView({
               })}
             </g>
 
-            {/* Nodes — hidden in overview, visible only in expanded cluster */}
-            {false && filteredNodes.map((node) => {
+            {/* Nodes — rendered in overview with invisible labels, visible on hover */}
+            {filteredNodes.map((node) => {
               const pos = getPos(node.id)
               if (!pos) return null
 
