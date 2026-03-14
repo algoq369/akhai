@@ -99,26 +99,51 @@ async function generateVisualization(query: string, response: string, type: 'dia
 // === MINI RENDERERS ===
 function DiagramRenderer({ data }: { data: any }) {
   if (!data?.nodes) return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>
-  const nodeMap: Record<string, { x: number; y: number; label: string; color: string }> = {}
-  const cols = Math.ceil(Math.sqrt(data.nodes.length))
-  data.nodes.forEach((n: any, i: number) => {
-    nodeMap[n.id] = { x: 30 + (i % cols) * 160, y: 30 + Math.floor(i / cols) * 70, label: n.label, color: n.color || '#6366f1' }
+  const cx = 200, cy = 140, radius = 110
+  const allNodes = data.nodes || []
+  const central = allNodes[0]
+  const children = allNodes.slice(1)
+  const nodePos: Record<string, { x: number; y: number }> = {}
+  if (central) nodePos[central.id] = { x: cx, y: cy }
+  children.forEach((n: any, i: number) => {
+    const angle = (i / Math.max(children.length, 1)) * Math.PI * 2 - Math.PI / 2
+    nodePos[n.id] = { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius }
   })
   return (
     <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word' }}>{data.title || 'Diagram'}</div>
-      <svg width="100%" height="100%" viewBox={`0 0 ${cols * 160 + 40} ${Math.ceil(data.nodes.length / cols) * 70 + 40}`} style={{ flex: 1 }}>
+      <svg width="100%" height="100%" viewBox="0 0 400 300" style={{ flex: 1 }}>
+        <defs>
+          <filter id="dshadow"><feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.12" /></filter>
+        </defs>
         {(data.edges || []).map((e: any, i: number) => {
-          const f = nodeMap[e.from], t = nodeMap[e.to]
-          return f && t ? <line key={i} x1={f.x + 60} y1={f.y + 18} x2={t.x + 60} y2={t.y + 18} stroke="#cbd5e1" strokeWidth={1.5} markerEnd="url(#arrowhead)" /> : null
+          const f = nodePos[e.from], t = nodePos[e.to]
+          if (!f || !t) return null
+          const mx = (f.x + t.x) / 2, my = (f.y + t.y) / 2
+          const cpx = mx + (cy - my) * 0.3, cpy = my + (mx - cx) * 0.3
+          const tNode = allNodes.find((n: any) => n.id === e.to)
+          const edgeColor = tNode?.color || '#cbd5e1'
+          return <path key={i} d={`M ${f.x} ${f.y} Q ${cpx} ${cpy} ${t.x} ${t.y}`} fill="none" stroke={`${edgeColor}66`} strokeWidth={1.5} />
         })}
-        <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#cbd5e1" /></marker></defs>
-        {data.nodes.map((n: any) => {
-          const pos = nodeMap[n.id]
+        {/* Central node */}
+        {central && (
+          <g>
+            <circle cx={cx} cy={cy} r={30} fill="none" stroke={`${central.color || '#6366f1'}30`} strokeWidth={1}>
+              <animate attributeName="r" values="30;34;30" dur="3s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="1;0.4;1" dur="3s" repeatCount="indefinite" />
+            </circle>
+            <rect x={cx - 70} y={cy - 24} width={140} height={48} rx={8} fill={`${central.color || '#6366f1'}15`} stroke={`${central.color || '#6366f1'}50`} strokeWidth={1.5} filter="url(#dshadow)" />
+            <text x={cx} y={cy + 5} textAnchor="middle" fontSize={11} fontWeight={700} fill={central.color || '#6366f1'} fontFamily="'JetBrains Mono',monospace">{central.label?.slice(0, 22)}</text>
+          </g>
+        )}
+        {/* Child nodes */}
+        {children.map((n: any) => {
+          const pos = nodePos[n.id]
+          const c = n.color || '#6366f1'
           return (
             <g key={n.id}>
-              <rect x={pos.x} y={pos.y} width={120} height={36} rx={6} fill={`${pos.color}15`} stroke={`${pos.color}40`} strokeWidth={1} />
-              <text x={pos.x + 60} y={pos.y + 22} textAnchor="middle" fontSize={8} fontWeight={500} fill={pos.color} fontFamily="'JetBrains Mono',monospace">{pos.label.slice(0, 20)}</text>
+              <rect x={pos.x - 52} y={pos.y - 16} width={104} height={32} rx={6} fill={`${c}12`} stroke={`${c}40`} strokeWidth={1} filter="url(#dshadow)" />
+              <text x={pos.x} y={pos.y + 4} textAnchor="middle" fontSize={9} fontWeight={500} fill={c} fontFamily="'JetBrains Mono',monospace">{n.label?.slice(0, 18)}</text>
             </g>
           )
         })}
