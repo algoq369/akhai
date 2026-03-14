@@ -212,10 +212,13 @@ const DETECTION_PATTERNS: DetectionPattern[] = [
         expandQuery = `vitamin ${vitamin} deficiency symptoms`
       }
 
-      // NO DEFAULT FALLBACK - Only annotate terms with SPECIFIC insights
-      // If we don't have specific knowledge about a term, don't create a generic annotation
-      else {
-        return null // Skip - no specific insight available for this term
+      // Generic fallback for recognized multi-word terms (proper nouns, technical phrases)
+      // Only for terms ≥2 words that matched the capitalized/technical regexes
+      else if (term.split(/\s+/).length >= 2 && term.length >= 8) {
+        insight = `${term} — Click to explore this concept in depth and discover connections to related topics`
+        expandQuery = `Tell me more about ${term}`
+      } else {
+        return null // Single short word — skip
       }
 
       // Final check: Only return annotation if we have actual insight
@@ -243,7 +246,7 @@ const DETECTION_PATTERNS: DetectionPattern[] = [
       /\$(\d+(?:\.\d+)?[+]?)\s*(?:billion|million)/gi,
       /(\d+(?:\.\d+)?)\s*(ms|seconds?|minutes?|hours?|days?)/gi,
       /(\d+(?:\.\d+)?)\s*[xX]\s*(faster|slower|more|less)/gi,
-      /(\d+)\s*(?:qubits?|tokens?|parameters?)/gi,
+      /(\d+)[-\s]*(?:qubits?|tokens?|parameters?)/gi,
       /valued\s+at\s+\$(\d+(?:\.\d+)?)\s*(billion|million)/gi,
       /\$(\d+(?:\.\d+)?[M+]+)\s*(?:ARR|revenue|valuation)/gi,
       /over\s+(\d+(?:,\d{3})*)\s+(?:paid\s+)?subscribers?/gi,
