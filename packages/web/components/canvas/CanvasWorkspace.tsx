@@ -264,7 +264,7 @@ function TableRenderer({ data }: { data: any }) {
               return (
                 <tr key={ri} style={{ background: ri % 2 === 0 ? '#f8fafc' : 'white' }}>
                   {vals.map((v: any, ci: number) => (
-                    <td key={ci} style={{ padding: '3px 6px', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>{String(v).slice(0, 30)}</td>
+                    <td key={ci} title={String(v)} style={{ padding: '3px 6px', color: '#475569', borderBottom: '1px solid #f1f5f9' }}>{String(v).slice(0, 50)}</td>
                   ))}
                 </tr>
               )
@@ -279,11 +279,12 @@ function TableRenderer({ data }: { data: any }) {
 function TimelineRenderer({ data }: { data: any }) {
   if (!data?.events) return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>
   const events = data.events.slice(0, 8)
-  const spacing = 360 / Math.max(events.length, 1)
+  const spacing = Math.min(80, 360 / Math.max(events.length, 1))
+  const vbW = Math.min(500, events.length * spacing + 40)
   return (
     <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word' }}>{data.title || 'Timeline'}</div>
-      <svg width="100%" height="100%" viewBox={`0 0 ${events.length * spacing + 40} 80`} preserveAspectRatio="xMidYMid meet" style={{ flex: 1 }}>
+      <svg width="100%" height="100%" viewBox={`0 0 ${vbW} 80`} preserveAspectRatio="xMidYMid meet" style={{ flex: 1 }}>
         {/* Main line */}
         <line x1={20} y1={40} x2={events.length * spacing + 20} y2={40} stroke="#e2e8f0" strokeWidth={2} />
         {events.map((ev: any, i: number) => {
@@ -338,11 +339,14 @@ function RadarRenderer({ data }: { data: any }) {
           )
         })}
         {/* Data polygon */}
-        <polygon points={polygon} fill="#6366f120" stroke="#6366f1" strokeWidth={2} />
-        {/* Data dots */}
-        {dataPoints.map((p: any, i: number) => (
-          <circle key={i} cx={p.x} cy={p.y} r={3} fill="#6366f1" stroke="white" strokeWidth={1} />
-        ))}
+        {(() => { const c = data.color || '#6366f1'; return (
+          <>
+            <polygon points={polygon} fill={`${c}20`} stroke={c} strokeWidth={2} />
+            {dataPoints.map((p: any, i: number) => (
+              <circle key={i} cx={p.x} cy={p.y} r={3} fill={c} stroke="white" strokeWidth={1} />
+            ))}
+          </>
+        ) })()}
       </svg>
     </div>
   )
@@ -415,7 +419,7 @@ export default function CanvasWorkspace({
   // === GENERATE DIAGRAM/CHART FROM SELECTED QUERY ===
   const VIZ_TYPES: VizType[] = ['diagram', 'chart', 'table', 'timeline', 'radar']
   const VIZ_COLORS: Record<VizType, string> = { diagram: '#8b5cf6', chart: '#10b981', table: '#f59e0b', timeline: '#0ea5e9', radar: '#ec4899' }
-  const VIZ_SIZES: Record<VizType, { w: number; h: number }> = { diagram: { w: 380, h: 280 }, chart: { w: 300, h: 220 }, table: { w: 400, h: 200 }, timeline: { w: 440, h: 120 }, radar: { w: 320, h: 280 } }
+  const VIZ_SIZES: Record<VizType, { w: number; h: number }> = { diagram: { w: 380, h: 280 }, chart: { w: 300, h: 220 }, table: { w: 440, h: 200 }, timeline: { w: 460, h: 140 }, radar: { w: 320, h: 280 } }
 
   const handleGenerate = async (type: VizType) => {
     const selNode = nodes.find(n => n.id === selected && n.type === 'query')
@@ -464,7 +468,7 @@ export default function CanvasWorkspace({
         const diagData = await generateVisualization(targetQuery.data.query, targetQuery.data.response, 'diagram')
         if (diagData) {
           const dId = `diagram-auto-${Date.now()}`
-          setNodes(prev => [...prev, { id: dId, type: 'diagram', x: targetQuery.x + targetQuery.w + 40, y: targetQuery.y, w: 380, h: 240, data: diagData }])
+          setNodes(prev => [...prev, { id: dId, type: 'diagram', x: targetQuery.x + targetQuery.w + 40, y: targetQuery.y, w: 380, h: 280, data: diagData }])
           setConnections(prev => [...prev, { from: targetQuery.id, to: dId, color: '#8b5cf6' }])
         }
       }
@@ -472,7 +476,7 @@ export default function CanvasWorkspace({
         const chartData = await generateVisualization(targetQuery.data.query, targetQuery.data.response, 'chart')
         if (chartData) {
           const cId = `chart-auto-${Date.now()}`
-          setNodes(prev => [...prev, { id: cId, type: 'chart', x: targetQuery.x + targetQuery.w + 40, y: targetQuery.y + 260, w: 300, h: 200, data: chartData }])
+          setNodes(prev => [...prev, { id: cId, type: 'chart', x: targetQuery.x + targetQuery.w + 40, y: targetQuery.y + 300, w: 300, h: 220, data: chartData }])
           setConnections(prev => [...prev, { from: targetQuery.id, to: cId, color: '#10b981' }])
         }
       }
