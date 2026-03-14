@@ -8,6 +8,7 @@
  * 'advanced →' links to /tree-of-life full page.
  */
 
+import { useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLayerStore } from '@/lib/stores/layer-store'
 import { LAYER_PRESETS, type PresetName } from '@/lib/layer-presets'
@@ -31,9 +32,48 @@ const PRESETS: { key: PresetName; label: string }[] = [
   { key: 'deep', label: 'thorough' },
 ]
 
+// ═══════════════════════════════════════════
+// ARCHETYPE NAMING — pure client-side logic
+// ═══════════════════════════════════════════
+
+interface Archetype { name: string; symbol: string; color: string }
+
+function generateConfigName(r: number, a: number, g: number): Archetype | null {
+  // All high
+  if (r > 75 && a > 75 && g > 75) return { name: 'The Sovereign', symbol: '◊', color: '#18181b' }
+  // All low
+  if (r < 40 && a < 40 && g < 40) return { name: 'The Seeker', symbol: '◬', color: '#94a3b8' }
+  // All balanced (within 35-65 range)
+  if (r >= 35 && r <= 65 && a >= 35 && a <= 65 && g >= 35 && g <= 65) return null // matches standard balanced
+
+  // Dual combos
+  if (r > 70 && a > 70) return { name: 'The Architect', symbol: '⊙', color: '#4f46e5' }
+  if (r > 70 && g > 70) return { name: 'The Alchemist', symbol: '☿', color: '#7c3aed' }
+  if (a > 70 && g > 70) return { name: 'The Oracle', symbol: '✡', color: '#22c55e' }
+
+  // Single dominant
+  if (r > 75 && r > a && r > g) return { name: 'The Discerner', symbol: '◇', color: '#4f46e5' }
+  if (a > 75 && a > r && a > g) return { name: 'The Sentinel', symbol: '▣', color: '#22c55e' }
+  if (g > 75 && g > r && g > a) return { name: 'The Visionary', symbol: '◈', color: '#f97316' }
+
+  // Fallback: custom but no strong archetype
+  const max = Math.max(r, a, g)
+  if (max === r) return { name: 'The Discerner', symbol: '◇', color: '#4f46e5' }
+  if (max === a) return { name: 'The Sentinel', symbol: '▣', color: '#22c55e' }
+  return { name: 'The Visionary', symbol: '◈', color: '#f97316' }
+}
+
 export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigurationModalProps) {
   const weights = useLayerStore((s) => s.weights)
   const activePreset = useLayerStore((s) => s.activePreset)
+
+  const archetype = useMemo(() => {
+    if (activePreset) return null // standard preset active, no custom name
+    const r = Math.round((weights[Layer.REASONING] ?? 0.5) * 100)
+    const a = Math.round((weights[Layer.ATTENTION] ?? 0.5) * 100)
+    const g = Math.round((weights[Layer.GENERATIVE] ?? 0.5) * 100)
+    return generateConfigName(r, a, g)
+  }, [weights, activePreset])
 
   return (
     <AnimatePresence>
@@ -119,7 +159,7 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
           </div>
 
           {/* Presets */}
-          <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-4 mb-3 flex-wrap">
             {PRESETS.map(({ key, label }) => (
               <button
                 key={key}
@@ -135,6 +175,19 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
                 {label}
               </button>
             ))}
+
+            {/* Custom archetype name */}
+            {archetype && (
+              <span
+                className="text-[10px] tracking-[0.1em] font-semibold transition-colors"
+                style={{
+                  color: archetype.color,
+                  textShadow: `0 0 8px ${archetype.color}33`,
+                }}
+              >
+                {archetype.symbol} {archetype.name}
+              </span>
+            )}
           </div>
 
           {/* Advanced link */}
