@@ -147,9 +147,9 @@ export function MindMapMiniChat({
     <div
       className="fixed left-4 bottom-20 bg-white border border-neutral-200 transition-all duration-200"
       style={{
-        width: isOpen ? '260px' : '36px',
+        width: isOpen ? '240px' : '36px',
         height: isOpen ? 'auto' : '36px',
-        maxHeight: isOpen ? '360px' : '36px',
+        maxHeight: isOpen ? '200px' : '36px',
         zIndex: 100,
         overflow: 'hidden',
       }}
@@ -169,10 +169,10 @@ export function MindMapMiniChat({
       {isOpen && (
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="px-3 py-2 border-b border-neutral-100 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span className="text-neutral-400">◇</span>
-              <span className="text-xs text-neutral-500">assistant</span>
+          <div className="px-2.5 py-1 border-b border-neutral-100 flex justify-between items-center">
+            <div className="flex items-center gap-1.5">
+              <span className="text-neutral-400 text-[10px]">◇</span>
+              <span className="text-[10px] text-neutral-500">assistant</span>
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -184,15 +184,15 @@ export function MindMapMiniChat({
 
           {/* Context line */}
           {selectedTopic && (
-            <div className="px-3 py-1.5 border-b border-neutral-100 text-[10px] text-neutral-400">
-              {selectedTopic.label} · {suggestionsCount} suggestions · {connectionsCount} links
+            <div className="px-2.5 py-1 border-b border-neutral-100 text-[9px] text-neutral-400">
+              {selectedTopic.label} · {connectionsCount} links
             </div>
           )}
 
           {/* Messages */}
           <div
-            className="flex-1 overflow-y-auto px-3 py-2"
-            style={{ minHeight: '140px', maxHeight: '200px' }}
+            className="flex-1 overflow-y-auto px-2.5 py-1.5"
+            style={{ minHeight: '60px', maxHeight: '100px' }}
           >
             {messages.map((msg, i) => (
               <div
@@ -213,7 +213,7 @@ export function MindMapMiniChat({
           </div>
 
           {/* Input - underline style */}
-          <div className="px-3 py-2 border-t border-neutral-100">
+          <div className="px-2.5 py-1 border-t border-neutral-100">
             <input
               type="text"
               placeholder="message..."
@@ -221,7 +221,7 @@ export function MindMapMiniChat({
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
               disabled={isLoading}
-              className="w-full bg-transparent border-none border-b border-neutral-200 text-xs text-neutral-600 pb-1 focus:outline-none focus:border-neutral-400 placeholder-neutral-400 transition-colors"
+              className="w-full bg-transparent border-none border-b border-neutral-200 text-[10px] text-neutral-600 pb-0.5 focus:outline-none focus:border-neutral-400 placeholder-neutral-400 transition-colors"
             />
           </div>
         </div>

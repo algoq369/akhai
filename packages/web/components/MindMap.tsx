@@ -165,7 +165,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
   }, [selectedGraphNode])
 
   const handleSendQuery = (query: string) => {
-    window.open(`/?q=${encodeURIComponent(query)}`, '_blank')
+    window.location.href = `/?q=${encodeURIComponent(query)}`
     setChatInput('')
   }
 
