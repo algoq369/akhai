@@ -52,7 +52,7 @@ function getTopicColor(name: string): string {
 
 function extractTopics(text: string): string[] {
   const words = text.match(/[A-Z][a-z]+(?:\s[A-Z][a-z]+)*/g) || []
-  return [...new Set(words)].filter(w => w.length > 3 && !['This','That','These','Those','What','When','Where','Which','There','Here','Three','Four','Five','Several','Many','Some','Each','Both','Most','Much','Very','Also','However','Therefore','Furthermore','Moreover','Additionally'].includes(w)).slice(0, 5)
+  return [...new Set(words)].filter(w => w.length > 3 && !['This','That','These','Those','What','When','Where','Which','There','Here','Three','Four','Five','Several','Many','Some','Each','Both','Most','Much','Very','Also','However','Therefore','Furthermore','Moreover','Additionally','Sorry','Please','Error'].includes(w)).slice(0, 5)
 }
 
 // === LOCAL FALLBACK GENERATORS ===
@@ -675,16 +675,16 @@ export default function CanvasWorkspace({
               note: { background: node.data.color || '#fef3c7', border: selected === node.id ? '1.5px dashed #d97706' : '1px dashed #e5e7eb', borderRadius: 6 },
               stat: { background: 'rgba(255,255,255,0.95)', border: '1px solid #f1f5f9', borderRadius: 8 },
               config: { background: 'rgba(255,255,255,0.95)', border: '1px solid #e2e8f020', borderRadius: 8 },
-              diagram: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #8b5cf6' : '1px solid #e2e8f0', borderRadius: 8 },
-              chart: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #10b981' : '1px solid #e2e8f0', borderRadius: 8 },
+              diagram: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #8b5cf6' : '1px solid #e2e8f0', borderRadius: 8, borderTop: '3px solid #8b5cf6' },
+              chart: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #10b981' : '1px solid #e2e8f0', borderRadius: 8, borderTop: '3px solid #10b981' },
               drawing: { background: 'transparent', border: 'none', borderRadius: 0 },
-              table: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #f59e0b' : '1px solid #e2e8f0', borderRadius: 8 },
-              timeline: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #0ea5e9' : '1px solid #e2e8f0', borderRadius: 8 },
-              radar: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #ec4899' : '1px solid #e2e8f0', borderRadius: 8 },
+              table: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #f59e0b' : '1px solid #e2e8f0', borderRadius: 8, borderTop: '3px solid #f59e0b' },
+              timeline: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #0ea5e9' : '1px solid #e2e8f0', borderRadius: 8, borderTop: '3px solid #0ea5e9' },
+              radar: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #ec4899' : '1px solid #e2e8f0', borderRadius: 8, borderTop: '3px solid #ec4899' },
             }
             return (
               <div key={node.id} data-node="true" onMouseDown={e => startDrag(node.id, e)} onMouseEnter={() => setHovered(node.id)} onMouseLeave={() => setHovered(null)}
-                style={{ position: 'absolute', left: node.x, top: node.y, width: node.w, height: node.h, ...styles[node.type], cursor: tool === 'connect' ? 'crosshair' : 'move', opacity: nodeOpacity(node.id), transition: dragging?.id === node.id ? 'none' : 'opacity 0.15s, box-shadow 0.15s', boxShadow: selected === node.id ? '0 2px 12px rgba(0,0,0,0.06)' : 'none', zIndex: selected === node.id ? 10 : 1, overflow: 'hidden' }}>
+                style={{ position: 'absolute', left: node.x, top: node.y, width: node.w, height: node.h, ...styles[node.type], cursor: tool === 'connect' ? 'crosshair' : 'move', opacity: nodeOpacity(node.id), transition: dragging?.id === node.id ? 'none' : 'opacity 0.15s, box-shadow 0.15s', boxShadow: selected === node.id ? '0 2px 12px rgba(0,0,0,0.06)' : hovered === node.id && VIZ_COLORS[node.type as VizType] ? `0 0 12px ${VIZ_COLORS[node.type as VizType]}26` : 'none', zIndex: selected === node.id ? 10 : 1, overflow: 'hidden' }}>
                 {/* Query node */}
                 {node.type === 'query' && (() => {
                   const mc = METHOD_COLORS[node.data.methodology] || '#94a3b8'
