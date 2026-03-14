@@ -111,6 +111,11 @@ export default function MindMapDiagramView({
   const [analyseOpen, setAnalyseOpen] = useState(false)
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null)
 
+  // Drill-down pan/zoom
+  const [drillZoom, setDrillZoom] = useState(1)
+  const [drillPan, setDrillPan] = useState({ x: 0, y: 0 })
+  const [isDrillPanning, setIsDrillPanning] = useState(false)
+  const drillPanStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
 
   // Discussion panel
   const [discussions, setDiscussions] = useState<Discussion[]>([])
@@ -370,6 +375,12 @@ export default function MindMapDiagramView({
       y: (dims.height / 2) * (1 - z),
     })
   }, [dims, layoutNodes])
+
+  // Reset drill-down pan/zoom when cluster changes
+  useEffect(() => {
+    setDrillZoom(1)
+    setDrillPan({ x: 0, y: 0 })
+  }, [expandedCluster])
 
   // Get node position with user drag override
   const getPos = useCallback((id: string): { x: number; y: number } | null => {
@@ -940,10 +951,20 @@ export default function MindMapDiagramView({
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: cc.text, display: 'inline-block' }} />
                 <span className="text-slate-800 dark:text-slate-100" style={{ fontWeight: 700, fontSize: 15 }}>{expandedCluster}</span>
                 <span style={{ color: '#94a3b8', fontSize: 11 }}>{cl.nodes.length} topics · {fLinks.length} connections</span>
-                <button onClick={() => setExpandedCluster(null)} style={{ marginLeft: 'auto', fontSize: 16, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>&#x2715;</button>
+                <span style={{ color: '#64748b', fontSize: 10, marginLeft: 'auto', marginRight: 12 }}>{Math.round(drillZoom * 100)}%</span>
+                <button onClick={() => { setDrillZoom(1); setDrillPan({ x: 0, y: 0 }) }} style={{ fontSize: 10, border: '1px solid #e2e8f0', borderRadius: 4, background: 'none', cursor: 'pointer', color: '#94a3b8', padding: '2px 6px', marginRight: 8 }}>reset</button>
+                <button onClick={() => setExpandedCluster(null)} style={{ fontSize: 16, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>&#x2715;</button>
               </div>
-              <div style={{ width: '100%', height: 'calc(100% - 52px)', overflow: 'auto', minWidth: 600, minHeight: 400 }}>
-                <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}>
+              <div
+                style={{ width: '100%', height: 'calc(100% - 52px)', overflow: 'hidden', cursor: isDrillPanning ? 'grabbing' : 'grab' }}
+                onWheel={(e) => { e.stopPropagation(); setDrillZoom(z => Math.min(3, Math.max(0.3, z - e.deltaY * 0.001))) }}
+                onMouseDown={(e) => { if (!(e.target as Element).closest('g[style*="pointer"]')) { setIsDrillPanning(true); drillPanStartRef.current = { x: e.clientX, y: e.clientY, panX: drillPan.x, panY: drillPan.y } } }}
+                onMouseMove={(e) => { if (isDrillPanning) { setDrillPan({ x: drillPanStartRef.current.panX + (e.clientX - drillPanStartRef.current.x), y: drillPanStartRef.current.panY + (e.clientY - drillPanStartRef.current.y) }) } }}
+                onMouseUp={() => setIsDrillPanning(false)}
+                onMouseLeave={() => setIsDrillPanning(false)}
+              >
+                <svg width="100%" height="100%" viewBox={`0 0 ${svgW} ${svgH}`}>
+                <g transform={`translate(${drillPan.x}, ${drillPan.y}) scale(${drillZoom})`}>
                   {fLinks.map((link, li) => {
                     const ps = posMap.get(link.source), pt = posMap.get(link.target)
                     if (!ps || !pt) return null
@@ -970,6 +991,7 @@ export default function MindMapDiagramView({
                       </g>
                     )
                   })}
+                </g>
                 </svg>
               </div>
             </div>
