@@ -42,7 +42,15 @@ export async function POST(request: NextRequest) {
     } catch (err: any) {
       if (err.message?.includes('credit balance') || err.message?.includes('402') || err.message?.includes('400')) {
         console.log('[CanvasViz] Anthropic credits depleted, falling back to OpenRouter')
-        result = await callProvider('openrouter', vizRequest)
+        // OpenRouter free models: merge system into user prompt, use temperature 0.3
+        result = await callProvider('openrouter', {
+          ...vizRequest,
+          messages: [
+            { role: 'user' as const, content: `${systemPrompt}\n\n${userContent}` },
+          ],
+          temperature: 0.3,
+          maxTokens: 500,
+        })
       } else {
         throw err
       }
