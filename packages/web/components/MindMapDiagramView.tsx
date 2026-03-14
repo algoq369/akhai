@@ -390,11 +390,20 @@ export default function MindMapDiagramView({
     return ln ? { x: ln.x, y: ln.y } : null
   }, [nodePositions, layoutNodes])
 
-  // Visible cross-cluster links
+  // Visible cross-cluster links — only between visible top-5 nodes
+  const visibleNodeIds = useMemo(() => {
+    const ids = new Set<string>()
+    clusters.forEach(c => c.nodes.slice(0, 5).forEach(n => ids.add(n.id)))
+    return ids
+  }, [clusters])
+
   const visibleLinks = useMemo(() => {
     const nodeIds = new Set(Object.keys(layoutNodes))
-    return topicLinks.filter(link => nodeIds.has(link.source) && nodeIds.has(link.target))
-  }, [topicLinks, layoutNodes])
+    return topicLinks.filter(link => 
+      nodeIds.has(link.source) && nodeIds.has(link.target) &&
+      visibleNodeIds.has(link.source) && visibleNodeIds.has(link.target)
+    )
+  }, [topicLinks, layoutNodes, visibleNodeIds])
 
   // Connected topics for hover highlight
   const connectedTopicIds = useMemo(() => {
@@ -415,85 +424,22 @@ export default function MindMapDiagramView({
 
     const sorted = [...cl.nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
     const n = sorted.length
-    const vw = Math.min(2000, Math.max(900, n * 12))
-    const vh = Math.min(1500, Math.max(700, n * 9))
-    const ctrX = vw / 2, ctrY = vh / 2
 
-    // Initialize positions in a wider golden angle spiral
-    const spreadFactor = n > 100 ? 50 : n > 50 ? 38 : 28
-    const pos = sorted.map((_node, i) => {
-      const angle = i * GOLDEN_ANGLE
-      const dist = 60 + Math.sqrt(i) * spreadFactor
-      return { id: sorted[i].id, x: ctrX + Math.cos(angle) * dist, y: ctrY + Math.sin(angle) * dist }
-    })
+    // Clean grid layout — 5 columns, rows auto-sized
+    const cols = n > 50 ? 6 : n > 20 ? 5 : n > 8 ? 4 : 3
+    const cellW = 180, cellH = 55, padX = 30, padY = 50
+    const rows = Math.ceil(n / cols)
+    const vw = cols * cellW + padX * 2
+    const vh = rows * cellH + padY * 2
+
+    const pos = sorted.map((node, i) => ({
+      id: node.id,
+      x: padX + (i % cols) * cellW + cellW / 2,
+      y: padY + Math.floor(i / cols) * cellH + cellH / 2,
+    }))
 
     const idSet = new Set(sorted.map(nd => nd.id))
     const intLinks = topicLinks.filter(l => idSet.has(l.source) && idSet.has(l.target))
-    const posMap = new Map(pos.map(p => [p.id, p]))
-
-    // Force simulation — universal repulsion + edge attraction + gravity
-    const iterations = n > 100 ? 300 : n > 50 ? 200 : 120
-    const idealDist = n > 100 ? 120 : n > 50 ? 70 : 50
-    const repMult = n > 100 ? 0.2 : 0.15
-    for (let iter = 0; iter < iterations; iter++) {
-      const cooling = 1 - iter / iterations // Simulated annealing
-      // Universal repulsion between all node pairs
-      for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-          const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y
-          const distSq = dx * dx + dy * dy
-          const dist = Math.sqrt(distSq) || 1
-          // Coulomb-like repulsion: force = idealDist² / dist
-          const force = (idealDist * idealDist) / dist * repMult * cooling
-          const fx = (dx / dist) * force, fy = (dy / dist) * force
-          pos[i].x += fx; pos[i].y += fy
-          pos[j].x -= fx; pos[j].y -= fy
-        }
-      }
-      // Attraction between connected nodes (Hooke's law)
-      const springLen = n > 100 ? 130 : n > 50 ? 100 : 80
-      intLinks.forEach(link => {
-        const ps = posMap.get(link.source), pt = posMap.get(link.target)
-        if (!ps || !pt) return
-        const dx = pt.x - ps.x, dy = pt.y - ps.y
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1
-        const f = (dist - springLen) / dist * 0.08 * cooling
-        ps.x += dx * f; ps.y += dy * f
-        pt.x -= dx * f; pt.y -= dy * f
-      })
-      // Center gravity — light, just prevents total drift
-      const gravity = 0.008
-      pos.forEach(p => {
-        p.x += (ctrX - p.x) * gravity * cooling
-        p.y += (ctrY - p.y) * gravity * cooling
-      })
-    }
-
-    // Collision resolution pass — push apart any overlapping nodes
-    const minSep = n > 100 ? 60 : 45
-    for (let pass = 0; pass < 50; pass++) {
-      let moved = false
-      for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-          const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1
-          if (dist < minSep) {
-            const push = (minSep - dist) / dist * 0.5
-            pos[i].x += dx * push; pos[i].y += dy * push
-            pos[j].x -= dx * push; pos[j].y -= dy * push
-            moved = true
-          }
-        }
-      }
-      if (!moved) break
-    }
-
-    // Clamp to viewport with generous padding
-    const pad = 80
-    pos.forEach(p => {
-      p.x = Math.max(pad, Math.min(vw - pad, p.x))
-      p.y = Math.max(pad, Math.min(vh - pad, p.y))
-    })
 
     return { positions: pos, links: intLinks, sortedNodes: sorted, vw, vh }
   }, [expandedCluster, clusters, topicLinks])
@@ -911,8 +857,7 @@ export default function MindMapDiagramView({
         const { positions: fPos, links: fLinks, sortedNodes: fNodes, vw: svgW, vh: svgH } = forceLayoutNodes
         if (fPos.length === 0) return null
         const posMap = new Map(fPos.map(p => [p.id, p]))
-        const topN = fNodes.length > 80 ? 10 : fNodes.length > 30 ? 20 : fNodes.length
-        const topLabelIds = new Set(fNodes.slice(0, topN).map(n => n.id))
+        const topLabelIds = new Set(fNodes.map(n => n.id)) // Grid layout: all labels visible
         const connectedIds = hoveredNode ? new Set(fLinks.filter(l => l.source === hoveredNode || l.target === hoveredNode).flatMap(l => [l.source, l.target])) : null
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedCluster(null)}>
@@ -941,7 +886,8 @@ export default function MindMapDiagramView({
                     if (!ps || !pt) return null
                     const mx = (ps.x + pt.x) / 2, my = (ps.y + pt.y) / 2 - 15
                     const isHi = hoveredNode === link.source || hoveredNode === link.target
-                    return <path key={`fl-${li}`} d={`M ${ps.x} ${ps.y} Q ${mx} ${my} ${pt.x} ${pt.y}`} fill="none" stroke={cc.text} strokeWidth={isHi ? 2 : 1.5} opacity={isHi ? 0.5 : 0.06} className="transition-all duration-200" />
+                    if (!isHi) return null // Only show connections on hover
+                    return <path key={`fl-${li}`} d={`M ${ps.x} ${ps.y} Q ${mx} ${my} ${pt.x} ${pt.y}`} fill="none" stroke={cc.text} strokeWidth={2.5} opacity={0.6} />
                   })}
                   {fNodes.map((node) => {
                     const p = posMap.get(node.id)
@@ -952,7 +898,7 @@ export default function MindMapDiagramView({
                     const isConnected = connectedIds ? connectedIds.has(node.id) : false
                     const nodeOpacity = connectedIds ? (isHov ? 1 : isConnected ? 0.6 : 0.15) : 1
                     const showLabel = topLabelIds.has(node.id) || isHov || isConnected
-                    const labelText = node.name.length > 18 ? node.name.slice(0, 18) + '\u2026' : node.name
+                    const labelText = node.name.length > 24 ? node.name.slice(0, 24) + '\u2026' : node.name
                     return (
                       <g key={node.id} transform={`translate(${p.x}, ${p.y})`} opacity={nodeOpacity} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedCluster(null) }} style={{ cursor: 'pointer' }}>
                         <circle r={20} fill="transparent" />
