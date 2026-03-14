@@ -316,11 +316,12 @@ export default function MindMapDiagramView({
       // Sort nodes by queryCount
       const sorted = [...nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
 
-      // Place nodes within cluster using golden angle
+      // Place nodes within cluster using golden angle — wider spread
       let maxDx = 0, maxDy = 0
+      const nodeSpread = sorted.length > 80 ? 42 : sorted.length > 30 ? 35 : 28
       sorted.forEach((node, nIdx) => {
         const nAngle = nIdx * GOLDEN_ANGLE * 2.4
-        const nDist = 30 + Math.sqrt(nIdx) * 28
+        const nDist = 40 + Math.sqrt(nIdx) * nodeSpread
         const nx = clusterCx + Math.cos(nAngle) * nDist
         const ny = clusterCy + Math.sin(nAngle) * nDist * 0.75
 
@@ -414,8 +415,8 @@ export default function MindMapDiagramView({
 
     const sorted = [...cl.nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
     const n = sorted.length
-    const vw = Math.min(1600, Math.max(900, n * 10))
-    const vh = Math.min(1200, Math.max(700, n * 7))
+    const vw = Math.min(2000, Math.max(900, n * 12))
+    const vh = Math.min(1500, Math.max(700, n * 9))
     const ctrX = vw / 2, ctrY = vh / 2
 
     // Initialize positions in a wider golden angle spiral
@@ -431,8 +432,9 @@ export default function MindMapDiagramView({
     const posMap = new Map(pos.map(p => [p.id, p]))
 
     // Force simulation — universal repulsion + edge attraction + gravity
-    const iterations = n > 100 ? 250 : n > 50 ? 180 : 120
-    const idealDist = n > 100 ? 90 : n > 50 ? 55 : 50
+    const iterations = n > 100 ? 300 : n > 50 ? 200 : 120
+    const idealDist = n > 100 ? 120 : n > 50 ? 70 : 50
+    const repMult = n > 100 ? 0.2 : 0.15
     for (let iter = 0; iter < iterations; iter++) {
       const cooling = 1 - iter / iterations // Simulated annealing
       // Universal repulsion between all node pairs
@@ -442,7 +444,7 @@ export default function MindMapDiagramView({
           const distSq = dx * dx + dy * dy
           const dist = Math.sqrt(distSq) || 1
           // Coulomb-like repulsion: force = idealDist² / dist
-          const force = (idealDist * idealDist) / dist * 0.15 * cooling
+          const force = (idealDist * idealDist) / dist * repMult * cooling
           const fx = (dx / dist) * force, fy = (dy / dist) * force
           pos[i].x += fx; pos[i].y += fy
           pos[j].x -= fx; pos[j].y -= fy
@@ -459,8 +461,8 @@ export default function MindMapDiagramView({
         ps.x += dx * f; ps.y += dy * f
         pt.x -= dx * f; pt.y -= dy * f
       })
-      // Center gravity — keeps cluster compact
-      const gravity = 0.015
+      // Center gravity — light, just prevents total drift
+      const gravity = 0.008
       pos.forEach(p => {
         p.x += (ctrX - p.x) * gravity * cooling
         p.y += (ctrY - p.y) * gravity * cooling
@@ -468,8 +470,8 @@ export default function MindMapDiagramView({
     }
 
     // Collision resolution pass — push apart any overlapping nodes
-    const minSep = n > 100 ? 50 : 40
-    for (let pass = 0; pass < 30; pass++) {
+    const minSep = n > 100 ? 60 : 45
+    for (let pass = 0; pass < 50; pass++) {
       let moved = false
       for (let i = 0; i < n; i++) {
         for (let j = i + 1; j < n; j++) {
@@ -778,22 +780,28 @@ export default function MindMapDiagramView({
                 const sourceNode = filteredNodes.find(n => n.id === link.source)
                 const isDirect = hoveredNode === link.source || hoveredNode === link.target
                 const isSecondDeg = !isDirect && (connectedTopicIds.has(link.source) || connectedTopicIds.has(link.target))
-                const linkOpacity = isDirect ? 0.5 : isSecondDeg ? 0.25 : 0
+                if (!isDirect && !isSecondDeg) return null // Don't render invisible links at all
                 const midX = (sourcePos.x + targetPos.x) / 2
-                const midY = (sourcePos.y + targetPos.y) / 2 - 20
+                const midY = (sourcePos.y + targetPos.y) / 2 - 30
                 const srcCatIdx = clusters.findIndex(c => c.category === (sourceNode?.category || 'other'))
                 const srcColor = getClusterColor(sourceNode?.category || 'other', srcCatIdx >= 0 ? srcCatIdx : 0).text
 
                 return (
-                  <path
-                    key={`link-${idx}`}
-                    d={`M ${sourcePos.x} ${sourcePos.y} Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
-                    fill="none"
-                    stroke={srcColor}
-                    strokeWidth={isDirect ? 2 : 1.5}
-                    opacity={linkOpacity}
-                    className="transition-all duration-200"
-                  />
+                  <g key={`link-${idx}`}>
+                    <path
+                      d={`M ${sourcePos.x} ${sourcePos.y} Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
+                      fill="none"
+                      stroke={isDirect ? srcColor : '#94a3b8'}
+                      strokeWidth={isDirect ? 3 : 1.5}
+                      opacity={isDirect ? 0.85 : 0.2}
+                    />
+                    {isDirect && (
+                      <>
+                        <circle cx={sourcePos.x} cy={sourcePos.y} r={5} fill={srcColor} opacity={0.9} />
+                        <circle cx={targetPos.x} cy={targetPos.y} r={5} fill={srcColor} opacity={0.9} />
+                      </>
+                    )}
+                  </g>
                 )
               })}
             </g>
