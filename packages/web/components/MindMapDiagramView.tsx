@@ -929,10 +929,10 @@ export default function MindMapDiagramView({
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedCluster(null)}>
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
-            <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: '80%', height: '80%', background: 'white', borderRadius: 16, boxShadow: '0 24px 48px rgba(0,0,0,0.12)', overflow: 'hidden', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', borderBottom: '1px solid #e2e8f0' }}>
+            <div onClick={e => e.stopPropagation()} className="bg-white dark:bg-[#18181b]" style={{ position: 'relative', width: '80%', height: '80%', borderRadius: 16, boxShadow: '0 24px 48px rgba(0,0,0,0.12)', overflow: 'hidden', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+              <div className="border-b border-slate-200 dark:border-slate-700" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px' }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: cc.text, display: 'inline-block' }} />
-                <span style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{expandedCluster}</span>
+                <span className="text-slate-800 dark:text-slate-100" style={{ fontWeight: 700, fontSize: 15 }}>{expandedCluster}</span>
                 <span style={{ color: '#94a3b8', fontSize: 11 }}>{cl.nodes.length} topics · {fLinks.length} connections</span>
                 <button onClick={() => setExpandedCluster(null)} style={{ marginLeft: 'auto', fontSize: 16, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>&#x2715;</button>
               </div>
@@ -957,7 +957,7 @@ export default function MindMapDiagramView({
                       <g key={node.id} transform={`translate(${p.x}, ${p.y})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedCluster(null) }} style={{ cursor: 'pointer' }}>
                         <circle r={12} fill="transparent" />
                         <circle r={nr} fill={cc.text + '90'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
-                        {showLabel && <text y={nr + 14} textAnchor="middle" fill={isHov ? '#1e293b' : '#64748b'} fontSize={isHov ? 11 : 9} fontWeight={isHov ? 600 : 400}>{isHov ? node.name : labelText}</text>}
+                        {showLabel && <text y={nr + 14} textAnchor="middle" fill={isHov ? cc.text : '#94a3b8'} fontSize={isHov ? 11 : 9} fontWeight={isHov ? 600 : 400}>{isHov ? node.name : labelText}</text>}
                         {isHov && <text y={-nr - 8} textAnchor="middle" fill="#94a3b8" fontSize={8}>{qc} queries · {connectionCounts[node.id] || 0} connections</text>}
                       </g>
                     )
@@ -976,9 +976,9 @@ export default function MindMapDiagramView({
         const bLinks = topicLinks.filter(l => top10.some(n => n.id === l.source) && top10.some(n => n.id === l.target))
         return (<div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedBubble(null)}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} />
-          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: '70vw', height: '60vh', background: 'white', borderRadius: 16, boxShadow: '0 24px 48px rgba(0,0,0,0.15)', overflow: 'hidden', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px', borderBottom: '1px solid #e2e8f0' }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: cc.text }} /><span style={{ fontWeight: 700, fontSize: 14 }}>{expandedBubble}</span>
+          <div onClick={e => e.stopPropagation()} className="bg-white dark:bg-[#18181b]" style={{ position: 'relative', width: '70vw', height: '60vh', borderRadius: 16, boxShadow: '0 24px 48px rgba(0,0,0,0.15)', overflow: 'hidden', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+            <div className="border-b border-slate-200 dark:border-slate-700" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px' }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: cc.text }} /><span className="text-slate-800 dark:text-slate-100" style={{ fontWeight: 700, fontSize: 14 }}>{expandedBubble}</span>
               <span style={{ color: '#94a3b8', fontSize: 11 }}>{top10.length} of {cl.nodes.length}</span>
               <button onClick={() => setExpandedBubble(null)} style={{ marginLeft: 'auto', fontSize: 16, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>&#x2715;</button>
             </div>
@@ -988,7 +988,7 @@ export default function MindMapDiagramView({
                 const rn = topicLinks.filter(l => l.source === node.id || l.target === node.id).slice(0, 3).map(l => filteredNodes.find(n => n.id === (l.source === node.id ? l.target : l.source))?.name).filter(Boolean)
                 return (<g key={node.id} transform={`translate(${nx}, ${ny})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedBubble(null) }} style={{ cursor: 'pointer' }}>
                   <circle r={nr} fill={cc.text + '90'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
-                  <text y={nr + 12} textAnchor="middle" fill={isHov ? '#1e293b' : '#64748b'} fontSize={9} fontWeight={isHov ? 600 : 400}>{node.name}</text>
+                  <text y={nr + 12} textAnchor="middle" fill={isHov ? cc.text : '#94a3b8'} fontSize={9} fontWeight={isHov ? 600 : 400}>{node.name}</text>
                   {isHov && <text y={-nr - 6} textAnchor="middle" fill="#94a3b8" fontSize={8}>{node.queryCount || 0} queries · {connectionCounts[node.id] || 0} conn{rn.length > 0 ? ` · ${rn.join(', ')}` : ''}</text>}
                 </g>)
               })}
