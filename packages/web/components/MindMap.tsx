@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import MindMapDiagramView from './MindMapDiagramView'
 import MindMapHistoryView from './MindMapHistoryView'
 import MindMapReportView from './MindMapReportView'
+import MindMapMiniChat from './MindMapMiniChat'
 
 export interface Node {
   id: string
@@ -70,7 +71,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
   
   const [selectedGraphNode, setSelectedGraphNode] = useState<{ id: string; name: string; category?: string } | null>(null)
   const [miniChatOpen, setMiniChatOpen] = useState(false)
-  const [chatInput, setChatInput] = useState('')
+  const [miniChatQuery, setMiniChatQuery] = useState('')
 
   useEffect(() => {
     setViewMode(initialView)
@@ -152,21 +153,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
     return connections.filter(c => c.from === selectedGraphNode.id || c.to === selectedGraphNode.id)
   }, [selectedGraphNode, connections])
 
-  const quickActions = useMemo(() => {
-    if (!selectedGraphNode) return [
-      { label: 'explore topics', query: 'What topics have I explored most?' },
-      { label: 'find patterns', query: 'Find connections between my ideas' },
-      { label: 'suggest research', query: 'Suggest new research directions' },
-    ]
-    return [
-      { label: 'analyze', query: `Analyze ${selectedGraphNode.name} in depth` },
-      { label: 'connect', query: `Find connections for ${selectedGraphNode.name}` },
-      { label: 'expand', query: `Explore related topics to ${selectedGraphNode.name}` },
-    ]
-  }, [selectedGraphNode])
-
   const handleSendQuery = (query: string) => {
-    setChatInput('')
     onClose()
     onSendQuery?.(query)
   }
@@ -291,70 +278,23 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
                 searchQuery={searchQuery}
                 onNodeSelect={handleNodeSelect}
                 onNodeAction={(query) => handleSendQuery(query)}
+                onContinueToChat={(query) => {
+                  setMiniChatQuery(query)
+                  setMiniChatOpen(true)
+                }}
                 propTopicLinks={topicLinks}
               />
-              
+
               <div className="absolute bottom-4 left-4 z-50">
-                <button
-                  onClick={() => setMiniChatOpen(!miniChatOpen)}
-                  className="rounded-full shadow-lg transition-all"
-                >
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: miniChatOpen ? '#1e293b' : '#ffffff', border: miniChatOpen ? 'none' : '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ color: miniChatOpen ? '#ffffff' : '#475569', fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>{miniChatOpen ? '\u2715' : '\u25C7'}</span>
-                  </div>
-                </button>
-
-                <AnimatePresence>
-                  {miniChatOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 20, scale: 0.9 }}
-                      className="absolute bottom-12 left-0 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden"
-                      style={{ width: 240, maxHeight: 160 }}
-                    >
-                      <div className="px-2 py-1.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
-                        <span className="text-[10px] font-semibold text-slate-800">quick query</span>
-                        {selectedGraphNode && (
-                          <span className="text-[8px] text-slate-400 truncate">{selectedGraphNode.name}</span>
-                        )}
-                      </div>
-
-                      <div className="p-1.5 border-b border-slate-100 flex gap-1">
-                        {quickActions.map((action) => (
-                          <button
-                            key={action.label}
-                            onClick={() => handleSendQuery(action.query)}
-                            className="flex-1 px-2 py-0.5 text-[8px] font-medium text-slate-600 bg-slate-100 rounded hover:bg-slate-200 transition-colors"
-                          >
-                            {action.label}
-                          </button>
-                        ))}
-                      </div>
-
-                      <form onSubmit={(e) => { e.preventDefault(); if (chatInput.trim()) handleSendQuery(chatInput) }} className="p-2">
-                        <div className="flex gap-1.5">
-                          <input
-                            type="text"
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            placeholder="ask..."
-                            className="flex-1 px-2 py-1 text-[9px] bg-slate-100 rounded-lg border-0 focus:outline-none focus:ring-1 focus:ring-slate-400 text-slate-700"
-                          />
-                          <button
-                            type="submit"
-                            disabled={!chatInput.trim()}
-                            className="w-6 h-6 flex items-center justify-center bg-slate-800 text-white rounded-lg disabled:opacity-50 hover:bg-slate-700 transition-colors"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                          </button>
-                        </div>
-                      </form>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <MindMapMiniChat
+                  selectedTopic={selectedGraphNode ? { id: selectedGraphNode.id, label: selectedGraphNode.name, category: selectedGraphNode.category } : null}
+                  connectionsCount={connections.length}
+                  prefillQuery={miniChatQuery}
+                  isOpen={miniChatOpen}
+                  onOpenChange={setMiniChatOpen}
+                  nodes={nodes}
+                  topicLinks={topicLinks}
+                />
               </div>
             </div>
           ) : viewMode === 'history' ? (

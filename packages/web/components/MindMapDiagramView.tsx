@@ -10,6 +10,7 @@ interface MindMapDiagramViewProps {
   searchQuery?: string
   onNodeSelect?: (node: { id: string; name: string; category?: string } | null) => void
   onNodeAction?: (query: string, nodeId: string) => void
+  onContinueToChat?: (query: string) => void
   propTopicLinks?: TopicLink[]
 }
 
@@ -87,6 +88,7 @@ export default function MindMapDiagramView({
   searchQuery = '',
   onNodeSelect,
   onNodeAction,
+  onContinueToChat,
   propTopicLinks
 }: MindMapDiagramViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -1098,7 +1100,7 @@ export default function MindMapDiagramView({
                 </button>
                 <button
                   onClick={() => {
-                    onNodeAction?.(`Tell me more about ${selectedTopic.name}`, selectedTopic.id)
+                    onContinueToChat?.(`Tell me more about ${selectedTopic.name}`)
                     closeAnalyse()
                   }}
                   className="flex-1 px-2 py-1 text-[9px] font-medium text-white bg-slate-700 hover:bg-slate-800 rounded-lg transition-colors text-center"
