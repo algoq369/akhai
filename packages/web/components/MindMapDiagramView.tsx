@@ -748,7 +748,9 @@ export default function MindMapDiagramView({
                 if (!sourcePos || !targetPos) return null
 
                 const sourceNode = filteredNodes.find(n => n.id === link.source)
-                const isHighlighted = hoveredNode === link.source || hoveredNode === link.target
+                const isDirect = hoveredNode === link.source || hoveredNode === link.target
+                const isSecondDeg = !isDirect && (connectedTopicIds.has(link.source) || connectedTopicIds.has(link.target))
+                const linkOpacity = isDirect ? 0.5 : isSecondDeg ? 0.25 : 0
                 const midX = (sourcePos.x + targetPos.x) / 2
                 const midY = (sourcePos.y + targetPos.y) / 2 - 20
                 const srcCatIdx = clusters.findIndex(c => c.category === (sourceNode?.category || 'other'))
@@ -760,8 +762,8 @@ export default function MindMapDiagramView({
                     d={`M ${sourcePos.x} ${sourcePos.y} Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
                     fill="none"
                     stroke={srcColor}
-                    strokeWidth={isHighlighted ? 2 : 1.5}
-                    opacity={isHighlighted ? 0.7 : 0.3}
+                    strokeWidth={isDirect ? 2 : 1.5}
+                    opacity={linkOpacity}
                     className="transition-all duration-200"
                   />
                 )
@@ -926,8 +928,8 @@ export default function MindMapDiagramView({
         const { positions: fPos, links: fLinks, sortedNodes: fNodes, vw: svgW, vh: svgH } = forceLayoutNodes
         if (fPos.length === 0) return null
         const posMap = new Map(fPos.map(p => [p.id, p]))
-        const showAllLabels = fNodes.length <= 50
-        const topLabelIds = showAllLabels ? new Set(fNodes.map(n => n.id)) : new Set(fNodes.slice(0, 30).map(n => n.id))
+        const topN = fNodes.length > 80 ? 10 : fNodes.length > 30 ? 20 : fNodes.length
+        const topLabelIds = new Set(fNodes.slice(0, topN).map(n => n.id))
         const connectedIds = hoveredNode ? new Set(fLinks.filter(l => l.source === hoveredNode || l.target === hoveredNode).flatMap(l => [l.source, l.target])) : null
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedCluster(null)}>
@@ -946,7 +948,7 @@ export default function MindMapDiagramView({
                     if (!ps || !pt) return null
                     const mx = (ps.x + pt.x) / 2, my = (ps.y + pt.y) / 2 - 15
                     const isHi = hoveredNode === link.source || hoveredNode === link.target
-                    return <path key={`fl-${li}`} d={`M ${ps.x} ${ps.y} Q ${mx} ${my} ${pt.x} ${pt.y}`} fill="none" stroke={cc.text} strokeWidth={isHi ? 2 : 1.5} opacity={isHi ? 0.6 : 0.15} className="transition-all duration-200" />
+                    return <path key={`fl-${li}`} d={`M ${ps.x} ${ps.y} Q ${mx} ${my} ${pt.x} ${pt.y}`} fill="none" stroke={cc.text} strokeWidth={isHi ? 2 : 1.5} opacity={isHi ? 0.5 : 0.06} className="transition-all duration-200" />
                   })}
                   {fNodes.map((node) => {
                     const p = posMap.get(node.id)
@@ -955,7 +957,7 @@ export default function MindMapDiagramView({
                     const nr = Math.max(8, Math.min(16, 6 + Math.sqrt(qc) * 2.5))
                     const isHov = hoveredNode === node.id
                     const isConnected = connectedIds ? connectedIds.has(node.id) : false
-                    const nodeOpacity = connectedIds ? (isHov ? 1 : isConnected ? 0.6 : 0.08) : 1
+                    const nodeOpacity = connectedIds ? (isHov ? 1 : isConnected ? 0.6 : 0.15) : 1
                     const showLabel = topLabelIds.has(node.id) || isHov || isConnected
                     const labelText = node.name.length > 18 ? node.name.slice(0, 18) + '\u2026' : node.name
                     return (
