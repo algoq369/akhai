@@ -3407,7 +3407,7 @@ function HomePage() {
       />
 
       {/* Create Profile Button - Show when not logged in and expanded */}
-      {!user && isExpanded && (
+      {!user && isExpanded && !isCanvasMode && (
         <div className="fixed top-14 right-4 z-30">
           <button
             onClick={() => setShowAuthModal(true)}

@@ -1,474 +1,400 @@
 'use client'
 
-/**
- * CANVAS WORKSPACE
- *
- * Main container for the draggable canvas mindmap UI.
- * Provides toggle between Classic and Canvas modes.
- * All panels are draggable with responsive starting positions.
- */
-
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import DraggablePanel from './DraggablePanel'
-import QueryCardsPanel from './QueryCardsPanel'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { QueryCard } from './QueryCardsPanel'
 import type { VisualNode, VisualEdge } from './VisualsPanel'
-import AILayersPanel from './AILayersPanel'
 import type { AIInsight } from './AILayersPanel'
-import { LayerTreeSVG } from '@/components/tree-workbench/LayerTreeSVG'
-import { AntipatternTreeSVG } from '@/components/tree-workbench/AntipatternTreeSVG'
 import { useLayerStore } from '@/lib/stores/layer-store'
-import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
-
-// Stable empty arrays to prevent Zustand infinite re-render loop
-const EMPTY_INSIGHTS: AIInsight[] = []
-
-// ═══════════════════════════════════════════════════════════════════
-// RESPONSIVE LAYOUT
-// ═══════════════════════════════════════════════════════════════════
-
-const GAP = 10
-const TOP_Y = 80
-
-/**
- * Calculate panel positions and sizes that fit within the available width.
- * Three tiers: wide (3-col side-by-side), medium (3-col compressed), narrow (stacked).
- */
-function getResponsiveLayout(containerWidth: number) {
-  // Wide: ≥1200px → compact panels side-by-side
-  if (containerWidth >= 1200) {
-    return {
-      positions: {
-        queries: { x: GAP, y: TOP_Y },
-        visuals: { x: GAP * 2 + 280, y: TOP_Y },
-        trees:   { x: GAP * 3 + 280 + 360, y: TOP_Y },
-      },
-      sizes: {
-        queries: { width: 280, height: 350 },
-        visuals: { width: 360, height: 350 },
-        trees:   { width: 320, height: 350 },
-      },
-    }
-  }
-
-  // Medium: 700-1199px → compressed 3-column layout
-  if (containerWidth >= 700) {
-    const usable = containerWidth - GAP * 4
-    const qW = Math.floor(usable * 0.33)
-    const vW = Math.floor(usable * 0.38)
-    const tW = usable - qW - vW
-    return {
-      positions: {
-        queries: { x: GAP, y: TOP_Y },
-        visuals: { x: GAP * 2 + qW, y: TOP_Y },
-        trees:   { x: GAP * 3 + qW + vW, y: TOP_Y },
-      },
-      sizes: {
-        queries: { width: qW, height: 350 },
-        visuals: { width: vW, height: 350 },
-        trees:   { width: tW, height: 350 },
-      },
-    }
-  }
-
-  // Narrow: <700px → vertical stack
-  return {
-    positions: {
-      queries: { x: GAP, y: TOP_Y },
-      visuals: { x: GAP, y: TOP_Y + 320 },
-      trees:   { x: GAP, y: TOP_Y + 640 },
-    },
-    sizes: {
-      queries: { width: Math.max(280, containerWidth - GAP * 2), height: 300 },
-      visuals: { width: Math.max(280, containerWidth - GAP * 2), height: 300 },
-      trees:   { width: Math.max(280, containerWidth - GAP * 2), height: 300 },
-    },
-  }
-}
-
-// Local storage keys
-const POSITIONS_KEY = 'akhai-canvas-positions'
-
-// ═══════════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════════
 
 interface CanvasWorkspaceProps {
-  // Query cards from conversation
   queryCards: QueryCard[]
-  // Visual nodes for mindmap (legacy)
   visualNodes: VisualNode[]
   visualEdges: VisualEdge[]
-  // AI Layers panel data
   aiInsights?: AIInsight[]
   totalDataPoints?: number
   overallConfidence?: number
   querySynthesis?: string
-  // Callbacks
   onQuerySelect?: (queryId: string) => void
   onNodeSelect?: (nodeId: string) => void
   onInsightSelect?: (insightId: string) => void
   onSwitchToClassic?: () => void
-  // Classic chat content (rendered when in classic mode)
   classicContent?: React.ReactNode
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════════
+interface CanvasNode {
+  id: string
+  type: 'query' | 'topic' | 'note' | 'config' | 'stat'
+  x: number
+  y: number
+  w: number
+  h: number
+  data: any
+}
 
-export function CanvasWorkspace({
-  queryCards,
-  visualNodes,
-  visualEdges,
-  aiInsights = [],
-  totalDataPoints = 0,
-  overallConfidence = 0,
-  querySynthesis,
-  onQuerySelect,
-  onNodeSelect,
-  onInsightSelect,
-  onSwitchToClassic,
-  classicContent,
+interface Connection {
+  from: string
+  to: string
+  color: string
+}
+
+const METHOD_COLORS: Record<string, string> = {
+  auto: '#8b5cf6', direct: '#6366f1', cod: '#10b981',
+  bot: '#f59e0b', react: '#ef4444', pot: '#0ea5e9', gtp: '#ec4899',
+}
+
+const TOPIC_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6', '#ef4444', '#14b8a6']
+
+function getTopicColor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return TOPIC_COLORS[Math.abs(hash) % TOPIC_COLORS.length]
+}
+
+// Extract topics from query response text (simple keyword extraction)
+function extractTopics(text: string): string[] {
+  const words = text.match(/[A-Z][a-z]+(?:\s[A-Z][a-z]+)*/g) || []
+  const unique = [...new Set(words)].filter(w => w.length > 3 && !['This', 'That', 'These', 'Those', 'What', 'When', 'Where', 'Which', 'There', 'Here'].includes(w))
+  return unique.slice(0, 5)
+}
+
+export default function CanvasWorkspace({
+  queryCards, visualNodes, visualEdges, aiInsights,
+  onQuerySelect, onNodeSelect, onInsightSelect, onSwitchToClassic,
 }: CanvasWorkspaceProps) {
-  // View mode state
-  const [selectedQueryId, setSelectedQueryId] = useState<string | null>(null)
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null)
-
-  // Responsive container measurement
   const canvasRef = useRef<HTMLDivElement>(null)
-  const [containerWidth, setContainerWidth] = useState(1200)
+  const [nodes, setNodes] = useState<CanvasNode[]>([])
+  const [connections, setConnections] = useState<Connection[]>([])
+  const [pan, setPan] = useState({ x: 40, y: 40 })
+  const [zoom, setZoom] = useState(0.9)
+  const [dragging, setDragging] = useState<{ id: string; ox: number; oy: number } | null>(null)
+  const [isPanning, setIsPanning] = useState(false)
+  const panStart = useRef({ x: 0, y: 0 })
+  const [selected, setSelected] = useState<string | null>(null)
+  const [connecting, setConnecting] = useState<{ fromId: string; mx: number; my: number } | null>(null)
+  const [tool, setTool] = useState<'select' | 'connect' | 'note'>('select')
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [editingNote, setEditingNote] = useState<string | null>(null)
 
-  // Compute responsive layout
-  const layout = getResponsiveLayout(containerWidth)
-  const [positions, setPositions] = useState(layout.positions)
-  const [panelSizes, setPanelSizes] = useState(layout.sizes)
-  const [layoutKey, setLayoutKey] = useState(0) // bumped to force DraggablePanel remount
+  const weights = useLayerStore((s) => s.weights)
+  const activePreset = useLayerStore((s) => s.activePreset)
 
-  // Get weights from store
-  const { weights, processingMode, activePreset, lastMethodologyUsed } = useLayerStore()
-
-  // ── Compute real AI insights from layer weights + query data ──
-  const computedInsights = useMemo<AIInsight[]>(() => {
-    // Only generate insights when we have active layers AND queries
-    const activeLayers = Object.entries(weights)
-      .filter(([, w]) => w > 0.1)
-      .sort(([, a], [, b]) => b - a)
-
-    if (activeLayers.length === 0 && queryCards.length === 0) return EMPTY_INSIGHTS
-
-    const insights: AIInsight[] = []
-
-    // Generate insights from top active layers
-    activeLayers.slice(0, 5).forEach(([layerIdStr, weight], idx) => {
-      const layerNum = Number(layerIdStr) as Layer
-      const meta = LAYER_METADATA[layerNum]
-      if (!meta) return
-
-      const confidence = Math.round(weight * 100)
-      const category: AIInsight['category'] =
-        idx === 0 ? 'strategy' : idx === 1 ? 'insight' : idx === 2 ? 'data' : 'action'
-
-      insights.push({
-        id: `layer-${layerNum}`,
-        text: `${meta.aiRole} — active at ${confidence}% (${meta.name})`,
-        category,
-        confidence,
-        metricsCount: meta.queryCharacteristics.length,
-        dataPercent: Math.round(weight * 80),
-      })
-    })
-
-    // Generate insights from recent queries (methodology distribution)
-    if (queryCards.length > 0) {
-      const methodCounts: Record<string, number> = {}
-      queryCards.forEach((card) => {
-        const m = card.methodology || 'direct'
-        methodCounts[m] = (methodCounts[m] || 0) + 1
-      })
-
-      const topMethod = Object.entries(methodCounts).sort(([, a], [, b]) => b - a)[0]
-      if (topMethod) {
-        insights.push({
-          id: 'methodology-dist',
-          text: `Primary methodology: ${topMethod[0]} (${topMethod[1]}/${queryCards.length} queries)`,
-          category: 'data',
-          confidence: Math.round((topMethod[1] / queryCards.length) * 100),
-          metricsCount: Object.keys(methodCounts).length,
-        })
-      }
-
-      // Query count insight
-      insights.push({
-        id: 'query-count',
-        text: `${queryCards.length} queries processed across ${Object.keys(methodCounts).length} methodologies`,
-        category: 'insight',
-        confidence: 95,
-        metricsCount: queryCards.length,
-      })
-    }
-
-    // Preset/mode insight
-    if (activePreset || processingMode !== 'weighted') {
-      insights.push({
-        id: 'config-mode',
-        text: `Configuration: ${activePreset || 'custom'} preset, ${processingMode} processing mode`,
-        category: 'strategy',
-        confidence: 100,
-        metricsCount: 1,
-      })
-    }
-
-    return insights
-  }, [weights, queryCards, activePreset, processingMode])
-
-  const computedTotalDataPoints = useMemo(() => {
-    return queryCards.length + Object.values(weights).filter((w) => w > 0.1).length
-  }, [queryCards, weights])
-
-  const computedOverallConfidence = useMemo(() => {
-    const activeWeightValues = Object.values(weights).filter((w) => w > 0.1)
-    if (activeWeightValues.length === 0) return 0
-    const avg = activeWeightValues.reduce((s, v) => s + v, 0) / activeWeightValues.length
-    return Math.round(avg * 100)
-  }, [weights])
-
-  const computedSynthesis = useMemo(() => {
-    const active = Object.entries(weights)
-      .filter(([, w]) => w > 0.5)
-      .map(([id]) => {
-        const meta = LAYER_METADATA[Number(id) as Layer]
-        return meta?.name || `L${id}`
-      })
-    if (active.length === 0) return undefined
-    return `Dominant layers: ${active.join(', ')}${lastMethodologyUsed ? ` | Last method: ${lastMethodologyUsed}` : ''}`
-  }, [weights, lastMethodologyUsed])
-
-  // Merge prop insights with computed ones (props take priority)
-  const mergedInsights = useMemo(() => {
-    return aiInsights.length > 0 ? aiInsights : computedInsights
-  }, [aiInsights, computedInsights])
-
-  const mergedDataPoints = aiInsights.length > 0 ? totalDataPoints : computedTotalDataPoints
-  const mergedConfidence = aiInsights.length > 0 ? overallConfidence : computedOverallConfidence
-  const mergedSynthesis = querySynthesis || computedSynthesis
-
-  // Tree panel dynamic sizing
-  const treePanelRef = useRef<HTMLDivElement>(null)
-  const [treePanelDims, setTreePanelDims] = useState({
-    width: panelSizes.trees.width,
-    height: panelSizes.trees.height - 40, // subtract header height
-  })
-
-  // ── Measure tree panel dimensions ──
+  // Auto-generate nodes from queryCards
   useEffect(() => {
-    if (!treePanelRef.current) return
-    const obs = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setTreePanelDims({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height,
-        })
-      }
-    })
-    obs.observe(treePanelRef.current)
-    return () => obs.disconnect()
-  }, [])
+    if (queryCards.length === 0) return
+    const newNodes: CanvasNode[] = []
+    const newConns: Connection[] = []
+    const topicMap: Record<string, { count: number; nodeId: string }> = {}
+    let topicX = 650, topicY = 60
 
-  // ── Measure container width ──
-  useEffect(() => {
-    if (!canvasRef.current) return
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width)
-      }
-    })
-    observer.observe(canvasRef.current)
-    // Initial measurement
-    setContainerWidth(canvasRef.current.clientWidth)
-    return () => observer.disconnect()
-  }, [])
+    queryCards.forEach((card, i) => {
+      const qId = `q-${card.id}`
+      newNodes.push({
+        id: qId, type: 'query', x: 40, y: 40 + i * 170, w: 320, h: 150,
+        data: { ...card, methodology: card.methodology || 'auto' },
+      })
 
-  // ── Load saved positions & validate they fit ──
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    const savedPositions = localStorage.getItem(POSITIONS_KEY)
-    if (savedPositions) {
-      try {
-        const parsed = JSON.parse(savedPositions)
-        // Check if trees panel would be off-screen
-        const treesX = parsed.trees?.x ?? 980
-        if (treesX > containerWidth - 100) {
-          // Cached positions are off-screen — use fresh responsive layout
-          localStorage.removeItem(POSITIONS_KEY)
-          const fresh = getResponsiveLayout(containerWidth)
-          setPositions(fresh.positions)
-          setPanelSizes(fresh.sizes)
-          setLayoutKey(k => k + 1)
+      // Extract and create topic nodes
+      const topics = extractTopics(card.response)
+      topics.forEach(topic => {
+        const tKey = topic.toLowerCase()
+        if (!topicMap[tKey]) {
+          const tId = `t-${tKey.replace(/\s/g, '-')}`
+          topicMap[tKey] = { count: 1, nodeId: tId }
+          newNodes.push({
+            id: tId, type: 'topic', x: topicX + (Math.random() - 0.5) * 120, y: topicY, w: 110, h: 44,
+            data: { name: topic, count: 1, color: getTopicColor(topic) },
+          })
+          topicY += 56
+          if (topicY > 500) { topicY = 60; topicX += 140 }
         } else {
-          setPositions(parsed)
-          setLayoutKey(k => k + 1)
+          topicMap[tKey].count++
+          // Update count on existing topic node
+          const existing = newNodes.find(n => n.id === topicMap[tKey].nodeId)
+          if (existing) existing.data.count = topicMap[tKey].count
         }
-      } catch (e) {
-        console.warn('Failed to parse saved positions')
-      }
-    } else {
-      // No saved positions — use responsive defaults
-      const fresh = getResponsiveLayout(containerWidth)
-      setPositions(fresh.positions)
-      setPanelSizes(fresh.sizes)
-      setLayoutKey(k => k + 1)
-    }
-  }, [containerWidth])
-
-  // Save positions when they change
-  const handlePositionChange = useCallback((panelId: string, position: { x: number; y: number }) => {
-    setPositions(prev => {
-      const next = { ...prev, [panelId]: position }
-      localStorage.setItem(POSITIONS_KEY, JSON.stringify(next))
-      return next
+        newConns.push({ from: qId, to: topicMap[tKey].nodeId, color: getTopicColor(topic) })
+      })
     })
+
+    // Config node
+    newNodes.push({
+      id: 'cfg', type: 'config', x: 650, y: 10, w: 160, h: 50,
+      data: { preset: activePreset || 'balanced', weights },
+    })
+
+    // Stats node
+    newNodes.push({
+      id: 'stats', type: 'stat', x: 40, y: 40 + queryCards.length * 170 + 20, w: 200, h: 60,
+      data: { queries: queryCards.length, topics: Object.keys(topicMap).length, connections: newConns.length },
+    })
+
+    setNodes(newNodes)
+    setConnections(newConns)
+  }, [queryCards, activePreset, weights])
+
+  // Pan/zoom handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('[data-node]')) return
+    if (tool === 'note' && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect()
+      const x = (e.clientX - rect.left - pan.x) / zoom
+      const y = (e.clientY - rect.top - pan.y) / zoom
+      const id = `note-${Date.now()}`
+      setNodes(prev => [...prev, { id, type: 'note', x, y, w: 200, h: 80, data: { text: 'New note...', color: '#fef3c7' } }])
+      setTool('select')
+      setEditingNote(id)
+      return
+    }
+    setIsPanning(true)
+    panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y }
+    setSelected(null)
+  }, [tool, pan, zoom])
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning) setPan({ x: e.clientX - panStart.current.x, y: e.clientY - panStart.current.y })
+    if (dragging && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect()
+      const x = (e.clientX - rect.left - pan.x) / zoom - dragging.ox
+      const y = (e.clientY - rect.top - pan.y) / zoom - dragging.oy
+      setNodes(prev => prev.map(n => n.id === dragging.id ? { ...n, x, y } : n))
+    }
+    if (connecting) setConnecting(prev => prev ? { ...prev, mx: e.clientX, my: e.clientY } : null)
+  }, [isPanning, dragging, connecting, pan, zoom])
+
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (connecting && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect()
+      const mx = (e.clientX - rect.left - pan.x) / zoom
+      const my = (e.clientY - rect.top - pan.y) / zoom
+      const target = nodes.find(n => n.id !== connecting.fromId && mx >= n.x && mx <= n.x + n.w && my >= n.y && my <= n.y + n.h)
+      if (target) setConnections(prev => [...prev, { from: connecting.fromId, to: target.id, color: '#94a3b8' }])
+      setConnecting(null)
+    }
+    setIsPanning(false)
+    setDragging(null)
+  }, [connecting, nodes, pan, zoom])
+
+  useEffect(() => {
+    const el = canvasRef.current; if (!el) return
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); setZoom(z => Math.min(2, Math.max(0.3, z - e.deltaY * 0.001))) }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
   }, [])
 
-  // Reset positions to responsive defaults
-  const resetPositions = useCallback(() => {
-    localStorage.removeItem(POSITIONS_KEY)
-    window.location.reload()
-  }, [])
+  const startDrag = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!canvasRef.current) return
+    const rect = canvasRef.current.getBoundingClientRect()
+    const node = nodes.find(n => n.id === id)
+    if (!node) return
+    if (tool === 'connect') {
+      setConnecting({ fromId: id, mx: e.clientX, my: e.clientY })
+      return
+    }
+    const mx = (e.clientX - rect.left - pan.x) / zoom
+    const my = (e.clientY - rect.top - pan.y) / zoom
+    setDragging({ id, ox: mx - node.x, oy: my - node.y })
+    setSelected(id)
+  }
 
-  // Handle selections
-  const handleQuerySelect = useCallback((queryId: string) => {
-    setSelectedQueryId(queryId)
-    onQuerySelect?.(queryId)
-  }, [onQuerySelect])
+  const getCenter = (id: string) => {
+    const n = nodes.find(nd => nd.id === id)
+    return n ? { x: n.x + n.w / 2, y: n.y + n.h / 2 } : { x: 0, y: 0 }
+  }
 
-  const handleNodeSelect = useCallback((nodeId: string) => {
-    setSelectedNodeId(nodeId)
-    onNodeSelect?.(nodeId)
-  }, [onNodeSelect])
+  const deleteSelected = () => {
+    if (!selected) return
+    setNodes(prev => prev.filter(n => n.id !== selected))
+    setConnections(prev => prev.filter(c => c.from !== selected && c.to !== selected))
+    setSelected(null)
+  }
 
-  const handleInsightSelect = useCallback((insightId: string) => {
-    setSelectedInsightId(insightId)
-    onInsightSelect?.(insightId)
-  }, [onInsightSelect])
+  const isConnected = (nodeId: string) => {
+    if (!hovered) return false
+    return connections.some(c => (c.from === hovered && c.to === nodeId) || (c.to === hovered && c.from === nodeId))
+  }
+
+  const nodeOpacity = (nodeId: string) => {
+    if (!hovered) return 1
+    if (nodeId === hovered || isConnected(nodeId)) return 1
+    return 0.25
+  }
 
   return (
-    <div ref={canvasRef} className="relative w-full" style={{ height: 'calc(100vh - 120px)' }}>
-          <div
-            className="relative w-full h-full bg-[#f8f9fa] overflow-x-hidden overflow-y-auto"
-          >
-            {/* Canvas Background Pattern */}
-            <div
-              className="absolute inset-0 opacity-30 pointer-events-none"
-              style={{
-                backgroundImage: `radial-gradient(circle, #d1d5db 1px, transparent 1px)`,
-                backgroundSize: '24px 24px',
-              }}
-            />
+    <div style={{ width: '100%', height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace", background: '#fafbfc' }}>
 
-            {/* Minimalist Orb Controls */}
-            <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3">
-              <div className="flex flex-col items-center gap-0.5">
-                <button
-                  onClick={() => onSwitchToClassic?.()}
-                  className="w-3 h-3 rounded-full bg-relic-silver/40 hover:bg-relic-silver border border-relic-mist transition-all hover:scale-125"
-                  title="Classic Chat"
-                />
-                <span className="text-[6px] text-relic-silver/60 select-none">chat</span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <button
-                  onClick={() => window.location.href = '/tree-of-life'}
-                  className="w-3 h-3 rounded-full bg-purple-300/40 hover:bg-purple-400 border border-purple-200/50 transition-all hover:scale-125"
-                  title="AI Config"
-                />
-                <span className="text-[6px] text-relic-silver/60 select-none">config</span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <button
-                  onClick={resetPositions}
-                  className="w-3 h-3 rounded-full bg-relic-ghost border border-relic-mist hover:bg-relic-silver/50 transition-all hover:scale-125"
-                  title="Reset Layout"
-                />
-                <span className="text-[6px] text-relic-silver/60 select-none">reset</span>
-              </div>
-            </div>
+      {/* Toolbar */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '5px 14px', borderBottom: '1px solid #f1f5f9', background: 'white', gap: 6, flexShrink: 0 }}>
+        <button onClick={onSwitchToClassic} style={{ fontSize: 9, padding: '3px 8px', borderRadius: 3, border: '1px solid #e2e8f0', background: 'white', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
+          ← chat
+        </button>
+        <div style={{ width: 1, height: 14, background: '#e2e8f0', margin: '0 4px' }} />
 
-            {/* Queries Panel - Left */}
-            <DraggablePanel
-              key={`queries-${layoutKey}`}
-              id="queries"
-              title="Queries"
-              defaultPosition={positions.queries}
-              defaultSize={panelSizes.queries}
-              onPositionChange={handlePositionChange}
-              zIndex={10}
-            >
-              <QueryCardsPanel
-                cards={queryCards}
-                onCardSelect={handleQuerySelect}
-                selectedCardId={selectedQueryId}
-              />
-            </DraggablePanel>
+        {[
+          { id: 'select' as const, icon: '↖', label: 'select' },
+          { id: 'connect' as const, icon: '⟶', label: 'connect' },
+          { id: 'note' as const, icon: '✎', label: 'note' },
+        ].map(t => (
+          <button key={t.id} onClick={() => setTool(t.id)} style={{
+            fontSize: 9, padding: '3px 7px', borderRadius: 3,
+            border: tool === t.id ? '1px solid #6366f1' : '1px solid transparent',
+            background: tool === t.id ? '#6366f108' : 'transparent',
+            color: tool === t.id ? '#6366f1' : '#94a3b8',
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}>{t.icon} {t.label}</button>
+        ))}
 
-            {/* AI Computational Layers Panel - Center */}
-            <DraggablePanel
-              key={`visuals-${layoutKey}`}
-              id="visuals"
-              title="AI Computational Layers"
-              defaultPosition={positions.visuals}
-              defaultSize={panelSizes.visuals}
-              onPositionChange={handlePositionChange}
-              zIndex={10}
-            >
-              <AILayersPanel
-                insights={mergedInsights}
-                totalDataPoints={mergedDataPoints}
-                overallConfidence={mergedConfidence}
-                querySynthesis={mergedSynthesis}
-                onInsightClick={handleInsightSelect}
-                selectedInsightId={selectedInsightId}
-              />
-            </DraggablePanel>
+        {selected && (
+          <button onClick={deleteSelected} style={{ fontSize: 9, padding: '3px 7px', borderRadius: 3, border: '1px solid #ef4444', background: '#ef444408', color: '#ef4444', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+        )}
 
-            {/* Combined Trees Panel - Right (Ascent + Descent side by side) */}
-            <DraggablePanel
-              key={`trees-${layoutKey}`}
-              id="trees"
-              title="Dual Trees"
-              defaultPosition={positions.trees}
-              defaultSize={panelSizes.trees}
-              onPositionChange={handlePositionChange}
-              zIndex={10}
-            >
-              <div ref={treePanelRef} className="flex min-h-0" style={{ overflow: 'visible', height: panelSizes.trees.height - 40 }}>
-                <div className="flex-1 border-r border-neutral-100 relative" style={{ overflow: 'visible' }}>
-                  <div className="text-center text-[7px] uppercase tracking-wider text-relic-slate py-0.5">
-                    AI Processing Layers
+        <span style={{ marginLeft: 'auto', fontSize: 8, color: '#94a3b8' }}>
+          {nodes.length} nodes · {connections.length} links · {Math.round(zoom * 100)}%
+        </span>
+      </div>
+
+      {/* Canvas area */}
+      <div ref={canvasRef} style={{ flex: 1, overflow: 'hidden', position: 'relative', cursor: tool === 'note' ? 'crosshair' : tool === 'connect' ? 'crosshair' : isPanning ? 'grabbing' : 'grab' }}
+        onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={() => { setIsPanning(false); setDragging(null) }}>
+
+        {/* Dot grid */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+          <defs><pattern id="canvas-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="0.4" fill="#cbd5e1" opacity="0.15" /></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#canvas-grid)" />
+        </svg>
+
+        {/* Transform layer */}
+        <div style={{ transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', position: 'absolute' }}>
+          {/* SVG connections */}
+          <svg width="2000" height="1500" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible' }}>
+            {connections.map((c, i) => {
+              const from = getCenter(c.from), to = getCenter(c.to)
+              const hl = hovered && (c.from === hovered || c.to === hovered)
+              return <line key={`c-${i}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                stroke={c.color || '#94a3b8'} strokeWidth={hl ? 2 : 1}
+                strokeOpacity={hovered ? (hl ? 0.7 : 0.08) : 0.25}
+                strokeDasharray={c.color === '#94a3b8' ? '4 4' : 'none'}
+                style={{ transition: 'all 0.15s' }} />
+            })}
+            {connecting && (() => {
+              const from = getCenter(connecting.fromId)
+              const rect = canvasRef.current?.getBoundingClientRect()
+              if (!rect) return null
+              const toX = (connecting.mx - rect.left - pan.x) / zoom
+              const toY = (connecting.my - rect.top - pan.y) / zoom
+              return <line x1={from.x} y1={from.y} x2={toX} y2={toY} stroke="#6366f1" strokeWidth={2} strokeDasharray="6 3" />
+            })()}
+          </svg>
+
+          {/* Nodes */}
+          {nodes.map(node => {
+            const styles: Record<string, React.CSSProperties> = {
+              query: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #6366f1' : '1px solid #e2e8f0', borderRadius: 6 },
+              topic: { background: `${node.data.color}10`, border: selected === node.id ? `1.5px solid ${node.data.color}` : `1px solid ${node.data.color}30`, borderRadius: 20 },
+              note: { background: node.data.color || '#fef3c7', border: selected === node.id ? '1.5px dashed #d97706' : '1px dashed #e5e7eb', borderRadius: 6 },
+              stat: { background: 'rgba(255,255,255,0.95)', border: '1px solid #f1f5f9', borderRadius: 8 },
+              config: { background: 'rgba(255,255,255,0.95)', border: '1px solid #e2e8f020', borderRadius: 8 },
+            }
+
+            return (
+              <div key={node.id} data-node="true"
+                onMouseDown={e => startDrag(node.id, e)}
+                onMouseEnter={() => setHovered(node.id)}
+                onMouseLeave={() => setHovered(null)}
+                style={{
+                  position: 'absolute', left: node.x, top: node.y, width: node.w, height: node.h,
+                  ...styles[node.type],
+                  cursor: tool === 'connect' ? 'crosshair' : 'move',
+                  opacity: nodeOpacity(node.id),
+                  transition: dragging?.id === node.id ? 'none' : 'opacity 0.15s, box-shadow 0.15s',
+                  boxShadow: selected === node.id ? '0 2px 12px rgba(0,0,0,0.06)' : 'none',
+                  zIndex: selected === node.id ? 10 : 1,
+                  overflow: 'hidden',
+                }}>
+
+                {/* Query node */}
+                {node.type === 'query' && (() => {
+                  const mc = METHOD_COLORS[node.data.methodology] || '#94a3b8'
+                  return (
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '10px 12px', borderLeft: `3px solid ${mc}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#1e293b', marginBottom: 4, lineHeight: 1.3 }}>{node.data.query}</div>
+                      <div style={{ fontSize: 9, color: '#94a3b8', lineHeight: 1.4, flex: 1, overflow: 'hidden' }}>{node.data.response?.slice(0, 100)}...</div>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6 }}>
+                        <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 2, background: `${mc}12`, color: mc, fontWeight: 600, textTransform: 'uppercase' }}>{node.data.methodology}</span>
+                        <span style={{ fontSize: 7, color: '#cbd5e1', marginLeft: 'auto' }}>
+                          {node.data.timestamp ? new Date(node.data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                      </div>
+                      {selected === node.id && (
+                        <button onClick={(e) => { e.stopPropagation(); onQuerySelect?.(node.data.id) }}
+                          style={{ fontSize: 8, marginTop: 4, padding: '3px 8px', border: '1px solid #e2e8f0', borderRadius: 3, background: 'white', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          view in chat →
+                        </button>
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* Topic node */}
+                {node.type === 'topic' && (
+                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: node.data.color }} />
+                    <span style={{ fontSize: 10, fontWeight: 600, color: node.data.color }}>{node.data.name}</span>
+                    {node.data.count > 1 && <span style={{ fontSize: 8, color: '#cbd5e1' }}>×{node.data.count}</span>}
                   </div>
-                  <LayerTreeSVG
-                    width={Math.max(120, Math.floor((treePanelDims.width || panelSizes.trees.width) / 2) - 8)}
-                    height={Math.max(200, (treePanelDims.height || panelSizes.trees.height - 40) - 30)}
-                    showLabels={true}
-                  />
-                </div>
-                <div className="flex-1 relative" style={{ overflow: 'visible' }}>
-                  <div className="text-center text-[7px] uppercase tracking-wider text-red-400 py-0.5">
-                    Anti-Pattern Monitors
-                  </div>
-                  <AntipatternTreeSVG
-                    width={Math.max(120, Math.floor((treePanelDims.width || panelSizes.trees.width) / 2) - 8)}
-                    height={Math.max(200, (treePanelDims.height || panelSizes.trees.height - 40) - 30)}
-                  />
-                </div>
-              </div>
-            </DraggablePanel>
+                )}
 
-          </div>
+                {/* Note node */}
+                {node.type === 'note' && (
+                  <div onDoubleClick={() => setEditingNote(node.id)} style={{ height: '100%', padding: '8px 10px' }}>
+                    {editingNote === node.id ? (
+                      <textarea autoFocus value={node.data.text}
+                        onChange={e => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, data: { ...n.data, text: e.target.value } } : n))}
+                        onBlur={() => setEditingNote(null)}
+                        style={{ width: '100%', height: '100%', border: 'none', background: 'transparent', fontSize: 9, color: '#78716c', fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.5 }} />
+                    ) : (
+                      <div style={{ fontSize: 9, color: '#78716c', lineHeight: 1.5 }}>{node.data.text}</div>
+                    )}
+                  </div>
+                )}
+
+                {/* Stat node */}
+                {node.type === 'stat' && (
+                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '0 10px' }}>
+                    {[{ l: 'queries', v: node.data.queries }, { l: 'topics', v: node.data.topics }, { l: 'links', v: node.data.connections }].map((s: any) => (
+                      <div key={s.l} style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{s.v}</div>
+                        <div style={{ fontSize: 7, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.l}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Config node */}
+                {node.type === 'config' && (
+                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px 8px', gap: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: '#6366f1' }}>{node.data.preset || 'balanced'}</span>
+                  </div>
+                )}
+
+                {/* Connect handle indicator */}
+                {tool === 'connect' && (
+                  <div style={{ position: 'absolute', right: -3, top: '50%', transform: 'translateY(-50%)', width: 6, height: 6, borderRadius: '50%', background: '#6366f1', border: '1.5px solid white' }} />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Bottom hints */}
+      <div style={{ padding: '3px 14px', borderTop: '1px solid #f1f5f9', background: 'white', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+        <span style={{ fontSize: 7, color: '#cbd5e1' }}>
+          drag to move · scroll to zoom · {tool === 'connect' ? 'click node → drag to target' : tool === 'note' ? 'click to place note' : 'click to select · double-click note to edit'}
+        </span>
+        <span style={{ fontSize: 7, color: '#cbd5e1', marginLeft: 'auto' }}>akhai canvas</span>
+      </div>
     </div>
   )
 }
-
-export default CanvasWorkspace
