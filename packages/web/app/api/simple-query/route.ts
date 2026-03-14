@@ -461,6 +461,9 @@ export async function POST(request: NextRequest) {
     // Get methodology-specific system prompt
     let systemPrompt = getMethodologyPrompt(selectedMethod.id, pageContext, legendMode)
 
+    // Inject current date so model knows what year it is
+    systemPrompt = `Current date: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. Always use up-to-date context when discussing current events, trends, or future projections.\n\n${systemPrompt}`
+
     // Inject URL context if we fetched any content
     if (urlContext) {
       systemPrompt = `${systemPrompt}\n\n${urlContext}`
