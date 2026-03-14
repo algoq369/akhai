@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | { read f; echo \"$f\" | grep -qE '(\\.env|\\.env\\.|pnpm-lock|package-lock|\\.git/)' && { echo 'BLOCKED: protected file' >&2; exit 2; }; exit 0; }"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"$DISCORD_WEBHOOK\" ] && curl -s -H 'Content-Type: application/json' -d '{\"embeds\":[{\"title\":\"✅ AkhAI — Task done\",\"color\":3066993,\"timestamp\":\"'\"$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)\"'\"}]}' \"$DISCORD_WEBHOOK\" 2>/dev/null; exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}

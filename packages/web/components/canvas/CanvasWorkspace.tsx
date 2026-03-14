@@ -55,6 +55,30 @@ function extractTopics(text: string): string[] {
   return [...new Set(words)].filter(w => w.length > 3 && !['This','That','These','Those','What','When','Where','Which','There','Here'].includes(w)).slice(0, 5)
 }
 
+// === LOCAL FALLBACK GENERATORS ===
+function generateLocalDiagram(query: string, response: string): any {
+  const topics = extractTopics(response)
+  if (topics.length === 0) topics.push(query.split(' ').slice(0, 3).join(' '))
+  const nodes = topics.map((t, i) => ({ id: `n${i}`, label: t, color: TOPIC_COLORS[i % TOPIC_COLORS.length] }))
+  // Central node from query
+  const central = { id: 'nc', label: query.slice(0, 32), color: '#6366f1' }
+  const edges = nodes.map(n => ({ from: 'nc', to: n.id, label: '' }))
+  return { title: query.slice(0, 60), type: 'mindmap', nodes: [central, ...nodes], edges }
+}
+
+function generateLocalChart(query: string, response: string): any {
+  // Extract numbers from response, or estimate topic relevance
+  const numMatches = response.match(/\d+(\.\d+)?%?/g)?.slice(0, 8) || []
+  const topics = extractTopics(response).slice(0, 6)
+  if (topics.length === 0) topics.push('Main', 'Secondary', 'Other')
+  const data = topics.map((t, i) => ({
+    label: t,
+    value: numMatches[i] ? parseFloat(numMatches[i].replace('%', '')) : Math.round(20 + Math.random() * 60),
+    color: TOPIC_COLORS[i % TOPIC_COLORS.length],
+  }))
+  return { title: query.slice(0, 60), xLabel: 'Topics', yLabel: 'Relevance', data }
+}
+
 // === DIAGRAM/CHART GENERATION ===
 async function generateVisualization(query: string, response: string, type: 'diagram' | 'chart'): Promise<any> {
   const prompt = type === 'diagram'
@@ -74,13 +98,15 @@ Response: ${response.slice(0, 800)}`
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: prompt, methodology: 'direct' }),
     })
+    if (!res.ok) throw new Error(`API ${res.status}`)
     const data = await res.json()
-    const text = data.response || ''
-    // Extract JSON from response
+    if (data.error) throw new Error(data.error)
+    const text = data.content || data.response || ''
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (jsonMatch) return JSON.parse(jsonMatch[0])
-  } catch (e) { console.error('Viz generation failed:', e) }
-  return null
+  } catch (e) { console.error('Viz API failed, using local fallback:', e) }
+  // Local fallback — always produce something
+  return type === 'diagram' ? generateLocalDiagram(query, response) : generateLocalChart(query, response)
 }
 
 // === MINI RENDERERS ===
@@ -89,23 +115,23 @@ function DiagramRenderer({ data }: { data: any }) {
   const nodeMap: Record<string, { x: number; y: number; label: string; color: string }> = {}
   const cols = Math.ceil(Math.sqrt(data.nodes.length))
   data.nodes.forEach((n: any, i: number) => {
-    nodeMap[n.id] = { x: 30 + (i % cols) * 140, y: 30 + Math.floor(i / cols) * 70, label: n.label, color: n.color || '#6366f1' }
+    nodeMap[n.id] = { x: 30 + (i % cols) * 160, y: 30 + Math.floor(i / cols) * 70, label: n.label, color: n.color || '#6366f1' }
   })
   return (
     <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 6 }}>{data.title || 'Diagram'}</div>
-      <svg width="100%" height="100%" viewBox={`0 0 ${cols * 140 + 40} ${Math.ceil(data.nodes.length / cols) * 70 + 40}`} style={{ flex: 1 }}>
+      <svg width="100%" height="100%" viewBox={`0 0 ${cols * 160 + 40} ${Math.ceil(data.nodes.length / cols) * 70 + 40}`} style={{ flex: 1 }}>
         {(data.edges || []).map((e: any, i: number) => {
           const f = nodeMap[e.from], t = nodeMap[e.to]
-          return f && t ? <line key={i} x1={f.x + 50} y1={f.y + 18} x2={t.x + 50} y2={t.y + 18} stroke="#cbd5e1" strokeWidth={1.5} markerEnd="url(#arrowhead)" /> : null
+          return f && t ? <line key={i} x1={f.x + 60} y1={f.y + 18} x2={t.x + 60} y2={t.y + 18} stroke="#cbd5e1" strokeWidth={1.5} markerEnd="url(#arrowhead)" /> : null
         })}
         <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#cbd5e1" /></marker></defs>
         {data.nodes.map((n: any) => {
           const pos = nodeMap[n.id]
           return (
             <g key={n.id}>
-              <rect x={pos.x} y={pos.y} width={100} height={36} rx={6} fill={`${pos.color}15`} stroke={`${pos.color}40`} strokeWidth={1} />
-              <text x={pos.x + 50} y={pos.y + 22} textAnchor="middle" fontSize={8} fontWeight={500} fill={pos.color} fontFamily="'JetBrains Mono',monospace">{pos.label.slice(0, 16)}</text>
+              <rect x={pos.x} y={pos.y} width={120} height={36} rx={6} fill={`${pos.color}15`} stroke={`${pos.color}40`} strokeWidth={1} />
+              <text x={pos.x + 60} y={pos.y + 22} textAnchor="middle" fontSize={8} fontWeight={500} fill={pos.color} fontFamily="'JetBrains Mono',monospace">{pos.label.slice(0, 20)}</text>
             </g>
           )
         })}
@@ -131,7 +157,7 @@ function ChartRenderer({ data }: { data: any }) {
               borderRadius: '3px 3px 0 0', transition: 'height 0.3s',
               minHeight: 8,
             }} />
-            <span style={{ fontSize: 6, color: '#94a3b8', textAlign: 'center', lineHeight: 1.1, maxWidth: 50, overflow: 'hidden' }}>{d.label?.slice(0, 12)}</span>
+            <span style={{ fontSize: 6, color: '#94a3b8', textAlign: 'center', lineHeight: 1.1, maxWidth: 50, overflow: 'hidden' }}>{d.label?.slice(0, 16)}</span>
           </div>
         ))}
       </div>
@@ -158,6 +184,7 @@ export default function CanvasWorkspace({
   const [hovered, setHovered] = useState<string | null>(null)
   const [editingNote, setEditingNote] = useState<string | null>(null)
   const [generating, setGenerating] = useState<string | null>(null) // "diagram" | "chart" | null
+  const autoGenDone = useRef(false)
 
   // Pencil drawing state
   const [strokes, setStrokes] = useState<DrawStroke[]>([])
@@ -173,7 +200,7 @@ export default function CanvasWorkspace({
     const newNodes: CanvasNode[] = []
     const newConns: Connection[] = []
     const topicMap: Record<string, { count: number; nodeId: string }> = {}
-    let topicX = 650, topicY = 60
+    let topicX = 850, topicY = 80
 
     queryCards.forEach((card, i) => {
       const qId = `q-${card.id}`
@@ -194,7 +221,7 @@ export default function CanvasWorkspace({
         newConns.push({ from: qId, to: topicMap[tKey].nodeId, color: getTopicColor(topic) })
       })
     })
-    newNodes.push({ id: 'cfg', type: 'config', x: 650, y: 10, w: 160, h: 50, data: { preset: activePreset || 'balanced', weights } })
+    newNodes.push({ id: 'cfg', type: 'config', x: 850, y: 10, w: 160, h: 50, data: { preset: activePreset || 'balanced', weights } })
     newNodes.push({ id: 'stats', type: 'stat', x: 40, y: 40 + queryCards.length * 170 + 20, w: 200, h: 60, data: { queries: queryCards.length, topics: Object.keys(topicMap).length, connections: newConns.length } })
     setNodes(newNodes)
     setConnections(newConns)
@@ -218,6 +245,43 @@ export default function CanvasWorkspace({
     }
     setGenerating(null)
   }
+
+  // === AUTO-GENERATE DIAGRAM + CHART ON CANVAS LOAD ===
+  useEffect(() => {
+    if (autoGenDone.current) return
+    const queryNodes = nodes.filter(n => n.type === 'query')
+    if (queryNodes.length === 0) return
+    const hasDiagram = nodes.some(n => n.type === 'diagram')
+    const hasChart = nodes.some(n => n.type === 'chart')
+    if (hasDiagram && hasChart) return
+    autoGenDone.current = true
+
+    // Auto-generate for the most recent query (skip error responses)
+    const latest = queryNodes[queryNodes.length - 1]
+    const resp = latest.data.response || ''
+    const isError = resp.startsWith('Sorry') || resp.startsWith('Error') || resp.length < 80
+    if (isError && queryNodes.length === 1) return // Don't auto-gen for solo error queries
+    const targetQuery = isError ? queryNodes.find(n => !(n.data.response || '').startsWith('Sorry')) || latest : latest
+    const genViz = async () => {
+      if (!hasDiagram) {
+        const diagData = await generateVisualization(targetQuery.data.query, targetQuery.data.response, 'diagram')
+        if (diagData) {
+          const dId = `diagram-auto-${Date.now()}`
+          setNodes(prev => [...prev, { id: dId, type: 'diagram', x: targetQuery.x + targetQuery.w + 40, y: targetQuery.y, w: 380, h: 240, data: diagData }])
+          setConnections(prev => [...prev, { from: targetQuery.id, to: dId, color: '#8b5cf6' }])
+        }
+      }
+      if (!hasChart) {
+        const chartData = await generateVisualization(targetQuery.data.query, targetQuery.data.response, 'chart')
+        if (chartData) {
+          const cId = `chart-auto-${Date.now()}`
+          setNodes(prev => [...prev, { id: cId, type: 'chart', x: targetQuery.x + targetQuery.w + 40, y: targetQuery.y + 260, w: 300, h: 200, data: chartData }])
+          setConnections(prev => [...prev, { from: targetQuery.id, to: cId, color: '#10b981' }])
+        }
+      }
+    }
+    genViz()
+  }, [nodes])
 
   // === MOUSE HANDLERS ===
   const getCanvasPos = (e: React.MouseEvent) => {
