@@ -181,13 +181,10 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
   return (
     <div className="fixed inset-0 z-40 bg-white">
       <header className="bg-white border-b border-slate-200">
-        <div className="flex items-center justify-between px-5 py-3">
-          <div>
-            <h1 className="text-base font-medium text-slate-900">mind map</h1>
-            <p className="text-xs text-slate-400">visualize your knowledge graph</p>
-          </div>
+        <div className="flex items-center gap-3 px-4 py-1.5">
+          <span className="text-sm font-medium text-slate-900">mind map</span>
 
-          <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg">
+          <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg">
             {[
               { id: 'graph', label: 'graph' },
               { id: 'history', label: 'history' },
@@ -196,7 +193,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
               <button
                 key={id}
                 onClick={() => setViewMode(id as ViewMode)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all ${
                   viewMode === id
                     ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
@@ -207,21 +204,13 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
             ))}
           </div>
 
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3 px-5 py-2 border-t border-slate-100">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 max-w-xs">
             <input
               type="text"
               placeholder="search topics..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-3 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-slate-400 text-slate-700"
+              className="w-full pl-2.5 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] focus:outline-none focus:ring-1 focus:ring-slate-400 text-slate-700"
             />
           </div>
 
@@ -229,43 +218,45 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 focus:outline-none"
+              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] text-slate-600 focus:outline-none"
             >
-              <option value="all">all topics ({nodes.length})</option>
+              <option value="all">all ({nodes.length})</option>
               {categories.map(([cat, count]) => (
                 <option key={cat} value={cat}>{cat} ({count})</option>
               ))}
             </select>
           )}
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setShowPinned(!showPinned)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-2 py-0.5 rounded-lg text-[9px] font-medium transition-all ${
                 showPinned ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
               }`}
             >
               pinned
             </button>
-
             <button
               onClick={() => setShowConnections(!showConnections)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-2 py-0.5 rounded-lg text-[9px] font-medium transition-all ${
                 showConnections ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
               }`}
             >
               connections ({connections.length})
             </button>
-
           </div>
 
-          <div className="ml-auto text-[10px] text-slate-400">
-            {filteredNodes.length} topics
-          </div>
+          <span className="text-[9px] text-slate-400 ml-auto">{filteredNodes.length} topics</span>
+
+          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </header>
 
-      <main className="h-[calc(100vh-120px)] flex">
+      <main className="h-[calc(100vh-42px)] flex">
         <div className="flex-1 overflow-hidden relative">
           {loading ? (
             <div className="flex items-center justify-center h-full">
@@ -297,28 +288,18 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                 nodes={filteredNodes}
                 searchQuery={searchQuery}
                 onNodeSelect={handleNodeSelect}
-                onNodeAction={(query, nodeId) => handleSendQuery(query)}
+                onNodeAction={(query, nodeId) => { handleSendQuery(query); onClose() }}
                 propTopicLinks={topicLinks}
               />
               
               <div className="absolute bottom-4 left-4 z-50">
                 <button
                   onClick={() => setMiniChatOpen(!miniChatOpen)}
-                  className={`p-3 rounded-full shadow-lg transition-all ${
-                    miniChatOpen 
-                      ? 'bg-slate-800 text-white' 
-                      : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
-                  }`}
+                  className="rounded-full shadow-lg transition-all"
                 >
-                  {miniChatOpen ? (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                  )}
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: miniChatOpen ? '#1e293b' : '#ffffff', border: miniChatOpen ? 'none' : '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ color: miniChatOpen ? '#ffffff' : '#475569', fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>{miniChatOpen ? '\u2715' : '\u25C7'}</span>
+                  </div>
                 </button>
 
                 <AnimatePresence>

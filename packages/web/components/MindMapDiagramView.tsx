@@ -569,7 +569,7 @@ export default function MindMapDiagramView({
     setAiLoading(true)
     setAiInsight(null)
     try {
-      const prompt = `In 2 concise sentences, explain the significance of "${selectedTopic.name}" (category: ${selectedTopic.category}) in relation to its connected topics: ${analyseData.topConnections.map(c => c.name).join(', ')}. Focus on why these connections matter.`
+      const prompt = `In exactly 2 short sentences (max 40 words total), explain the significance of "${selectedTopic.name}" (category: ${selectedTopic.category}) in relation to its connected topics: ${analyseData.topConnections.map(c => c.name).join(', ')}. Focus on why these connections matter.`
       const res = await fetch('/api/quick-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1080,7 +1080,7 @@ export default function MindMapDiagramView({
                       analysing...
                     </div>
                   ) : (
-                    <p className="text-[10px] text-slate-600 leading-relaxed">{aiInsight}</p>
+                    <p className="text-[10px] text-slate-600 leading-relaxed" style={{ maxHeight: 60, overflow: 'hidden' }}>{aiInsight}</p>
                   )}
                 </div>
               )}
