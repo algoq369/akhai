@@ -22,9 +22,11 @@ interface CanvasWorkspaceProps {
   classicContent?: React.ReactNode
 }
 
+type NodeType = 'query' | 'topic' | 'note' | 'config' | 'stat' | 'diagram' | 'chart' | 'drawing'
+
 interface CanvasNode {
   id: string
-  type: 'query' | 'topic' | 'note' | 'config' | 'stat'
+  type: NodeType
   x: number
   y: number
   w: number
@@ -32,17 +34,14 @@ interface CanvasNode {
   data: any
 }
 
-interface Connection {
-  from: string
-  to: string
-  color: string
-}
+interface Connection { from: string; to: string; color: string }
+interface DrawPoint { x: number; y: number }
+interface DrawStroke { points: DrawPoint[]; color: string; width: number }
 
 const METHOD_COLORS: Record<string, string> = {
   auto: '#8b5cf6', direct: '#6366f1', cod: '#10b981',
   bot: '#f59e0b', react: '#ef4444', pot: '#0ea5e9', gtp: '#ec4899',
 }
-
 const TOPIC_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6', '#ef4444', '#14b8a6']
 
 function getTopicColor(name: string): string {
@@ -51,13 +50,96 @@ function getTopicColor(name: string): string {
   return TOPIC_COLORS[Math.abs(hash) % TOPIC_COLORS.length]
 }
 
-// Extract topics from query response text (simple keyword extraction)
 function extractTopics(text: string): string[] {
   const words = text.match(/[A-Z][a-z]+(?:\s[A-Z][a-z]+)*/g) || []
-  const unique = [...new Set(words)].filter(w => w.length > 3 && !['This', 'That', 'These', 'Those', 'What', 'When', 'Where', 'Which', 'There', 'Here'].includes(w))
-  return unique.slice(0, 5)
+  return [...new Set(words)].filter(w => w.length > 3 && !['This','That','These','Those','What','When','Where','Which','There','Here'].includes(w)).slice(0, 5)
 }
 
+// === DIAGRAM/CHART GENERATION ===
+async function generateVisualization(query: string, response: string, type: 'diagram' | 'chart'): Promise<any> {
+  const prompt = type === 'diagram'
+    ? `Based on this query and response, generate a Mermaid-style diagram as JSON. Output ONLY valid JSON, no markdown.
+Format: { "title": "short title", "type": "flowchart|mindmap|sequence", "nodes": [{"id":"n1","label":"text","color":"#hex"}], "edges": [{"from":"n1","to":"n2","label":"optional"}] }
+Query: ${query}
+Response: ${response.slice(0, 800)}`
+    : `Based on this query and response, extract data for a bar chart as JSON. Output ONLY valid JSON, no markdown.
+Format: { "title": "chart title", "xLabel": "x axis", "yLabel": "y axis", "data": [{"label":"item","value":number,"color":"#hex"}] }
+If no numeric data exists, estimate reasonable proportional values based on the content.
+Query: ${query}
+Response: ${response.slice(0, 800)}`
+
+  try {
+    const res = await fetch('/api/quick-query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: prompt, methodology: 'direct' }),
+    })
+    const data = await res.json()
+    const text = data.response || ''
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (jsonMatch) return JSON.parse(jsonMatch[0])
+  } catch (e) { console.error('Viz generation failed:', e) }
+  return null
+}
+
+// === MINI RENDERERS ===
+function DiagramRenderer({ data }: { data: any }) {
+  if (!data?.nodes) return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>
+  const nodeMap: Record<string, { x: number; y: number; label: string; color: string }> = {}
+  const cols = Math.ceil(Math.sqrt(data.nodes.length))
+  data.nodes.forEach((n: any, i: number) => {
+    nodeMap[n.id] = { x: 30 + (i % cols) * 140, y: 30 + Math.floor(i / cols) * 70, label: n.label, color: n.color || '#6366f1' }
+  })
+  return (
+    <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 6 }}>{data.title || 'Diagram'}</div>
+      <svg width="100%" height="100%" viewBox={`0 0 ${cols * 140 + 40} ${Math.ceil(data.nodes.length / cols) * 70 + 40}`} style={{ flex: 1 }}>
+        {(data.edges || []).map((e: any, i: number) => {
+          const f = nodeMap[e.from], t = nodeMap[e.to]
+          return f && t ? <line key={i} x1={f.x + 50} y1={f.y + 18} x2={t.x + 50} y2={t.y + 18} stroke="#cbd5e1" strokeWidth={1.5} markerEnd="url(#arrowhead)" /> : null
+        })}
+        <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#cbd5e1" /></marker></defs>
+        {data.nodes.map((n: any) => {
+          const pos = nodeMap[n.id]
+          return (
+            <g key={n.id}>
+              <rect x={pos.x} y={pos.y} width={100} height={36} rx={6} fill={`${pos.color}15`} stroke={`${pos.color}40`} strokeWidth={1} />
+              <text x={pos.x + 50} y={pos.y + 22} textAnchor="middle" fontSize={8} fontWeight={500} fill={pos.color} fontFamily="'JetBrains Mono',monospace">{pos.label.slice(0, 16)}</text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
+function ChartRenderer({ data }: { data: any }) {
+  if (!data?.data) return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>
+  const maxVal = Math.max(...data.data.map((d: any) => d.value || 0), 1)
+  return (
+    <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>{data.title || 'Chart'}</div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 3, paddingBottom: 16 }}>
+        {data.data.map((d: any, i: number) => (
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <span style={{ fontSize: 7, color: '#64748b', fontWeight: 600 }}>{d.value}</span>
+            <div style={{
+              width: '100%', maxWidth: 40,
+              height: `${Math.max(8, (d.value / maxVal) * 100)}%`,
+              background: d.color || TOPIC_COLORS[i % TOPIC_COLORS.length],
+              borderRadius: '3px 3px 0 0', transition: 'height 0.3s',
+              minHeight: 8,
+            }} />
+            <span style={{ fontSize: 6, color: '#94a3b8', textAlign: 'center', lineHeight: 1.1, maxWidth: 50, overflow: 'hidden' }}>{d.label?.slice(0, 12)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// === MAIN COMPONENT ===
 export default function CanvasWorkspace({
   queryCards, visualNodes, visualEdges, aiInsights,
   onQuerySelect, onNodeSelect, onInsightSelect, onSwitchToClassic,
@@ -72,9 +154,15 @@ export default function CanvasWorkspace({
   const panStart = useRef({ x: 0, y: 0 })
   const [selected, setSelected] = useState<string | null>(null)
   const [connecting, setConnecting] = useState<{ fromId: string; mx: number; my: number } | null>(null)
-  const [tool, setTool] = useState<'select' | 'connect' | 'note'>('select')
+  const [tool, setTool] = useState<'select' | 'connect' | 'note' | 'pencil'>('select')
   const [hovered, setHovered] = useState<string | null>(null)
   const [editingNote, setEditingNote] = useState<string | null>(null)
+  const [generating, setGenerating] = useState<string | null>(null) // "diagram" | "chart" | null
+
+  // Pencil drawing state
+  const [strokes, setStrokes] = useState<DrawStroke[]>([])
+  const [currentStroke, setCurrentStroke] = useState<DrawPoint[] | null>(null)
+  const [pencilColor, setPencilColor] = useState('#1e293b')
 
   const weights = useLayerStore((s) => s.weights)
   const activePreset = useLayerStore((s) => s.activePreset)
@@ -89,62 +177,69 @@ export default function CanvasWorkspace({
 
     queryCards.forEach((card, i) => {
       const qId = `q-${card.id}`
-      newNodes.push({
-        id: qId, type: 'query', x: 40, y: 40 + i * 170, w: 320, h: 150,
-        data: { ...card, methodology: card.methodology || 'auto' },
-      })
-
-      // Extract and create topic nodes
+      newNodes.push({ id: qId, type: 'query', x: 40, y: 40 + i * 170, w: 320, h: 150, data: { ...card, methodology: card.methodology || 'auto' } })
       const topics = extractTopics(card.response)
       topics.forEach(topic => {
         const tKey = topic.toLowerCase()
         if (!topicMap[tKey]) {
           const tId = `t-${tKey.replace(/\s/g, '-')}`
           topicMap[tKey] = { count: 1, nodeId: tId }
-          newNodes.push({
-            id: tId, type: 'topic', x: topicX + (Math.random() - 0.5) * 120, y: topicY, w: 110, h: 44,
-            data: { name: topic, count: 1, color: getTopicColor(topic) },
-          })
-          topicY += 56
-          if (topicY > 500) { topicY = 60; topicX += 140 }
+          newNodes.push({ id: tId, type: 'topic', x: topicX + (Math.random() - 0.5) * 120, y: topicY, w: 110, h: 44, data: { name: topic, count: 1, color: getTopicColor(topic) } })
+          topicY += 56; if (topicY > 500) { topicY = 60; topicX += 140 }
         } else {
           topicMap[tKey].count++
-          // Update count on existing topic node
           const existing = newNodes.find(n => n.id === topicMap[tKey].nodeId)
           if (existing) existing.data.count = topicMap[tKey].count
         }
         newConns.push({ from: qId, to: topicMap[tKey].nodeId, color: getTopicColor(topic) })
       })
     })
-
-    // Config node
-    newNodes.push({
-      id: 'cfg', type: 'config', x: 650, y: 10, w: 160, h: 50,
-      data: { preset: activePreset || 'balanced', weights },
-    })
-
-    // Stats node
-    newNodes.push({
-      id: 'stats', type: 'stat', x: 40, y: 40 + queryCards.length * 170 + 20, w: 200, h: 60,
-      data: { queries: queryCards.length, topics: Object.keys(topicMap).length, connections: newConns.length },
-    })
-
+    newNodes.push({ id: 'cfg', type: 'config', x: 650, y: 10, w: 160, h: 50, data: { preset: activePreset || 'balanced', weights } })
+    newNodes.push({ id: 'stats', type: 'stat', x: 40, y: 40 + queryCards.length * 170 + 20, w: 200, h: 60, data: { queries: queryCards.length, topics: Object.keys(topicMap).length, connections: newConns.length } })
     setNodes(newNodes)
     setConnections(newConns)
   }, [queryCards, activePreset, weights])
 
-  // Pan/zoom handlers
+  // === GENERATE DIAGRAM/CHART FROM SELECTED QUERY ===
+  const handleGenerate = async (type: 'diagram' | 'chart') => {
+    const selNode = nodes.find(n => n.id === selected && n.type === 'query')
+    if (!selNode) return
+    setGenerating(type)
+    const vizData = await generateVisualization(selNode.data.query, selNode.data.response, type)
+    if (vizData) {
+      const newId = `${type}-${Date.now()}`
+      const newNode: CanvasNode = {
+        id: newId, type, x: selNode.x + selNode.w + 40, y: selNode.y,
+        w: type === 'chart' ? 300 : 380, h: type === 'chart' ? 200 : 240,
+        data: vizData,
+      }
+      setNodes(prev => [...prev, newNode])
+      setConnections(prev => [...prev, { from: selected!, to: newId, color: '#6366f1' }])
+    }
+    setGenerating(null)
+  }
+
+  // === MOUSE HANDLERS ===
+  const getCanvasPos = (e: React.MouseEvent) => {
+    if (!canvasRef.current) return { x: 0, y: 0 }
+    const rect = canvasRef.current.getBoundingClientRect()
+    return { x: (e.clientX - rect.left - pan.x) / zoom, y: (e.clientY - rect.top - pan.y) / zoom }
+  }
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('[data-node]')) return
-    if (tool === 'note' && canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect()
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const id = `note-${Date.now()}`
-      setNodes(prev => [...prev, { id, type: 'note', x, y, w: 200, h: 80, data: { text: 'New note...', color: '#fef3c7' } }])
-      setTool('select')
-      setEditingNote(id)
+    // Pencil tool — start drawing
+    if (tool === 'pencil') {
+      const pos = getCanvasPos(e)
+      setCurrentStroke([pos])
       return
+    }
+    // Note tool — place note
+    if (tool === 'note' && canvasRef.current) {
+      const pos = getCanvasPos(e)
+      const id = `note-${Date.now()}`
+      setNodes(prev => [...prev, { id, type: 'note', x: pos.x, y: pos.y, w: 200, h: 80, data: { text: 'New note...', color: '#fef3c7' } }])
+      setTool('select'); setEditingNote(id); return
     }
     setIsPanning(true)
     panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y }
@@ -154,26 +249,32 @@ export default function CanvasWorkspace({
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isPanning) setPan({ x: e.clientX - panStart.current.x, y: e.clientY - panStart.current.y })
     if (dragging && canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect()
-      const x = (e.clientX - rect.left - pan.x) / zoom - dragging.ox
-      const y = (e.clientY - rect.top - pan.y) / zoom - dragging.oy
-      setNodes(prev => prev.map(n => n.id === dragging.id ? { ...n, x, y } : n))
+      const pos = getCanvasPos(e)
+      setNodes(prev => prev.map(n => n.id === dragging.id ? { ...n, x: pos.x - dragging.ox, y: pos.y - dragging.oy } : n))
     }
     if (connecting) setConnecting(prev => prev ? { ...prev, mx: e.clientX, my: e.clientY } : null)
-  }, [isPanning, dragging, connecting, pan, zoom])
+    // Pencil — continue stroke
+    if (currentStroke && tool === 'pencil') {
+      const pos = getCanvasPos(e)
+      setCurrentStroke(prev => prev ? [...prev, pos] : null)
+    }
+  }, [isPanning, dragging, connecting, currentStroke, tool, pan, zoom])
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    // Pencil — finish stroke
+    if (currentStroke && currentStroke.length > 1) {
+      setStrokes(prev => [...prev, { points: currentStroke, color: pencilColor, width: 2 }])
+      setCurrentStroke(null)
+    } else { setCurrentStroke(null) }
+    // Connect — complete connection
     if (connecting && canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect()
-      const mx = (e.clientX - rect.left - pan.x) / zoom
-      const my = (e.clientY - rect.top - pan.y) / zoom
-      const target = nodes.find(n => n.id !== connecting.fromId && mx >= n.x && mx <= n.x + n.w && my >= n.y && my <= n.y + n.h)
+      const pos = getCanvasPos(e)
+      const target = nodes.find(n => n.id !== connecting.fromId && pos.x >= n.x && pos.x <= n.x + n.w && pos.y >= n.y && pos.y <= n.y + n.h)
       if (target) setConnections(prev => [...prev, { from: connecting.fromId, to: target.id, color: '#94a3b8' }])
       setConnecting(null)
     }
-    setIsPanning(false)
-    setDragging(null)
-  }, [connecting, nodes, pan, zoom])
+    setIsPanning(false); setDragging(null)
+  }, [connecting, currentStroke, pencilColor, nodes, pan, zoom])
 
   useEffect(() => {
     const el = canvasRef.current; if (!el) return
@@ -184,79 +285,82 @@ export default function CanvasWorkspace({
 
   const startDrag = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!canvasRef.current) return
-    const rect = canvasRef.current.getBoundingClientRect()
-    const node = nodes.find(n => n.id === id)
-    if (!node) return
-    if (tool === 'connect') {
-      setConnecting({ fromId: id, mx: e.clientX, my: e.clientY })
-      return
-    }
-    const mx = (e.clientX - rect.left - pan.x) / zoom
-    const my = (e.clientY - rect.top - pan.y) / zoom
-    setDragging({ id, ox: mx - node.x, oy: my - node.y })
-    setSelected(id)
+    const node = nodes.find(n => n.id === id); if (!node) return
+    if (tool === 'connect') { setConnecting({ fromId: id, mx: e.clientX, my: e.clientY }); return }
+    const pos = getCanvasPos(e)
+    setDragging({ id, ox: pos.x - node.x, oy: pos.y - node.y }); setSelected(id)
   }
 
-  const getCenter = (id: string) => {
-    const n = nodes.find(nd => nd.id === id)
-    return n ? { x: n.x + n.w / 2, y: n.y + n.h / 2 } : { x: 0, y: 0 }
-  }
+  const getCenter = (id: string) => { const n = nodes.find(nd => nd.id === id); return n ? { x: n.x + n.w / 2, y: n.y + n.h / 2 } : { x: 0, y: 0 } }
+  const deleteSelected = () => { if (!selected) return; setNodes(prev => prev.filter(n => n.id !== selected)); setConnections(prev => prev.filter(c => c.from !== selected && c.to !== selected)); setSelected(null) }
+  const isConnected = (nodeId: string) => hovered ? connections.some(c => (c.from === hovered && c.to === nodeId) || (c.to === hovered && c.from === nodeId)) : false
+  const nodeOpacity = (nodeId: string) => !hovered ? 1 : (nodeId === hovered || isConnected(nodeId)) ? 1 : 0.25
+  const selectedIsQuery = selected ? nodes.find(n => n.id === selected)?.type === 'query' : false
 
-  const deleteSelected = () => {
-    if (!selected) return
-    setNodes(prev => prev.filter(n => n.id !== selected))
-    setConnections(prev => prev.filter(c => c.from !== selected && c.to !== selected))
-    setSelected(null)
-  }
-
-  const isConnected = (nodeId: string) => {
-    if (!hovered) return false
-    return connections.some(c => (c.from === hovered && c.to === nodeId) || (c.to === hovered && c.from === nodeId))
-  }
-
-  const nodeOpacity = (nodeId: string) => {
-    if (!hovered) return 1
-    if (nodeId === hovered || isConnected(nodeId)) return 1
-    return 0.25
-  }
-
+  // === RENDER ===
   return (
     <div style={{ width: '100%', height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace", background: '#fafbfc' }}>
-
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '5px 14px', borderBottom: '1px solid #f1f5f9', background: 'white', gap: 6, flexShrink: 0 }}>
-        <button onClick={onSwitchToClassic} style={{ fontSize: 9, padding: '3px 8px', borderRadius: 3, border: '1px solid #e2e8f0', background: 'white', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
-          ← chat
-        </button>
-        <div style={{ width: 1, height: 14, background: '#e2e8f0', margin: '0 4px' }} />
+      <div style={{ display: 'flex', alignItems: 'center', padding: '5px 14px', borderBottom: '1px solid #f1f5f9', background: 'white', gap: 4, flexShrink: 0, flexWrap: 'wrap' }}>
+        <button onClick={onSwitchToClassic} style={{ fontSize: 9, padding: '3px 8px', borderRadius: 3, border: '1px solid #e2e8f0', background: 'white', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>← chat</button>
+        <div style={{ width: 1, height: 14, background: '#e2e8f0', margin: '0 2px' }} />
 
-        {[
-          { id: 'select' as const, icon: '↖', label: 'select' },
-          { id: 'connect' as const, icon: '⟶', label: 'connect' },
-          { id: 'note' as const, icon: '✎', label: 'note' },
-        ].map(t => (
+        {/* Tools */}
+        {([
+          { id: 'select', icon: '↖', label: 'select' },
+          { id: 'pencil', icon: '✏', label: 'pencil' },
+          { id: 'connect', icon: '⟶', label: 'connect' },
+          { id: 'note', icon: '✎', label: 'note' },
+        ] as const).map(t => (
           <button key={t.id} onClick={() => setTool(t.id)} style={{
             fontSize: 9, padding: '3px 7px', borderRadius: 3,
             border: tool === t.id ? '1px solid #6366f1' : '1px solid transparent',
             background: tool === t.id ? '#6366f108' : 'transparent',
-            color: tool === t.id ? '#6366f1' : '#94a3b8',
-            cursor: 'pointer', fontFamily: 'inherit',
+            color: tool === t.id ? '#6366f1' : '#94a3b8', cursor: 'pointer', fontFamily: 'inherit',
           }}>{t.icon} {t.label}</button>
         ))}
 
-        {selected && (
-          <button onClick={deleteSelected} style={{ fontSize: 9, padding: '3px 7px', borderRadius: 3, border: '1px solid #ef4444', background: '#ef444408', color: '#ef4444', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+        {/* Pencil color picker */}
+        {tool === 'pencil' && (
+          <div style={{ display: 'flex', gap: 2, marginLeft: 4 }}>
+            {['#1e293b', '#6366f1', '#ef4444', '#10b981', '#f59e0b', '#ec4899'].map(c => (
+              <button key={c} onClick={() => setPencilColor(c)} style={{
+                width: 14, height: 14, borderRadius: '50%', border: pencilColor === c ? '2px solid #1e293b' : '1px solid #e2e8f0',
+                background: c, cursor: 'pointer', padding: 0,
+              }} />
+            ))}
+          </div>
         )}
 
-        <span style={{ marginLeft: 'auto', fontSize: 8, color: '#94a3b8' }}>
-          {nodes.length} nodes · {connections.length} links · {Math.round(zoom * 100)}%
-        </span>
+        <div style={{ width: 1, height: 14, background: '#e2e8f0', margin: '0 2px' }} />
+
+        {/* Diagram/Chart generation — only when a query is selected */}
+        {selectedIsQuery && (
+          <>
+            <button onClick={() => handleGenerate('diagram')} disabled={!!generating} style={{
+              fontSize: 9, padding: '3px 8px', borderRadius: 3, border: '1px solid #8b5cf6',
+              background: generating === 'diagram' ? '#8b5cf615' : 'transparent',
+              color: '#8b5cf6', cursor: generating ? 'wait' : 'pointer', fontFamily: 'inherit',
+            }}>{generating === 'diagram' ? '◌ generating...' : '◈ diagram'}</button>
+            <button onClick={() => handleGenerate('chart')} disabled={!!generating} style={{
+              fontSize: 9, padding: '3px 8px', borderRadius: 3, border: '1px solid #10b981',
+              background: generating === 'chart' ? '#10b98115' : 'transparent',
+              color: '#10b981', cursor: generating ? 'wait' : 'pointer', fontFamily: 'inherit',
+            }}>{generating === 'chart' ? '◌ generating...' : '▥ chart'}</button>
+          </>
+        )}
+
+        {selected && <button onClick={deleteSelected} style={{ fontSize: 9, padding: '3px 7px', borderRadius: 3, border: '1px solid #ef4444', background: '#ef444408', color: '#ef4444', cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>}
+
+        {/* Undo pencil strokes */}
+        {strokes.length > 0 && <button onClick={() => setStrokes(prev => prev.slice(0, -1))} style={{ fontSize: 9, padding: '3px 7px', borderRadius: 3, border: '1px solid #94a3b8', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontFamily: 'inherit' }}>↩ undo</button>}
+
+        <span style={{ marginLeft: 'auto', fontSize: 8, color: '#94a3b8' }}>{nodes.length} nodes · {connections.length} links · {strokes.length > 0 ? `${strokes.length} strokes · ` : ''}{Math.round(zoom * 100)}%</span>
       </div>
 
       {/* Canvas area */}
-      <div ref={canvasRef} style={{ flex: 1, overflow: 'hidden', position: 'relative', cursor: tool === 'note' ? 'crosshair' : tool === 'connect' ? 'crosshair' : isPanning ? 'grabbing' : 'grab' }}
-        onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={() => { setIsPanning(false); setDragging(null) }}>
+      <div ref={canvasRef} style={{ flex: 1, overflow: 'hidden', position: 'relative', cursor: tool === 'pencil' ? 'crosshair' : tool === 'note' ? 'crosshair' : tool === 'connect' ? 'crosshair' : isPanning ? 'grabbing' : 'grab' }}
+        onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={() => { setIsPanning(false); setDragging(null); if (currentStroke) { setStrokes(prev => [...prev, { points: currentStroke, color: pencilColor, width: 2 }]); setCurrentStroke(null) } }}>
 
         {/* Dot grid */}
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
@@ -266,25 +370,25 @@ export default function CanvasWorkspace({
 
         {/* Transform layer */}
         <div style={{ transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', position: 'absolute' }}>
-          {/* SVG connections */}
-          <svg width="2000" height="1500" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible' }}>
+          {/* SVG layer: connections + pencil strokes */}
+          <svg width="3000" height="2000" style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible' }}>
+            <defs><marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#cbd5e1" /></marker></defs>
+            {/* Connection lines */}
             {connections.map((c, i) => {
               const from = getCenter(c.from), to = getCenter(c.to)
               const hl = hovered && (c.from === hovered || c.to === hovered)
-              return <line key={`c-${i}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                stroke={c.color || '#94a3b8'} strokeWidth={hl ? 2 : 1}
-                strokeOpacity={hovered ? (hl ? 0.7 : 0.08) : 0.25}
-                strokeDasharray={c.color === '#94a3b8' ? '4 4' : 'none'}
-                style={{ transition: 'all 0.15s' }} />
+              return <line key={`c-${i}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke={c.color || '#94a3b8'} strokeWidth={hl ? 2 : 1} strokeOpacity={hovered ? (hl ? 0.7 : 0.08) : 0.25} strokeDasharray={c.color === '#94a3b8' ? '4 4' : 'none'} style={{ transition: 'all 0.15s' }} />
             })}
-            {connecting && (() => {
-              const from = getCenter(connecting.fromId)
-              const rect = canvasRef.current?.getBoundingClientRect()
-              if (!rect) return null
-              const toX = (connecting.mx - rect.left - pan.x) / zoom
-              const toY = (connecting.my - rect.top - pan.y) / zoom
-              return <line x1={from.x} y1={from.y} x2={toX} y2={toY} stroke="#6366f1" strokeWidth={2} strokeDasharray="6 3" />
-            })()}
+            {/* Active connection drag line */}
+            {connecting && (() => { const from = getCenter(connecting.fromId); const rect = canvasRef.current?.getBoundingClientRect(); if (!rect) return null; const tx = (connecting.mx - rect.left - pan.x) / zoom; const ty = (connecting.my - rect.top - pan.y) / zoom; return <line x1={from.x} y1={from.y} x2={tx} y2={ty} stroke="#6366f1" strokeWidth={2} strokeDasharray="6 3" /> })()}
+            {/* Pencil strokes */}
+            {strokes.map((stroke, si) => (
+              <polyline key={`s-${si}`} points={stroke.points.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke={stroke.color} strokeWidth={stroke.width} strokeLinecap="round" strokeLinejoin="round" />
+            ))}
+            {/* Current stroke being drawn */}
+            {currentStroke && currentStroke.length > 1 && (
+              <polyline points={currentStroke.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke={pencilColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" opacity={0.7} />
+            )}
           </svg>
 
           {/* Nodes */}
@@ -295,24 +399,13 @@ export default function CanvasWorkspace({
               note: { background: node.data.color || '#fef3c7', border: selected === node.id ? '1.5px dashed #d97706' : '1px dashed #e5e7eb', borderRadius: 6 },
               stat: { background: 'rgba(255,255,255,0.95)', border: '1px solid #f1f5f9', borderRadius: 8 },
               config: { background: 'rgba(255,255,255,0.95)', border: '1px solid #e2e8f020', borderRadius: 8 },
+              diagram: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #8b5cf6' : '1px solid #e2e8f0', borderRadius: 8 },
+              chart: { background: 'rgba(255,255,255,0.97)', border: selected === node.id ? '1.5px solid #10b981' : '1px solid #e2e8f0', borderRadius: 8 },
+              drawing: { background: 'transparent', border: 'none', borderRadius: 0 },
             }
-
             return (
-              <div key={node.id} data-node="true"
-                onMouseDown={e => startDrag(node.id, e)}
-                onMouseEnter={() => setHovered(node.id)}
-                onMouseLeave={() => setHovered(null)}
-                style={{
-                  position: 'absolute', left: node.x, top: node.y, width: node.w, height: node.h,
-                  ...styles[node.type],
-                  cursor: tool === 'connect' ? 'crosshair' : 'move',
-                  opacity: nodeOpacity(node.id),
-                  transition: dragging?.id === node.id ? 'none' : 'opacity 0.15s, box-shadow 0.15s',
-                  boxShadow: selected === node.id ? '0 2px 12px rgba(0,0,0,0.06)' : 'none',
-                  zIndex: selected === node.id ? 10 : 1,
-                  overflow: 'hidden',
-                }}>
-
+              <div key={node.id} data-node="true" onMouseDown={e => startDrag(node.id, e)} onMouseEnter={() => setHovered(node.id)} onMouseLeave={() => setHovered(null)}
+                style={{ position: 'absolute', left: node.x, top: node.y, width: node.w, height: node.h, ...styles[node.type], cursor: tool === 'connect' ? 'crosshair' : 'move', opacity: nodeOpacity(node.id), transition: dragging?.id === node.id ? 'none' : 'opacity 0.15s, box-shadow 0.15s', boxShadow: selected === node.id ? '0 2px 12px rgba(0,0,0,0.06)' : 'none', zIndex: selected === node.id ? 10 : 1, overflow: 'hidden' }}>
                 {/* Query node */}
                 {node.type === 'query' && (() => {
                   const mc = METHOD_COLORS[node.data.methodology] || '#94a3b8'
@@ -322,20 +415,18 @@ export default function CanvasWorkspace({
                       <div style={{ fontSize: 9, color: '#94a3b8', lineHeight: 1.4, flex: 1, overflow: 'hidden' }}>{node.data.response?.slice(0, 100)}...</div>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6 }}>
                         <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 2, background: `${mc}12`, color: mc, fontWeight: 600, textTransform: 'uppercase' }}>{node.data.methodology}</span>
-                        <span style={{ fontSize: 7, color: '#cbd5e1', marginLeft: 'auto' }}>
-                          {node.data.timestamp ? new Date(node.data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                        </span>
+                        <span style={{ fontSize: 7, color: '#cbd5e1', marginLeft: 'auto' }}>{node.data.timestamp ? new Date(node.data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                       </div>
                       {selected === node.id && (
-                        <button onClick={(e) => { e.stopPropagation(); onQuerySelect?.(node.data.id) }}
-                          style={{ fontSize: 8, marginTop: 4, padding: '3px 8px', border: '1px solid #e2e8f0', borderRadius: 3, background: 'white', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>
-                          view in chat →
-                        </button>
+                        <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                          <button onClick={(e) => { e.stopPropagation(); onQuerySelect?.(node.data.id) }} style={{ fontSize: 7, padding: '2px 6px', border: '1px solid #e2e8f0', borderRadius: 3, background: 'white', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' }}>view in chat →</button>
+                          <button onClick={(e) => { e.stopPropagation(); handleGenerate('diagram') }} style={{ fontSize: 7, padding: '2px 6px', border: '1px solid #8b5cf6', borderRadius: 3, background: '#8b5cf608', color: '#8b5cf6', cursor: 'pointer', fontFamily: 'inherit' }}>◈ diagram</button>
+                          <button onClick={(e) => { e.stopPropagation(); handleGenerate('chart') }} style={{ fontSize: 7, padding: '2px 6px', border: '1px solid #10b981', borderRadius: 3, background: '#10b98108', color: '#10b981', cursor: 'pointer', fontFamily: 'inherit' }}>▥ chart</button>
+                        </div>
                       )}
                     </div>
                   )
                 })()}
-
                 {/* Topic node */}
                 {node.type === 'topic' && (
                   <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
@@ -349,13 +440,9 @@ export default function CanvasWorkspace({
                 {node.type === 'note' && (
                   <div onDoubleClick={() => setEditingNote(node.id)} style={{ height: '100%', padding: '8px 10px' }}>
                     {editingNote === node.id ? (
-                      <textarea autoFocus value={node.data.text}
-                        onChange={e => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, data: { ...n.data, text: e.target.value } } : n))}
-                        onBlur={() => setEditingNote(null)}
+                      <textarea autoFocus value={node.data.text} onChange={e => setNodes(prev => prev.map(n => n.id === node.id ? { ...n, data: { ...n.data, text: e.target.value } } : n))} onBlur={() => setEditingNote(null)}
                         style={{ width: '100%', height: '100%', border: 'none', background: 'transparent', fontSize: 9, color: '#78716c', fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.5 }} />
-                    ) : (
-                      <div style={{ fontSize: 9, color: '#78716c', lineHeight: 1.5 }}>{node.data.text}</div>
-                    )}
+                    ) : <div style={{ fontSize: 9, color: '#78716c', lineHeight: 1.5 }}>{node.data.text}</div>}
                   </div>
                 )}
 
@@ -363,10 +450,7 @@ export default function CanvasWorkspace({
                 {node.type === 'stat' && (
                   <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '0 10px' }}>
                     {[{ l: 'queries', v: node.data.queries }, { l: 'topics', v: node.data.topics }, { l: 'links', v: node.data.connections }].map((s: any) => (
-                      <div key={s.l} style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{s.v}</div>
-                        <div style={{ fontSize: 7, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.l}</div>
-                      </div>
+                      <div key={s.l} style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{s.v}</div><div style={{ fontSize: 7, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.l}</div></div>
                     ))}
                   </div>
                 )}
@@ -378,10 +462,14 @@ export default function CanvasWorkspace({
                   </div>
                 )}
 
-                {/* Connect handle indicator */}
-                {tool === 'connect' && (
-                  <div style={{ position: 'absolute', right: -3, top: '50%', transform: 'translateY(-50%)', width: 6, height: 6, borderRadius: '50%', background: '#6366f1', border: '1.5px solid white' }} />
-                )}
+                {/* Diagram node */}
+                {node.type === 'diagram' && <DiagramRenderer data={node.data} />}
+
+                {/* Chart node */}
+                {node.type === 'chart' && <ChartRenderer data={node.data} />}
+
+                {/* Connect handle */}
+                {tool === 'connect' && <div style={{ position: 'absolute', right: -3, top: '50%', transform: 'translateY(-50%)', width: 6, height: 6, borderRadius: '50%', background: '#6366f1', border: '1.5px solid white' }} />}
               </div>
             )
           })}
@@ -391,7 +479,7 @@ export default function CanvasWorkspace({
       {/* Bottom hints */}
       <div style={{ padding: '3px 14px', borderTop: '1px solid #f1f5f9', background: 'white', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
         <span style={{ fontSize: 7, color: '#cbd5e1' }}>
-          drag to move · scroll to zoom · {tool === 'connect' ? 'click node → drag to target' : tool === 'note' ? 'click to place note' : 'click to select · double-click note to edit'}
+          {tool === 'pencil' ? 'draw on canvas · pick color above · ↩ to undo' : tool === 'connect' ? 'click node → drag to target' : tool === 'note' ? 'click to place note' : 'drag to move · scroll to zoom · select query → ◈ diagram or ▥ chart'}
         </span>
         <span style={{ fontSize: 7, color: '#cbd5e1', marginLeft: 'auto' }}>akhai canvas</span>
       </div>
