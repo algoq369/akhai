@@ -405,14 +405,15 @@ export default function MindMapDiagramView({
 
     const sorted = [...cl.nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
     const n = sorted.length
-    const vw = Math.min(1200, Math.max(800, n * 6))
-    const vh = Math.min(900, Math.max(600, n * 4.5))
+    const vw = Math.min(1400, Math.max(800, n * 8))
+    const vh = Math.min(1000, Math.max(600, n * 6))
     const ctrX = vw / 2, ctrY = vh / 2
 
-    // Initialize positions using golden angle spiral
+    // Initialize positions using golden angle spiral — wider spread for large clusters
+    const spreadFactor = n > 100 ? 40 : n > 50 ? 30 : 25
     const pos = sorted.map((_node, i) => {
       const angle = i * GOLDEN_ANGLE
-      const dist = 30 + Math.sqrt(i) * 25
+      const dist = 50 + Math.sqrt(i) * spreadFactor
       return { id: sorted[i].id, x: ctrX + Math.cos(angle) * dist, y: ctrY + Math.sin(angle) * dist }
     })
 
@@ -421,9 +422,10 @@ export default function MindMapDiagramView({
     const intLinks = topicLinks.filter(l => idSet.has(l.source) && idSet.has(l.target))
     const posMap = new Map(pos.map(p => [p.id, p]))
 
-    // Run force iterations
-    const minDist = n > 100 ? 40 : n > 50 ? 32 : 45
-    const iterations = n > 100 ? 150 : 100
+    // Run force iterations — stronger repulsion for large clusters
+    const minDist = n > 100 ? 55 : n > 50 ? 40 : 45
+    const iterations = n > 100 ? 200 : n > 50 ? 150 : 100
+    const repStrength = n > 100 ? 0.7 : 0.5
     for (let iter = 0; iter < iterations; iter++) {
       // Repulsion between all pairs
       for (let i = 0; i < n; i++) {
@@ -431,31 +433,33 @@ export default function MindMapDiagramView({
           const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y
           const dist = Math.sqrt(dx * dx + dy * dy) || 1
           if (dist < minDist) {
-            const f = (minDist - dist) / dist * 0.5
+            const f = (minDist - dist) / dist * repStrength
             pos[i].x += dx * f; pos[i].y += dy * f
             pos[j].x -= dx * f; pos[j].y -= dy * f
           }
         }
       }
       // Attraction between connected nodes
+      const attractDist = n > 100 ? 120 : n > 50 ? 100 : 80
       intLinks.forEach(link => {
         const ps = posMap.get(link.source), pt = posMap.get(link.target)
         if (!ps || !pt) return
         const dx = pt.x - ps.x, dy = pt.y - ps.y
         const dist = Math.sqrt(dx * dx + dy * dy) || 1
-        const f = (dist - 80) / dist * 0.05
+        const f = (dist - attractDist) / dist * 0.05
         ps.x += dx * f; ps.y += dy * f
         pt.x -= dx * f; pt.y -= dy * f
       })
-      // Center gravity
+      // Center gravity — stronger for large clusters to prevent drift
+      const gravity = n > 100 ? 0.02 : 0.01
       pos.forEach(p => {
-        p.x += (ctrX - p.x) * 0.01
-        p.y += (ctrY - p.y) * 0.01
+        p.x += (ctrX - p.x) * gravity
+        p.y += (ctrY - p.y) * gravity
       })
     }
 
     // Clamp to viewport with padding
-    const pad = 40
+    const pad = 60
     pos.forEach(p => {
       p.x = Math.max(pad, Math.min(vw - pad, p.x))
       p.y = Math.max(pad, Math.min(vh - pad, p.y))
@@ -554,7 +558,7 @@ export default function MindMapDiagramView({
   const sharedCount = Object.keys(sharedNodeInfo).length
 
   // Node size from queryCount
-  const getNodeRadius = (qc: number) => Math.max(4, Math.min(16, 3 + Math.sqrt(qc) * 3))
+  const getNodeRadius = (qc: number) => Math.max(6, Math.min(16, 3 + Math.sqrt(qc) * 3))
 
   // Build analyse modal data
   const analyseData = useMemo(() => {
@@ -796,6 +800,8 @@ export default function MindMapDiagramView({
                   onClick={(e) => handleNodeClick(e, node)}
                   style={{ cursor: 'pointer' }}
                 >
+                  {/* Invisible hitbox for easier hover */}
+                  <circle r={20} fill="transparent" />
                   {/* Node shape: diamond for shared, circle for regular */}
                   {isShared ? (
                     <rect
@@ -934,7 +940,7 @@ export default function MindMapDiagramView({
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedCluster(null)}>
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
-            <div onClick={e => e.stopPropagation()} className="bg-white dark:bg-[#18181b]" style={{ position: 'relative', width: '80%', height: '80%', borderRadius: 16, boxShadow: '0 24px 48px rgba(0,0,0,0.12)', overflow: 'hidden', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+            <div onClick={e => e.stopPropagation()} className="bg-white dark:bg-[#18181b]" style={{ position: 'relative', width: '90%', height: '90%', borderRadius: 16, boxShadow: '0 24px 48px rgba(0,0,0,0.12)', overflow: 'hidden', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
               <div className="border-b border-slate-200 dark:border-slate-700" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px' }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: cc.text, display: 'inline-block' }} />
                 <span className="text-slate-800 dark:text-slate-100" style={{ fontWeight: 700, fontSize: 15 }}>{expandedCluster}</span>
@@ -962,7 +968,7 @@ export default function MindMapDiagramView({
                     const labelText = node.name.length > 18 ? node.name.slice(0, 18) + '\u2026' : node.name
                     return (
                       <g key={node.id} transform={`translate(${p.x}, ${p.y})`} opacity={nodeOpacity} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedCluster(null) }} style={{ cursor: 'pointer' }}>
-                        <circle r={12} fill="transparent" />
+                        <circle r={20} fill="transparent" />
                         <circle r={nr} fill={cc.text + '90'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
                         {showLabel && <text y={nr + 14} textAnchor="middle" fill={isHov ? cc.text : '#94a3b8'} fontSize={isHov ? 11 : 9} fontWeight={isHov ? 600 : 400}>{isHov ? node.name : labelText}</text>}
                         {isHov && <text y={-nr - 8} textAnchor="middle" fill="#94a3b8" fontSize={8}>{qc} queries · {connectionCounts[node.id] || 0} connections</text>}
