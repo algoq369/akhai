@@ -231,17 +231,23 @@ export default function CanvasWorkspace({
   const handleGenerate = async (type: 'diagram' | 'chart') => {
     const selNode = nodes.find(n => n.id === selected && n.type === 'query')
     if (!selNode) return
+    const capturedId = selected!
     setGenerating(type)
     const vizData = await generateVisualization(selNode.data.query, selNode.data.response, type)
     if (vizData) {
       const newId = `${type}-${Date.now()}`
+      // Offset below any existing viz nodes from same query
+      const existingViz = nodes.filter(n => (n.type === 'diagram' || n.type === 'chart'))
+      const yOffset = existingViz.length * 260
       const newNode: CanvasNode = {
-        id: newId, type, x: selNode.x + selNode.w + 40, y: selNode.y,
+        id: newId, type, x: selNode.x + selNode.w + 40, y: selNode.y + yOffset,
         w: type === 'chart' ? 300 : 380, h: type === 'chart' ? 200 : 240,
         data: vizData,
       }
       setNodes(prev => [...prev, newNode])
-      setConnections(prev => [...prev, { from: selected!, to: newId, color: '#6366f1' }])
+      setConnections(prev => [...prev, { from: capturedId, to: newId, color: type === 'chart' ? '#10b981' : '#8b5cf6' }])
+      // Keep query selected so user can immediately generate the other viz type
+      setSelected(capturedId)
     }
     setGenerating(null)
   }
