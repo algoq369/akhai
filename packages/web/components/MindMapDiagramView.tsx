@@ -421,7 +421,7 @@ export default function MindMapDiagramView({
 
     // Force simulation — universal repulsion + edge attraction + gravity
     const iterations = n > 100 ? 250 : n > 50 ? 180 : 120
-    const idealDist = n > 100 ? 70 : n > 50 ? 55 : 50
+    const idealDist = n > 100 ? 90 : n > 50 ? 55 : 50
     for (let iter = 0; iter < iterations; iter++) {
       const cooling = 1 - iter / iterations // Simulated annealing
       // Universal repulsion between all node pairs
@@ -454,6 +454,25 @@ export default function MindMapDiagramView({
         p.x += (ctrX - p.x) * gravity * cooling
         p.y += (ctrY - p.y) * gravity * cooling
       })
+    }
+
+    // Collision resolution pass — push apart any overlapping nodes
+    const minSep = n > 100 ? 50 : 40
+    for (let pass = 0; pass < 30; pass++) {
+      let moved = false
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const dx = pos[i].x - pos[j].x, dy = pos[i].y - pos[j].y
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1
+          if (dist < minSep) {
+            const push = (minSep - dist) / dist * 0.5
+            pos[i].x += dx * push; pos[i].y += dy * push
+            pos[j].x -= dx * push; pos[j].y -= dy * push
+            moved = true
+          }
+        }
+      }
+      if (!moved) break
     }
 
     // Clamp to viewport with generous padding
