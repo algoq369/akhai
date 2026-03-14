@@ -79,7 +79,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
 
   useEffect(() => {
     if (selectedGraphNode) {
-      setChatInput(`Tell me more about ${selectedGraphNode.name}`)
+      setMiniChatQuery(`Tell me more about ${selectedGraphNode.name}`)
     }
   }, [selectedGraphNode])
 
