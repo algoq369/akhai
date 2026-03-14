@@ -3392,6 +3392,13 @@ function HomePage() {
           setShowMindMap(false);
           setMindMapInitialView('graph'); // Reset to graph view when closed
         }}
+        onSendQuery={(q) => {
+          setQuery(q);
+          setTimeout(() => {
+            const form = inputRef.current?.closest('form');
+            if (form) form.requestSubmit();
+          }, 100);
+        }}
         userId={user?.id || null}
         initialView={mindMapInitialView}
       />

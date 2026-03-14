@@ -467,8 +467,8 @@ export default function MindMapDiagramView({
     })
 
     // Position: hubs across top row, children in columns below each hub
-    const colW = Math.max(160, 900 / hubCount)
-    const rowH = 40
+    const colW = n > 50 ? 180 : n > 20 ? 160 : 140
+    const rowH = n > 30 ? 40 : 35
     const padTop = 60, padLeft = 40
     const vw = Math.max(900, hubCount * colW + padLeft * 2)
     
@@ -964,7 +964,9 @@ export default function MindMapDiagramView({
                     if (!p) return null
                     const qc = node.queryCount || 0
                     const isHub = hubIds.has(node.id)
-                    const nr = isHub ? 14 : Math.max(6, Math.min(12, 4 + Math.sqrt(qc) * 2))
+                    const hubR = fNodes.length < 20 ? 10 : 14
+                    const childR = fNodes.length < 20 ? 5 : Math.max(6, Math.min(12, 4 + Math.sqrt(qc) * 2))
+                    const nr = isHub ? hubR : childR
                     const isHov = hoveredNode === node.id
                     const isConnected = connectedIds ? connectedIds.has(node.id) : false
                     const nodeOpacity = connectedIds ? (isHov ? 1 : isConnected ? 0.6 : 0.15) : 1
