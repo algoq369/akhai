@@ -10,13 +10,19 @@ export async function POST(request: NextRequest) {
   try {
     const { query, response, type } = await request.json()
 
-    if (!query || !type || !['diagram', 'chart'].includes(type)) {
-      return NextResponse.json({ error: 'query, response, and type (diagram|chart) are required' }, { status: 400 })
+    const validTypes = ['diagram', 'chart', 'table', 'timeline', 'radar']
+    if (!query || !type || !validTypes.includes(type)) {
+      return NextResponse.json({ error: `query, response, and type (${validTypes.join('|')}) are required` }, { status: 400 })
     }
 
-    const systemPrompt = type === 'diagram'
-      ? 'You are a JSON generator. Output ONLY valid JSON, no markdown, no explanation. Generate a diagram from the user content.\nFormat: { "title": "short title", "type": "flowchart|mindmap|sequence", "nodes": [{"id":"n1","label":"text","color":"#hex"}], "edges": [{"from":"n1","to":"n2","label":"optional"}] }'
-      : 'You are a JSON generator. Output ONLY valid JSON, no markdown, no explanation. Generate chart data from the user content.\nFormat: { "title": "chart title", "xLabel": "x axis", "yLabel": "y axis", "data": [{"label":"item","value":number,"color":"#hex"}] }\nIf no numeric data exists, estimate reasonable proportional values.'
+    const prompts: Record<string, string> = {
+      diagram: 'You are a JSON generator. Output ONLY valid JSON, no markdown, no explanation. Generate a diagram from the user content.\nFormat: { "title": "short title", "type": "flowchart|mindmap|sequence", "nodes": [{"id":"n1","label":"text","color":"#hex"}], "edges": [{"from":"n1","to":"n2","label":"optional"}] }',
+      chart: 'You are a JSON generator. Output ONLY valid JSON, no markdown, no explanation. Generate chart data from the user content.\nFormat: { "title": "chart title", "xLabel": "x axis", "yLabel": "y axis", "data": [{"label":"item","value":number,"color":"#hex"}] }\nIf no numeric data exists, estimate reasonable proportional values.',
+      table: 'You are a JSON generator. Output ONLY valid JSON, no markdown, no explanation. Generate a comparison table from the user content.\nFormat: { "title": "table title", "columns": ["Col1","Col2","Col3"], "rows": [{"col1":"val","col2":"val","col3":"val"}] }\nExtract key entities and their attributes. 3-6 rows, 2-4 columns.',
+      timeline: 'You are a JSON generator. Output ONLY valid JSON, no markdown, no explanation. Generate a timeline from the user content.\nFormat: { "title": "timeline title", "events": [{"label":"event name","description":"brief","color":"#hex"}] }\nExtract sequential steps or chronological events. 3-8 events.',
+      radar: 'You are a JSON generator. Output ONLY valid JSON, no markdown, no explanation. Generate radar chart data from the user content.\nFormat: { "title": "radar title", "axes": [{"label":"dimension","value":0-100}] }\nExtract 3-8 dimensions with estimated scores. Values must be 0-100.',
+    }
+    const systemPrompt = prompts[type]
 
     const userContent = `Query: ${query}\nResponse: ${(response || '').slice(0, 800)}`
 
