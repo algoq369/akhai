@@ -52,7 +52,7 @@ function getTopicColor(name: string): string {
 
 function extractTopics(text: string): string[] {
   const words = text.match(/[A-Z][a-z]+(?:\s[A-Z][a-z]+)*/g) || []
-  return [...new Set(words)].filter(w => w.length > 3 && !['This','That','These','Those','What','When','Where','Which','There','Here'].includes(w)).slice(0, 5)
+  return [...new Set(words)].filter(w => w.length > 3 && !['This','That','These','Those','What','When','Where','Which','There','Here','Three','Four','Five','Several','Many','Some','Each','Both','Most','Much','Very','Also','However','Therefore','Furthermore','Moreover','Additionally'].includes(w)).slice(0, 5)
 }
 
 // === LOCAL FALLBACK GENERATORS ===
@@ -81,29 +81,16 @@ function generateLocalChart(query: string, response: string): any {
 
 // === DIAGRAM/CHART GENERATION ===
 async function generateVisualization(query: string, response: string, type: 'diagram' | 'chart'): Promise<any> {
-  const prompt = type === 'diagram'
-    ? `Based on this query and response, generate a Mermaid-style diagram as JSON. Output ONLY valid JSON, no markdown.
-Format: { "title": "short title", "type": "flowchart|mindmap|sequence", "nodes": [{"id":"n1","label":"text","color":"#hex"}], "edges": [{"from":"n1","to":"n2","label":"optional"}] }
-Query: ${query}
-Response: ${response.slice(0, 800)}`
-    : `Based on this query and response, extract data for a bar chart as JSON. Output ONLY valid JSON, no markdown.
-Format: { "title": "chart title", "xLabel": "x axis", "yLabel": "y axis", "data": [{"label":"item","value":number,"color":"#hex"}] }
-If no numeric data exists, estimate reasonable proportional values based on the content.
-Query: ${query}
-Response: ${response.slice(0, 800)}`
-
   try {
-    const res = await fetch('/api/quick-query', {
+    const res = await fetch('/api/canvas-viz', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: prompt, methodology: 'direct' }),
+      body: JSON.stringify({ query, response: response.slice(0, 800), type }),
     })
     if (!res.ok) throw new Error(`API ${res.status}`)
     const data = await res.json()
     if (data.error) throw new Error(data.error)
-    const text = data.content || data.response || ''
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (jsonMatch) return JSON.parse(jsonMatch[0])
+    if (data.viz) return data.viz
   } catch (e) { console.error('Viz API failed, using local fallback:', e) }
   // Local fallback — always produce something
   return type === 'diagram' ? generateLocalDiagram(query, response) : generateLocalChart(query, response)
@@ -157,7 +144,7 @@ function ChartRenderer({ data }: { data: any }) {
               borderRadius: '3px 3px 0 0', transition: 'height 0.3s',
               minHeight: 8,
             }} />
-            <span style={{ fontSize: 6, color: '#94a3b8', textAlign: 'center', lineHeight: 1.1, maxWidth: 50, overflow: 'hidden' }}>{d.label?.slice(0, 16)}</span>
+            <span title={d.label} style={{ fontSize: 6, color: '#94a3b8', textAlign: 'center', lineHeight: 1.1, maxWidth: 50, overflow: 'hidden' }}>{d.label?.slice(0, 20)}</span>
           </div>
         ))}
       </div>
@@ -185,6 +172,8 @@ export default function CanvasWorkspace({
   const [editingNote, setEditingNote] = useState<string | null>(null)
   const [generating, setGenerating] = useState<string | null>(null) // "diagram" | "chart" | null
   const autoGenDone = useRef(false)
+  const nodesRef = useRef<CanvasNode[]>([])
+  nodesRef.current = nodes
 
   // Pencil drawing state
   const [strokes, setStrokes] = useState<DrawStroke[]>([])
@@ -255,10 +244,11 @@ export default function CanvasWorkspace({
   // === AUTO-GENERATE DIAGRAM + CHART ON CANVAS LOAD ===
   useEffect(() => {
     if (autoGenDone.current) return
-    const queryNodes = nodes.filter(n => n.type === 'query')
+    const currentNodes = nodesRef.current
+    const queryNodes = currentNodes.filter(n => n.type === 'query')
     if (queryNodes.length === 0) return
-    const hasDiagram = nodes.some(n => n.type === 'diagram')
-    const hasChart = nodes.some(n => n.type === 'chart')
+    const hasDiagram = currentNodes.some(n => n.type === 'diagram')
+    const hasChart = currentNodes.some(n => n.type === 'chart')
     if (hasDiagram && hasChart) return
     autoGenDone.current = true
 
@@ -287,7 +277,7 @@ export default function CanvasWorkspace({
       }
     }
     genViz()
-  }, [nodes])
+  }, [queryCards.length])
 
   // === MOUSE HANDLERS ===
   const getCanvasPos = (e: React.MouseEvent) => {
