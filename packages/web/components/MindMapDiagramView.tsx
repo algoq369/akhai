@@ -425,21 +425,64 @@ export default function MindMapDiagramView({
     const sorted = [...cl.nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
     const n = sorted.length
 
-    // Clean grid layout — 5 columns, rows auto-sized
-    const cols = n > 50 ? 6 : n > 20 ? 5 : n > 8 ? 4 : 3
-    const cellW = 180, cellH = 55, padX = 30, padY = 50
-    const rows = Math.ceil(n / cols)
-    const vw = cols * cellW + padX * 2
-    const vh = rows * cellH + padY * 2
-
-    const pos = sorted.map((node, i) => ({
-      id: node.id,
-      x: padX + (i % cols) * cellW + cellW / 2,
-      y: padY + Math.floor(i / cols) * cellH + cellH / 2,
-    }))
-
+    // Tree layout: hubs at top, children branching below
     const idSet = new Set(sorted.map(nd => nd.id))
     const intLinks = topicLinks.filter(l => idSet.has(l.source) && idSet.has(l.target))
+    
+    // Build adjacency
+    const adj: Record<string, string[]> = {}
+    sorted.forEach(nd => { adj[nd.id] = [] })
+    intLinks.forEach(l => {
+      if (adj[l.source]) adj[l.source].push(l.target)
+      if (adj[l.target]) adj[l.target].push(l.source)
+    })
+
+    // Pick top hubs (most connected or most queried)
+    const hubCount = Math.min(Math.max(3, Math.ceil(n / 15)), 8)
+    const hubs = sorted.slice(0, hubCount)
+    const hubIds = new Set(hubs.map(h => h.id))
+    
+    // Assign remaining nodes to nearest hub
+    const hubChildren: Record<string, Node[]> = {}
+    hubs.forEach(h => { hubChildren[h.id] = [] })
+    const assigned = new Set(hubIds)
+    
+    // First pass: assign nodes connected to hubs
+    sorted.forEach(nd => {
+      if (assigned.has(nd.id)) return
+      const connectedHubs = (adj[nd.id] || []).filter(id => hubIds.has(id))
+      if (connectedHubs.length > 0) {
+        hubChildren[connectedHubs[0]].push(nd)
+        assigned.add(nd.id)
+      }
+    })
+    // Second pass: assign remaining to hub with fewest children
+    sorted.forEach(nd => {
+      if (assigned.has(nd.id)) return
+      const minHub = hubs.reduce((a, b) => hubChildren[a.id].length <= hubChildren[b.id].length ? a : b)
+      hubChildren[minHub.id].push(nd)
+      assigned.add(nd.id)
+    })
+
+    // Position: hubs across top row, children in columns below each hub
+    const colW = Math.max(160, 900 / hubCount)
+    const rowH = 40
+    const padTop = 60, padLeft = 40
+    const vw = Math.max(900, hubCount * colW + padLeft * 2)
+    
+    const pos: { id: string; x: number; y: number }[] = []
+    hubs.forEach((hub, hi) => {
+      const cx = padLeft + hi * colW + colW / 2
+      pos.push({ id: hub.id, x: cx, y: padTop })
+      
+      const children = hubChildren[hub.id].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
+      children.forEach((child, ci) => {
+        pos.push({ id: child.id, x: cx, y: padTop + (ci + 1) * rowH })
+      })
+    })
+    
+    const maxChildren = Math.max(...Object.values(hubChildren).map(c => c.length), 0)
+    const vh = padTop + (maxChildren + 2) * rowH
 
     return { positions: pos, links: intLinks, sortedNodes: sorted, vw, vh }
   }, [expandedCluster, clusters, topicLinks])
@@ -857,7 +900,8 @@ export default function MindMapDiagramView({
         const { positions: fPos, links: fLinks, sortedNodes: fNodes, vw: svgW, vh: svgH } = forceLayoutNodes
         if (fPos.length === 0) return null
         const posMap = new Map(fPos.map(p => [p.id, p]))
-        const topLabelIds = new Set(fNodes.map(n => n.id)) // Grid layout: all labels visible
+        const topLabelIds = new Set(fNodes.map(n => n.id))
+        const hubIds = new Set(fNodes.slice(0, Math.min(Math.max(3, Math.ceil(fNodes.length / 15)), 8)).map(n => n.id))
         const connectedIds = hoveredNode ? new Set(fLinks.filter(l => l.source === hoveredNode || l.target === hoveredNode).flatMap(l => [l.source, l.target])) : null
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedCluster(null)}>
@@ -881,19 +925,22 @@ export default function MindMapDiagramView({
               >
                 <svg width="100%" height="100%" viewBox={`0 0 ${svgW} ${svgH}`}>
                 <g transform={`translate(${drillPan.x}, ${drillPan.y}) scale(${drillZoom})`}>
+                  {/* Tree branches: hub → children (always visible) */}
                   {fLinks.map((link, li) => {
                     const ps = posMap.get(link.source), pt = posMap.get(link.target)
                     if (!ps || !pt) return null
-                    const mx = (ps.x + pt.x) / 2, my = (ps.y + pt.y) / 2 - 15
+                    // Only draw if one end is a hub
+                    const isTreeEdge = hubIds.has(link.source) || hubIds.has(link.target)
                     const isHi = hoveredNode === link.source || hoveredNode === link.target
-                    if (!isHi) return null // Only show connections on hover
-                    return <path key={`fl-${li}`} d={`M ${ps.x} ${ps.y} Q ${mx} ${my} ${pt.x} ${pt.y}`} fill="none" stroke={cc.text} strokeWidth={2.5} opacity={0.6} />
+                    if (!isTreeEdge && !isHi) return null
+                    return <line key={`fl-${li}`} x1={ps.x} y1={ps.y} x2={pt.x} y2={pt.y} stroke={cc.text} strokeWidth={isHi ? 2 : 1} opacity={isHi ? 0.6 : 0.12} />
                   })}
                   {fNodes.map((node) => {
                     const p = posMap.get(node.id)
                     if (!p) return null
                     const qc = node.queryCount || 0
-                    const nr = Math.max(8, Math.min(16, 6 + Math.sqrt(qc) * 2.5))
+                    const isHub = hubIds.has(node.id)
+                    const nr = isHub ? 14 : Math.max(6, Math.min(12, 4 + Math.sqrt(qc) * 2))
                     const isHov = hoveredNode === node.id
                     const isConnected = connectedIds ? connectedIds.has(node.id) : false
                     const nodeOpacity = connectedIds ? (isHov ? 1 : isConnected ? 0.6 : 0.15) : 1
@@ -902,8 +949,8 @@ export default function MindMapDiagramView({
                     return (
                       <g key={node.id} transform={`translate(${p.x}, ${p.y})`} opacity={nodeOpacity} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedCluster(null) }} style={{ cursor: 'pointer' }}>
                         <circle r={20} fill="transparent" />
-                        <circle r={nr} fill={cc.text + '90'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
-                        {showLabel && <text y={nr + 14} textAnchor="middle" fill={isHov ? cc.text : '#94a3b8'} fontSize={isHov ? 11 : 9} fontWeight={isHov ? 600 : 400}>{isHov ? node.name : labelText}</text>}
+                        <circle r={nr} fill={isHub ? cc.text + 'D0' : cc.text + '70'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHub ? 2.5 : (isHov ? 2 : 1)} />
+                        {showLabel && <text y={nr + 14} textAnchor="middle" fill={isHov ? cc.text : isHub ? cc.text : '#94a3b8'} fontSize={isHub ? 11 : (isHov ? 10 : 8)} fontWeight={isHub ? 700 : (isHov ? 600 : 400)}>{isHov ? node.name : labelText}</text>}
                         {isHov && <text y={-nr - 8} textAnchor="middle" fill="#94a3b8" fontSize={8}>{qc} queries · {connectionCounts[node.id] || 0} connections</text>}
                       </g>
                     )
