@@ -25,7 +25,7 @@ export interface ModelSpec {
  * Methodology-to-Provider mapping
  *
  * Strategy:
- * - ALL methodologies (except GTP): Claude Opus 4.5 for maximum quality
+ * - ALL methodologies (except GTP): Claude Opus 4.6 for maximum quality
  * - GTP ONLY: Multi-AI consensus using all 4 providers (Anthropic, DeepSeek, Mistral, xAI)
  *
  * This ensures:
@@ -36,38 +36,38 @@ export interface ModelSpec {
 export const METHODOLOGY_PROVIDER_MAP: Record<CoreMethodology, ModelSpec> = {
   direct: {
     provider: 'anthropic',
-    model: 'claude-opus-4-5-20251101',
-    reasoning: 'Premium Claude Opus 4.5 for all queries',
+    model: 'claude-opus-4-6',
+    reasoning: 'Premium Claude Opus 4.6 for all queries',
   },
   cod: {
     provider: 'anthropic',
-    model: 'claude-opus-4-5-20251101',
-    reasoning: 'Premium Claude Opus 4.5 for all queries',
+    model: 'claude-opus-4-6',
+    reasoning: 'Premium Claude Opus 4.6 for all queries',
   },
   bot: {
     provider: 'anthropic',
-    model: 'claude-opus-4-5-20251101',
-    reasoning: 'Premium Claude Opus 4.5 for all queries',
+    model: 'claude-opus-4-6',
+    reasoning: 'Premium Claude Opus 4.6 for all queries',
   },
   react: {
     provider: 'anthropic',
-    model: 'claude-opus-4-5-20251101',
-    reasoning: 'Premium Claude Opus 4.5 for all queries',
+    model: 'claude-opus-4-6',
+    reasoning: 'Premium Claude Opus 4.6 for all queries',
   },
   pot: {
     provider: 'anthropic',
-    model: 'claude-opus-4-5-20251101',
-    reasoning: 'Premium Claude Opus 4.5 for all queries',
+    model: 'claude-opus-4-6',
+    reasoning: 'Premium Claude Opus 4.6 for all queries',
   },
   gtp: {
     provider: 'anthropic', // Mother Base synthesis uses Anthropic
-    model: 'claude-opus-4-5-20251101',
+    model: 'claude-opus-4-6',
     reasoning: 'Multi-AI consensus: Anthropic + DeepSeek + Mistral + xAI advisors',
   },
   auto: {
     provider: 'anthropic',
-    model: 'claude-opus-4-5-20251101',
-    reasoning: 'Premium Claude Opus 4.5 for all queries',
+    model: 'claude-opus-4-6',
+    reasoning: 'Premium Claude Opus 4.6 for all queries',
   },
 }
 
@@ -82,12 +82,12 @@ export function getProviderForMethodology(
   methodology: CoreMethodology,
   legendMode: boolean = false
 ): ModelSpec {
-  // Legend Mode overrides to always use Claude Opus 4
+  // Legend Mode overrides to always use Claude Opus 4.6
   if (legendMode) {
     return {
       provider: 'anthropic',
-      model: 'claude-opus-4-5-20251101',
-      reasoning: 'Legend Mode: Premium R&D with Claude Opus 4.5',
+      model: 'claude-opus-4-6',
+      reasoning: 'Legend Mode: Premium R&D with Claude Opus 4.6',
     }
   }
 

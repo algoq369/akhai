@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
           content: query,
         },
       ],
-      model: 'claude-opus-4-5-20251101',
+      model: 'claude-opus-4-6',
       maxTokens: 500, // Keep responses short for quick chat
       temperature: 0.7,
     })

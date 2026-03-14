@@ -142,7 +142,7 @@ export async function verifyFactuality(
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5-20251101',
+        model: 'claude-opus-4-6',
         max_tokens: 1500,
         messages: [
           {

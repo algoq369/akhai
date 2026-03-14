@@ -151,7 +151,7 @@ Return your analysis as a JSON object with this structure:
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-opus-4-5-20251101',
+      model: 'claude-opus-4-6',
       max_tokens: 4000,
       temperature: 0.7,
       system: systemPrompt,

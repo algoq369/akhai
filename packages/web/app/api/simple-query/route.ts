@@ -464,6 +464,20 @@ export async function POST(request: NextRequest) {
     // Inject current date so model knows what year it is
     systemPrompt = `Current date: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. Always use up-to-date context when discussing current events, trends, or future projections.\n\n${systemPrompt}`
 
+    // Auto web search for every query — inject fresh context
+    try {
+      const searchRes = await fetch('http://localhost:3000/api/web-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: query, maxResults: 3 }) })
+      if (searchRes.ok) {
+        const searchData = await searchRes.json()
+        const results = searchData.results || searchData.organic || []
+        if (results.length > 0) {
+          const webContext = results.slice(0, 3).map((r: any) => '- ' + (r.title || '') + ': ' + (r.snippet || r.description || '')).join('\n')
+          systemPrompt = 'Live web context (searched as of today):\n' + webContext + '\n\n' + systemPrompt
+          log('INFO', 'SEARCH', 'Auto-search: ' + results.length + ' results injected')
+        }
+      }
+    } catch (e) { log('WARN', 'SEARCH', 'Auto-search failed: ' + (e as Error).message) }
+
     // Inject URL context if we fetched any content
     if (urlContext) {
       systemPrompt = `${systemPrompt}\n\n${urlContext}`

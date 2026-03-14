@@ -29,7 +29,7 @@ interface TopicSuggestionsResponse {
 /**
  * POST /api/mindmap/topic-suggestions
  *
- * Generate AI-powered suggestions for a topic using Claude Opus 4.5
+ * Generate AI-powered suggestions for a topic using Claude Opus 4.6
  * Returns:
  * - 1 deeper question
  * - 1 most pertinent connection
@@ -86,9 +86,9 @@ ${lastQueries && lastQueries.length > 0 ? `Recent Queries: ${lastQueries.join(';
 
 Generate suggestions that help explore this topic more deeply.`
 
-    // Call Claude Opus 4.5
+    // Call Claude Opus 4.6
     const message = await anthropic.messages.create({
-      model: 'claude-opus-4-5-20251101',
+      model: 'claude-opus-4-6',
       max_tokens: 4096,
       temperature: 0.7,
       system: systemPrompt,

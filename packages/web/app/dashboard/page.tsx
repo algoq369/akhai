@@ -47,7 +47,7 @@ export default function DashboardPage() {
   }
 
   const providers = [
-    { key: 'anthropic', name: 'Anthropic Claude', model: 'claude-opus-4-5-20251101', active: stats?.providers?.anthropic?.status === 'active' },
+    { key: 'anthropic', name: 'Anthropic Claude', model: 'claude-opus-4-6', active: stats?.providers?.anthropic?.status === 'active' },
     { key: 'deepseek', name: 'DeepSeek', model: 'deepseek-chat', active: stats?.providers?.deepseek?.status === 'active' },
     { key: 'xai', name: 'Grok', model: 'grok-3', active: stats?.providers?.xai?.status === 'active' },
     { key: 'mistral', name: 'Mistral AI', model: 'mistral-small-latest', active: stats?.providers?.mistral?.status === 'active' },

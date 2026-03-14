@@ -825,7 +825,7 @@ export default function ProfilePage() {
                   <span className="text-relic-silver dark:text-relic-ghost text-[9px] w-20 pt-0.5">primary</span>
                   <div className="flex gap-3">
                     {[
-                      { id: 'claude-opus-4-5-20251101', label: 'opus 4.5', cost: '$0.075/q' },
+                      { id: 'claude-opus-4-6', label: 'opus 4.6', cost: '$0.075/q' },
                       { id: 'claude-3-5-haiku-20241022', label: 'haiku', cost: '$0.007/q' }
                     ].map((model) => (
                       <span
@@ -837,9 +837,9 @@ export default function ProfilePage() {
                           localStorage.setItem('akhai-primary-model', model.id)
                         }}
                         className="text-[9px] cursor-pointer transition-colors group"
-                        style={{ color: (settings.modelConfig?.motherBase || 'claude-opus-4-5-20251101') === model.id ? (document.documentElement.classList.contains('dark') ? '#ffffff' : '#18181b') : '#94a3b8' }}
+                        style={{ color: (settings.modelConfig?.motherBase || 'claude-opus-4-6') === model.id ? (document.documentElement.classList.contains('dark') ? '#ffffff' : '#18181b') : '#94a3b8' }}
                       >
-                        {(settings.modelConfig?.motherBase || 'claude-opus-4-5-20251101') === model.id ? '●' : '○'} {model.label}
+                        {(settings.modelConfig?.motherBase || 'claude-opus-4-6') === model.id ? '●' : '○'} {model.label}
                         <span className="text-relic-silver/50 ml-1">{model.cost}</span>
                       </span>
                     ))}
