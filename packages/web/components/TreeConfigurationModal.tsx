@@ -1,10 +1,10 @@
 'use client'
 
 /**
- * Tree Configuration Panel - Inline Borderless 3-Slider
+ * Tree Configuration Panel - Centered Ghost Panel
  *
- * Matches InstinctModeConsole style: no box, no backdrop, no border.
- * Unfolds inline below the ✦ button. Pure raw text + sliders.
+ * Floating borderless config: no box, no shadow, just content on near-white.
+ * Centered on screen with subtle backdrop. Scale + fade animation.
  * 'advanced →' links to /tree-of-life full page.
  */
 
@@ -37,22 +37,43 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && (<>
+        {/* Backdrop */}
         <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.12 }}
+          className="fixed inset-0 z-50 bg-black/10"
+          onClick={onClose}
+        />
+
+        {/* Ghost panel */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}
-          className="w-full max-w-2xl font-mono text-[9px] mt-1 px-4 overflow-hidden"
+          className="fixed z-50 font-mono"
+          style={{
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '100%',
+            maxWidth: 380,
+            padding: 24,
+            backgroundColor: 'rgba(255, 255, 255, 0.97)',
+          }}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-zinc-500 uppercase tracking-[0.15em] text-[8px]">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[9px] uppercase tracking-[0.15em] text-zinc-400">
               ai config
             </span>
             <button
               onClick={onClose}
-              className="text-zinc-400 hover:text-zinc-500 transition-colors text-[8px]"
+              className="text-[9px] text-zinc-400 hover:text-zinc-500 transition-colors"
             >
               [x]
             </button>
@@ -120,12 +141,12 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
           {/* Advanced link */}
           <button
             onClick={() => { window.location.href = '/tree-of-life?mode=advanced' }}
-            className="text-zinc-400 hover:text-zinc-500 transition-colors text-[7px] uppercase tracking-[0.1em]"
+            className="text-[8px] text-zinc-400 hover:text-zinc-500 transition-colors uppercase tracking-[0.1em]"
           >
             advanced &rarr;
           </button>
         </motion.div>
-      )}
+      </>)}
     </AnimatePresence>
   )
 }
