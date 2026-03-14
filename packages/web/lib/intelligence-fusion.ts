@@ -833,5 +833,8 @@ export function generateEnhancedSystemPrompt(
     lines.push(fusionResult.contextInjection)
   }
 
+  lines.push('')
+  lines.push('STYLE REMINDER: Your base voice is short and eloquent. The layer weights above adjust HOW you deliver — more creative, more analytical, more focused — but never make you verbose. Compression is your art. Say more with less.')
+
   return lines.join('\n')
 }
