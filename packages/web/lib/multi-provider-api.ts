@@ -315,7 +315,7 @@ async function callOpenRouter(
       'X-Title': 'AkhAI',
     },
     body: JSON.stringify({
-      model: 'google/gemma-2-9b-it:free',
+      model: 'nvidia/nemotron-3-super-120b-a12b:free',
       messages,
       max_tokens: request.maxTokens || 500,
       temperature: request.temperature ?? 0.7,
@@ -340,7 +340,7 @@ async function callOpenRouter(
       outputTokens,
       totalTokens: inputTokens + outputTokens,
     },
-    model: 'google/gemma-2-9b-it:free',
+    model: 'nvidia/nemotron-3-super-120b-a12b:free',
     provider: 'openrouter',
     cost: 0,
     latencyMs,
