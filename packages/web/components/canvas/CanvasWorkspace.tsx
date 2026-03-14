@@ -153,25 +153,64 @@ function DiagramRenderer({ data }: { data: any }) {
 }
 
 function ChartRenderer({ data }: { data: any }) {
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setMounted(true), 50); return () => clearTimeout(t) }, [])
   if (!data?.data) return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>
   const maxVal = Math.max(...data.data.map((d: any) => d.value || 0), 1)
+  const ticks = [0, 25, 50, 75, 100]
+  const chartH = 120, chartL = 28, chartR = 8, chartT = 6, chartB = 28
   return (
     <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word' }}>{data.title || 'Chart'}</div>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 3, paddingBottom: 16 }}>
-        {data.data.map((d: any, i: number) => (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <span style={{ fontSize: 7, color: '#64748b', fontWeight: 600 }}>{d.value}</span>
-            <div style={{
-              width: '100%', maxWidth: 40,
-              height: `${Math.max(8, (d.value / maxVal) * 100)}%`,
-              background: d.color || TOPIC_COLORS[i % TOPIC_COLORS.length],
-              borderRadius: '3px 3px 0 0', transition: 'height 0.3s',
-              minHeight: 8,
-            }} />
-            <span title={d.label} style={{ fontSize: 6, color: '#94a3b8', textAlign: 'center', lineHeight: 1.1, maxWidth: 50, overflow: 'hidden' }}>{d.label?.slice(0, 20)}</span>
-          </div>
-        ))}
+      <div style={{ flex: 1, position: 'relative' }}>
+        <svg width="100%" height="100%" viewBox={`0 0 ${chartL + (data.data.length * 36) + chartR} ${chartT + chartH + chartB}`} preserveAspectRatio="xMidYMid meet">
+          {/* Y-axis ticks + gridlines */}
+          {ticks.map(t => {
+            const y = chartT + chartH - (t / 100) * chartH
+            return (
+              <g key={t}>
+                <text x={chartL - 4} y={y + 3} textAnchor="end" fontSize={6} fill="#94a3b8" fontFamily="'JetBrains Mono',monospace">{Math.round(t / 100 * maxVal)}</text>
+                <line x1={chartL} y1={y} x2={chartL + data.data.length * 36} y2={y} stroke="#f1f5f9" strokeWidth={0.5} strokeDasharray="3 2" />
+              </g>
+            )
+          })}
+          {/* Y axis line */}
+          <line x1={chartL} y1={chartT} x2={chartL} y2={chartT + chartH} stroke="#e2e8f0" strokeWidth={0.5} />
+          {/* X axis line */}
+          <line x1={chartL} y1={chartT + chartH} x2={chartL + data.data.length * 36} y2={chartT + chartH} stroke="#e2e8f0" strokeWidth={0.5} />
+          {/* Bars */}
+          {data.data.map((d: any, i: number) => {
+            const barColor = d.color || TOPIC_COLORS[i % TOPIC_COLORS.length]
+            const pct = Math.max(0.02, (d.value || 0) / maxVal)
+            const barH = mounted ? pct * chartH : 0
+            const barW = 22, barX = chartL + i * 36 + 7
+            const barY = chartT + chartH - barH
+            const isHov = hoveredBar === i
+            const tall = pct > 0.4
+            return (
+              <g key={i} onMouseEnter={() => setHoveredBar(i)} onMouseLeave={() => setHoveredBar(null)} style={{ cursor: 'pointer' }}>
+                <rect x={barX} y={barY} width={barW} height={barH} rx={4} fill={barColor} opacity={isHov ? 1 : 0.85} style={{ transition: 'height 0.6s ease-out, y 0.6s ease-out, opacity 0.15s', transform: isHov ? 'scale(1.05)' : 'none', transformOrigin: `${barX + barW / 2}px ${chartT + chartH}px` }} />
+                {/* Dark accent line at bar top */}
+                {barH > 4 && <rect x={barX} y={barY} width={barW} height={2} rx={1} fill={barColor} opacity={0.6} style={{ transition: 'y 0.6s ease-out' }} />}
+                {/* Value label */}
+                <text x={barX + barW / 2} y={tall ? barY + 12 : barY - 4} textAnchor="middle" fontSize={7} fontWeight={600} fill={tall ? '#fff' : '#64748b'} fontFamily="'JetBrains Mono',monospace" style={{ transition: 'y 0.6s ease-out' }}>{d.value}</text>
+                {/* X label */}
+                <text x={barX + barW / 2} y={chartT + chartH + 8} textAnchor="end" fontSize={6} fill="#94a3b8" fontFamily="'JetBrains Mono',monospace" transform={`rotate(-30 ${barX + barW / 2} ${chartT + chartH + 8})`}>
+                  <title>{d.label}</title>
+                  {d.label?.slice(0, 20)}
+                </text>
+                {/* Hover tooltip */}
+                {isHov && (
+                  <g>
+                    <rect x={barX - 8} y={barY - 22} width={barW + 16} height={16} rx={3} fill="#1e293b" />
+                    <text x={barX + barW / 2} y={barY - 11} textAnchor="middle" fontSize={7} fontWeight={600} fill="#fff" fontFamily="'JetBrains Mono',monospace">{d.value}</text>
+                  </g>
+                )}
+              </g>
+            )
+          })}
+        </svg>
       </div>
     </div>
   )
