@@ -50,10 +50,10 @@ export async function GET(
     const queries = db.prepare(`
       SELECT
         q.id,
-        q.content,
-        q.methodology,
+        q.query as content,
+        q.flow as methodology,
         q.created_at,
-        q.conversation_id
+        q.chat_id as conversation_id
       FROM queries q
       INNER JOIN query_topics qt ON q.id = qt.query_id
       WHERE qt.topic_id = ?
