@@ -247,10 +247,10 @@ export default function ResponseMindmap({
   // Dynamic dimensions based on expansion and detail panel
   const dimensions = useMemo(() => {
     if (selectedNode) {
-      return { width: 700, height: 450 }
+      return { width: 640, height: 450 }
     }
-    return isExpanded 
-      ? { width: 700, height: 450 }
+    return isExpanded
+      ? { width: 640, height: 450 }
       : { width: 380, height: 260 }
   }, [isExpanded, selectedNode])
 
@@ -451,10 +451,13 @@ export default function ResponseMindmap({
                     
                     const isActive = hoveredNode === node.id || selectedNode?.id === node.id
                     
+                    const mx = (parent.x + node.x) / 2
+                    const my = (parent.y + node.y) / 2 - 15
+
                     return (
                       <motion.path
                         key={`line-${node.id}`}
-                        d={`M ${parent.x} ${parent.y} L ${node.x} ${node.y}`}
+                        d={`M ${parent.x} ${parent.y} Q ${mx} ${my} ${node.x} ${node.y}`}
                         fill="none"
                         stroke={isActive ? accentGradient.from : '#e2e8f0'}
                         strokeWidth={isActive ? 2.5 : 1.5}
@@ -517,7 +520,7 @@ export default function ResponseMindmap({
                           fill="white"
                           fontSize={isExpanded ? 12 : 11}
                           fontWeight={isRoot ? 600 : 500}
-                          fontFamily="system-ui, -apple-system, sans-serif"
+                          fontFamily="'JetBrains Mono', ui-monospace, monospace"
                           className="select-none pointer-events-none"
                           style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
                         >
