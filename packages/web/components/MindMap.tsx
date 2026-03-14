@@ -64,7 +64,6 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
   const [connections, setConnections] = useState<Connection[]>([])
   const [topicLinks, setTopicLinks] = useState<{ source: string; target: string; type: string; strength: number }[]>([])
   const [showConnections, setShowConnections] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(false)
   const [showPinned, setShowPinned] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   
@@ -152,14 +151,6 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
     return connections.filter(c => c.from === selectedGraphNode.id || c.to === selectedGraphNode.id)
   }, [selectedGraphNode, connections])
 
-  const suggestions = useMemo(() => {
-    if (!selectedGraphNode) return nodes.slice(0, 8)
-    return nodes.filter(n => 
-      n.id !== selectedGraphNode.id && 
-      (n.category || 'other').toLowerCase() === (selectedGraphNode.category || 'other').toLowerCase()
-    ).slice(0, 8)
-  }, [selectedGraphNode, nodes])
-
   const quickActions = useMemo(() => {
     if (!selectedGraphNode) return [
       { label: 'explore topics', query: 'What topics have I explored most?' },
@@ -181,7 +172,6 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
   const handleNodeSelect = (node: { id: string; name: string; category?: string } | null) => {
     setSelectedGraphNode(node)
     if (node) {
-      setShowSuggestions(true)
       setShowConnections(false)
     }
   }
@@ -259,7 +249,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
             </button>
 
             <button
-              onClick={() => { setShowConnections(!showConnections); if (!showConnections) setShowSuggestions(false) }}
+              onClick={() => setShowConnections(!showConnections)}
               className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 showConnections ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
               }`}
@@ -267,14 +257,6 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
               connections ({connections.length})
             </button>
 
-            <button
-              onClick={() => { setShowSuggestions(!showSuggestions); if (!showSuggestions) setShowConnections(false) }}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                showSuggestions ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              suggestions
-            </button>
           </div>
 
           <div className="ml-auto text-[10px] text-slate-400">
@@ -415,7 +397,7 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
         </div>
 
         <AnimatePresence>
-          {(showConnections || showSuggestions) && (
+          {showConnections && (
             <motion.div
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 280, opacity: 1 }}
@@ -425,10 +407,10 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
               <div className="h-full flex flex-col">
                 <div className="flex-none p-3 bg-white border-b border-slate-100">
                   <span className="text-xs font-semibold text-slate-700">
-                    {showConnections ? 'connections' : 'suggestions'}
+                    connections
                   </span>
                   <span className="ml-2 text-[9px] text-slate-400">
-                    {showConnections ? nodeConnections.length : suggestions.length}
+                    {nodeConnections.length}
                   </span>
                   {selectedGraphNode && (
                     <p className="text-[10px] text-slate-500 mt-1">
@@ -471,41 +453,6 @@ export default function MindMap({ isOpen, onClose, userId, initialView = 'graph'
                     </div>
                   )}
 
-                  {showSuggestions && (
-                    <div className="space-y-2">
-                      {suggestions.length > 0 ? (
-                        suggestions.map(node => (
-                          <div key={node.id} className="bg-white rounded-lg p-2.5 border border-slate-100 hover:border-slate-200">
-                            <div className="flex items-start gap-2">
-                              <span className="w-2 h-2 rounded-full mt-1" style={{ backgroundColor: getCategoryStyle(node.category).dot }} />
-                              <div className="flex-1">
-                                <span className="text-[11px] font-medium text-slate-700 line-clamp-2">{node.name}</span>
-                                <p className="text-[9px] text-slate-400 mt-0.5">{node.category || 'other'} / {node.queryCount || 0} queries</p>
-                              </div>
-                            </div>
-                            <div className="flex gap-1.5 mt-2">
-                              <button
-                                onClick={() => handleNodeSelect({ id: node.id, name: node.name, category: node.category || undefined })}
-                                className="flex-1 text-[9px] px-2 py-1 bg-slate-100 text-slate-600 rounded hover:bg-slate-200"
-                              >
-                                select
-                              </button>
-                              <button
-                                onClick={() => handleSendQuery(`Analyze ${node.name}`)}
-                                className="flex-1 text-[9px] px-2 py-1 bg-slate-100 text-slate-600 rounded hover:bg-slate-200"
-                              >
-                                analyze
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-8">
-                          <p className="text-[10px] text-slate-400">no suggestions</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </motion.div>

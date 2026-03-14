@@ -806,63 +806,26 @@ export default function MindMapDiagramView({
               })}
             </g>
 
-            {/* Nodes — rendered in overview with invisible labels, visible on hover */}
-            {filteredNodes.map((node) => {
-              const pos = getPos(node.id)
-              if (!pos) return null
-
-              const ln = layoutNodes[node.id]
-              const isShared = ln?.isShared || false
-              const isHovered = hoveredNode === node.id
-              const isSelected = selectedTopic?.id === node.id
-              const isConnected = connectedTopicIds.has(node.id)
-              const r = getNodeRadius(node.queryCount || 0)
-
-              const catIdx = clusters.findIndex(c => c.category === (node.category || 'other'))
-              const color = getClusterColor(node.category || 'other', catIdx >= 0 ? catIdx : 0)
-
-              return (
-                <g
-                  key={node.id}
-                  data-node={node.id}
-                  transform={`translate(${pos.x}, ${pos.y})`}
-                  onMouseEnter={(e) => { e.stopPropagation(); setHoveredNode(node.id) }}
-                  onMouseLeave={() => setHoveredNode(null)}
-                  onMouseDown={(e) => { e.stopPropagation(); handleNodeMouseDown(e, node.id) }}
-                  onClick={(e) => { e.stopPropagation(); handleNodeClick(e, node) }}
-                  style={{ cursor: 'pointer', pointerEvents: 'all' }}
-                >
-                  {/* Invisible hitbox for easier hover */}
-                  <circle r={20} fill="transparent" />
-                  {/* Node shape: diamond for shared, circle for regular */}
-                  {isShared ? (
-                    <rect
-                      x={-r}
-                      y={-r}
-                      width={r * 2}
-                      height={r * 2}
-                      rx={2}
-                      transform={`rotate(45)`}
-                      fill={isSelected ? color.fill : color.text + 'B0'}
-                      stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.text + '80'}
-                      strokeWidth={isSelected || isHovered ? 2 : 1}
-                      className="transition-all duration-150"
-                      filter={isHovered ? 'url(#glow)' : undefined}
-                    />
-                  ) : (
-                    <circle
-                      r={r}
-                      fill={isSelected ? color.fill : color.text + '90'}
-                      stroke={isSelected ? color.text : isConnected ? '#94a3b8' : color.text + '4D'}
-                      strokeWidth={isSelected || isHovered ? 2 : 1}
-                      className="transition-all duration-150"
-                      filter={isHovered ? 'url(#glow)' : undefined}
-                    />
-                  )}
-
-                  {/* Node label + query count: shown in hover card only */}
-                </g>
-              )
+            {/* Top 5 nodes per cluster — rest visible in drill-down */}
+            {clusters.map((cluster, cIdx) => {
+              const color = getClusterColor(cluster.category, cIdx)
+              const top5 = cluster.nodes.slice(0, 5)
+              return top5.map((node) => {
+                const pos = getPos(node.id)
+                if (!pos) return null
+                const r = getNodeRadius(node.queryCount || 0)
+                const isHov = hoveredNode === node.id
+                return (
+                  <g key={node.id} transform={`translate(${pos.x}, ${pos.y})`}
+                    style={{ pointerEvents: 'all', cursor: 'pointer' }}
+                    onMouseEnter={() => setHoveredNode(node.id)}
+                    onMouseLeave={() => setHoveredNode(null)}
+                    onClick={(e) => { e.stopPropagation(); handleNodeClick(e, node) }}>
+                    <circle r={20} fill="transparent" />
+                    <circle r={r} fill={color.text + '90'} stroke={isHov ? color.text : color.text + '4D'} strokeWidth={isHov ? 2 : 1} />
+                  </g>
+                )
+              })
             })}
 
             {/* Hover card — foreignObject with interconnection summary */}
