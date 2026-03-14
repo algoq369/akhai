@@ -9,7 +9,6 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import DraggablePanel from './DraggablePanel'
 import QueryCardsPanel from './QueryCardsPanel'
 import type { QueryCard } from './QueryCardsPanel'
@@ -89,7 +88,6 @@ function getResponsiveLayout(containerWidth: number) {
 
 // Local storage keys
 const POSITIONS_KEY = 'akhai-canvas-positions'
-const VIEW_MODE_KEY = 'akhai-view-mode'
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
@@ -110,6 +108,7 @@ interface CanvasWorkspaceProps {
   onQuerySelect?: (queryId: string) => void
   onNodeSelect?: (nodeId: string) => void
   onInsightSelect?: (insightId: string) => void
+  onSwitchToClassic?: () => void
   // Classic chat content (rendered when in classic mode)
   classicContent?: React.ReactNode
 }
@@ -129,10 +128,10 @@ export function CanvasWorkspace({
   onQuerySelect,
   onNodeSelect,
   onInsightSelect,
+  onSwitchToClassic,
   classicContent,
 }: CanvasWorkspaceProps) {
   // View mode state
-  const [isCanvasMode, setIsCanvasMode] = useState(true)
   const [selectedQueryId, setSelectedQueryId] = useState<string | null>(null)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null)
@@ -275,7 +274,7 @@ export function CanvasWorkspace({
     })
     obs.observe(treePanelRef.current)
     return () => obs.disconnect()
-  }, [isCanvasMode])
+  }, [])
 
   // ── Measure container width ──
   useEffect(() => {
@@ -289,15 +288,11 @@ export function CanvasWorkspace({
     // Initial measurement
     setContainerWidth(canvasRef.current.clientWidth)
     return () => observer.disconnect()
-  }, [isCanvasMode])
+  }, [])
 
   // ── Load saved positions & validate they fit ──
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const savedMode = localStorage.getItem(VIEW_MODE_KEY)
-    if (savedMode) {
-      setIsCanvasMode(savedMode === 'canvas')
-    }
 
     const savedPositions = localStorage.getItem(POSITIONS_KEY)
     if (savedPositions) {
@@ -360,20 +355,9 @@ export function CanvasWorkspace({
   }, [onInsightSelect])
 
   return (
-    <div ref={canvasRef} className="relative w-full h-full min-h-screen">
-
-      <AnimatePresence mode="wait">
-        {isCanvasMode ? (
-          /* ═══════════════════════════════════════════════════════════════════ */
-          /* CANVAS MODE                                                       */
-          /* ═══════════════════════════════════════════════════════════════════ */
-          <motion.div
-            key="canvas"
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="relative w-full h-full min-h-screen bg-[#f8f9fa] overflow-x-hidden overflow-y-auto"
+    <div ref={canvasRef} className="relative w-full" style={{ height: 'calc(100vh - 120px)' }}>
+          <div
+            className="relative w-full h-full bg-[#f8f9fa] overflow-x-hidden overflow-y-auto"
           >
             {/* Canvas Background Pattern */}
             <div
@@ -388,7 +372,7 @@ export function CanvasWorkspace({
             <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3">
               <div className="flex flex-col items-center gap-0.5">
                 <button
-                  onClick={() => window.location.href = '/'}
+                  onClick={() => onSwitchToClassic?.()}
                   className="w-3 h-3 rounded-full bg-relic-silver/40 hover:bg-relic-silver border border-relic-mist transition-all hover:scale-125"
                   title="Classic Chat"
                 />
@@ -482,23 +466,7 @@ export function CanvasWorkspace({
               </div>
             </DraggablePanel>
 
-          </motion.div>
-        ) : (
-          /* ═══════════════════════════════════════════════════════════════════ */
-          /* CLASSIC MODE                                                      */
-          /* ═══════════════════════════════════════════════════════════════════ */
-          <motion.div
-            key="classic"
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="w-full h-full"
-          >
-            {classicContent}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
     </div>
   )
 }

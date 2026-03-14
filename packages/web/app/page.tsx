@@ -2066,6 +2066,7 @@ function HomePage() {
               });
             }}
             onNodeSelect={(id) => console.log('Selected node:', id)}
+            onSwitchToClassic={() => setIsCanvasMode(false)}
             aiInsights={topicInsights}
           />
         )}
