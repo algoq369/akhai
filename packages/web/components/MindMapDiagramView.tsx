@@ -673,31 +673,28 @@ export default function MindMapDiagramView({
               )
             })}
 
-            {/* Cross-cluster connection lines */}
+            {/* Cross-cluster connection lines — node-to-node bezier curves */}
             <g className="connections" style={{ pointerEvents: 'none' }}>
               {visibleLinks.map((link, idx) => {
                 const sourcePos = getPos(link.source)
                 const targetPos = getPos(link.target)
                 if (!sourcePos || !targetPos) return null
 
-                // Only draw cross-cluster lines
                 const sourceNode = filteredNodes.find(n => n.id === link.source)
-                const targetNode = filteredNodes.find(n => n.id === link.target)
-                const sameCat = sourceNode?.category === targetNode?.category
-
                 const isHighlighted = hoveredNode === link.source || hoveredNode === link.target
                 const midX = (sourcePos.x + targetPos.x) / 2
                 const midY = (sourcePos.y + targetPos.y) / 2 - 20
+                const srcCatIdx = clusters.findIndex(c => c.category === (sourceNode?.category || 'other'))
+                const srcColor = getClusterColor(sourceNode?.category || 'other', srcCatIdx >= 0 ? srcCatIdx : 0).text
 
                 return (
                   <path
                     key={`link-${idx}`}
                     d={`M ${sourcePos.x} ${sourcePos.y} Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
                     fill="none"
-                    stroke={isHighlighted ? '#64748b' : 'transparent'}
-                    strokeWidth={isHighlighted ? 1.5 : 0}
-                    strokeDasharray={sameCat ? 'none' : '4 3'}
-                    opacity={isHighlighted ? 0.8 : 0}
+                    stroke={srcColor}
+                    strokeWidth={isHighlighted ? 2 : 1.5}
+                    opacity={isHighlighted ? 0.7 : 0.3}
                     className="transition-all duration-200"
                   />
                 )
