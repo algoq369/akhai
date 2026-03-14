@@ -112,7 +112,7 @@ export default function MindMapDiagramView({
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null)
   const [hoveredPreview, setHoveredPreview] = useState<{ id: string; x: number; y: number; name: string } | null>(null)
   const [hoveredCluster, setHoveredCluster] = useState<string | null>(null)
-  const [expandedBubble, setExpandedBubble] = useState<string | null>(null)
+
 
   // Discussion panel
   const [discussions, setDiscussions] = useState<Discussion[]>([])
@@ -405,7 +405,8 @@ export default function MindMapDiagramView({
 
     const sorted = [...cl.nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0))
     const n = sorted.length
-    const vw = 800, vh = 600
+    const vw = Math.min(1200, Math.max(800, n * 6))
+    const vh = Math.min(900, Math.max(600, n * 4.5))
     const ctrX = vw / 2, ctrY = vh / 2
 
     // Initialize positions using golden angle spiral
@@ -420,9 +421,10 @@ export default function MindMapDiagramView({
     const intLinks = topicLinks.filter(l => idSet.has(l.source) && idSet.has(l.target))
     const posMap = new Map(pos.map(p => [p.id, p]))
 
-    // Run 100 force iterations
-    const minDist = n > 50 ? 32 : 45
-    for (let iter = 0; iter < 100; iter++) {
+    // Run force iterations
+    const minDist = n > 100 ? 40 : n > 50 ? 32 : 45
+    const iterations = n > 100 ? 150 : 100
+    for (let iter = 0; iter < iterations; iter++) {
       // Repulsion between all pairs
       for (let i = 0; i < n; i++) {
         for (let j = i + 1; j < n; j++) {
@@ -459,7 +461,7 @@ export default function MindMapDiagramView({
       p.y = Math.max(pad, Math.min(vh - pad, p.y))
     })
 
-    return { positions: pos, links: intLinks, sortedNodes: sorted }
+    return { positions: pos, links: intLinks, sortedNodes: sorted, vw, vh }
   }, [expandedCluster, clusters, topicLinks])
 
   // Fetch discussions
@@ -732,7 +734,7 @@ export default function MindMapDiagramView({
                   </text>
                   {cluster.nodes.slice(0, 5).map((pn, pi) => {
                     const a = (pi / 5) * Math.PI * 2 - Math.PI / 2, px = cluster.cx + Math.cos(a) * cluster.ry * 0.35, py = cluster.cy + Math.sin(a) * cluster.ry * 0.35
-                    return <circle key={`pv-${pn.id}`} cx={px} cy={py} r={8} fill={color.text + '70'} stroke={color.text + '40'} strokeWidth={1} onMouseEnter={() => setHoveredPreview({ id: pn.id, x: px, y: py, name: pn.name })} onMouseLeave={() => setHoveredPreview(null)} onClick={(e) => { e.stopPropagation(); setExpandedBubble(cluster.category) }} style={{ cursor: 'pointer' }} />
+                    return <circle key={`pv-${pn.id}`} cx={px} cy={py} r={8} fill={color.text + '70'} stroke={color.text + '40'} strokeWidth={1} onMouseEnter={() => setHoveredPreview({ id: pn.id, x: px, y: py, name: pn.name })} onMouseLeave={() => setHoveredPreview(null)} onClick={(e) => { e.stopPropagation(); setExpandedCluster(cluster.category) }} style={{ cursor: 'pointer' }} />
                   })}
                 </g>
               )
@@ -921,11 +923,12 @@ export default function MindMapDiagramView({
         const cl = clusters.find(c => c.category === expandedCluster)
         if (!cl) return null
         const cc = getClusterColor(cl.category, clusters.indexOf(cl))
-        const { positions: fPos, links: fLinks, sortedNodes: fNodes } = forceLayoutNodes
+        const { positions: fPos, links: fLinks, sortedNodes: fNodes, vw: svgW, vh: svgH } = forceLayoutNodes
         if (fPos.length === 0) return null
         const posMap = new Map(fPos.map(p => [p.id, p]))
         const showAllLabels = fNodes.length <= 50
         const topLabelIds = showAllLabels ? new Set(fNodes.map(n => n.id)) : new Set(fNodes.slice(0, 30).map(n => n.id))
+        const connectedIds = hoveredNode ? new Set(fLinks.filter(l => l.source === hoveredNode || l.target === hoveredNode).flatMap(l => [l.source, l.target])) : null
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedCluster(null)}>
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
@@ -936,8 +939,8 @@ export default function MindMapDiagramView({
                 <span style={{ color: '#94a3b8', fontSize: 11 }}>{cl.nodes.length} topics · {fLinks.length} connections</span>
                 <button onClick={() => setExpandedCluster(null)} style={{ marginLeft: 'auto', fontSize: 16, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>&#x2715;</button>
               </div>
-              <div style={{ width: '100%', height: 'calc(100% - 52px)', overflow: 'auto' }}>
-                <svg width="800" height="600" viewBox="0 0 800 600">
+              <div style={{ width: '100%', height: 'calc(100% - 52px)', overflow: 'auto', minWidth: 600, minHeight: 400 }}>
+                <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}>
                   {fLinks.map((link, li) => {
                     const ps = posMap.get(link.source), pt = posMap.get(link.target)
                     if (!ps || !pt) return null
@@ -951,10 +954,12 @@ export default function MindMapDiagramView({
                     const qc = node.queryCount || 0
                     const nr = Math.max(8, Math.min(16, 6 + Math.sqrt(qc) * 2.5))
                     const isHov = hoveredNode === node.id
-                    const showLabel = topLabelIds.has(node.id) || isHov
+                    const isConnected = connectedIds ? connectedIds.has(node.id) : false
+                    const nodeOpacity = connectedIds ? (isHov ? 1 : isConnected ? 0.6 : 0.08) : 1
+                    const showLabel = topLabelIds.has(node.id) || isHov || isConnected
                     const labelText = node.name.length > 18 ? node.name.slice(0, 18) + '\u2026' : node.name
                     return (
-                      <g key={node.id} transform={`translate(${p.x}, ${p.y})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedCluster(null) }} style={{ cursor: 'pointer' }}>
+                      <g key={node.id} transform={`translate(${p.x}, ${p.y})`} opacity={nodeOpacity} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedCluster(null) }} style={{ cursor: 'pointer' }}>
                         <circle r={12} fill="transparent" />
                         <circle r={nr} fill={cc.text + '90'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
                         {showLabel && <text y={nr + 14} textAnchor="middle" fill={isHov ? cc.text : '#94a3b8'} fontSize={isHov ? 11 : 9} fontWeight={isHov ? 600 : 400}>{isHov ? node.name : labelText}</text>}
@@ -969,32 +974,6 @@ export default function MindMapDiagramView({
         )
       })()}
 
-      {/* Bubble click — 10-topic popup */}
-      {expandedBubble && (() => {
-        const cl = clusters.find(c => c.category === expandedBubble); if (!cl) return null; const cc = getClusterColor(cl.category, clusters.indexOf(cl))
-        const top10 = [...cl.nodes].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0)).slice(0, 10)
-        const bLinks = topicLinks.filter(l => top10.some(n => n.id === l.source) && top10.some(n => n.id === l.target))
-        return (<div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setExpandedBubble(null)}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} />
-          <div onClick={e => e.stopPropagation()} className="bg-white dark:bg-[#18181b]" style={{ position: 'relative', width: '70vw', height: '60vh', borderRadius: 16, boxShadow: '0 24px 48px rgba(0,0,0,0.15)', overflow: 'hidden', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
-            <div className="border-b border-slate-200 dark:border-slate-700" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px' }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: cc.text }} /><span className="text-slate-800 dark:text-slate-100" style={{ fontWeight: 700, fontSize: 14 }}>{expandedBubble}</span>
-              <span style={{ color: '#94a3b8', fontSize: 11 }}>{top10.length} of {cl.nodes.length}</span>
-              <button onClick={() => setExpandedBubble(null)} style={{ marginLeft: 'auto', fontSize: 16, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>&#x2715;</button>
-            </div>
-            <svg width="100%" height="calc(100% - 48px)" viewBox="0 0 600 400">
-              {bLinks.map((link, li) => { const si = top10.findIndex(n => n.id === link.source), ti = top10.findIndex(n => n.id === link.target); if (si < 0 || ti < 0) return null; const sa = (si / top10.length) * Math.PI * 2 - Math.PI / 2, ta = (ti / top10.length) * Math.PI * 2 - Math.PI / 2; return <line key={`bl-${li}`} x1={300 + Math.cos(sa)*150} y1={200 + Math.sin(sa)*150} x2={300 + Math.cos(ta)*150} y2={200 + Math.sin(ta)*150} stroke={cc.text + '20'} strokeWidth={1} /> })}
-              {top10.map((node, ni) => { const a = (ni / top10.length) * Math.PI * 2 - Math.PI / 2, nx = 300 + Math.cos(a)*150, ny = 200 + Math.sin(a)*150, nr = getNodeRadius(node.queryCount || 0), isHov = hoveredNode === node.id
-                const rn = topicLinks.filter(l => l.source === node.id || l.target === node.id).slice(0, 3).map(l => filteredNodes.find(n => n.id === (l.source === node.id ? l.target : l.source))?.name).filter(Boolean)
-                return (<g key={node.id} transform={`translate(${nx}, ${ny})`} onMouseEnter={() => setHoveredNode(node.id)} onMouseLeave={() => setHoveredNode(null)} onClick={(e) => { e.stopPropagation(); onNodeAction?.(`Tell me more about ${node.name}`, node.id); setExpandedBubble(null) }} style={{ cursor: 'pointer' }}>
-                  <circle r={nr} fill={cc.text + '90'} stroke={isHov ? cc.text : cc.text + '4D'} strokeWidth={isHov ? 2 : 1} />
-                  <text y={nr + 12} textAnchor="middle" fill={isHov ? cc.text : '#94a3b8'} fontSize={9} fontWeight={isHov ? 600 : 400}>{node.name}</text>
-                  {isHov && <text y={-nr - 6} textAnchor="middle" fill="#94a3b8" fontSize={8}>{node.queryCount || 0} queries · {connectionCounts[node.id] || 0} conn{rn.length > 0 ? ` · ${rn.join(', ')}` : ''}</text>}
-                </g>)
-              })}
-            </svg>
-          </div></div>)
-      })()}
 
       {/* Analyse popup (modal overlay) */}
       <AnimatePresence mode="wait">
