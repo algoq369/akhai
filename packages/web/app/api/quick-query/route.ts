@@ -49,22 +49,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Call provider using existing multi-provider API
-    const response = await callProvider('anthropic', {
+    // Call provider with automatic OpenRouter fallback
+    const providerRequest = {
       messages: [
         {
-          role: 'system',
+          role: 'system' as const,
           content: systemPrompt,
         },
         {
-          role: 'user',
+          role: 'user' as const,
           content: query,
         },
       ],
       model: 'claude-opus-4-6',
-      maxTokens: 500, // Keep responses short for quick chat
+      maxTokens: 500,
       temperature: 0.7,
-    })
+    }
+
+    let response
+    try {
+      response = await callProvider('anthropic', providerRequest)
+    } catch (err: any) {
+      if (err.message?.includes('credit balance') || err.message?.includes('402') || err.message?.includes('400')) {
+        console.log('[QuickQuery] Anthropic credits depleted, falling back to OpenRouter')
+        response = await callProvider('openrouter', providerRequest)
+      } else {
+        throw err
+      }
+    }
 
     return NextResponse.json({
       content: response.content,

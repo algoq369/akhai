@@ -26,15 +26,27 @@ export async function POST(request: NextRequest) {
 
     const userContent = `Query: ${query}\nResponse: ${(response || '').slice(0, 800)}`
 
-    const result = await callProvider('anthropic', {
+    const vizRequest = {
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userContent },
+        { role: 'system' as const, content: systemPrompt },
+        { role: 'user' as const, content: userContent },
       ],
       model: 'claude-opus-4-6',
       maxTokens: 300,
       temperature: 0,
-    })
+    }
+
+    let result
+    try {
+      result = await callProvider('anthropic', vizRequest)
+    } catch (err: any) {
+      if (err.message?.includes('credit balance') || err.message?.includes('402') || err.message?.includes('400')) {
+        console.log('[CanvasViz] Anthropic credits depleted, falling back to OpenRouter')
+        result = await callProvider('openrouter', vizRequest)
+      } else {
+        throw err
+      }
+    }
 
     const text = result.content || ''
     const jsonMatch = text.match(/\{[\s\S]*\}/)

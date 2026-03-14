@@ -56,6 +56,8 @@ export async function callProvider(
       return await callMistral(request, startTime)
     case 'xai':
       return await callXAI(request, startTime)
+    case 'openrouter':
+      return await callOpenRouter(request, startTime)
     default:
       throw new Error(`Unsupported provider: ${provider}`)
   }
@@ -282,6 +284,65 @@ async function callXAI(
     model: request.model,
     provider: 'xai',
     cost,
+    latencyMs,
+  }
+}
+
+/**
+ * Call OpenRouter API (OpenAI-compatible, free models)
+ */
+async function callOpenRouter(
+  request: CompletionRequest,
+  startTime: number
+): Promise<CompletionResponse> {
+  const config = getProviderApiConfig('openrouter')
+
+  if (!config.apiKey) {
+    throw new Error('OPENROUTER_API_KEY not configured')
+  }
+
+  const messages = request.messages.map(m => ({
+    role: m.role,
+    content: m.content,
+  }))
+
+  const response = await fetch(config.baseUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+      'HTTP-Referer': 'https://akhai.app',
+      'X-Title': 'AkhAI',
+    },
+    body: JSON.stringify({
+      model: 'google/gemma-2-9b-it:free',
+      messages,
+      max_tokens: request.maxTokens || 500,
+      temperature: request.temperature ?? 0.7,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`OpenRouter API error: ${response.status} - ${error}`)
+  }
+
+  const data = await response.json()
+  const latencyMs = Date.now() - startTime
+
+  const inputTokens = data.usage?.prompt_tokens || 0
+  const outputTokens = data.usage?.completion_tokens || 0
+
+  return {
+    content: data.choices?.[0]?.message?.content || '',
+    usage: {
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+    },
+    model: 'google/gemma-2-9b-it:free',
+    provider: 'openrouter',
+    cost: 0,
     latencyMs,
   }
 }

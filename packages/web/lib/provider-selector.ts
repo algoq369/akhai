@@ -6,7 +6,7 @@
  */
 
 export type CoreMethodology = 'direct' | 'cod' | 'bot' | 'react' | 'pot' | 'gtp' | 'auto'
-export type ProviderFamily = 'anthropic' | 'deepseek' | 'mistral' | 'xai'
+export type ProviderFamily = 'anthropic' | 'deepseek' | 'mistral' | 'xai' | 'openrouter'
 
 export interface ProviderConfig {
   family: ProviderFamily
@@ -127,6 +127,11 @@ export function getProviderApiConfig(provider: ProviderFamily): {
         apiKey: process.env.XAI_API_KEY,
         baseUrl: 'https://api.x.ai/v1/chat/completions',
       }
+    case 'openrouter':
+      return {
+        apiKey: process.env.OPENROUTER_API_KEY,
+        baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
+      }
   }
 }
 
@@ -148,8 +153,8 @@ export function validateProviderApiKey(provider: ProviderFamily): boolean {
  * @returns Fallback provider
  */
 export function getFallbackProvider(primary: ProviderFamily): ProviderFamily {
-  // Fallback hierarchy: Anthropic > DeepSeek > Mistral > xAI
-  const fallbackOrder: ProviderFamily[] = ['anthropic', 'deepseek', 'mistral', 'xai']
+  // Fallback hierarchy: Anthropic > OpenRouter > DeepSeek > Mistral > xAI
+  const fallbackOrder: ProviderFamily[] = ['anthropic', 'openrouter', 'deepseek', 'mistral', 'xai']
   const primaryIndex = fallbackOrder.indexOf(primary)
 
   // Try next provider in hierarchy
@@ -176,7 +181,7 @@ export function getFallbackProvider(primary: ProviderFamily): ProviderFamily {
  * @returns Array of available provider families
  */
 export function getAvailableProviders(): ProviderFamily[] {
-  const providers: ProviderFamily[] = ['anthropic', 'deepseek', 'mistral', 'xai']
+  const providers: ProviderFamily[] = ['anthropic', 'openrouter', 'deepseek', 'mistral', 'xai']
   return providers.filter(validateProviderApiKey)
 }
 
@@ -195,6 +200,7 @@ export function getProviderPricing(provider: ProviderFamily): {
     anthropic: { input: 0.003, output: 0.015 },
     mistral: { input: 0.0002, output: 0.0006 },
     xai: { input: 0.002, output: 0.01 },
+    openrouter: { input: 0, output: 0 },
   }
 
   return rates[provider]
