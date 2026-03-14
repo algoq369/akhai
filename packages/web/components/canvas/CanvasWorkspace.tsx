@@ -119,7 +119,7 @@ function DiagramRenderer({ data }: { data: any }) {
   })
   return (
     <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 6 }}>{data.title || 'Diagram'}</div>
+      <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word' }}>{data.title || 'Diagram'}</div>
       <svg width="100%" height="100%" viewBox={`0 0 ${cols * 160 + 40} ${Math.ceil(data.nodes.length / cols) * 70 + 40}`} style={{ flex: 1 }}>
         {(data.edges || []).map((e: any, i: number) => {
           const f = nodeMap[e.from], t = nodeMap[e.to]
@@ -145,7 +145,7 @@ function ChartRenderer({ data }: { data: any }) {
   const maxVal = Math.max(...data.data.map((d: any) => d.value || 0), 1)
   return (
     <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 4 }}>{data.title || 'Chart'}</div>
+      <div style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word' }}>{data.title || 'Chart'}</div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 3, paddingBottom: 16 }}>
         {data.data.map((d: any, i: number) => (
           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
@@ -236,17 +236,17 @@ export default function CanvasWorkspace({
     const vizData = await generateVisualization(selNode.data.query, selNode.data.response, type)
     if (vizData) {
       const newId = `${type}-${Date.now()}`
-      // Offset below any existing viz nodes from same query
-      const existingViz = nodes.filter(n => (n.type === 'diagram' || n.type === 'chart'))
-      const yOffset = existingViz.length * 260
-      const newNode: CanvasNode = {
-        id: newId, type, x: selNode.x + selNode.w + 40, y: selNode.y + yOffset,
-        w: type === 'chart' ? 300 : 380, h: type === 'chart' ? 200 : 240,
-        data: vizData,
-      }
-      setNodes(prev => [...prev, newNode])
+      setNodes(prev => {
+        const existingViz = prev.filter(n => n.type === 'diagram' || n.type === 'chart')
+        const yOffset = existingViz.length * 260
+        const newNode: CanvasNode = {
+          id: newId, type, x: selNode.x + selNode.w + 40, y: selNode.y + yOffset,
+          w: type === 'chart' ? 300 : 380, h: type === 'chart' ? 200 : 240,
+          data: vizData,
+        }
+        return [...prev, newNode]
+      })
       setConnections(prev => [...prev, { from: capturedId, to: newId, color: type === 'chart' ? '#10b981' : '#8b5cf6' }])
-      // Keep query selected so user can immediately generate the other viz type
       setSelected(capturedId)
     }
     setGenerating(null)
