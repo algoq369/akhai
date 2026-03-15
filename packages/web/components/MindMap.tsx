@@ -169,7 +169,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-40 bg-white">
+    <div className="fixed inset-0 z-40 bg-white" style={{ top: 22 }}>
       <header className="bg-white border-b border-slate-200">
         <div className="flex items-center gap-3 px-4 py-1.5">
           <span className="text-sm font-medium text-slate-900">mind map</span>
@@ -247,7 +247,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
         </div>
       </header>
 
-      <main className="h-[calc(100vh-42px)] flex">
+      <main className="flex" style={{ height: 'calc(100vh - 64px)' }}>
         <div className="flex-1 overflow-hidden relative">
           {loading ? (
             <div className="flex items-center justify-center h-full">
