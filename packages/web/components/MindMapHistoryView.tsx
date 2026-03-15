@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 interface QueryHistoryItem {
   id: string
@@ -259,7 +260,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
   // Hover/click handlers for query rows
   const handleQueryMouseEnter = (e: React.MouseEvent, query: QueryHistoryItem) => {
     const x = e.clientX, y = e.clientY
-    hoverTimeout.current = setTimeout(() => setHoveredQuery({ query, x, y }), 300)
+    hoverTimeout.current = setTimeout(() => setHoveredQuery({ query, x, y }), 150)
   }
   const handleQueryMouseLeave = () => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
@@ -668,14 +669,14 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
         )}
       </main>
 
-      {/* Hover tooltip */}
-      {hoveredQuery && (
+      {/* Hover tooltip — portal to escape overflow:hidden */}
+      {hoveredQuery && typeof document !== 'undefined' && createPortal(
         <div
           style={{
             position: 'fixed',
-            left: Math.min(hoveredQuery.x + 12, typeof window !== 'undefined' ? window.innerWidth - 320 : hoveredQuery.x + 12),
+            left: Math.min(hoveredQuery.x + 12, window.innerWidth - 320),
             top: Math.max(hoveredQuery.y - 80, 10),
-            zIndex: 200,
+            zIndex: 9999,
             background: 'white',
             border: '1px solid #e2e8f0',
             borderRadius: 8,
@@ -699,18 +700,19 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
             <span>{(hoveredQuery.query.tokens_used || 0).toLocaleString()} tok</span>
             <span>${(hoveredQuery.query.cost || 0).toFixed(4)}</span>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Click popup — analyse / continue */}
-      {clickedQuery && (
+      {/* Click popup — portal to escape overflow:hidden */}
+      {clickedQuery && typeof document !== 'undefined' && createPortal(
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
             position: 'fixed',
             left: clickedQuery.x - 90,
             top: clickedQuery.y - 20,
-            zIndex: 200,
+            zIndex: 9999,
             background: 'white',
             border: '1px solid #e2e8f0',
             borderRadius: 8,
@@ -729,7 +731,8 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
             onClick={() => { window.location.href = `/?q=${encodeURIComponent(clickedQuery.query.query)}` }}
             style={{ fontSize: 9, padding: '5px 12px', border: 'none', borderRadius: 5, background: '#1e293b', cursor: 'pointer', color: 'white', fontFamily: 'inherit' }}
           >→ continue</button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
