@@ -274,7 +274,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
     setHoveredQuery(null)
     // Regular click → navigate to conversation
-    window.location.href = `/?q=${encodeURIComponent(query.query)}`
+    window.location.href = `/?q=${encodeURIComponent(query.query)}&ref=${query.id}`
   }
   const handleQueryContextMenu = (e: React.MouseEvent, query: QueryHistoryItem) => {
     e.preventDefault()
@@ -786,7 +786,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
             style={{ fontSize: 9, padding: '5px 12px', border: '1px solid #e2e8f0', borderRadius: 5, background: 'white', cursor: 'pointer', color: '#64748b', fontFamily: 'inherit' }}
           >◇ analyse</button>
           <button
-            onClick={() => { window.location.href = `/?q=${encodeURIComponent(clickedQuery.query.query)}` }}
+            onClick={() => { window.location.href = `/?q=${encodeURIComponent(clickedQuery.query.query)}&ref=${clickedQuery.query.id}` }}
             style={{ fontSize: 9, padding: '5px 12px', border: 'none', borderRadius: 5, background: '#1e293b', cursor: 'pointer', color: 'white', fontFamily: 'inherit' }}
           >→ continue</button>
         </div>,
