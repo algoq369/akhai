@@ -704,9 +704,31 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
 
       {/* Click popup — analyse / continue */}
       {clickedQuery && (
-        <div style={{ position: 'fixed', left: clickedQuery.x - 80, top: clickedQuery.y - 30, zIndex: 100, background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, padding: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', display: 'flex', gap: 4, fontFamily: "'JetBrains Mono', monospace" }} onClick={e => e.stopPropagation()}>
-          <button onClick={() => { onContinueToChat?.(clickedQuery.query.query); setClickedQuery(null) }} style={{ fontSize: 9, padding: '4px 10px', border: '1px solid #e2e8f0', borderRadius: 4, background: 'white', cursor: 'pointer', color: '#64748b' }}>◇ analyse</button>
-          <button onClick={() => { window.location.href = `/?q=${encodeURIComponent(clickedQuery.query.query)}`; }} style={{ fontSize: 9, padding: '4px 10px', border: 'none', borderRadius: 4, background: '#1e293b', cursor: 'pointer', color: 'white' }}>→ continue</button>
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            left: clickedQuery.x - 90,
+            top: clickedQuery.y - 20,
+            zIndex: 200,
+            background: 'white',
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            padding: '6px 8px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            display: 'flex',
+            gap: 6,
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          <button
+            onClick={() => { onContinueToChat?.(clickedQuery.query.query); setClickedQuery(null) }}
+            style={{ fontSize: 9, padding: '5px 12px', border: '1px solid #e2e8f0', borderRadius: 5, background: 'white', cursor: 'pointer', color: '#64748b', fontFamily: 'inherit' }}
+          >◇ analyse</button>
+          <button
+            onClick={() => { window.location.href = `/?q=${encodeURIComponent(clickedQuery.query.query)}` }}
+            style={{ fontSize: 9, padding: '5px 12px', border: 'none', borderRadius: 5, background: '#1e293b', cursor: 'pointer', color: 'white', fontFamily: 'inherit' }}
+          >→ continue</button>
         </div>
       )}
     </div>
