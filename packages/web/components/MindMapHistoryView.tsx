@@ -269,7 +269,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
   const hoverHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleQueryMouseLeave = () => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
-    hoverHideTimeout.current = setTimeout(() => setHoveredQuery(null), 200)
+    hoverHideTimeout.current = setTimeout(() => setHoveredQuery(null), 300)
   }
   const handleQueryClick = (e: React.MouseEvent, query: QueryHistoryItem) => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
@@ -278,7 +278,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
     onClose?.()
     setTimeout(() => {
       window.location.href = `/?q=${encodeURIComponent(query.query)}&ref=${query.id}`
-    }, 100)
+    }, 150)
   }
   const handleQueryContextMenu = (e: React.MouseEvent, query: QueryHistoryItem) => {
     e.preventDefault()
@@ -709,7 +709,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
       {hoveredQuery && typeof document !== 'undefined' && createPortal(
         <div
           onMouseEnter={() => { if (hoverHideTimeout.current) clearTimeout(hoverHideTimeout.current) }}
-          onMouseLeave={() => { hoverHideTimeout.current = setTimeout(() => setHoveredQuery(null), 200) }}
+          onMouseLeave={() => { hoverHideTimeout.current = setTimeout(() => setHoveredQuery(null), 300) }}
           style={{
             position: 'fixed',
             left: Math.min(hoveredQuery.x + 12, window.innerWidth - 320),
@@ -808,7 +808,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
             style={{ fontSize: 9, padding: '5px 12px', border: '1px solid #e2e8f0', borderRadius: 5, background: 'white', cursor: 'pointer', color: '#64748b', fontFamily: 'inherit' }}
           >◇ analyse</button>
           <button
-            onClick={() => { window.location.href = `/?q=${encodeURIComponent(clickedQuery.query.query)}&ref=${clickedQuery.query.id}` }}
+            onClick={() => { setClickedQuery(null); onClose?.(); setTimeout(() => { window.location.href = `/?q=${encodeURIComponent(clickedQuery.query.query)}&ref=${clickedQuery.query.id}` }, 150) }}
             style={{ fontSize: 9, padding: '5px 12px', border: 'none', borderRadius: 5, background: '#1e293b', cursor: 'pointer', color: 'white', fontFamily: 'inherit' }}
           >→ continue</button>
         </div>,
