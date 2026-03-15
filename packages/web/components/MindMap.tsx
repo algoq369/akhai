@@ -275,37 +275,36 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
           ) : viewMode === 'board' ? (
             <VisionBoard userId={userId} />
           ) : viewMode === 'graph' ? (
-            <div className="relative w-full h-full">
-              <MindMapDiagramView
-                userId={userId}
-                nodes={filteredNodes}
-                searchQuery={searchQuery}
-                onNodeSelect={handleNodeSelect}
-                onNodeAction={(query) => handleSendQuery(query)}
-                onContinueToChat={(query) => {
-                  setMiniChatQuery(query)
-                  setMiniChatOpen(true)
-                }}
-                propTopicLinks={topicLinks}
-              />
-
-              <div className="absolute bottom-4 left-4 z-50">
-                <MindMapMiniChat
-                  selectedTopic={selectedGraphNode ? { id: selectedGraphNode.id, label: selectedGraphNode.name, category: selectedGraphNode.category } : null}
-                  connectionsCount={connections.length}
-                  prefillQuery={miniChatQuery}
-                  isOpen={miniChatOpen}
-                  onOpenChange={setMiniChatOpen}
-                  nodes={nodes}
-                  topicLinks={topicLinks}
-                />
-              </div>
-            </div>
+            <MindMapDiagramView
+              userId={userId}
+              nodes={filteredNodes}
+              searchQuery={searchQuery}
+              onNodeSelect={handleNodeSelect}
+              onNodeAction={(query) => handleSendQuery(query)}
+              onContinueToChat={(query) => {
+                setMiniChatQuery(query)
+                setMiniChatOpen(true)
+              }}
+              propTopicLinks={topicLinks}
+            />
           ) : viewMode === 'history' ? (
             <MindMapHistoryView onClose={onClose} onContinueToChat={(query) => { setMiniChatQuery(query); setMiniChatOpen(true) }} />
           ) : viewMode === 'report' ? (
             <MindMapReportView userId={userId} selectedTopics={[]} />
           ) : null}
+
+          {/* Mini-chat — visible on all tabs */}
+          <div className="absolute bottom-4 left-4 z-50">
+            <MindMapMiniChat
+              selectedTopic={selectedGraphNode ? { id: selectedGraphNode.id, label: selectedGraphNode.name, category: selectedGraphNode.category } : null}
+              connectionsCount={connections.length}
+              prefillQuery={miniChatQuery}
+              isOpen={miniChatOpen}
+              onOpenChange={setMiniChatOpen}
+              nodes={nodes}
+              topicLinks={topicLinks}
+            />
+          </div>
         </div>
 
         <AnimatePresence>
