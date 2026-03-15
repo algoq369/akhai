@@ -418,8 +418,8 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
     const n: BoardNode = {
       id: uid(), type,
       x: pos.x, y: pos.y,
-      w: vizSize?.w || (type === 'drawing' ? 200 : type === 'conversation' ? 200 : 180),
-      h: vizSize?.h || (type === 'drawing' ? 140 : type === 'conversation' ? 130 : 100),
+      w: vizSize?.w || (type === 'drawing' ? 200 : type === 'conversation' ? 280 : 180),
+      h: vizSize?.h || (type === 'drawing' ? 140 : type === 'conversation' ? 160 : 100),
       data: { title: '', body: '', ...data },
       createdAt: Date.now(),
     }
@@ -558,6 +558,8 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
   const PINS_KEY = 'akhai-vision-pins'
   const [timelinePins, setTimelinePins] = useState<{date: string, label: string}[]>([])
   const [hoveredPin, setHoveredPin] = useState<{label: string, x: number, y: number} | null>(null)
+  const [pinPopup, setPinPopup] = useState<{date: string, displayDate: string, x: number} | null>(null)
+  const [pinLabel, setPinLabel] = useState('')
   const timelineRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -747,6 +749,20 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
                           style={{ height: node.h - 56 }}
                         />
                       </div>
+                    ) : node.type === 'conversation' ? (
+                      <div className="px-2 py-1.5">
+                        <div className="text-[11px] font-medium text-slate-800 overflow-hidden" style={{
+                          display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, wordBreak: 'break-word', lineHeight: 1.4,
+                        }}>{node.data.title || 'untitled'}</div>
+                        <div className="text-[9px] text-slate-500 mt-1.5 overflow-hidden" style={{
+                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any,
+                        }}>{node.data.body || ''}</div>
+                        {node.data.source && (
+                          <div className="mt-1.5 flex items-center gap-1.5">
+                            <span className="px-1 py-0.5 rounded text-[7px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-500">{node.data.source}</span>
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <div className="px-2 py-1">
                         <div className="text-[10px] font-medium text-slate-800 truncate">{node.data.title || 'untitled'}</div>
@@ -867,8 +883,8 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
                 setTimelinePins(prev => prev.filter(p => p.date !== dateStr))
                 return
               }
-              const label = window.prompt(`Pin label for ${clickedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}:`)
-              if (label?.trim()) setTimelinePins(prev => [...prev, { date: dateStr, label: label.trim() }])
+              setPinPopup({ date: dateStr, displayDate: clickedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), x: e.clientX - rect.left })
+              setPinLabel('')
             }}
           >
             {/* Month labels — top 20px */}
@@ -952,6 +968,38 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
             background: '#1e293b', color: 'white', fontSize: 9, padding: '3px 8px', borderRadius: 4,
             pointerEvents: 'none', fontFamily: "'JetBrains Mono', monospace", whiteSpace: 'nowrap',
           }}>{hoveredPin.label}</div>
+        )}
+
+        {/* Inline pin popup */}
+        {pinPopup && (
+          <div style={{
+            position: 'absolute', left: Math.max(10, Math.min(pinPopup.x + 70 - 80, (timelineRef.current?.offsetWidth || 400) - 180)), bottom: 60, zIndex: 50,
+            background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, padding: 8,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: "'JetBrains Mono', monospace",
+          }}>
+            <div style={{ fontSize: 8, color: '#94a3b8', marginBottom: 4 }}>pin for {pinPopup.displayDate}</div>
+            <input
+              autoFocus
+              value={pinLabel}
+              onChange={(e) => setPinLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && pinLabel.trim()) {
+                  setTimelinePins(prev => [...prev, { date: pinPopup.date, label: pinLabel.trim() }])
+                  setPinPopup(null); setPinLabel('')
+                }
+                if (e.key === 'Escape') setPinPopup(null)
+              }}
+              style={{ fontSize: 10, border: '1px solid #e2e8f0', borderRadius: 4, padding: '3px 6px', width: 140, outline: 'none' }}
+              placeholder="label..."
+            />
+            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+              <button onClick={() => setPinPopup(null)} style={{ fontSize: 8, padding: '2px 6px', border: '1px solid #e2e8f0', borderRadius: 3, background: 'white', cursor: 'pointer', color: '#94a3b8' }}>cancel</button>
+              <button onClick={() => {
+                if (pinLabel.trim()) setTimelinePins(prev => [...prev, { date: pinPopup.date, label: pinLabel.trim() }])
+                setPinPopup(null); setPinLabel('')
+              }} style={{ fontSize: 8, padding: '2px 6px', border: 'none', borderRadius: 3, background: '#1e293b', cursor: 'pointer', color: 'white' }}>add</button>
+            </div>
+          </div>
         )}
       </div>
     </div>
