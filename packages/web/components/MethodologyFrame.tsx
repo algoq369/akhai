@@ -48,7 +48,7 @@ export default function MethodologyFrame({
   return (
     <div className="flex flex-col items-center">
       {/* Methodology dots row */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {METHODOLOGIES.map((method) => {
           const isSelected = currentMethodology === method.id
           const isHovered = hoveredMethod === method.id
@@ -63,10 +63,10 @@ export default function MethodologyFrame({
               {/* Dot */}
               <motion.button
                 onClick={() => onMethodologyChange(method.id)}
-                className="w-2.5 h-2.5 rounded-full transition-all duration-200"
+                className="w-2 h-2 rounded-full transition-all duration-200"
                 style={{
                   backgroundColor: isSelected ? method.color : '#cbd5e1',
-                  boxShadow: isSelected ? `0 0 8px ${method.color}` : 'none',
+                  boxShadow: isSelected ? `0 0 6px ${method.color}` : 'none',
                 }}
                 whileHover={{ scale: 1.4 }}
                 whileTap={{ scale: 0.9 }}
