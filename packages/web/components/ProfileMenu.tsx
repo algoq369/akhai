@@ -18,6 +18,7 @@ interface ProfileMenuProps {
  */
 export default function ProfileMenu({ userName: userNameProp, userEmail: userEmailProp, avatarUrl: avatarUrlProp, onLogout }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const [showLanguageSelector, setShowLanguageSelector] = useState(false)
   const [showTournamentTooltip, setShowTournamentTooltip] = useState(false)
   const [user, setUser] = useState<{ username: string | null; email: string | null; avatar_url: string | null } | null>(null)
@@ -130,7 +131,17 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
 
   return (
     <div className="relative" ref={menuRef}>
-      {/* Dark Mode + Profile */}
+      {collapsed ? (
+        /* Collapsed — tiny toggle on right edge */
+        <button
+          onClick={() => setCollapsed(false)}
+          className="text-[10px] text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
+          style={{ padding: '2px 4px', lineHeight: 1 }}
+          title="Open profile"
+        >⏻</button>
+      ) : (
+      /* Expanded — full profile + dark mode */
+      <>
       <div className="flex items-center gap-3">
         <DarkModeToggle />
 
@@ -160,6 +171,8 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
           <User className="w-4 h-4" />
           <span>{userName || 'sign in'}</span>
         </button>
+        {/* Collapse button */}
+        <button onClick={() => { setCollapsed(true); setIsOpen(false) }} className="text-[9px] text-slate-300 dark:text-slate-600 hover:text-slate-500 transition-colors" style={{ padding: '0 2px' }}>✕</button>
       </div>
 
       {/* Dropdown Menu - Raw text, no background */}
@@ -287,6 +300,8 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
             </button>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   )
