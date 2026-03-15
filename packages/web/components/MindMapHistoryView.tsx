@@ -670,10 +670,32 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
 
       {/* Hover tooltip */}
       {hoveredQuery && (
-        <div style={{ position: 'fixed', left: hoveredQuery.x + 10, top: hoveredQuery.y - 60, zIndex: 100, background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', maxWidth: 280, fontFamily: "'JetBrains Mono', monospace" }}>
-          <p style={{ fontSize: 10, color: '#1e293b', marginBottom: 4 }}>{hoveredQuery.query.query.slice(0, 120)}</p>
-          <div style={{ display: 'flex', gap: 8, fontSize: 8, color: '#94a3b8' }}>
-            <span style={{ padding: '1px 4px', borderRadius: 2, background: (METHODOLOGY_COLORS[hoveredQuery.query.flow] || '#8b5cf6') + '15', color: METHODOLOGY_COLORS[hoveredQuery.query.flow] || '#8b5cf6', fontWeight: 600, textTransform: 'uppercase' }}>{hoveredQuery.query.flow}</span>
+        <div
+          style={{
+            position: 'fixed',
+            left: Math.min(hoveredQuery.x + 12, typeof window !== 'undefined' ? window.innerWidth - 320 : hoveredQuery.x + 12),
+            top: Math.max(hoveredQuery.y - 80, 10),
+            zIndex: 200,
+            background: 'white',
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            padding: '10px 14px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            maxWidth: 300,
+            pointerEvents: 'none' as const,
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          <p style={{ fontSize: 11, color: '#1e293b', lineHeight: 1.5, marginBottom: 6 }}>
+            {hoveredQuery.query.query.slice(0, 150)}{hoveredQuery.query.query.length > 150 ? '...' : ''}
+          </p>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 9, color: '#94a3b8' }}>
+            <span style={{
+              padding: '1px 5px', borderRadius: 3,
+              background: (METHODOLOGY_COLORS[hoveredQuery.query.flow] || '#8b5cf6') + '18',
+              color: METHODOLOGY_COLORS[hoveredQuery.query.flow] || '#8b5cf6',
+              fontWeight: 600, textTransform: 'uppercase' as const, fontSize: 8,
+            }}>{hoveredQuery.query.flow}</span>
             <span>{(hoveredQuery.query.tokens_used || 0).toLocaleString()} tok</span>
             <span>${(hoveredQuery.query.cost || 0).toFixed(4)}</span>
           </div>
