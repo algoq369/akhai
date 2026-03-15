@@ -3326,7 +3326,7 @@ function HomePage() {
           <div className="w-full px-2 py-0.5">
             <div className="flex items-center justify-between">
               {/* Left side - description text - pushed to left edge */}
-              <span className="text-[7px] text-relic-silver/60 dark:text-relic-ghost/40 whitespace-nowrap">
+              <span className="text-[8px] text-relic-silver/60 dark:text-relic-ghost/40 whitespace-nowrap">
                 self aware — autonomous intelligence
               </span>
 
@@ -3338,9 +3338,9 @@ function HomePage() {
                     const { settings, setInstinctMode } = useSettingsStore.getState();
                     setInstinctMode(!settings.instinctMode);
                   }}
-                  className="flex items-center gap-0.5 text-[7px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
+                  className="flex items-center gap-0.5 text-[8px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
                 >
-                  <SuperSaiyanIcon size={11} active={settings.instinctMode} />
+                  <SuperSaiyanIcon size={12} active={settings.instinctMode} />
                   <span className={settings.instinctMode ? 'text-relic-void dark:text-white' : ''}>
                     instinct
                   </span>
@@ -3349,10 +3349,10 @@ function HomePage() {
                 {/* AI Config Console Toggle */}
                 <button
                   onClick={() => setShowLayerDashboard(!showLayerDashboard)}
-                  className="flex items-center gap-0.5 text-[7px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
+                  className="flex items-center gap-0.5 text-[8px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
                 >
                   <span
-                    className="text-[9px] transition-all"
+                    className="text-[10px] transition-all"
                     style={{
                       color: showLayerDashboard ? '#a855f7' : '#94a3b8',
                       filter: showLayerDashboard ? 'drop-shadow(0 0 3px #a855f7)' : 'none',

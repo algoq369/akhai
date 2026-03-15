@@ -69,7 +69,7 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
               onMouseEnter={() => setHoveredItem(item.id)}
               onMouseLeave={() => setHoveredItem(null)}
               className={`
-                text-[7px] font-mono transition-all duration-200
+                text-[8px] font-mono transition-all duration-200
                 ${active
                   ? item.accent === 'violet'
                     ? 'text-violet-500 dark:text-violet-400 border-b border-violet-500 dark:border-violet-400'
@@ -94,7 +94,7 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
             onMouseEnter={() => setHoveredItem(item.id)}
             onMouseLeave={() => setHoveredItem(null)}
             className={`
-              text-[7px] font-mono transition-all duration-200
+              text-[8px] font-mono transition-all duration-200
               ${hovered ? 'text-relic-slate dark:text-white scale-105' : 'text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white'}
             `}
           >
