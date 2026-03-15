@@ -99,8 +99,8 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
             top: '50%',
             left: '50%',
             width: '100%',
-            maxWidth: 220,
-            padding: '10px 12px',
+            maxWidth: 240,
+            padding: '8px 12px',
             backgroundColor: 'rgba(255, 255, 255, 0.97)',
             borderRadius: 6,
             boxShadow: '0 6px 20px rgba(0,0,0,0.1)',
@@ -108,7 +108,7 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-[8px] uppercase tracking-[0.1em] text-zinc-400">
               ai config
             </span>
@@ -121,19 +121,19 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
           </div>
 
           {/* Sliders */}
-          <div className="space-y-1.5 mb-2">
+          <div className="space-y-1 mb-1.5">
             {SLIDER_CONFIG.map(({ layer, label, left, right, color }) => {
               const value = Math.round((weights[layer] ?? 0.5) * 100)
               return (
                 <div key={layer}>
-                  <div className="flex items-baseline gap-1.5 mb-0">
+                  <div className="flex items-baseline gap-1 mb-0">
                     <span
                       className="uppercase tracking-[0.06em] text-[7px] min-w-[50px]"
                       style={{ color }}
                     >
                       {label}
                     </span>
-                    <span className="text-[12px] font-semibold tabular-nums" style={{ color }}>
+                    <span className="text-[8px] font-semibold tabular-nums" style={{ color }}>
                       {value}%
                     </span>
                   </div>
@@ -145,15 +145,17 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
                     onChange={(e) => {
                       useLayerStore.getState().setWeight(layer, Number(e.target.value) / 100)
                     }}
-                    className="w-full h-px appearance-none cursor-pointer"
+                    className="w-full appearance-none cursor-pointer"
                     style={{
-                      background: `linear-gradient(to right, ${color} ${value}%, #d4d4d8 ${value}%)`,
+                      height: 2,
+                      background: `linear-gradient(to right, ${color} ${value}%, #e4e4e7 ${value}%)`,
                       accentColor: color,
+                      borderRadius: 1,
                     }}
                   />
-                  <div className="flex justify-between mt-0.5">
-                    <span className="text-zinc-500 text-[7px]" style={{ opacity: 0.6 }}>{left}</span>
-                    <span className="text-zinc-500 text-[7px]" style={{ opacity: 0.6 }}>{right}</span>
+                  <div className="flex justify-between mt-0">
+                    <span className="text-zinc-400 text-[6px]">{left}</span>
+                    <span className="text-zinc-400 text-[6px]">{right}</span>
                   </div>
                 </div>
               )
@@ -161,7 +163,7 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
           </div>
 
           {/* Presets */}
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             {PRESETS.map(({ key, label }) => (
               <button
                 key={key}
