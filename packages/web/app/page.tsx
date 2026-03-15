@@ -3322,7 +3322,7 @@ function HomePage() {
 
       {/* Footer - Only when not expanded */}
       {!isExpanded && (
-        <footer className="border-t border-relic-mist/30 dark:border-relic-slate/20">
+        <footer className="border-t border-relic-mist/30 dark:border-relic-slate/20" style={{ marginBottom: 24 }}>
           <div className="w-full px-4 py-3">
             <div className="flex items-center justify-between">
               {/* Left side - description text - pushed to left edge */}
