@@ -144,7 +144,7 @@ export default function RootLayout({
 
         {/* Global Profile Widget - Accessible on all pages */}
         <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2">
-          <ProfileMenu userName="User" />
+          <ProfileMenu />
         </div>
 
         <PostHogProvider>

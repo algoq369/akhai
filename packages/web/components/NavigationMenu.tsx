@@ -18,8 +18,6 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
     { id: 'philosophy', label: 'philosophy', href: '/philosophy', isLink: true, accent: 'violet' },
     { id: 'intelligence-robot-training', label: 'intelligence & robot training', href: '/idea-factory?tab=customize', isLink: true },
     { id: 'mindmap', label: 'mindmap', onClick: onMindMapClick, isLink: false },
-    ...(onHistoryClick ? [{ id: 'history', label: 'history', onClick: onHistoryClick, isLink: false }] : []),
-    { id: 'grimoire', label: 'grimoire', href: '/grimoires', isLink: true },
     { id: 'pricing', label: '₿', href: '/pricing', isLink: true, accent: 'bitcoin' },
     // Only show profile link if user is logged in (use button for client-side navigation)
     ...(user ? [{ id: 'profile', label: 'profile', onClick: () => router.push('/profile'), isLink: false }] : []),

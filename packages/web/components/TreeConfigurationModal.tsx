@@ -99,7 +99,7 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
             top: '50%',
             left: '50%',
             width: '100%',
-            maxWidth: 440,
+            maxWidth: 320,
             padding: 24,
             backgroundColor: 'rgba(255, 255, 255, 0.97)',
           }}

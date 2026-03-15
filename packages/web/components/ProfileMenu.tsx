@@ -40,7 +40,7 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
   }, [])
 
   // Use fetched user data or fallback to props
-  const userName = user?.username || userNameProp || null
+  const userName = user?.username || user?.email?.split('@')[0] || userNameProp || null
   const userEmail = user?.email || userEmailProp
   const avatarUrl = user?.avatar_url || avatarUrlProp
 
