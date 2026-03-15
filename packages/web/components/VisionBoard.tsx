@@ -745,20 +745,20 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
                     )}
                   </div>
                   <div className="overflow-hidden" style={{ height: node.h - 28 }}>
-                    {VizRenderer && node.data.vizData ? (
-                      <VizRenderer data={node.data.vizData} />
+                    {VizRenderer && node.data?.vizData ? (
+                      <VizRenderer data={node.data?.vizData} />
                     ) : isEditing ? (
                       <div className="px-2 py-1 space-y-1">
                         <input
                           autoFocus
-                          value={node.data.title || ''}
+                          value={node.data?.title || ''}
                           onChange={(e) => updateNodeData(node.id, { title: e.target.value })}
                           onKeyDown={(e) => { if (e.key === 'Enter') setEditingNode(null) }}
                           placeholder="title"
                           className="w-full text-[10px] font-medium text-slate-800 bg-transparent outline-none border-b border-slate-200 pb-0.5"
                         />
                         <textarea
-                          value={node.data.body || ''}
+                          value={node.data?.body || ''}
                           onChange={(e) => updateNodeData(node.id, { body: e.target.value })}
                           placeholder="notes..."
                           className="w-full text-[9px] text-slate-600 bg-transparent outline-none resize-none"
@@ -769,22 +769,22 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
                       <div className="px-2 py-1.5">
                         <div className="text-[11px] font-medium text-slate-800 overflow-hidden" style={{
                           display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any, wordBreak: 'break-word', lineHeight: 1.4,
-                        }}>{node.data.title || 'untitled'}</div>
+                        }}>{node.data?.title || 'untitled'}</div>
                         <div className="text-[9px] text-slate-500 mt-1.5 overflow-hidden" style={{
                           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any,
-                        }}>{node.data.body || ''}</div>
-                        {node.data.source && (
+                        }}>{node.data?.body || ''}</div>
+                        {node.data?.source && (
                           <div className="mt-1.5 flex items-center gap-1.5">
-                            <span className="px-1 py-0.5 rounded text-[7px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-500">{node.data.source}</span>
+                            <span className="px-1 py-0.5 rounded text-[7px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-500">{node.data?.source}</span>
                           </div>
                         )}
                       </div>
                     ) : (
                       <div className="px-2 py-1">
-                        <div className="text-[10px] font-medium text-slate-800 truncate">{node.data.title || 'untitled'}</div>
+                        <div className="text-[10px] font-medium text-slate-800 truncate">{node.data?.title || 'untitled'}</div>
                         <div className="text-[9px] text-slate-500 mt-0.5 overflow-hidden" style={{
                           display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any,
-                        }}>{node.data.body || ''}</div>
+                        }}>{node.data?.body || ''}</div>
                       </div>
                     )}
                   </div>
