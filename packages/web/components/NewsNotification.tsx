@@ -1,110 +1,89 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 
 interface NewsItem {
-  id: string
-  title: string
-  category: 'AI' | 'AGI' | 'ASI' | 'CRYPTO' | 'TECH'
+  category: string
   source: string
+  headline: string
   url: string
-  timestamp: number
+  age?: string
 }
 
-const INITIAL_NEWS: NewsItem[] = [
-  { id: '1', title: 'Claude 4 Opus achieves new benchmarks', category: 'AI', source: 'Anthropic', url: 'https://anthropic.com', timestamp: Date.now() },
-  { id: '2', title: 'Bitcoin whale moves 10K BTC', category: 'CRYPTO', source: 'Whale Alert', url: 'https://whale-alert.io', timestamp: Date.now() },
-  { id: '3', title: 'OpenAI announces GPT-5 preview', category: 'AGI', source: 'TechCrunch', url: 'https://techcrunch.com', timestamp: Date.now() },
+const FALLBACK_NEWS: NewsItem[] = [
+  { category: 'ai', source: 'akhai', headline: 'Sovereign intelligence engine active', url: '/' },
+  { category: 'crypto', source: 'akhai', headline: 'Multi-chain analysis ready', url: '/' },
+  { category: 'tech', source: 'akhai', headline: 'Grounding guard protecting against hallucination', url: '/' },
 ]
 
-// Removed colored categories - using raw text only
-
-const ONE_DAY_MS = 24 * 60 * 60 * 1000
+const REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
 export default function NewsNotification() {
-  const [news, setNews] = useState<NewsItem[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [items, setItems] = useState<NewsItem[]>([])
+  const [paused, setPaused] = useState(false)
+
+  const fetchNews = async () => {
+    try {
+      const res = await fetch('/api/news')
+      const data = await res.json()
+      if (data.items?.length) {
+        setItems(data.items)
+      } else {
+        setItems(FALLBACK_NEWS)
+      }
+    } catch {
+      setItems(FALLBACK_NEWS)
+    }
+  }
 
   useEffect(() => {
-    const stored = localStorage.getItem('akhai_news_history')
-    const now = Date.now()
-    
-    if (stored) {
-      try {
-        const parsed: NewsItem[] = JSON.parse(stored)
-        const filtered = parsed.filter(item => now - item.timestamp < ONE_DAY_MS)
-        if (filtered.length > 0) {
-          setNews(filtered)
-          localStorage.setItem('akhai_news_history', JSON.stringify(filtered))
-          return
-        }
-      } catch (e) {
-        console.error('Failed to parse news history:', e)
-      }
-    }
-    
-    setNews(INITIAL_NEWS)
-    localStorage.setItem('akhai_news_history', JSON.stringify(INITIAL_NEWS))
+    fetchNews()
+    const interval = setInterval(fetchNews, REFRESH_INTERVAL)
+    return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    if (news.length === 0 || isExpanded) return
-    const interval = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % news.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [news.length, isExpanded])
+  if (!items.length) return null
 
-  const currentNews = news[currentIndex]
-  if (news.length === 0 || !currentNews) return null
+  // Double items for seamless infinite scroll
+  const tickerContent = [...items, ...items]
+  const duration = items.length * 5
 
-  // Minimalist raw text - top left corner
   return (
-    <div className="fixed top-3 left-4 z-30">
-      <div className="flex items-center gap-1">
-        <a
-          href={currentNews.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-mono text-[8px] text-relic-silver hover:text-relic-slate flex items-center gap-1"
-        >
-          <span>{currentNews.category.toLowerCase()}</span>
-          <span>·</span>
-          <span>{currentNews.source}</span>
-          <span>·</span>
-          <span className="max-w-[120px] truncate">{currentNews.title}</span>
-        </a>
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-relic-silver hover:text-relic-slate ml-0.5"
-        >
-          {isExpanded ? <ChevronUpIcon className="w-2.5 h-2.5" /> : <ChevronDownIcon className="w-2.5 h-2.5" />}
-        </button>
+    <div
+      className="fixed top-0 left-0 right-0 z-30 overflow-hidden bg-white/60 dark:bg-relic-void/60 backdrop-blur-sm border-b border-relic-mist/20 dark:border-relic-slate/10"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div
+        className="flex whitespace-nowrap"
+        style={{
+          animation: `ticker-scroll ${duration}s linear infinite`,
+          animationPlayState: paused ? 'paused' : 'running',
+        }}
+      >
+        {tickerContent.map((item, i) => (
+          <a
+            key={`${item.headline}-${i}`}
+            href={item.url}
+            target={item.url === '/' ? undefined : '_blank'}
+            rel={item.url === '/' ? undefined : 'noopener noreferrer'}
+            className="inline-flex items-center gap-1.5 px-4 py-1 text-[9px] font-mono text-relic-silver dark:text-relic-ghost/70 hover:text-relic-slate dark:hover:text-white transition-colors shrink-0"
+          >
+            <span className="text-relic-silver/60 dark:text-relic-ghost/40">{item.category}</span>
+            <span className="text-relic-mist dark:text-relic-slate/40">·</span>
+            <span className="text-relic-silver/80 dark:text-relic-ghost/50">{item.source}</span>
+            <span className="text-relic-mist dark:text-relic-slate/40">·</span>
+            <span>{item.headline}</span>
+          </a>
+        ))}
       </div>
 
-      {isExpanded && (
-        <div className="absolute left-0 mt-1 border-b border-relic-mist p-1 space-y-0.5 min-w-[220px]">
-          {news.map((item, i) => (
-            <a
-              key={item.id}
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center gap-1 font-mono text-[8px] px-1 py-0.5 ${
-                i === currentIndex ? 'text-relic-slate' : 'text-relic-silver'
-              } hover:text-relic-slate`}
-            >
-              <span>{item.category.toLowerCase()}</span>
-              <span>·</span>
-              <span>{item.source}</span>
-              <span>·</span>
-              <span className="truncate flex-1">{item.title}</span>
-            </a>
-          ))}
-        </div>
-      )}
+      <style jsx>{`
+        @keyframes ticker-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
     </div>
   )
 }
