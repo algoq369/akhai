@@ -169,7 +169,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-40 bg-white" style={{ top: 22 }}>
+    <div className="fixed inset-0 z-40 bg-white" style={{ top: 23 }}>
       <header className="bg-white border-b border-slate-200">
         <div className="flex items-center gap-3 px-4 py-1.5">
           <span className="text-sm font-medium text-slate-900">mind map</span>
