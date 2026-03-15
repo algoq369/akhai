@@ -156,7 +156,7 @@ export default function UserProfile({ onDarkModeToggle, darkMode }: UserProfileP
           {user.avatar_url ? (
             <img
               src={user.avatar_url}
-              alt={user.username || 'User'}
+              alt={user.username || 'user'}
               className="w-6 h-6 rounded-full"
             />
           ) : (
@@ -164,7 +164,7 @@ export default function UserProfile({ onDarkModeToggle, darkMode }: UserProfileP
               {user.username?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
             </div>
           )}
-          <span className="text-xs font-mono text-relic-slate dark:text-relic-ghost">{user.username || user.email?.split('@')[0] || 'User'}</span>
+          <span className="text-xs font-mono text-relic-slate dark:text-relic-ghost">{user.username || user.email?.split('@')[0] || 'user'}</span>
           <svg
             className={`w-3 h-3 text-relic-silver transition-transform ${isOpen ? 'rotate-180' : ''}`}
             fill="none"
