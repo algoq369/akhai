@@ -269,23 +269,26 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
 
     setAiLoading(true)
     try {
-      const prompt = `Summarize the following vision board context in 2-3 sentences. Focus on themes, goals, and insights.\n\nTopics explored: ${topics.slice(0, 10).map(t => t.name).join(', ')}\n\nBoard nodes:\n${context || '(empty)'}`
+      const nodeNames = convNodes.map(n => n.data.title).filter(Boolean).join(', ')
+      const topicNames = topics.slice(0, 10).map(t => t.name).join(', ')
+      const prompt = `Summarize these research topics and suggest 2 next steps: ${nodeNames || topicNames || 'general research'}\n\nContext:\n${context || '(no additional context)'}`
       const res = await fetch('/api/quick-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: prompt }),
       })
+      if (!res.ok) throw new Error(`API error ${res.status}`)
       const data = await res.json()
-      const summary = data.response || data.text || 'Could not generate summary.'
+      const summary = data.response || data.text || data.result || 'Could not generate. Try again.'
       addNode('insight', -camera.x, -camera.y - 60, {
         title: 'AI Summary',
         body: summary,
         color: '#db2777',
       })
-    } catch {
+    } catch (err) {
       addNode('insight', -camera.x, -camera.y - 60, {
         title: 'AI Summary',
-        body: 'Failed to generate summary. Check API connection.',
+        body: 'Could not generate. Try again.',
         color: '#ef4444',
       })
     } finally {
@@ -507,6 +510,44 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
 
         {/* ── Right: Objectives ── */}
         <div className="w-52 flex-shrink-0 border-l border-slate-200 bg-white flex flex-col">
+          {/* Canvas tools */}
+          <div className="flex-none px-2 py-1.5 border-b border-slate-100 flex items-center gap-1">
+            <button
+              onClick={() => addNode('drawing')}
+              className="px-1.5 py-0.5 rounded text-[8px] font-medium text-sky-600 hover:bg-sky-50 transition-colors"
+            >
+              &#x270E; draw
+            </button>
+            <button
+              onClick={() => {
+                const convTitles = nodes.filter(n => n.type === 'conversation').map(n => n.data.title).filter(Boolean)
+                if (convTitles.length === 0) return
+                addNode('insight', -camera.x + 100, -camera.y, {
+                  title: 'Topic Diagram',
+                  body: convTitles.join(' → '),
+                  color: '#8b5cf6',
+                })
+              }}
+              className="px-1.5 py-0.5 rounded text-[8px] font-medium text-violet-600 hover:bg-violet-50 transition-colors"
+            >
+              &#x25C8; diagram
+            </button>
+            <button
+              onClick={() => {
+                const convNodes = nodes.filter(n => n.type === 'conversation')
+                if (convNodes.length === 0) return
+                const chartBody = convNodes.map(n => `${n.data.title || 'untitled'}: ${(n.data.body || '').split('\n')[0]}`).join('\n')
+                addNode('insight', -camera.x + 100, -camera.y + 80, {
+                  title: 'Data Chart',
+                  body: chartBody,
+                  color: '#10b981',
+                })
+              }}
+              className="px-1.5 py-0.5 rounded text-[8px] font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
+            >
+              &#x25A5; chart
+            </button>
+          </div>
           <div className="px-3 py-2 border-b border-slate-100">
             <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">objectives</span>
           </div>
@@ -550,9 +591,9 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
       </div>
 
       {/* ── Bottom: Timeline ── */}
-      <div className="flex-none h-10 border-t border-slate-200 bg-white px-4 flex items-center gap-3">
+      <div className="flex-none border-t border-slate-200 bg-white px-4 flex items-center gap-3" style={{ minHeight: 50 }}>
         <span className="text-[9px] text-slate-400 uppercase tracking-wider">timeline</span>
-        <div className="flex-1 h-6 relative">
+        <div className="flex-1 h-8 relative">
           {sparklineData.length >= 2 ? (
             <svg viewBox="0 0 100 20" className="w-full h-full" preserveAspectRatio="none">
               {sparklineData.map((p, i) => (
@@ -574,7 +615,7 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
               />
             </svg>
           ) : (
-            <span className="text-[9px] text-slate-300 absolute inset-0 flex items-center">add nodes to see timeline</span>
+            <span className="text-[9px] text-slate-300 absolute inset-0 flex items-center">no timeline data yet</span>
           )}
         </div>
         <span className="text-[9px] text-slate-400">{nodes.length} nodes</span>
