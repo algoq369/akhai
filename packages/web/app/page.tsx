@@ -671,6 +671,9 @@ function HomePage() {
     currentTopics,
   } = useSideCanalStore();
 
+  // Force topics panel closed
+  useEffect(() => { if (showTopicsPanel) setShowTopicsPanel(false) }, [])
+
   // Side Canal topics → AI insights for canvas
   const topicInsights = useMemo(() => {
     if (!currentTopics || currentTopics.length === 0) return [];
