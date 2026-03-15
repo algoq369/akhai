@@ -556,10 +556,18 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
 
   // ── Timeline sparkline ──
   const sparklineData = useMemo(() => {
+    if (nodes.length < 2) return []
+    const BUCKETS = 30
     const sorted = [...nodes].sort((a, b) => a.createdAt - b.createdAt)
-    if (sorted.length < 2) return []
     const min = sorted[0].createdAt, max = sorted[sorted.length - 1].createdAt, range = max - min || 1
-    return sorted.map(n => ({ x: ((n.createdAt - min) / range) * 100, type: n.type }))
+    const buckets: { types: Record<string, number>; total: number }[] = Array.from({ length: BUCKETS }, () => ({ types: {}, total: 0 }))
+    sorted.forEach(n => {
+      const idx = Math.min(Math.floor(((n.createdAt - min) / range) * BUCKETS), BUCKETS - 1)
+      buckets[idx].types[n.type] = (buckets[idx].types[n.type] || 0) + 1
+      buckets[idx].total++
+    })
+    const maxTotal = Math.max(1, ...buckets.map(b => b.total))
+    return buckets.map((b, i) => ({ x: (i / BUCKETS) * 100, w: 100 / BUCKETS - 0.5, h: (b.total / maxTotal) * 18, types: b.types, total: b.total }))
   }, [nodes])
 
   const maxQueries = useMemo(() => Math.max(1, ...topics.map(t => t.queryCount)), [topics])
@@ -794,15 +802,16 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
       </div>
 
       {/* ── Bottom: Timeline ── */}
-      <div className="flex-none bg-[#f8fafc] px-4 flex items-center gap-3" style={{ minHeight: 50, borderTop: '1px solid #e2e8f0' }}>
+      <div className="flex-none bg-[#f8fafc] px-4 flex items-center gap-3" style={{ minHeight: 56, borderTop: '1px solid #e2e8f0' }}>
         <span style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em' }}>TIMELINE</span>
         <div className="flex-1 relative" style={{ height: 30 }}>
           {sparklineData.length >= 2 ? (
             <svg viewBox="0 0 100 20" className="w-full h-full" preserveAspectRatio="none">
-              {sparklineData.map((p, i) => (
-                <circle key={i} cx={p.x} cy={10} r={1.5} fill={NODE_COLORS[p.type]?.border || '#94a3b8'} opacity={0.7} />
-              ))}
-              <polyline points={sparklineData.map(p => `${p.x},10`).join(' ')} fill="none" stroke="#94a3b8" strokeWidth={0.3} opacity={0.4} />
+              {sparklineData.map((b, i) => {
+                const topType = Object.entries(b.types).sort((a, c) => c[1] - a[1])[0]?.[0] as BoardNodeType | undefined
+                const color = topType ? (NODE_COLORS[topType]?.border || '#94a3b8') : '#94a3b8'
+                return b.total > 0 ? <rect key={i} x={b.x} y={20 - b.h} width={Math.max(b.w, 1)} height={Math.max(b.h, 1)} rx={0.5} fill={color} opacity={0.75} /> : null
+              })}
             </svg>
           ) : (
             <span style={{ fontSize: 9, color: '#94a3b8', position: 'absolute', top: '50%', transform: 'translateY(-50%)' }}>timeline builds as you explore</span>
