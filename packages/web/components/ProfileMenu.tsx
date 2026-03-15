@@ -136,9 +136,26 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
 
         {/* Profile Button - Raw text, no background */}
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={async () => {
+            if (!userName) {
+              try {
+                const res = await fetch('/api/auth/github')
+                const data = await res.json()
+                if (data.authUrl) {
+                  window.location.href = data.authUrl
+                } else {
+                  console.error('GitHub OAuth not configured')
+                  setIsOpen(!isOpen) // Fall back to menu
+                }
+              } catch {
+                setIsOpen(!isOpen)
+              }
+              return
+            }
+            setIsOpen(!isOpen)
+          }}
           className="flex items-center gap-2 text-sm font-mono text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
-          aria-label="Open profile menu"
+          aria-label={userName ? "Open profile menu" : "Sign in with GitHub"}
         >
           <User className="w-4 h-4" />
           <span>{userName || 'sign in'}</span>
