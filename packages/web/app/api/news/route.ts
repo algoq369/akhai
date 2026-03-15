@@ -100,6 +100,7 @@ export async function GET() {
             headline: (r.title || '').slice(0, 120),
             url: r.url,
             age: r.age || '',
+            description: (r.description || '').slice(0, 200),
           })
         }
       }
