@@ -38,9 +38,10 @@ const METHODOLOGY_COLORS: Record<string, string> = {
 interface MindMapHistoryViewProps {
   onClose?: () => void
   onTopicExpand?: (topicId: string) => void
+  onContinueToChat?: (query: string) => void
 }
 
-export default function MindMapHistoryView({ onClose, onTopicExpand }: MindMapHistoryViewProps) {
+export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueToChat }: MindMapHistoryViewProps) {
   const [queries, setQueries] = useState<QueryHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
@@ -308,7 +309,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand }: MindMapHi
             {/* Topic filter */}
             <div className="relative">
               <button
-                onClick={() => setShowTopicFilter(!showTopicFilter)}
+                onClick={() => { setShowTopicFilter(!showTopicFilter); setShowFilters(false) }}
                 className={`flex items-center gap-1 px-2 py-1.5 rounded text-[9px] font-medium tracking-wider uppercase transition-all ${
                   filterTopic
                     ? 'bg-slate-700 text-white'
@@ -352,7 +353,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand }: MindMapHi
             {/* Sort */}
             <div className="relative">
               <button
-                onClick={() => setShowFilters(!showFilters)}
+                onClick={() => { setShowFilters(!showFilters); setShowTopicFilter(false) }}
                 className="flex items-center gap-1 px-2 py-1.5 bg-slate-100 dark:bg-[#334155]/50 rounded text-[9px] font-medium tracking-wider uppercase text-slate-500 dark:text-[#94a3b8] hover:bg-slate-200 dark:hover:bg-[#334155] transition-all"
               >
                 {sortBy}
@@ -692,6 +693,17 @@ export default function MindMapHistoryView({ onClose, onTopicExpand }: MindMapHi
                   <span className="text-[10px] text-slate-600 dark:text-[#94a3b8]">${(selectedQuery.cost || 0).toFixed(4)}</span>
                 </div>
               </div>
+
+              {/* Action button */}
+              <button
+                onClick={() => {
+                  onContinueToChat?.(`Tell me more about ${selectedQuery.query.slice(0, 60)}`)
+                  setSelectedQuery(null)
+                }}
+                className="w-full mt-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase text-white bg-[#1e293b] dark:bg-[#334155] rounded-md hover:bg-[#334155] dark:hover:bg-[#475569] transition-colors cursor-pointer border-0"
+              >
+                → continue in chat
+              </button>
             </div>
           </div>
         )}

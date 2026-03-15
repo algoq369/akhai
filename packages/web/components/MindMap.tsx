@@ -298,7 +298,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
               </div>
             </div>
           ) : viewMode === 'history' ? (
-            <MindMapHistoryView onClose={onClose} />
+            <MindMapHistoryView onClose={onClose} onContinueToChat={(query) => { setMiniChatQuery(query); setMiniChatOpen(true) }} />
           ) : viewMode === 'report' ? (
             <MindMapReportView userId={userId} selectedTopics={[]} />
           ) : null}
