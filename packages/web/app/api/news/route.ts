@@ -23,13 +23,19 @@ interface NewsItem {
 let cache: { data: NewsItem[]; ts: number } | null = null
 const CACHE_TTL = 5 * 60 * 1000
 
-const QUERIES = ['AI artificial intelligence', 'crypto blockchain', 'technology startups']
+const QUERIES = [
+  'AGI artificial general intelligence ASI',
+  'AI artificial intelligence breakthrough frontier models',
+  'crypto blockchain bitcoin ethereum',
+  'sovereign AI open source models',
+]
 
 function categorize(headline: string): string {
   const lower = headline.toLowerCase()
+  if (lower.match(/agi\b|asi\b|superintelligen|general intelligence|singularity|consciousness/)) return 'agi'
   if (lower.match(/crypto|bitcoin|btc|eth|blockchain|defi|token|nft/)) return 'crypto'
-  if (lower.match(/ai\b|artificial|llm|gpt|claude|gemini|openai|anthropic|deepseek|model|neural/)) return 'ai'
-  if (lower.match(/startup|funding|vc|raise|valuation|ipo/)) return 'startups'
+  if (lower.match(/ai\b|artificial|llm|gpt|claude|gemini|openai|anthropic|deepseek|model|neural|frontier/)) return 'ai'
+  if (lower.match(/sovereign|open.source|self.hosted|local.*model/)) return 'sovereign'
   if (lower.match(/apple|google|meta|microsoft|amazon|nvidia/)) return 'tech'
   return 'tech'
 }
