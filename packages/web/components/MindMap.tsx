@@ -6,6 +6,7 @@ import MindMapDiagramView from './MindMapDiagramView'
 import MindMapHistoryView from './MindMapHistoryView'
 import MindMapReportView from './MindMapReportView'
 import MindMapMiniChat from './MindMapMiniChat'
+import VisionBoard from './VisionBoard'
 
 export interface Node {
   id: string
@@ -26,7 +27,7 @@ interface Connection {
   toName?: string
 }
 
-type ViewMode = 'graph' | 'history' | 'report'
+type ViewMode = 'board' | 'graph' | 'history' | 'report'
 
 interface MindMapProps {
   isOpen: boolean
@@ -175,6 +176,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
 
           <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg">
             {[
+              { id: 'board', label: 'board' },
               { id: 'graph', label: 'graph' },
               { id: 'history', label: 'history' },
               { id: 'report', label: 'grimoire' },
@@ -270,6 +272,8 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
                 retry
               </button>
             </div>
+          ) : viewMode === 'board' ? (
+            <VisionBoard userId={userId} />
           ) : viewMode === 'graph' ? (
             <div className="relative w-full h-full">
               <MindMapDiagramView
