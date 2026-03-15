@@ -57,6 +57,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
   const [hoveredQuery, setHoveredQuery] = useState<{query: QueryHistoryItem, x: number, y: number} | null>(null)
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null)
   const [clickedQuery, setClickedQuery] = useState<{query: QueryHistoryItem, x: number, y: number} | null>(null)
+  const [expandedCluster, setExpandedCluster] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/history')
@@ -269,6 +270,13 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
   const handleQueryClick = (e: React.MouseEvent, query: QueryHistoryItem) => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
     setHoveredQuery(null)
+    // Regular click → navigate to conversation
+    window.location.href = `/?q=${encodeURIComponent(query.query)}`
+  }
+  const handleQueryContextMenu = (e: React.MouseEvent, query: QueryHistoryItem) => {
+    e.preventDefault()
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+    setHoveredQuery(null)
     setClickedQuery(clickedQuery?.query.id === query.id ? null : { query, x: e.clientX, y: e.clientY })
   }
 
@@ -470,6 +478,63 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
             </p>
           </div>
         ) : viewMode === 'grid' ? (
+          expandedCluster ? (() => {
+            const cluster = filteredClusters.find(c => c.topic === expandedCluster)
+            if (!cluster) { setExpandedCluster(null); return null }
+            return (
+              <div className="bg-white dark:bg-[#18181b]/50 rounded-lg border border-slate-200 dark:border-[#334155] overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 dark:border-[#334155] bg-slate-50/50 dark:bg-[#334155]/10">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-[11px] font-semibold text-slate-700 dark:text-white">{cluster.topic}</h2>
+                    <span className="text-[9px] text-slate-400 dark:text-[#64748b]">{cluster.queries.length} conversations</span>
+                    <span className="text-[9px] text-slate-400 dark:text-[#64748b]">{cluster.totalTokens.toLocaleString()} tok</span>
+                    <span className="text-[9px] text-slate-400 dark:text-[#64748b]">${cluster.totalCost.toFixed(4)}</span>
+                  </div>
+                  <button
+                    onClick={() => setExpandedCluster(null)}
+                    className="px-2 py-0.5 text-[9px] font-medium text-slate-500 dark:text-[#94a3b8] hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#334155]/30 rounded transition-colors"
+                  >
+                    ✕ close
+                  </button>
+                </div>
+                <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+                  {cluster.queries.map((query) => (
+                    <div
+                      key={query.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); handleQueryClick(e, query) }}
+                      onContextMenu={(e) => handleQueryContextMenu(e, query)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleQueryClick(e as any, query)}
+                      onMouseEnter={(e) => handleQueryMouseEnter(e, query)}
+                      onMouseLeave={handleQueryMouseLeave}
+                      className="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100 dark:border-[#334155] last:border-0 cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-[#334155]/20"
+                    >
+                      <div
+                        className="w-0.5 h-8 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: METHODOLOGY_COLORS[query.flow] || '#8B5CF6' }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-slate-700 dark:text-[#94a3b8] line-clamp-2">{query.query}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span
+                            className="px-1 py-0.5 rounded text-[7px] font-semibold uppercase tracking-wider text-white"
+                            style={{ backgroundColor: METHODOLOGY_COLORS[query.flow] || '#8B5CF6' }}
+                          >{query.flow}</span>
+                          <span className="text-[8px] text-slate-400 dark:text-[#64748b]">{formatDate(query.created_at)} {formatTime(query.created_at)}</span>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-[9px] text-slate-500 dark:text-[#94a3b8]">{(query.tokens_used || 0).toLocaleString()} tok</div>
+                        <div className="text-[8px] text-slate-400 dark:text-[#64748b]">${(query.cost || 0).toFixed(4)}</div>
+                      </div>
+                      <span className="text-[10px] text-slate-300 dark:text-[#64748b]">→</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })() : (
           <>
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
               {filteredClusters.map((cluster) => (
@@ -477,12 +542,24 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
                   key={cluster.topic}
                   role="button"
                   tabIndex={0}
-                  onClick={() => setSelectedTopic(selectedTopic === cluster.topic ? null : cluster.topic)}
-                  onKeyDown={(e) => e.key === 'Enter' && setSelectedTopic(selectedTopic === cluster.topic ? null : cluster.topic)}
+                  onClick={() => setExpandedCluster(cluster.topic)}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    const firstQ = cluster.queries[0]
+                    if (firstQ) setClickedQuery({ query: firstQ, x: e.clientX, y: e.clientY })
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && setExpandedCluster(cluster.topic)}
+                  onMouseEnter={(e) => {
+                    const firstQ = cluster.queries[0]
+                    if (firstQ) {
+                      hoverTimeout.current = setTimeout(() => {
+                        setHoveredQuery({ query: firstQ, x: e.clientX, y: e.clientY })
+                      }, 150)
+                    }
+                  }}
+                  onMouseLeave={handleQueryMouseLeave}
                   className={`group relative bg-white dark:bg-[#18181b]/50 rounded-lg border transition-all duration-200 text-left overflow-hidden cursor-pointer ${
-                    selectedTopic === cluster.topic
-                      ? 'border-slate-400 dark:border-[#94a3b8] shadow-md'
-                      : 'border-slate-200 dark:border-[#334155] hover:border-slate-300 dark:hover:border-[#64748b] hover:shadow-sm'
+                    'border-slate-200 dark:border-[#334155] hover:border-slate-300 dark:hover:border-[#64748b] hover:shadow-sm'
                   }`}
                 >
                   {/* Preview area */}
@@ -527,76 +604,12 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
                       <span>{formatDate(cluster.lastActivity)}</span>
                       <span>${cluster.totalCost.toFixed(4)}</span>
                     </div>
-                    {onTopicExpand && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onTopicExpand(cluster.topic) }}
-                        className="mt-1 w-full py-0.5 px-2 text-[8px] tracking-wider uppercase bg-slate-50 dark:bg-[#334155]/30 text-slate-500 dark:text-[#94a3b8] rounded hover:bg-slate-100 dark:hover:bg-[#334155]/50 transition-colors"
-                      >
-                        EXPLORE
-                      </button>
-                    )}
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* Inline expanded detail below grid */}
-            {selectedTopic && (() => {
-              const cluster = clusters.find(c => c.topic === selectedTopic)
-              if (!cluster) return null
-
-              return (
-                <div className="mt-3 bg-white dark:bg-[#18181b]/50 rounded-lg border border-slate-200 dark:border-[#334155] overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 dark:border-[#334155]">
-                    <div>
-                      <h2 className="text-[11px] font-medium text-slate-700 dark:text-white">{cluster.topic}</h2>
-                      <p className="text-[9px] text-slate-400 dark:text-[#64748b] mt-0.5">
-                        {cluster.queries.length} queries · ${cluster.totalCost.toFixed(4)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setSelectedTopic(null)}
-                      className="text-slate-400 dark:text-[#64748b] hover:text-slate-600 dark:hover:text-[#94a3b8] text-xs"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div className="max-h-[40vh] overflow-y-auto">
-                    {cluster.queries.map((query) => (
-                      <div
-                        key={query.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => { e.stopPropagation(); handleQueryClick(e, query) }}
-                        onKeyDown={(e) => e.key === 'Enter' && setClickedQuery({ query, x: 400, y: 300 })}
-                        onMouseEnter={(e) => handleQueryMouseEnter(e, query)}
-                        onMouseLeave={handleQueryMouseLeave}
-                        className={`flex items-center gap-2 px-4 py-2 border-b border-slate-100 dark:border-[#334155] last:border-0 cursor-pointer transition-colors ${
-                          clickedQuery?.query.id === query.id ? 'bg-slate-100 dark:bg-[#334155]/40' : 'hover:bg-slate-50 dark:hover:bg-[#334155]/20'
-                        }`}
-                      >
-                        <div
-                          className="w-0.5 h-6 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: METHODOLOGY_COLORS[query.flow] || '#8B5CF6' }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] text-slate-600 dark:text-[#94a3b8] truncate">{query.query}</p>
-                          <p className="text-[8px] text-slate-400 dark:text-[#64748b] flex items-center gap-1.5 mt-0.5">
-                            <span>{formatDate(query.created_at)} {formatTime(query.created_at)}</span>
-                            <span className="uppercase tracking-wider font-medium" style={{ color: METHODOLOGY_COLORS[query.flow] }}>{query.flow}</span>
-                          </p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-[9px] text-slate-500 dark:text-[#94a3b8]">{(query.tokens_used || 0).toLocaleString()} tok</div>
-                          <div className="text-[8px] text-slate-400 dark:text-[#64748b]">${(query.cost || 0).toFixed(4)}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
           </>
+          )
         ) : (
           /* List View */
           <div className="space-y-1">
@@ -640,11 +653,12 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
                         role="button"
                         tabIndex={0}
                         onClick={(e) => { e.stopPropagation(); handleQueryClick(e, query) }}
-                        onKeyDown={(e) => e.key === 'Enter' && setClickedQuery({ query, x: 400, y: 300 })}
+                        onContextMenu={(e) => handleQueryContextMenu(e, query)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleQueryClick(e as any, query)}
                         onMouseEnter={(e) => handleQueryMouseEnter(e, query)}
                         onMouseLeave={handleQueryMouseLeave}
                         className={`flex items-center gap-2 px-3 py-2 border-b border-slate-100 dark:border-[#334155] last:border-0 cursor-pointer transition-colors ${
-                          clickedQuery?.query.id === query.id ? 'bg-slate-100 dark:bg-[#334155]/40' : 'hover:bg-white dark:hover:bg-[#334155]/20'
+                          'hover:bg-white dark:hover:bg-[#334155]/20'
                         }`}
                       >
                         <div
