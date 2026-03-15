@@ -3323,24 +3323,24 @@ function HomePage() {
       {/* Footer - Only when not expanded */}
       {!isExpanded && (
         <footer className="border-t border-relic-mist/30 dark:border-relic-slate/20" style={{ marginBottom: 24 }}>
-          <div className="w-full px-4 py-3">
+          <div className="w-full px-3 py-1">
             <div className="flex items-center justify-between">
               {/* Left side - description text - pushed to left edge */}
-              <span className="text-[11px] text-relic-silver dark:text-relic-ghost whitespace-nowrap pl-2">
+              <span className="text-[9px] text-relic-silver dark:text-relic-ghost whitespace-nowrap pl-1">
                 self aware - autonomous intelligence
               </span>
 
               {/* Right side - navigation and toggles - pushed to right edge */}
-              <div className="flex items-center gap-4 pr-2">
+              <div className="flex items-center gap-3 pr-1">
                 {/* Instinct Mode Toggle */}
                 <button
                   onClick={() => {
                     const { settings, setInstinctMode } = useSettingsStore.getState();
                     setInstinctMode(!settings.instinctMode);
                   }}
-                  className="flex items-center gap-2 text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
+                  className="flex items-center gap-1 text-[8px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
                 >
-                  <SuperSaiyanIcon size={18} active={settings.instinctMode} />
+                  <SuperSaiyanIcon size={14} active={settings.instinctMode} />
                   <span className={settings.instinctMode ? 'text-relic-void dark:text-white' : ''}>
                     instinct
                   </span>
@@ -3349,10 +3349,10 @@ function HomePage() {
                 {/* AI Config Console Toggle */}
                 <button
                   onClick={() => setShowLayerDashboard(!showLayerDashboard)}
-                  className="flex items-center gap-2 text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
+                  className="flex items-center gap-1 text-[8px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
                 >
                   <span
-                    className="text-[14px] transition-all"
+                    className="text-[11px] transition-all"
                     style={{
                       color: showLayerDashboard ? '#a855f7' : '#94a3b8',
                       filter: showLayerDashboard ? 'drop-shadow(0 0 3px #a855f7)' : 'none',
