@@ -82,11 +82,20 @@ export default function NewsNotification() {
         }),
       })
       const data = await res.json()
-      const text = data.content || data.response || 'No insight available.'
-      insightCache.current[cacheKey] = text
-      setInsight(text)
+      const text = data.content || data.response || ''
+      if (text && !text.includes('error') && !text.includes('Sorry')) {
+        insightCache.current[cacheKey] = text
+        setInsight(text)
+      } else {
+        // Fallback to description
+        const fallback = item.description || `${item.category.toUpperCase()} news from ${item.source}. Click "read full article" for details.`
+        insightCache.current[cacheKey] = fallback
+        setInsight(fallback)
+      }
     } catch {
-      setInsight('Insight temporarily unavailable.')
+      const fallback = item.description || 'Click "read full article" to learn more.'
+      insightCache.current[cacheKey] = fallback
+      setInsight(fallback)
     }
     setInsightLoading(false)
   }
@@ -128,54 +137,17 @@ export default function NewsNotification() {
         </div>
       </div>
 
-      {/* Preview panel — slides down on click */}
+      {/* Preview panel — compact single-line insight */}
       {selected && (
-        <div className="bg-white dark:bg-[#111] border-b border-slate-200/50 dark:border-slate-800/30 shadow-lg animate-in slide-in-from-top duration-200">
-          <div className="max-w-2xl mx-auto px-4 py-3">
-            {/* Header row */}
-            <div className="flex items-start justify-between gap-3 mb-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span style={{ color: CAT_COLORS[selected.category] || '#94a3b8', fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '1px 4px', borderRadius: 2, background: (CAT_COLORS[selected.category] || '#94a3b8') + '15' }}>{selected.category}</span>
-                  <span style={{ fontSize: 8, color: '#94a3b8' }}>{selected.source}</span>
-                  {selected.age && <span style={{ fontSize: 7, color: '#cbd5e1' }}>{selected.age}</span>}
-                </div>
-                <h3 style={{ fontSize: 12, fontWeight: 600, color: '#1e293b', lineHeight: 1.3, margin: 0 }} className="dark:text-white">{selected.headline}</h3>
-              </div>
-              <button onClick={() => { setSelected(null); setInsight(null); setPaused(false) }} style={{ fontSize: 14, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', padding: 2 }}>✕</button>
-            </div>
-
-            {/* AI Insight */}
-            <div className="bg-slate-50 dark:bg-[#1a1a1b] rounded-md px-3 py-2 mb-2">
-              {insightLoading ? (
-                <div className="flex items-center gap-2" style={{ fontSize: 9, color: '#94a3b8' }}>
-                  <div style={{ width: 10, height: 10, border: '1.5px solid #e2e8f0', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                  generating insight...
-                </div>
-              ) : insight ? (
-                <p style={{ fontSize: 10, color: '#475569', lineHeight: 1.5, margin: 0 }} className="dark:text-slate-400">{insight}</p>
-              ) : (
-                <p style={{ fontSize: 9, color: '#94a3b8', margin: 0 }}>click to generate AI insight</p>
-              )}
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex items-center gap-2">
-              <a
-                href={selected.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: 9, padding: '3px 10px', borderRadius: 4, background: '#1e293b', color: 'white', textDecoration: 'none', fontWeight: 500 }}
-              >
-                read full article →
-              </a>
-              <button
-                onClick={() => { setSelected(null); setInsight(null); setPaused(false) }}
-                style={{ fontSize: 9, padding: '3px 10px', borderRadius: 4, border: '1px solid #e2e8f0', background: 'white', color: '#64748b', cursor: 'pointer' }}
-              >
-                dismiss
-              </button>
-            </div>
+        <div className="bg-white/95 dark:bg-[#111]/95 backdrop-blur-sm border-b border-slate-200/40 dark:border-slate-700/30 shadow-md">
+          <div className="max-w-4xl mx-auto px-3 py-1.5 flex items-center gap-3">
+            <span style={{ color: CAT_COLORS[selected.category] || '#94a3b8', fontSize: 7, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '1px 4px', borderRadius: 2, background: (CAT_COLORS[selected.category] || '#94a3b8') + '12', flexShrink: 0 }}>{selected.category}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300 }} className="dark:text-white">{selected.headline}</span>
+            <span style={{ fontSize: 9, color: '#64748b', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="dark:text-slate-400">
+              {insightLoading ? '◌ loading...' : (insight || selected.description || '—')}
+            </span>
+            <a href={selected.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 8, padding: '2px 8px', borderRadius: 3, background: '#1e293b', color: 'white', textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>read →</a>
+            <button onClick={() => { setSelected(null); setInsight(null); setPaused(false) }} style={{ fontSize: 12, border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0, lineHeight: 1, flexShrink: 0 }}>✕</button>
           </div>
         </div>
       )}

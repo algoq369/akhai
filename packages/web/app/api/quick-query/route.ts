@@ -9,6 +9,31 @@ import { callProvider } from '@/lib/multi-provider-api'
 import { getRecentQueries } from '@/lib/database'
 import { getUserFromSession } from '@/lib/auth'
 
+// Alt free models for when primary OpenRouter model is rate-limited
+const ALT_FREE_MODELS = [
+  'stepfun/step-3.5-flash:free',
+  'nvidia/nemotron-3-nano-30b-a3b:free',
+  'openai/gpt-oss-20b:free',
+]
+async function callOpenRouterAlt(request: any) {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) throw new Error('No OpenRouter key')
+  for (const model of ALT_FREE_MODELS) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://akhai.app', 'X-Title': 'AkhAI' },
+        body: JSON.stringify({ model, messages: request.messages.map((m: any) => ({ role: m.role, content: m.content })), max_tokens: request.maxTokens || 500, temperature: request.temperature ?? 0.7 }),
+      })
+      if (!res.ok) continue // Try next model
+      const data = await res.json()
+      const content = data.choices?.[0]?.message?.content
+      if (content) return { content, provider: 'openrouter', model, usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 }, cost: 0, latencyMs: 0 }
+    } catch { continue }
+  }
+  throw new Error('All alt models failed')
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { query, userContext } = await request.json()
@@ -71,11 +96,24 @@ export async function POST(request: NextRequest) {
       response = await callProvider('anthropic', providerRequest)
     } catch (err: any) {
       if (err.message?.includes('credit balance') || err.message?.includes('402') || err.message?.includes('400')) {
-        console.log('[QuickQuery] Anthropic credits depleted, falling back to OpenRouter')
-        response = await callProvider('openrouter', providerRequest)
-      } else {
-        throw err
-      }
+        console.log('[QuickQuery] Anthropic credits depleted, trying OpenRouter')
+        try {
+          response = await callProvider('openrouter', providerRequest)
+        } catch (orErr: any) {
+          if (orErr.message?.includes('429') || orErr.message?.includes('rate limit')) {
+            console.log('[QuickQuery] OpenRouter rate limited, trying alt model')
+            try {
+              response = await callOpenRouterAlt(providerRequest)
+            } catch {
+              // All providers exhausted — return graceful message
+              return NextResponse.json({
+                content: 'AI analysis temporarily unavailable. Please try again in a few minutes.',
+                methodology: 'direct', tokens: 0, cost: 0, latencyMs: 0,
+              })
+            }
+          } else { throw orErr }
+        }
+      } else { throw err }
     }
 
     return NextResponse.json({
