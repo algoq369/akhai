@@ -3361,6 +3361,16 @@ function HomePage() {
                   </span>
                 </button>
 
+                <button
+                  onClick={() => setShowTopicsPanel(!showTopicsPanel)}
+                  className="flex items-center gap-2 text-[10px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors"
+                >
+                  <span style={{ color: showTopicsPanel ? '#6366f1' : '#94a3b8', fontSize: 14 }}>◈</span>
+                  <span className={showTopicsPanel ? 'text-relic-void dark:text-white' : ''}>
+                    {showTopicsPanel ? 'topics ✕' : 'topics'}
+                  </span>
+                </button>
+
                 <NavigationMenu
                   user={user}
                   onMindMapClick={() => {
@@ -3433,10 +3443,7 @@ function HomePage() {
           removeSuggestion(suggestionId);
         }}
         onSuggestionClick={(suggestion) => {
-          // USER CONFIRMED: Do both - inject topic AND open panel
           setQuery(suggestion.topicName + ' ');
-          setShowTopicsPanel(true);
-          // Focus input for immediate user action
           if (inputRef.current) {
             inputRef.current.focus();
           }
