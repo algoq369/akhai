@@ -456,8 +456,8 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
   // ── Viz generation ──
   const handleGenerateViz = useCallback(async (vizType: VizType) => {
     const convNodes = nodes.filter(n => n.type === 'conversation' || n.type === 'note' || n.type === 'goal')
-    const query = convNodes.map(n => n.data.title).filter(Boolean).join(', ') || topics.slice(0, 5).map(t => t.name).join(', ')
-    const response = convNodes.map(n => `${n.data.title || ''}: ${n.data.body || ''}`).filter(Boolean).join('\n') || topics.slice(0, 10).map(t => `${t.name}: ${t.description}`).join('\n')
+    const query = convNodes.map(n => n.data?.title).filter(Boolean).join(', ') || topics.slice(0, 5).map(t => t.name).join(', ')
+    const response = convNodes.map(n => `${n.data?.title || ''}: ${n.data?.body || ''}`).filter(Boolean).join('\n') || topics.slice(0, 10).map(t => `${t.name}: ${t.description}`).join('\n')
     if (!query) return
 
     const nodeType: BoardNodeType = vizType === 'timeline' ? 'timelineViz' : vizType as BoardNodeType
@@ -535,11 +535,11 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
   // ── AI Summary ──
   const handleAISummary = useCallback(async () => {
     const convNodes = nodes.filter(n => n.type === 'conversation' || n.type === 'note' || n.type === 'goal')
-    const context = convNodes.map(n => `${n.data.title || ''}: ${n.data.body || ''}`).filter(Boolean).join('\n')
+    const context = convNodes.map(n => `${n.data?.title || ''}: ${n.data?.body || ''}`).filter(Boolean).join('\n')
     if (!context.trim() && topics.length === 0) return
     setAiLoading(true)
     try {
-      const nodeNames = convNodes.map(n => n.data.title).filter(Boolean).join(', ')
+      const nodeNames = convNodes.map(n => n.data?.title).filter(Boolean).join(', ')
       const topicNames = topics.slice(0, 10).map(t => t.name).join(', ')
       const prompt = `Summarize these research topics and suggest 2 next steps: ${nodeNames || topicNames || 'general research'}\n\nContext:\n${context || '(no additional context)'}`
       const res = await fetch('/api/quick-query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: prompt }) })
