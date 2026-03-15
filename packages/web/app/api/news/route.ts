@@ -17,6 +17,7 @@ interface NewsItem {
   headline: string
   url: string
   age?: string
+  description?: string
 }
 
 // Simple in-memory cache (5 min TTL)
