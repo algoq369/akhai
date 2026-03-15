@@ -176,7 +176,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
 
           <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg">
             {[
-              { id: 'board', label: 'board' },
+              { id: 'board', label: 'vision' },
               { id: 'graph', label: 'graph' },
               { id: 'history', label: 'history' },
               { id: 'report', label: 'grimoire' },

@@ -35,6 +35,8 @@ interface TopicProgress {
   name: string
   category: string
   queryCount: number
+  description: string
+  connected: string[]
 }
 
 interface BoardState {
@@ -45,13 +47,13 @@ interface BoardState {
 
 const STORAGE_KEY = 'akhai-vision-board'
 
-const NODE_COLORS: Record<BoardNodeType, { bg: string; border: string; label: string }> = {
-  conversation: { bg: '#f8fafc', border: '#94a3b8', label: 'conv' },
-  note:         { bg: '#fefce8', border: '#ca8a04', label: 'note' },
-  goal:         { bg: '#ecfdf5', border: '#059669', label: 'goal' },
-  milestone:    { bg: '#ede9fe', border: '#7c3aed', label: 'mile' },
-  insight:      { bg: '#fdf2f8', border: '#db2777', label: 'ai' },
-  drawing:      { bg: '#f0f9ff', border: '#0284c7', label: 'draw' },
+const NODE_COLORS: Record<BoardNodeType, { bg: string; border: string; label: string; toolbar: string }> = {
+  conversation: { bg: '#f8fafc', border: '#94a3b8', label: 'conv', toolbar: 'conversation' },
+  note:         { bg: '#fefce8', border: '#ca8a04', label: 'note', toolbar: 'note' },
+  goal:         { bg: '#ecfdf5', border: '#059669', label: 'goal', toolbar: 'goal' },
+  milestone:    { bg: '#ede9fe', border: '#7c3aed', label: 'mile', toolbar: 'milestone' },
+  insight:      { bg: '#fdf2f8', border: '#db2777', label: 'ai', toolbar: 'insight' },
+  drawing:      { bg: '#f0f9ff', border: '#0284c7', label: 'draw', toolbar: 'drawing' },
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -120,8 +122,25 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
     fetch('/api/mindmap/data')
       .then(r => r.json())
       .then(data => {
-        const t = (data.nodes || [])
-          .map((n: any) => ({ name: n.name, category: n.category || 'other', queryCount: n.queryCount || 0 }))
+        const allNodes = data.nodes || []
+        const links = data.links || []
+        const t = allNodes
+          .map((n: any) => {
+            const connIds = links
+              .filter((l: any) => l.source === n.id || l.target === n.id)
+              .map((l: any) => l.source === n.id ? l.target : l.source)
+            const connNames = connIds
+              .map((id: string) => allNodes.find((nn: any) => nn.id === id)?.name)
+              .filter(Boolean)
+              .slice(0, 5)
+            return {
+              name: n.name,
+              category: n.category || 'other',
+              queryCount: n.queryCount || 0,
+              description: n.description || '',
+              connected: connNames,
+            }
+          })
           .sort((a: TopicProgress, b: TopicProgress) => b.queryCount - a.queryCount)
           .slice(0, 20)
         setTopics(t)
@@ -147,8 +166,8 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
     const n: BoardNode = {
       id: uid(), type,
       x: pos.x, y: pos.y,
-      w: type === 'drawing' ? 200 : 180,
-      h: type === 'drawing' ? 140 : 100,
+      w: type === 'drawing' ? 200 : type === 'conversation' ? 200 : 180,
+      h: type === 'drawing' ? 140 : type === 'conversation' ? 130 : 100,
       data: { title: '', body: '', ...data },
       createdAt: Date.now(),
     }
@@ -226,7 +245,17 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
     if (!type && !topicName) return
     const pos = screenToCanvas(e.clientX, e.clientY)
     if (topicName) {
-      addNode('conversation', pos.x, pos.y, { title: topicName, body: 'Dragged from progress tracker' })
+      let body = ''
+      try {
+        const td = JSON.parse(e.dataTransfer.getData('topic-data') || '{}')
+        const parts: string[] = []
+        if (td.category) parts.push(`[${td.category}]`)
+        if (td.queryCount) parts.push(`${td.queryCount} queries`)
+        if (td.description) parts.push(td.description)
+        if (td.connected?.length) parts.push(`Connected: ${td.connected.join(', ')}`)
+        body = parts.join('\n')
+      } catch { body = topicName }
+      addNode('conversation', pos.x, pos.y, { title: topicName, body })
     } else if (type) {
       addNode(type, pos.x, pos.y)
     }
@@ -320,6 +349,7 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
                   onDragStart={(e) => {
                     e.dataTransfer.setData('topic-name', t.name)
                     e.dataTransfer.setData('node-type', 'conversation')
+                    e.dataTransfer.setData('topic-data', JSON.stringify(t))
                   }}
                   className="group px-2 py-1.5 rounded-md hover:bg-slate-50 cursor-grab active:cursor-grabbing"
                 >
@@ -435,7 +465,12 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
 
           {/* Canvas toolbar */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/90 backdrop-blur border border-slate-200 rounded-lg px-2 py-1 shadow-sm z-20">
-            {(['note', 'goal', 'milestone', 'conversation'] as BoardNodeType[]).map(type => (
+            {([
+              { type: 'note' as BoardNodeType, icon: '\u270F' },
+              { type: 'goal' as BoardNodeType, icon: '\u25C7' },
+              { type: 'milestone' as BoardNodeType, icon: '\u25C8' },
+              { type: 'conversation' as BoardNodeType, icon: '\u25CB' },
+            ]).map(({ type, icon }) => (
               <button
                 key={type}
                 draggable
@@ -444,7 +479,7 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
                 className="px-2 py-0.5 rounded text-[9px] font-medium hover:bg-slate-100 transition-colors"
                 style={{ color: NODE_COLORS[type].border }}
               >
-                + {NODE_COLORS[type].label}
+                {icon} {NODE_COLORS[type].toolbar}
               </button>
             ))}
             <div className="w-px h-4 bg-slate-200 mx-1" />
