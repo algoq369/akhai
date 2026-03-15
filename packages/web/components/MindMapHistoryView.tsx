@@ -266,15 +266,19 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
     const x = e.clientX, y = e.clientY
     hoverTimeout.current = setTimeout(() => setHoveredQuery({ query, x, y }), 150)
   }
+  const hoverHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleQueryMouseLeave = () => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
-    setHoveredQuery(null)
+    hoverHideTimeout.current = setTimeout(() => setHoveredQuery(null), 200)
   }
   const handleQueryClick = (e: React.MouseEvent, query: QueryHistoryItem) => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
     setHoveredQuery(null)
-    // Regular click → navigate to conversation
-    window.location.href = `/?q=${encodeURIComponent(query.query)}&ref=${query.id}`
+    // Close mindmap modal first, then navigate
+    onClose?.()
+    setTimeout(() => {
+      window.location.href = `/?q=${encodeURIComponent(query.query)}&ref=${query.id}`
+    }, 100)
   }
   const handleQueryContextMenu = (e: React.MouseEvent, query: QueryHistoryItem) => {
     e.preventDefault()
@@ -704,6 +708,8 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
       {/* Hover tooltip — portal to escape overflow:hidden */}
       {hoveredQuery && typeof document !== 'undefined' && createPortal(
         <div
+          onMouseEnter={() => { if (hoverHideTimeout.current) clearTimeout(hoverHideTimeout.current) }}
+          onMouseLeave={() => { hoverHideTimeout.current = setTimeout(() => setHoveredQuery(null), 200) }}
           style={{
             position: 'fixed',
             left: Math.min(hoveredQuery.x + 12, window.innerWidth - 320),
@@ -715,7 +721,7 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
             padding: '10px 14px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
             maxWidth: 300,
-            pointerEvents: 'none' as const,
+            pointerEvents: 'auto' as const,
             fontFamily: "'JetBrains Mono', monospace",
           }}
         >
@@ -732,6 +738,12 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
             <span>{(hoveredQuery.query.tokens_used || 0).toLocaleString()} tok</span>
             <span>${(hoveredQuery.query.cost || 0).toFixed(4)}</span>
           </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setHoveredQuery(null); onContinueToChat?.(hoveredQuery.query.query) }}
+            style={{ marginTop: 6, fontSize: 9, color: '#8b5cf6', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+          >
+            ◇ analyse in mini-chat
+          </button>
         </div>,
         document.body
       )}
