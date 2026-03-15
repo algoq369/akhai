@@ -3639,12 +3639,12 @@ function HomePage() {
         <ContinueParamWatcher onContinue={loadConversation} />
       </Suspense>
 
-      {/* Pipeline History — fixed right-side drawer */}
-      <PipelineHistoryPanel
+      {/* Pipeline History — DISABLED (will re-enable with metadata canal) */}
+      {false && <PipelineHistoryPanel
         isOpen={historyPanelOpen}
         onToggle={() => setHistoryPanelOpen(!historyPanelOpen)}
         messages={messages}
-      />
+      />}
     </div>
   );
 }

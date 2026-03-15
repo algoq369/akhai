@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "AkhAI Web (Next.js)",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "web", "dev"],
-      "port": 3000
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH && pnpm --filter web dev"],
+      "port": 3000,
+      "autoPort": false
     },
     {
       "name": "AkhAI API (Hono)",
