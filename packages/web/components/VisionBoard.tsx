@@ -323,7 +323,25 @@ function loadState(): BoardState {
   if (typeof window === 'undefined') return { nodes: [], objectives: [], camera: { x: 0, y: 0, zoom: 1 } }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      // Filter out malformed nodes and ensure required fields
+      parsed.nodes = (parsed.nodes || [])
+        .filter((n: any) => n && n.id && n.type)
+        .map((n: any) => ({
+          ...n,
+          type: n.type || 'note',
+          data: n.data || {},
+          w: n.w || 200,
+          h: n.h || 120,
+          x: n.x ?? 0,
+          y: n.y ?? 0,
+          createdAt: n.createdAt || Date.now(),
+        }))
+      parsed.objectives = (parsed.objectives || []).filter((o: any) => o && o.id)
+      parsed.camera = parsed.camera || { x: 0, y: 0, zoom: 1 }
+      return parsed
+    }
   } catch {}
   return { nodes: [], objectives: [], camera: { x: 0, y: 0, zoom: 1 } }
 }
@@ -699,8 +717,9 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
             transform: `translate(${camera.x * camera.zoom}px, ${camera.y * camera.zoom}px) scale(${camera.zoom})`,
             transformOrigin: '0 0',
           }}>
-            {nodes.map(node => {
-              const style = NODE_COLORS[node.type]
+            {nodes.filter(n => n && n.id && n.type).map(node => {
+              if (!node.data) node.data = {}
+              const style = NODE_COLORS[node.type] || NODE_COLORS.note
               const isSelected = selectedNode === node.id
               const isEditing = editingNode === node.id
               const VizRenderer = VIZ_RENDERERS[node.type]
