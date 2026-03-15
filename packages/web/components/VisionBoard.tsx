@@ -349,6 +349,7 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
   const [nodes, setNodes] = useState<BoardNode[]>([])
   const [objectives, setObjectives] = useState<Objective[]>([])
   const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 1 })
+  const boardLoaded = useRef(false)
   const [topics, setTopics] = useState<TopicProgress[]>([])
   const [topicsLoading, setTopicsLoading] = useState(true)
 
@@ -369,9 +370,11 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
     setNodes(s.nodes)
     setObjectives(s.objectives)
     setCamera(s.camera)
+    boardLoaded.current = true
   }, [])
 
   useEffect(() => {
+    if (!boardLoaded.current) return // Don't save until initial load completes
     saveState({ nodes, objectives, camera })
   }, [nodes, objectives, camera])
 
@@ -557,6 +560,7 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
   // ── Calendar Timeline ──
   const PINS_KEY = 'akhai-vision-pins'
   const [timelinePins, setTimelinePins] = useState<{date: string, label: string}[]>([])
+  const pinsLoaded = useRef(false)
   const [hoveredPin, setHoveredPin] = useState<{label: string, x: number, y: number} | null>(null)
   const [pinPopup, setPinPopup] = useState<{date: string, displayDate: string, x: number} | null>(null)
   const [pinLabel, setPinLabel] = useState('')
@@ -567,9 +571,11 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
       const raw = localStorage.getItem(PINS_KEY)
       if (raw) setTimelinePins(JSON.parse(raw))
     } catch {}
+    pinsLoaded.current = true
   }, [])
 
   useEffect(() => {
+    if (!pinsLoaded.current) return // Don't save until initial load completes
     try { localStorage.setItem(PINS_KEY, JSON.stringify(timelinePins)) } catch {}
   }, [timelinePins])
 
