@@ -58,6 +58,9 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null)
   const [clickedQuery, setClickedQuery] = useState<{query: QueryHistoryItem, x: number, y: number} | null>(null)
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null)
+  const [clusterInsight, setClusterInsight] = useState<{topic: string, text: string, x: number, y: number} | null>(null)
+  const clusterInsightCache = useRef<Record<string, string>>({})
+  const clusterHoverTimeout = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     fetch('/api/history')
@@ -280,6 +283,39 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
     setClickedQuery(clickedQuery?.query.id === query.id ? null : { query, x: e.clientX, y: e.clientY })
   }
 
+  const handleClusterHover = (e: React.MouseEvent, cluster: TopicCluster) => {
+    const x = e.clientX, y = e.clientY
+    if (clusterHoverTimeout.current) clearTimeout(clusterHoverTimeout.current)
+    clusterHoverTimeout.current = setTimeout(async () => {
+      // Check cache first
+      if (clusterInsightCache.current[cluster.topic]) {
+        setClusterInsight({ topic: cluster.topic, text: clusterInsightCache.current[cluster.topic], x, y })
+        return
+      }
+      setClusterInsight({ topic: cluster.topic, text: '...', x, y })
+      try {
+        const queryTexts = cluster.queries.slice(0, 3).map(q => q.query).join('; ')
+        const res = await fetch('/api/quick-query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: `In 2 sentences (max 30 words), summarize what the user explored about: ${cluster.topic}. Queries: ${queryTexts}` }),
+        })
+        if (!res.ok) throw new Error('API error')
+        const data = await res.json()
+        const text = data.response || data.text || data.result || 'No insight available'
+        clusterInsightCache.current[cluster.topic] = text
+        setClusterInsight({ topic: cluster.topic, text, x, y })
+      } catch {
+        clusterInsightCache.current[cluster.topic] = 'Could not generate insight'
+        setClusterInsight({ topic: cluster.topic, text: 'Could not generate insight', x, y })
+      }
+    }, 400)
+  }
+  const handleClusterHoverLeave = () => {
+    if (clusterHoverTimeout.current) clearTimeout(clusterHoverTimeout.current)
+    setClusterInsight(null)
+  }
+
   return (
     <div className="flex flex-col h-full font-mono bg-gradient-to-b from-slate-50 to-white dark:from-[#18181b] dark:to-[#18181b] overflow-hidden" onClick={() => setClickedQuery(null)}>
       {/* Toolbar — z-index above cards */}
@@ -430,24 +466,11 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
         {/* Daily summary banner */}
         {!loading && dailySummary.count > 0 && (
           <div className="mb-3 px-3 py-2 bg-slate-50 dark:bg-[#334155]/20 border border-slate-200 dark:border-[#334155] rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-[9px] tracking-wider uppercase text-slate-500 dark:text-[#94a3b8] font-medium">TODAY</span>
-                <span className="text-[10px] text-slate-600 dark:text-[#94a3b8]">{dailySummary.count} queries</span>
-                <span className="text-[10px] text-slate-400 dark:text-[#64748b]">{dailySummary.tokens.toLocaleString()} tok</span>
-                <span className="text-[10px] text-slate-400 dark:text-[#64748b]">${dailySummary.cost.toFixed(4)}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {dailySummary.methods.slice(0, 4).map(([method, count]) => (
-                  <span
-                    key={method}
-                    className="px-1.5 py-0.5 rounded text-[8px] font-medium text-white uppercase tracking-wider"
-                    style={{ backgroundColor: METHODOLOGY_COLORS[method] || '#8B5CF6' }}
-                  >
-                    {method} {count}
-                  </span>
-                ))}
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[9px] tracking-wider uppercase text-slate-500 dark:text-[#94a3b8] font-medium">TODAY</span>
+              <span className="text-[10px] text-slate-600 dark:text-[#94a3b8]">{dailySummary.count} queries</span>
+              <span className="text-[10px] text-slate-400 dark:text-[#64748b]">{dailySummary.tokens.toLocaleString()} tok</span>
+              <span className="text-[10px] text-slate-400 dark:text-[#64748b]">${dailySummary.cost.toFixed(4)}</span>
             </div>
           </div>
         )}
@@ -549,15 +572,8 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
                     if (firstQ) setClickedQuery({ query: firstQ, x: e.clientX, y: e.clientY })
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && setExpandedCluster(cluster.topic)}
-                  onMouseEnter={(e) => {
-                    const firstQ = cluster.queries[0]
-                    if (firstQ) {
-                      hoverTimeout.current = setTimeout(() => {
-                        setHoveredQuery({ query: firstQ, x: e.clientX, y: e.clientY })
-                      }, 150)
-                    }
-                  }}
-                  onMouseLeave={handleQueryMouseLeave}
+                  onMouseEnter={(e) => handleClusterHover(e, cluster)}
+                  onMouseLeave={handleClusterHoverLeave}
                   className={`group relative bg-white dark:bg-[#18181b]/50 rounded-lg border transition-all duration-200 text-left overflow-hidden cursor-pointer ${
                     'border-slate-200 dark:border-[#334155] hover:border-slate-300 dark:hover:border-[#64748b] hover:shadow-sm'
                   }`}
@@ -714,6 +730,34 @@ export default function MindMapHistoryView({ onClose, onTopicExpand, onContinueT
             <span>{(hoveredQuery.query.tokens_used || 0).toLocaleString()} tok</span>
             <span>${(hoveredQuery.query.cost || 0).toFixed(4)}</span>
           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Cluster insight tooltip — portal */}
+      {clusterInsight && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            left: Math.min(clusterInsight.x + 12, window.innerWidth - 300),
+            top: Math.max(clusterInsight.y - 100, 10),
+            zIndex: 9999,
+            background: 'white',
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            padding: '10px 14px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            maxWidth: 280,
+            pointerEvents: 'none' as const,
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: '#1e293b' }}>{clusterInsight.topic}</span>
+          </div>
+          <p style={{ fontSize: 9, color: '#64748b', lineHeight: 1.5 }}>
+            {clusterInsight.text}
+          </p>
         </div>,
         document.body
       )}

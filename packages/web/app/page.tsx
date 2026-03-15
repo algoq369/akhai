@@ -2040,7 +2040,7 @@ function HomePage() {
       {/* Main Content */}
       <main
         className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded && !isCanvasMode ? 'ml-60' : ''} ${
-          isExpanded && user && !isCanvasMode ? 'mr-80' : ''
+          showTopicsPanel && !isCanvasMode ? 'mr-80' : ''
         }`}
       >
         {/* Canvas Mode */}
