@@ -5,6 +5,7 @@ import { PostHogProvider } from './providers'
 import { QuickChatProvider } from '@/components/QuickChatProvider'
 import { DepthProvider } from '@/hooks/useDepthAnnotations'
 import ProfileMenu from '@/components/ProfileMenu'
+import FinanceBanner from '@/components/FinanceBanner'
 // import { FibonacciBackground } from '@/components/FibonacciBackground'
 
 export const metadata: Metadata = {
@@ -138,7 +139,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-mono antialiased bg-relic-ghost dark:bg-relic-void">
+      <body className="font-mono antialiased bg-relic-ghost dark:bg-relic-void pb-7">
         {/* <FibonacciBackground /> */}
         <CustomCursor />
 
@@ -153,6 +154,9 @@ export default function RootLayout({
             <QuickChatProvider />
           </DepthProvider>
         </PostHogProvider>
+
+        {/* Global Finance Banner - Fixed bottom */}
+        <FinanceBanner />
       </body>
     </html>
   )
