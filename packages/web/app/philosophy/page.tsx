@@ -197,6 +197,47 @@ export default function PhilosophyPage() {
             </div>
           </div>
 
+          {/* Qliphoth / Anti-Pattern Tree */}
+          <div className="mb-8 bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6">
+            <h3 className="font-mono text-[9px] mb-3 text-orange-400/80 uppercase tracking-[0.15em] text-center">Qliphoth — Anti-Pattern Detection Tree</h3>
+            <div className="font-mono text-[8px] text-orange-400/60 leading-relaxed max-w-md mx-auto">
+              <pre className="whitespace-pre">{`
+                  Thaumiel
+             dual contradictions
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+      Ghagiel                 Satariel
+   blocking intent         concealment
+          │                       │
+          └───────────┬───────────┘
+                    Daath
+              hallucination
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+    Gamchicoth               Golachab
+   info overload         over-confidence
+          │                       │
+          └───────────┬───────────┘
+                 Thagirion
+              arrogant tone
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+   Harab Serapel              Samael
+     repetition              deception
+          │                       │
+          └───────────┬───────────┘
+                  Gamaliel
+            verbose padding
+                      │
+                   Lilith
+             superficial output
+              `}</pre>
+            </div>
+          </div>
+
           <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6">
             <div className="grid md:grid-cols-3 gap-4 text-[10px] font-mono">
               {/* Traditional Tree */}
