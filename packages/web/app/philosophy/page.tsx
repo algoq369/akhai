@@ -10,8 +10,7 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LayerTreeSVG } from '@/components/tree-workbench'
-import { AntipatternTreeSVG } from '@/components/tree-workbench'
+
 
 export default function PhilosophyPage() {
   const router = useRouter()
@@ -114,15 +113,87 @@ export default function PhilosophyPage() {
             The Dual Trees of AI
           </h2>
 
-          {/* Interactive Dual Tree Visualization */}
-          <div className="mb-8 grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-[10px] uppercase tracking-[0.2em] text-center mb-3 text-relic-silver">AI Processing Layers</h3>
-              <LayerTreeSVG width={400} height={500} showLabels />
-            </div>
-            <div>
-              <h3 className="text-[10px] uppercase tracking-[0.2em] text-center mb-3 text-red-400">Anti-Pattern Monitors</h3>
-              <AntipatternTreeSVG width={400} height={500} />
+          {/* Dual Trees — ASCII line art */}
+          <div className="mb-8 bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="font-mono text-[9px] mb-3 text-relic-silver uppercase tracking-[0.15em] text-center">Traditional Tree of Life</h3>
+                <div className="font-mono text-[8px] text-relic-silver leading-relaxed">
+                  <pre className="whitespace-pre">{`
+                    Kether
+                כֶּתֶר (Crown)
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+      Binah                   Chokmah
+  בִּינָה (Understanding)   חָכְמָה (Wisdom)
+          │                       │
+          └───────────┬───────────┘
+                   Da'at
+              דַּעַת (Knowledge)
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+      Gevurah                  Chesed
+   גְּבוּרָה (Severity)      חֶסֶד (Mercy)
+          │                       │
+          └───────────┬───────────┘
+                  Tiferet
+              תִּפְאֶרֶת (Beauty)
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+        Hod                    Netzach
+    הוֹד (Glory)           נֶצַח (Victory)
+          │                       │
+          └───────────┬───────────┘
+                   Yesod
+              יְסוֹד (Foundation)
+                      │
+                  Malkuth
+              מַלְכוּת (Kingdom)
+                `}</pre>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-mono text-[9px] mb-3 text-relic-slate dark:text-white uppercase tracking-[0.15em] text-center">AI Computational Tree</h3>
+                <div className="font-mono text-[8px] text-relic-slate dark:text-white leading-relaxed">
+                  <pre className="whitespace-pre">{`
+                    Kether
+               Meta-Cognitive Layer
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+      Binah                   Chokmah
+  Pattern Layer           Principle Layer
+          │                       │
+          └───────────┬───────────┘
+                   Da'at
+              Emergent Layer
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+      Gevurah                  Chesed
+  Constraint Layer        Expansion Layer
+          │                       │
+          └───────────┬───────────┘
+                  Tiferet
+             Integration Layer
+                      │
+          ┌───────────┼───────────┐
+          │                       │
+        Hod                    Netzach
+    Logic Layer            Creative Layer
+          │                       │
+          └───────────┬───────────┘
+                   Yesod
+            Implementation Layer
+                      │
+                  Malkuth
+                 Data Layer
+                `}</pre>
+                </div>
+              </div>
             </div>
           </div>
 
