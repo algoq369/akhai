@@ -319,10 +319,11 @@ const VIZ_RENDERERS: Partial<Record<BoardNodeType, React.FC<{ data: any }>>> = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function loadState(): BoardState {
-  if (typeof window === 'undefined') return { nodes: [], objectives: [], camera: { x: 0, y: 0, zoom: 1 } }
+function loadState(uid?: string | null): BoardState {
+  const empty = { nodes: [], objectives: [], camera: { x: 0, y: 0, zoom: 1 } }
+  if (typeof window === 'undefined' || !uid) return empty
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(`${STORAGE_KEY}-${uid}`)
     if (raw) {
       const parsed = JSON.parse(raw)
       // Filter out malformed nodes and ensure required fields
@@ -347,11 +348,11 @@ function loadState(): BoardState {
 }
 
 let saveTimer: NodeJS.Timeout | null = null
-function saveState(state: BoardState) {
-  if (typeof window === 'undefined') return
+function saveState(state: BoardState, uid?: string | null) {
+  if (typeof window === 'undefined' || !uid) return
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch {}
+    try { localStorage.setItem(`${STORAGE_KEY}-${uid}`, JSON.stringify(state)) } catch {}
   }, 500)
 }
 
@@ -364,7 +365,7 @@ interface VisionBoardProps {
 }
 
 export default function VisionBoard({ userId }: VisionBoardProps) {
-  const initState = loadState()
+  const initState = loadState(userId)
   const [nodes, setNodes] = useState<BoardNode[]>(initState.nodes)
   const [objectives, setObjectives] = useState<Objective[]>(initState.objectives)
   const [camera, setCamera] = useState(initState.camera)
@@ -386,7 +387,7 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
 
   useEffect(() => {
     if (!boardInitRef.current) { boardInitRef.current = true; return }
-    saveState({ nodes, objectives, camera })
+    saveState({ nodes, objectives, camera }, userId)
   }, [nodes, objectives, camera])
 
   useEffect(() => {
@@ -569,11 +570,11 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
   }, [])
 
   // ── Calendar Timeline ──
-  const PINS_KEY = 'akhai-vision-pins'
+  const PINS_KEY = userId ? `akhai-vision-pins-${userId}` : 'akhai-vision-pins-none'
   const [timelinePins, setTimelinePins] = useState<{date: string, label: string}[]>(() => {
-    if (typeof window === 'undefined') return []
+    if (typeof window === 'undefined' || !userId) return []
     try {
-      const raw = localStorage.getItem('akhai-vision-pins')
+      const raw = localStorage.getItem(PINS_KEY)
       return raw ? JSON.parse(raw) : []
     } catch { return [] }
   })
