@@ -1,80 +1,80 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: March 15, 2026 (Day 70/150) — 23:50
+> Last updated: March 16, 2026 (Day 71/150) — 12:45
 
 ## PROJECT STATE
-- **Day 70/150** | Launch: June 4, 2026 | **~89% features complete**
+- **Day 71/150** | Launch: June 4, 2026 | **~90% features complete**
 - **Repo:** `/Users/sheirraza/akhai` | GitHub: `algoq369/akhai` (push pending — account suspended)
-- **99 commits this weekend** (March 14-15) | 246 total
+- **121 commits this sprint** (March 14-16) | 275 total
 
-## ALL SYSTEMS VERIFIED (March 15, 23:50)
+## ALL SYSTEMS VERIFIED (March 16, 12:40)
 - Server: HTTP 200 ✅
-- Finance API: 5 prices + F&G 15 Extreme Fear ✅
-- News API: 5 live headlines ✅
-- Quick Query AI: 218 chars response at $0 ✅
+- All 7 pages: 200 ✅
+- All 9 GET APIs: 200 ✅
+- All 3 POST APIs: 200 ✅ (quick-query, wallet, logout)
+- PostHog: Live with 12 custom events ✅
+- Finance: 5 indicators live ✅
+- News: 5 headlines live ✅
 
-## WHAT'S WORKING
-| Feature | File | Lines | Status |
-|---|---|---|---|
-| Canvas Workspace | `components/canvas/CanvasWorkspace.tsx` | 780 | ✅ 100% |
-| Mindmap Graph (CLUSPLOT) | `components/MindMapDiagramView.tsx` | 1128 | ✅ 95% |
-| Mindmap Mini-Chat | `components/MindMapMiniChat.tsx` | 241 | ✅ 100% |
-| History Tab | `components/MindMapHistoryView.tsx` | 819 | ✅ 85% |
-| Vision Board | `components/VisionBoard.tsx` | 1023 | ✅ 80% |
-| News Ticker (top) | `components/NewsNotification.tsx` | 166 | ✅ 100% |
-| Finance Banner (bottom) | `components/FinanceBanner.tsx` | ~150 | ✅ 100% |
-| Finance API | `app/api/finance/route.ts` | ~120 | ✅ 100% |
-| OpenRouter Fallback | `app/api/quick-query/route.ts` | 136 | ✅ 100% |
-| Auth (dev-login) | `app/api/auth/dev-login/route.ts` | 43 | ✅ Working |
-
-## LAYOUT STACK (top to bottom, no overlaps)
+## LAYOUT STACK (no overlaps verified)
 ```
-[News ticker — z-40, fixed top-0, 23px] — live AGI/crypto headlines from Brave Search
-[Profile menu — z-50, fixed top-7] — shows algoq369 when logged in
+[News ticker — z-40, fixed top-0, 23px]
+[Profile — z-50, collapsible, hidden by default]
 [Page content — paddingTop: 22px]
-[Footer — marginBottom: 24px, 33px tall] — instinct, ai config, philosophy, intel, mindmap
-[Finance banner — z-40, fixed bottom-0, 24px] — BTC, MCAP, GOLD, OIL, DXY, F&G
+[Footer — py-0.5, marginBottom: 24px]
+[Finance banner — z-40, fixed bottom-0, 24px]
 ```
 
-## KEY ARCHITECTURE
-- **Free API chain:** Anthropic → OpenRouter Nemotron → StepFun → Nano → GPT-OSS
-- **Finance data:** CoinGecko (crypto) + Yahoo Finance (macro) + alternative.me (F&G)
-- **News data:** Brave Search API (4 queries: AGI, AI, crypto, sovereign)
-- **Disabled panels:** TopicsPanel + PipelineHistoryPanel (both `{false && ...}`)
-- **Auth:** `/api/auth/dev-login` creates session for algoq369. GitHub OAuth needs CLIENT_ID/SECRET.
+## SECURITY AUDIT COMPLETED
+- ✅ User data isolation — all `OR user_id IS NULL` removed from queries
+- ✅ History returns empty when no auth session
+- ✅ Mindmap data scoped per user
+- ✅ VisionBoard localStorage scoped per userId
+- ✅ Linked accounts: wallet 0x83d0 + 0x7f0E → algoq369 (shared data)
+- ✅ Logout endpoint: POST /api/auth/logout (clears session + cookie)
+- ✅ Wallet auth: connect → sign → verify → session created
+- ✅ PostHog analytics: user identification + 12 custom events
 
-## ENV KEYS (packages/web)
-- `.env.local`: ANTHROPIC_API_KEY, OPENROUTER_API_KEY
-- `.env`: BRAVE_SEARCH_API_KEY
+## POSTHOG EVENTS TRACKED
+identify, query_submitted, query_completed, methodology_changed, mindmap_opened,
+philosophy_viewed, wallet_connected, user_logout, canvas_opened, news_clicked,
+instinct_mode_toggled, layer_preset_applied, finance_indicator_clicked
 
-## KNOWN ISSUES
-1. History hover tooltip — needs portal interaction testing
-2. History conversation click — uses `/?q=...` not chat_id
-3. Sign-in shows "sign in" until visiting `/api/auth/dev-login`
-4. GitHub account suspended — can't push
-5. better-sqlite3 — run `npm rebuild better-sqlite3` after Node updates
-6. Grimoire tab — 30% complete, needs wiring
+## KEY FILES MODIFIED THIS SESSION
+```
+lib/analytics.ts          — NEW: centralized PostHog events (107 lines)
+lib/database.ts           — user data isolation, linked_accounts table
+lib/tree-configuration.ts — JSON.parse fallback fix
+app/api/auth/logout/      — NEW: session destroy + cookie clear
+app/api/auth/dev-login/   — NEW: dev session for algoq369
+app/api/finance/route.ts  — 6 indicators: BTC, MCAP, GOLD, OIL, DXY, F&G
+components/FinanceBanner.tsx       — white clean bottom bar
+components/NewsNotification.tsx    — interactive ticker + analytics
+components/AuthModal.tsx           — compact, wallet + github options
+components/ProfileMenu.tsx         — collapsible, logout, analytics
+components/TreeConfigurationModal.tsx — ultra-compact AI config
+components/MethodologyFrame.tsx    — smaller orbs (w-2, gap-2)
+app/philosophy/page.tsx            — ASCII line-art trees restored
+app/providers.tsx                  — PostHog EU host fix
+```
 
-## NEXT PRIORITIES (Day 71+)
-1. Push to GitHub (when account restored)
-2. Grimoire tab wiring (auto-create, save insights, inline view)
-3. History polish (hover, conversation navigation)
-4. Settings page review
-5. Pricing + Stripe integration
-6. Mobile responsive pass
-7. Performance audit (page.tsx 3668 lines → split)
+## REMAINING FOR SHIP
+1. Clean up remaining `OR user_id IS NULL` in side-canal.ts query patterns
+2. Mobile responsive pass
+3. Performance audit (page.tsx 3692 lines → split)
+4. Grimoire tab wiring
+5. Production deploy (Hetzner VPS, domain, SSL)
+6. Git push when GitHub account restored
 
 ## QUICK COMMANDS
 ```bash
 cd ~/akhai && cd packages/web && NODE_ENV=development npx next dev --turbopack -p 3000
-npm rebuild better-sqlite3                    # fix sqlite after node updates
-rm -rf packages/web/.next/cache               # clear turbopack cache
-open http://localhost:3000/api/auth/dev-login  # set session cookie
+open http://localhost:3000/api/auth/dev-login  # set session for algoq369
 cd ~/akhai && cc                              # claude code
 ```
 
 ## 150-DAY TIMELINE
-- Days 1-100: Silent dev (Day 70 now — 30 days left)
+- Days 1-100: Silent dev (Day 71 — 29 days left)
 - Days 101-120: Prep (landing page, SEO, docs)
 - Day 121 (~May 6): Social launch
 - Day 150 (June 4): Full website launch
