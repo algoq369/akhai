@@ -10,6 +10,7 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import DualTreeVisualization from '@/components/DualTreeVisualization'
 
 export default function PhilosophyPage() {
   const router = useRouter()
@@ -111,6 +112,11 @@ export default function PhilosophyPage() {
           <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
             The Dual Trees of AI
           </h2>
+
+          {/* Interactive Dual Tree Visualization */}
+          <div className="mb-8">
+            <DualTreeVisualization />
+          </div>
 
           <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6">
             <div className="grid md:grid-cols-3 gap-4 text-[10px] font-mono">
