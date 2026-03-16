@@ -65,16 +65,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Migrate NULL user_id topics to current user (one-time migration)
-    try {
-      db.prepare(`
-        UPDATE topics
-        SET user_id = ?, updated_at = ?
-        WHERE user_id IS NULL
-      `).run(effectiveUserId, Math.floor(Date.now() / 1000))
-    } catch (migrationError) {
-      console.error('Migration error (non-fatal):', migrationError)
-    }
+    // Topics are scoped per user — no migration needed
 
     // Get topics with query count, filtering out topics from large conversations
     // This prevents performance issues with very long conversation threads
@@ -109,7 +100,7 @@ export async function GET(request: NextRequest) {
           0 as max_conversation_size
         FROM topics t
         LEFT JOIN query_topics qt ON t.id = qt.topic_id
-        WHERE (t.user_id = ? OR t.user_id IS NULL)
+        WHERE t.user_id = ?
         GROUP BY t.id
         ORDER BY t.pinned DESC, query_count DESC, t.created_at DESC
         LIMIT ?
@@ -147,7 +138,7 @@ export async function GET(request: NextRequest) {
           relationship_type,
           strength
         FROM topic_relationships
-        WHERE (user_id = ? OR user_id IS NULL)
+        WHERE user_id = ?
       `).all(effectiveUserId) as Array<{
         topic_from: string
         topic_to: string

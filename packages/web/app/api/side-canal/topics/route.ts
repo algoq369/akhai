@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         COUNT(qt.query_id) as query_count
       FROM topics t
       LEFT JOIN query_topics qt ON t.id = qt.topic_id
-      WHERE t.user_id = ? OR t.user_id IS NULL
+      WHERE t.user_id = ?
       GROUP BY t.id
       ORDER BY t.created_at DESC
       LIMIT 50

@@ -46,6 +46,16 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 
+  -- Linked accounts (wallet → github user mapping)
+  CREATE TABLE IF NOT EXISTS linked_accounts (
+    user_id TEXT NOT NULL,
+    auth_provider TEXT NOT NULL,
+    auth_id TEXT NOT NULL,
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    UNIQUE(auth_provider, auth_id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
   -- Queries table (with user_id support)
   CREATE TABLE IF NOT EXISTS queries (
     id TEXT PRIMARY KEY,
@@ -678,7 +688,7 @@ export function getRecentQueries(
     const stmt = db.prepare(`
       SELECT id, query, flow, status, created_at, completed_at, tokens_used, cost
       FROM queries
-      WHERE user_id = ? OR user_id IS NULL OR user_id = ''
+      WHERE user_id = ?
       ORDER BY created_at DESC
       LIMIT ?
     `);
@@ -874,6 +884,13 @@ export function createOrGetUser(
     avatar_url?: string;
   }
 ): User {
+  // Check linked accounts first (wallet → github user mapping)
+  const linked = db.prepare('SELECT user_id FROM linked_accounts WHERE auth_provider = ? AND auth_id = ?').get(authProvider, authId) as { user_id: string } | undefined;
+  if (linked) {
+    const linkedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(linked.user_id) as User | undefined;
+    if (linkedUser) return linkedUser;
+  }
+
   // Check if user exists
   const existing = db.prepare('SELECT * FROM users WHERE auth_provider = ? AND auth_id = ?').get(authProvider, authId) as User | undefined;
   
