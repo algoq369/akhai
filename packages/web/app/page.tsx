@@ -674,6 +674,13 @@ function HomePage() {
   // Force topics panel closed
   useEffect(() => { if (showTopicsPanel) setShowTopicsPanel(false) }, [])
 
+  // Listen for auth modal trigger from ProfileMenu / anywhere
+  useEffect(() => {
+    const handler = () => setShowAuthModal(true)
+    window.addEventListener('akhai:show-auth', handler)
+    return () => window.removeEventListener('akhai:show-auth', handler)
+  }, [])
+
   // Side Canal topics → AI insights for canvas
   const topicInsights = useMemo(() => {
     if (!currentTopics || currentTopics.length === 0) return [];

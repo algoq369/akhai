@@ -62,11 +62,15 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
     }
   }, [isOpen])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsOpen(false)
+    try {
+      await fetch('/api/auth/session', { method: 'POST' })
+    } catch {}
     if (onLogout) {
       onLogout()
     }
+    window.location.reload()
   }
 
   const menuItems = [
@@ -134,7 +138,13 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
       {collapsed ? (
         /* Collapsed — tiny toggle on right edge */
         <button
-          onClick={() => setCollapsed(false)}
+          onClick={() => {
+            if (!userName) {
+              window.dispatchEvent(new CustomEvent('akhai:show-auth'))
+              return
+            }
+            setCollapsed(false)
+          }}
           className="text-[10px] text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
           style={{ padding: '2px 4px', lineHeight: 1 }}
           title="Open profile"
@@ -147,20 +157,9 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
 
         {/* Profile Button - Raw text, no background */}
         <button
-          onClick={async () => {
+          onClick={() => {
             if (!userName) {
-              try {
-                const res = await fetch('/api/auth/github')
-                const data = await res.json()
-                if (data.authUrl) {
-                  window.location.href = data.authUrl
-                } else {
-                  console.error('GitHub OAuth not configured')
-                  setIsOpen(!isOpen) // Fall back to menu
-                }
-              } catch {
-                setIsOpen(!isOpen)
-              }
+              window.dispatchEvent(new CustomEvent('akhai:show-auth'))
               return
             }
             setIsOpen(!isOpen)
