@@ -10,7 +10,8 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import DualTreeVisualization from '@/components/DualTreeVisualization'
+import { LayerTreeSVG } from '@/components/tree-workbench'
+import { AntipatternTreeSVG } from '@/components/tree-workbench'
 
 export default function PhilosophyPage() {
   const router = useRouter()
@@ -114,8 +115,15 @@ export default function PhilosophyPage() {
           </h2>
 
           {/* Interactive Dual Tree Visualization */}
-          <div className="mb-8">
-            <DualTreeVisualization />
+          <div className="mb-8 grid md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-[10px] uppercase tracking-[0.2em] text-center mb-3 text-relic-silver">AI Processing Layers</h3>
+              <LayerTreeSVG width={400} height={500} showLabels />
+            </div>
+            <div>
+              <h3 className="text-[10px] uppercase tracking-[0.2em] text-center mb-3 text-red-400">Anti-Pattern Monitors</h3>
+              <AntipatternTreeSVG width={400} height={500} />
+            </div>
           </div>
 
           <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6">
