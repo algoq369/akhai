@@ -29,6 +29,7 @@ import ChatDashboard from '@/components/ChatDashboard';
 import SideChat from '@/components/SideChat';
 import NewsNotification from '@/components/NewsNotification';
 import FooterBar from '@/components/home/FooterBar';
+import Overlays from '@/components/home/Overlays';
 import FunctionIndicators from '@/components/FunctionIndicators';
 import MethodologyChangePrompt from '@/components/MethodologyChangePrompt';
 import MethodologyFrame from '@/components/MethodologyFrame';
@@ -3369,21 +3370,17 @@ function HomePage() {
         />
       )}
 
-      {/* Topics Panel — hidden */}
-      {false && <TopicsPanel
-        isOpen={showTopicsPanel}
-        onClose={() => setShowTopicsPanel(false)}
-        onOpenMindMap={() => setShowMindMap(true)}
-      />}
-
-      {/* Mind Map */}
-      <MindMap
-        isOpen={showMindMap}
-        onClose={() => {
+      {/* Overlays — modals, toasts, watchers */}
+      <Overlays
+        showTopicsPanel={showTopicsPanel}
+        setShowTopicsPanel={setShowTopicsPanel}
+        setShowMindMap={setShowMindMap}
+        showMindMap={showMindMap}
+        onCloseMindMap={() => {
           setShowMindMap(false);
-          setMindMapInitialView('graph'); // Reset to graph view when closed
+          setMindMapInitialView('graph');
         }}
-        onSendQuery={(q) => {
+        onSendMindMapQuery={(q) => {
           setQuery(q);
           setTimeout(() => {
             const form = inputRef.current?.closest('form');
@@ -3391,34 +3388,37 @@ function HomePage() {
           }, 100);
         }}
         userId={user?.id || null}
-        initialView={mindMapInitialView}
-      />
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={() => {
+        mindMapInitialView={mindMapInitialView}
+        showAuthModal={showAuthModal}
+        onCloseAuth={() => setShowAuthModal(false)}
+        onAuthSuccess={() => {
           checkSession();
           setShowAuthModal(false);
         }}
-      />
-
-      {/* Create Profile Button - Removed: auth accessible via nav menu */}
-
-      {/* Topic Suggestions Toast */}
-      <SuggestionToast
-        suggestions={topicSuggestions}
-        onRemoveSuggestion={(suggestionId) => {
-          // Remove suggestion from store
-          removeSuggestion(suggestionId);
-        }}
+        topicSuggestions={topicSuggestions}
+        onRemoveSuggestion={removeSuggestion}
         onSuggestionClick={(suggestion) => {
           setQuery(suggestion.topicName + ' ');
           if (inputRef.current) {
             inputRef.current.focus();
           }
         }}
+        showMethodologyPrompt={showMethodologyPrompt}
+        methodologyName={
+          pendingMethodology
+            ? METHODOLOGIES.find((m) => m.id === pendingMethodology)?.name || pendingMethodology
+            : ''
+        }
+        onContinueInCurrentChat={handleContinueInCurrentChat}
+        onStartNewChat={handleStartNewChat}
+        onCancelMethodologyChange={handleCancelMethodologyChange}
+        showLayerDashboard={showLayerDashboard}
+        onCloseLayerDashboard={() => setShowLayerDashboard(false)}
+        ContinueParamWatcher={ContinueParamWatcher}
+        loadConversation={loadConversation}
+        historyPanelOpen={historyPanelOpen}
+        setHistoryPanelOpen={setHistoryPanelOpen}
+        messages={messages}
       />
 
       {/* Side Mini Chat - Context Watcher - Always visible if there are messages */}
@@ -3594,39 +3594,8 @@ function HomePage() {
         }}
       />
 
-      {/* Methodology Change Prompt */}
-      <MethodologyChangePrompt
-        isOpen={showMethodologyPrompt}
-        methodologyName={
-          pendingMethodology
-            ? METHODOLOGIES.find((m) => m.id === pendingMethodology)?.name || pendingMethodology
-            : ''
-        }
-        onContinue={handleContinueInCurrentChat}
-        onNewChat={handleStartNewChat}
-        onCancel={handleCancelMethodologyChange}
-      />
-
-      {/* News Notification - Top Left */}
-      <NewsNotification />
-
-      {/* Tree Configuration Modal - Single entry point for both buttons */}
-      <TreeConfigurationModal
-        isOpen={showLayerDashboard}
-        onClose={() => setShowLayerDashboard(false)}
-      />
-
-      {/* URL Parameter Watcher - Wrapped in Suspense for Next.js 15 compatibility */}
-      <Suspense fallback={null}>
-        <ContinueParamWatcher onContinue={loadConversation} />
-      </Suspense>
-
-      {/* Pipeline History — DISABLED (will re-enable with metadata canal) */}
-      {false && <PipelineHistoryPanel
-        isOpen={historyPanelOpen}
-        onToggle={() => setHistoryPanelOpen(!historyPanelOpen)}
-        messages={messages}
-      />}
+      {/* MethodologyChangePrompt, NewsNotification, TreeConfigurationModal,
+         ContinueParamWatcher, PipelineHistoryPanel → now in Overlays */}
     </div>
   );
 }
