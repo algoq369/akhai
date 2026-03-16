@@ -131,6 +131,15 @@ export default function MindMapGrimoireView({ userId, selectedTopics, onTopicExp
     )
   }
 
+  // No user = no grimoire data
+  if (!userId) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-slate-400 font-mono text-[10px]">
+        <span>connect account to access grimoire</span>
+      </div>
+    )
+  }
+
   return (
     <div className="h-full overflow-y-auto bg-slate-50 dark:bg-relic-void">
       <div className="p-4">
