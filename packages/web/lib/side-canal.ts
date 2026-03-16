@@ -118,7 +118,7 @@ Example: [{"name": "Quantum Computing RSA Threat", "description": "How quantum a
       
       // Check if topic already exists for this user
       const existing = db.prepare(`
-        SELECT * FROM topics WHERE name = ? AND (user_id = ? OR user_id IS NULL)
+        SELECT * FROM topics WHERE name = ? AND (user_id = ?)
       `).get(topicData.name, userId) as Topic | undefined;
 
       if (existing) {
@@ -486,7 +486,7 @@ export function getContextForQuery(
     const matchingTopics = db.prepare(`
       SELECT id FROM topics
       WHERE (${placeholders})
-        AND (user_id = ? OR user_id IS NULL)
+        AND (user_id = ?)
       LIMIT 3
     `).all(...keywords.map(k => `%${k}%`), userId) as Array<{ id: string }>;
 
@@ -500,7 +500,7 @@ export function getContextForQuery(
     const synopses = db.prepare(`
       SELECT content FROM synopses
       WHERE topic_id IN (${synopsisPlaceholders})
-        AND (user_id = ? OR user_id IS NULL)
+        AND (user_id = ?)
     `).all(...topicIds, userId) as Array<{ content: string }>;
 
     if (synopses.length === 0) {
@@ -551,7 +551,7 @@ export function updateTopicRelationships(
         // Check if relationship exists
         const existing = db.prepare(`
           SELECT * FROM topic_relationships
-          WHERE topic_from = ? AND topic_to = ? AND (user_id = ? OR user_id IS NULL)
+          WHERE topic_from = ? AND topic_to = ? AND (user_id = ?)
         `).get(topicFrom, topicTo, userId);
 
         if (existing) {

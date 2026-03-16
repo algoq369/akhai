@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const topics = db.prepare(`
       SELECT * FROM topics
-      WHERE user_id = ? OR user_id IS NULL
+      WHERE user_id = ?
       ORDER BY created_at DESC
       LIMIT 50
     `).all(userId) as Array<{

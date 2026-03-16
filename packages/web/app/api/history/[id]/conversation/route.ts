@@ -28,7 +28,7 @@ export async function GET(
       query = db.prepare(`
         SELECT id, query, flow, created_at, session_id, user_id
         FROM queries
-        WHERE id = ? AND (user_id = ? OR user_id IS NULL OR user_id = '')
+        WHERE id = ? AND (user_id = ?)
       `).get(queryId, userId) as typeof query
     } else if (sessionId) {
       // Anonymous user: get their session query or legacy queries
@@ -69,7 +69,7 @@ export async function GET(
       sessionQueries = db.prepare(`
         SELECT id, query, flow, result, created_at, gnostic_metadata
         FROM queries
-        WHERE (user_id = ? OR user_id IS NULL OR user_id = '')
+        WHERE (user_id = ?)
           AND (
             (session_id IS NOT NULL AND session_id = ?)
             OR (session_id IS NULL AND created_at >= ? AND created_at <= ? + 3600)

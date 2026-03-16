@@ -725,24 +725,8 @@ export function getRecentQueries(
     }>;
   }
 
-  // Fallback for development: show all queries (single-user system)
-  // TODO: In production multi-user system, return [] here
-  const stmt = db.prepare(`
-    SELECT id, query, flow, status, created_at, completed_at, tokens_used, cost
-    FROM queries
-    ORDER BY created_at DESC
-    LIMIT ?
-  `);
-  return stmt.all(limit) as Array<{
-    id: string;
-    query: string;
-    flow: string;
-    status: string;
-    created_at: number;
-    completed_at: number | null;
-    tokens_used: number;
-    cost: number;
-  }>;
+  // No user, no session = no data
+  return [];
 }
 
 /**

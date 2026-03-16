@@ -14,6 +14,11 @@ export async function GET(request: NextRequest) {
     const user = token ? getUserFromSession(token) : null
     const userId = user?.id || null
 
+    // No session = no history
+    if (!userId) {
+      return NextResponse.json({ queries: [], total: 0, limit, offset });
+    }
+
     // Get queries scoped to user (with offset support)
     const queries = getRecentQueries(limit + offset, userId).slice(offset);
     const total = queries.length + offset; // Approximate total

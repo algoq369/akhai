@@ -20,7 +20,7 @@ export async function GET(
     // Get topic
     const topic = db.prepare(`
       SELECT * FROM topics
-      WHERE id = ? AND (user_id = ? OR user_id IS NULL)
+      WHERE id = ? AND (user_id = ?)
     `).get(topicId, userId) as {
       id: string;
       name: string;
@@ -41,7 +41,7 @@ export async function GET(
     // Get synopsis
     const synopsis = db.prepare(`
       SELECT * FROM synopses
-      WHERE topic_id = ? AND (user_id = ? OR user_id IS NULL)
+      WHERE topic_id = ? AND (user_id = ?)
       ORDER BY updated_at DESC
       LIMIT 1
     `).get(topicId, userId) as {
