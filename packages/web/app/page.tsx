@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { generateId, Message } from '@/lib/chat-store';
-import { trackQuery } from '@/lib/analytics';
 import { useSideCanalStore } from '@/lib/stores/side-canal-store';
 import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useLayerStore } from '@/lib/stores/layer-store';
@@ -3394,7 +3393,7 @@ function HomePage() {
                     setMindMapInitialView('graph');
                     setShowMindMap(true);
                     import('@/lib/analytics').then(({ trackMindmapOpened }) => trackMindmapOpened('graph'))
-                  }}}
+                  }}
                 />
               </div>
             </div>
