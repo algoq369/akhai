@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import FinanceBanner from '@/components/FinanceBanner';
 import { motion } from 'framer-motion';
 import { generateId, Message } from '@/lib/chat-store';
 import { useSideCanalStore } from '@/lib/stores/side-canal-store';
@@ -27,6 +28,7 @@ import NavigationMenu from '@/components/NavigationMenu';
 import ChatDashboard from '@/components/ChatDashboard';
 import SideChat from '@/components/SideChat';
 import NewsNotification from '@/components/NewsNotification';
+import FooterBar from '@/components/home/FooterBar';
 import FunctionIndicators from '@/components/FunctionIndicators';
 import MethodologyChangePrompt from '@/components/MethodologyChangePrompt';
 import MethodologyFrame from '@/components/MethodologyFrame';
@@ -443,6 +445,13 @@ function ContinueParamWatcher({ onContinue }: { onContinue: (id: string) => void
   return null;
 }
 
+// Analytics helper — PostHog tracking for queries
+const trackQuery = (data: Record<string, any>) => {
+  if (typeof window !== 'undefined' && (window as any).posthog) {
+    (window as any).posthog.capture('query_event', data);
+  }
+};
+
 function HomePage() {
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>('en');
   const [query, setQuery] = useState('');
@@ -675,9 +684,14 @@ function HomePage() {
 
   // Listen for auth modal trigger from ProfileMenu / anywhere
   useEffect(() => {
-    const handler = () => setShowAuthModal(true)
-    window.addEventListener('akhai:show-auth', handler)
-    return () => window.removeEventListener('akhai:show-auth', handler)
+    const showHandler = () => setShowAuthModal(true)
+    const successHandler = () => checkSession()
+    window.addEventListener('akhai:show-auth', showHandler)
+    window.addEventListener('akhai:auth-success', successHandler)
+    return () => {
+      window.removeEventListener('akhai:show-auth', showHandler)
+      window.removeEventListener('akhai:auth-success', successHandler)
+    }
   }, [])
 
   // Side Canal topics → AI insights for canvas
@@ -1120,7 +1134,7 @@ function HomePage() {
 
     // Track query in PostHog
     import('@/lib/analytics').then(({ trackQuerySubmitted }) => {
-      trackQuerySubmitted(query, selectedMethodology || 'auto')
+      trackQuerySubmitted(query, methodology || 'auto')
     })
 
     // Wait for transition animation before proceeding
@@ -3343,62 +3357,16 @@ function HomePage() {
 
       {/* Footer - Only when not expanded */}
       {!isExpanded && (
-        <footer className="border-t border-relic-mist/20 dark:border-relic-slate/10" style={{ marginBottom: 24 }}>
-          <div className="w-full px-2 py-0.5">
-            <div className="flex items-center justify-between">
-              {/* Left side - description text - pushed to left edge */}
-              <span className="text-[9px] text-relic-silver/60 dark:text-relic-ghost/40 whitespace-nowrap">
-                self aware — autonomous intelligence
-              </span>
-
-              {/* Right side - navigation and toggles - pushed to right edge */}
-              <div className="flex items-center gap-2 pr-0">
-                {/* Instinct Mode Toggle */}
-                <button
-                  onClick={() => {
-                    const { settings, setInstinctMode } = useSettingsStore.getState();
-                    setInstinctMode(!settings.instinctMode);
-                    import('@/lib/analytics').then(({ trackInstinctModeToggled }) => trackInstinctModeToggled(!settings.instinctMode))
-                  }}
-                  className="flex items-center gap-1 text-[9px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
-                >
-                  <SuperSaiyanIcon size={13} active={settings.instinctMode} />
-                  <span className={settings.instinctMode ? 'text-relic-void dark:text-white' : ''}>
-                    instinct
-                  </span>
-                </button>
-
-                {/* AI Config Console Toggle */}
-                <button
-                  onClick={() => setShowLayerDashboard(!showLayerDashboard)}
-                  className="flex items-center gap-1 text-[9px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
-                >
-                  <span
-                    className="text-[11px] transition-all"
-                    style={{
-                      color: showLayerDashboard ? '#a855f7' : '#94a3b8',
-                      filter: showLayerDashboard ? 'drop-shadow(0 0 3px #a855f7)' : 'none',
-                    }}
-                  >
-                    ✦
-                  </span>
-                  <span className={showLayerDashboard ? 'text-relic-void dark:text-white' : ''}>
-                    ai config
-                  </span>
-                </button>
-
-                <NavigationMenu
-                  user={user}
-                  onMindMapClick={() => {
-                    setMindMapInitialView('graph');
-                    setShowMindMap(true);
-                    import('@/lib/analytics').then(({ trackMindmapOpened }) => trackMindmapOpened('graph'))
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </footer>
+        <FooterBar
+          user={user}
+          showLayerDashboard={showLayerDashboard}
+          setShowLayerDashboard={setShowLayerDashboard}
+          onMindMapClick={() => {
+            setMindMapInitialView('graph');
+            setShowMindMap(true);
+            import('@/lib/analytics').then(({ trackMindmapOpened }) => trackMindmapOpened('graph'))
+          }}
+        />
       )}
 
       {/* Topics Panel — hidden */}
@@ -3436,17 +3404,7 @@ function HomePage() {
         }}
       />
 
-      {/* Create Profile Button - Show when not logged in and expanded */}
-      {!user && isExpanded && !isCanvasMode && (
-        <div className="fixed top-14 right-4 z-30">
-          <button
-            onClick={() => setShowAuthModal(true)}
-            className="px-4 py-2 text-xs font-mono border-2 border-relic-slate/30 dark:border-relic-ghost/30 text-relic-slate dark:text-relic-ghost bg-transparent hover:bg-relic-ghost/50 dark:hover:bg-relic-slate/20 transition-all duration-200"
-          >
-            create profile
-          </button>
-        </div>
-      )}
+      {/* Create Profile Button - Removed: auth accessible via nav menu */}
 
       {/* Topic Suggestions Toast */}
       <SuggestionToast
