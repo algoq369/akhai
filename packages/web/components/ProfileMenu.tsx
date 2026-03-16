@@ -65,7 +65,8 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
   const handleLogout = async () => {
     setIsOpen(false)
     try {
-      await fetch('/api/auth/session', { method: 'POST' })
+      await fetch('/api/auth/logout', { method: 'POST' })
+      import('@/lib/analytics').then(({ trackLogout }) => trackLogout())
     } catch {}
     if (onLogout) {
       onLogout()

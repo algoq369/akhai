@@ -116,6 +116,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       const data = await verifyResponse.json()
       
       if (data.success) {
+        import('@/lib/analytics').then(({ trackWalletConnected }) => trackWalletConnected(walletAddress))
         onSuccess()
         onClose()
       } else {

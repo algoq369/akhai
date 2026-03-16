@@ -63,6 +63,7 @@ export default function NewsNotification() {
     setSelected(item)
     setPaused(true)
     setInsight(null)
+    import('@/lib/analytics').then(({ trackNewsClicked }) => trackNewsClicked(item.headline, item.source))
 
     // Check cache first
     const cacheKey = item.headline.slice(0, 50)

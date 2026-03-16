@@ -1,223 +1,104 @@
 /**
- * Analytics tracking for AkhAI
- * Tracks query usage for future fine-tuning and product insights
+ * PostHog Analytics — Custom Events & User Identification
+ * 
+ * Centralized analytics tracking for AkhAI.
+ * Import and call these functions from any component.
  */
 
-export interface QueryEvent {
-  query: string
-  methodology: string
-  methodologySelected: string // What user selected
-  methodologyUsed: string // What was actually used (after auto-routing)
-  responseTime: number
-  tokens: number
-  cost: number
-  groundingGuardTriggered: boolean
-  timestamp: Date
-  success: boolean
-  errorMessage?: string
-}
+import posthog from 'posthog-js'
 
-export interface AnalyticsSummary {
-  totalQueries: number
-  methodologyDistribution: Record<string, number>
-  averageResponseTime: number
-  totalTokens: number
-  totalCost: number
-  successRate: number
-  guardTriggers: number
-}
-
-const STORAGE_KEY = 'akhai_analytics_events'
-const MAX_EVENTS = 1000
-
-/**
- * Track a query event
- */
-export function trackQuery(event: Omit<QueryEvent, 'timestamp'>): void {
-  try {
-    if (typeof window === 'undefined') return
-
-    const events = getEvents()
-    events.push({
-      ...event,
-      timestamp: new Date(),
-    })
-
-    // Keep only the last MAX_EVENTS
-    if (events.length > MAX_EVENTS) {
-      events.splice(0, events.length - MAX_EVENTS)
-    }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events))
-  } catch (error) {
-    console.error('Analytics tracking error:', error)
-  }
-}
-
-/**
- * Get all tracked events
- */
-export function getEvents(): QueryEvent[] {
-  try {
-    if (typeof window === 'undefined') return []
-
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored) return []
-
-    const parsed = JSON.parse(stored)
-    // Convert timestamp strings back to Date objects
-    return parsed.map((event: any) => ({
-      ...event,
-      timestamp: new Date(event.timestamp),
-    }))
-  } catch (error) {
-    console.error('Analytics retrieval error:', error)
-    return []
-  }
-}
-
-/**
- * Get analytics summary
- */
-export function getAnalyticsSummary(): AnalyticsSummary {
-  const events = getEvents()
-
-  if (events.length === 0) {
-    return {
-      totalQueries: 0,
-      methodologyDistribution: {},
-      averageResponseTime: 0,
-      totalTokens: 0,
-      totalCost: 0,
-      successRate: 0,
-      guardTriggers: 0,
-    }
-  }
-
-  const methodologyDistribution: Record<string, number> = {}
-  let totalResponseTime = 0
-  let totalTokens = 0
-  let totalCost = 0
-  let successCount = 0
-  let guardTriggers = 0
-
-  events.forEach((event) => {
-    // Methodology distribution
-    const methodology = event.methodologyUsed || event.methodology
-    methodologyDistribution[methodology] = (methodologyDistribution[methodology] || 0) + 1
-
-    // Aggregates
-    totalResponseTime += event.responseTime
-    totalTokens += event.tokens
-    totalCost += event.cost
-    if (event.success) successCount++
-    if (event.groundingGuardTriggered) guardTriggers++
+// ── User Identification ──
+export function identifyUser(userId: string, properties?: {
+  username?: string
+  email?: string
+  authProvider?: string
+  walletAddress?: string
+}) {
+  if (!posthog.__loaded) return
+  posthog.identify(userId, {
+    ...properties,
+    app: 'akhai',
   })
-
-  return {
-    totalQueries: events.length,
-    methodologyDistribution,
-    averageResponseTime: totalResponseTime / events.length,
-    totalTokens,
-    totalCost,
-    successRate: (successCount / events.length) * 100,
-    guardTriggers,
-  }
 }
 
-/**
- * Export events as JSON for fine-tuning
- */
-export function exportForFineTuning(): string {
-  const events = getEvents()
-
-  // Format for fine-tuning: { prompt, completion, metadata }
-  const fineTuningData = events
-    .filter((event) => event.success)
-    .map((event) => ({
-      prompt: event.query,
-      methodology: event.methodologyUsed || event.methodology,
-      metadata: {
-        responseTime: event.responseTime,
-        tokens: event.tokens,
-        timestamp: event.timestamp.toISOString(),
-      },
-    }))
-
-  return JSON.stringify(fineTuningData, null, 2)
+export function resetUser() {
+  if (!posthog.__loaded) return
+  posthog.reset()
 }
 
-/**
- * Clear all analytics data
- */
-export function clearAnalytics(): void {
-  try {
-    if (typeof window === 'undefined') return
-    localStorage.removeItem(STORAGE_KEY)
-  } catch (error) {
-    console.error('Analytics clear error:', error)
-  }
-}
-
-/**
- * Get events from a specific time range
- */
-export function getEventsByDateRange(startDate: Date, endDate: Date): QueryEvent[] {
-  const events = getEvents()
-  return events.filter(
-    (event) => event.timestamp >= startDate && event.timestamp <= endDate
-  )
-}
-
-/**
- * Get methodology performance comparison
- */
-export function getMethodologyComparison(): Record<
-  string,
-  {
-    count: number
-    avgResponseTime: number
-    avgTokens: number
-    avgCost: number
-    successRate: number
-  }
-> {
-  const events = getEvents()
-  const methodologyStats: Record<string, any> = {}
-
-  events.forEach((event) => {
-    const methodology = event.methodologyUsed || event.methodology
-
-    if (!methodologyStats[methodology]) {
-      methodologyStats[methodology] = {
-        count: 0,
-        totalResponseTime: 0,
-        totalTokens: 0,
-        totalCost: 0,
-        successCount: 0,
-      }
-    }
-
-    const stats = methodologyStats[methodology]
-    stats.count++
-    stats.totalResponseTime += event.responseTime
-    stats.totalTokens += event.tokens
-    stats.totalCost += event.cost
-    if (event.success) stats.successCount++
+// ── Query Events ──
+export function trackQuerySubmitted(query: string, methodology: string) {
+  if (!posthog.__loaded) return
+  posthog.capture('query_submitted', {
+    query_length: query.length,
+    methodology,
+    query_preview: query.substring(0, 50),
   })
+}
 
-  // Calculate averages
-  const comparison: Record<string, any> = {}
-  Object.keys(methodologyStats).forEach((methodology) => {
-    const stats = methodologyStats[methodology]
-    comparison[methodology] = {
-      count: stats.count,
-      avgResponseTime: stats.totalResponseTime / stats.count,
-      avgTokens: stats.totalTokens / stats.count,
-      avgCost: stats.totalCost / stats.count,
-      successRate: (stats.successCount / stats.count) * 100,
-    }
+export function trackQueryCompleted(methodology: string, tokens: number, cost: number, latencyMs: number) {
+  if (!posthog.__loaded) return
+  posthog.capture('query_completed', {
+    methodology,
+    tokens_used: tokens,
+    cost,
+    latency_ms: latencyMs,
   })
+}
 
-  return comparison
+// ── Navigation Events ──
+export function trackMindmapOpened(tab: string) {
+  if (!posthog.__loaded) return
+  posthog.capture('mindmap_opened', { tab })
+}
+
+export function trackPhilosophyViewed() {
+  if (!posthog.__loaded) return
+  posthog.capture('philosophy_viewed')
+}
+
+// ── Methodology Events ──
+export function trackMethodologyChanged(from: string, to: string) {
+  if (!posthog.__loaded) return
+  posthog.capture('methodology_changed', { from, to })
+}
+
+export function trackLayerPresetApplied(preset: string) {
+  if (!posthog.__loaded) return
+  posthog.capture('layer_preset_applied', { preset })
+}
+
+// ── Auth Events ──
+export function trackWalletConnected(address: string) {
+  if (!posthog.__loaded) return
+  posthog.capture('wallet_connected', {
+    wallet_prefix: address.substring(0, 6),
+  })
+}
+
+export function trackLogout() {
+  if (!posthog.__loaded) return
+  posthog.capture('user_logout')
+  posthog.reset()
+}
+
+// ── Feature Events ──
+export function trackCanvasOpened() {
+  if (!posthog.__loaded) return
+  posthog.capture('canvas_opened')
+}
+
+export function trackNewsClicked(headline: string, source: string) {
+  if (!posthog.__loaded) return
+  posthog.capture('news_clicked', { headline: headline.substring(0, 60), source })
+}
+
+export function trackFinanceIndicatorClicked(symbol: string) {
+  if (!posthog.__loaded) return
+  posthog.capture('finance_indicator_clicked', { symbol })
+}
+
+export function trackInstinctModeToggled(enabled: boolean) {
+  if (!posthog.__loaded) return
+  posthog.capture('instinct_mode_toggled', { enabled })
 }

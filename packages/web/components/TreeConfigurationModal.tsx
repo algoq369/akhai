@@ -169,7 +169,8 @@ export default function TreeConfigurationModal({ isOpen, onClose }: TreeConfigur
                 key={key}
                 onClick={() => {
                   useLayerStore.getState().applyPreset({ ...LAYER_PRESETS[key] }, key)
-                }}
+                  import('@/lib/analytics').then(({ trackLayerPresetApplied }) => trackLayerPresetApplied(key))
+                }}}
                 className="transition-colors text-[7px] uppercase tracking-[0.06em]"
                 style={{
                   color: activePreset === key ? '#18181b' : '#a1a1aa',

@@ -7,6 +7,7 @@
  * Clean minimalist design matching Code Relic aesthetic.
  */
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -14,6 +15,10 @@ import { useRouter } from 'next/navigation'
 
 export default function PhilosophyPage() {
   const router = useRouter()
+
+  useEffect(() => {
+    import('@/lib/analytics').then(({ trackPhilosophyViewed }) => trackPhilosophyViewed())
+  }, [])
 
   return (
     <div className="min-h-screen bg-white dark:bg-relic-void text-relic-slate dark:text-relic-ghost">

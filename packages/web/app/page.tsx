@@ -877,6 +877,15 @@ function HomePage() {
       const response = await fetch('/api/auth/session');
       const data = await response.json();
       setUser(data.user);
+      // Identify user in PostHog
+      if (data.user?.id) {
+        const { identifyUser } = await import('@/lib/analytics')
+        identifyUser(data.user.id, {
+          username: data.user.username,
+          email: data.user.email,
+          authProvider: data.user.auth_provider,
+        })
+      }
     } catch (error) {
       console.error('Session check error:', error);
     }
@@ -1109,6 +1118,11 @@ function HomePage() {
 
     // Start transition animation
     setIsTransitioning(true);
+
+    // Track query in PostHog
+    import('@/lib/analytics').then(({ trackQuerySubmitted }) => {
+      trackQuerySubmitted(query, selectedMethodology || 'auto')
+    })
 
     // Wait for transition animation before proceeding
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -1908,6 +1922,7 @@ function HomePage() {
       // No conversation yet, directly set methodology
       setMethodology(id);
       setIsBlinking(id);
+      import('@/lib/analytics').then(({ trackMethodologyChanged }) => trackMethodologyChanged(methodology, id))
       setTimeout(() => setIsBlinking(null), 300);
     }
   };
@@ -1997,7 +2012,7 @@ function HomePage() {
               <div className="flex items-center gap-3">
                 {/* Canvas Mode Toggle */}
                 <button
-                  onClick={() => setIsCanvasMode(!isCanvasMode)}
+                  onClick={() => { setIsCanvasMode(!isCanvasMode); if (!isCanvasMode) import('@/lib/analytics').then(({ trackCanvasOpened }) => trackCanvasOpened()) }}
                   className={`flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-medium transition-all ${
                     isCanvasMode
                       ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300'
@@ -3344,6 +3359,7 @@ function HomePage() {
                   onClick={() => {
                     const { settings, setInstinctMode } = useSettingsStore.getState();
                     setInstinctMode(!settings.instinctMode);
+                    import('@/lib/analytics').then(({ trackInstinctModeToggled }) => trackInstinctModeToggled(!settings.instinctMode))
                   }}
                   className="flex items-center gap-1 text-[9px] font-mono text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white transition-colors group"
                 >
@@ -3377,7 +3393,8 @@ function HomePage() {
                   onMindMapClick={() => {
                     setMindMapInitialView('graph');
                     setShowMindMap(true);
-                  }}
+                    import('@/lib/analytics').then(({ trackMindmapOpened }) => trackMindmapOpened('graph'))
+                  }}}
                 />
               </div>
             </div>
