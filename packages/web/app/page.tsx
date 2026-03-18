@@ -58,7 +58,6 @@ import { analyzeLayerContent } from '@/lib/layer-mapper';
 import { DepthText } from '@/components/DepthAnnotation';
 import { useDepthAnnotations } from '@/hooks/useDepthAnnotations';
 import LiveRefinementCanal from '@/components/LiveRefinementCanal';
-import GodViewPanel from '@/components/god-view/GodViewPanel';
 import { useGodViewStore } from '@/lib/stores/god-view-store';
 import FileDropZone from '@/components/FileDropZone';
 import CanvasWorkspace from '@/components/canvas/CanvasWorkspace';
@@ -2589,19 +2588,7 @@ function HomePage() {
         {/* Live Refinement Canal — between messages and input */}
         <LiveRefinementCanal isVisible={isExpanded && messages.length > 0} isLoading={isLoading} />
 
-        {/* God View Toggle — Neural Tree panel */}
-        {isExpanded && messages.length > 0 && (
-          <div className="max-w-3xl mx-auto px-6 mb-1 flex justify-end">
-            <button
-              onClick={() => useGodViewStore.getState().togglePanel()}
-              className="text-[9px] font-mono text-relic-silver/40 hover:text-relic-silver transition-colors flex items-center gap-1"
-              title="Neural Tree — watch AI reason in real-time"
-            >
-              <span>◊</span>
-              <span className="uppercase tracking-wider">god view</span>
-            </button>
-          </div>
-        )}
+        {/* God View toggle removed — AI Layers VIEW tab serves this purpose */}
 
         {/* Input Section */}
         <InputSection
@@ -2862,8 +2849,7 @@ function HomePage() {
         messages={messages}
       />
 
-      {/* God View Panel — Neural Tree + Activity Feed */}
-      <GodViewPanel />
+      {/* God View Panel removed — AI Layers VIEW tab serves this purpose */}
 
       {/* Side Mini Chat - Context Watcher - Always visible if there are messages */}
       <SideMiniChat
