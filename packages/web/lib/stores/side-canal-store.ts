@@ -42,8 +42,12 @@ export interface SideCanalState {
   autoExtractEnabled: boolean
   autoSynopsisEnabled: boolean
 
+  // Response metadata (accumulated across session, never cleared)
+  responseMetadata: Array<{ queryId: string; timestamp: number; data: Record<string, any> }>
+
   // Metadata Actions
   pushMetadata: (event: ThoughtEvent) => void
+  pushResponseMetadata: (queryId: string, data: Record<string, any>) => void
   getMessageTimeline: (messageId: string) => ThoughtEvent[]
   clearMetadataForMessage: (messageId: string) => void
 
@@ -77,6 +81,7 @@ export const useSideCanalStore = create<SideCanalState>()(
       metadataHistory: [],
       messageMetadata: {},
       currentMetadata: {},
+      responseMetadata: [],
       loading: false,
       error: null,
       toastVisible: false,
@@ -89,6 +94,12 @@ export const useSideCanalStore = create<SideCanalState>()(
       autoSynopsisEnabled: false, // Disabled to prevent errors (user can enable manually)
 
       // Metadata Actions
+
+      pushResponseMetadata: (queryId: string, data: Record<string, any>) => {
+        set((state) => ({
+          responseMetadata: [...state.responseMetadata, { queryId, timestamp: Date.now(), data }],
+        }))
+      },
 
       pushMetadata: (event: ThoughtEvent) => {
         set((state) => {

@@ -53,6 +53,8 @@ import { analyzeLayerContent } from '@/lib/layer-mapper';
 import { DepthText } from '@/components/DepthAnnotation';
 import { useDepthAnnotations } from '@/hooks/useDepthAnnotations';
 import LiveRefinementCanal from '@/components/LiveRefinementCanal';
+import GodViewPanel from '@/components/god-view/GodViewPanel';
+import { useGodViewStore } from '@/lib/stores/god-view-store';
 import FileDropZone from '@/components/FileDropZone';
 import CanvasWorkspace from '@/components/canvas/CanvasWorkspace';
 import type { QueryCard } from '@/components/canvas/QueryCardsPanel';
@@ -900,6 +902,7 @@ function HomePage() {
     setUploadedFileUrls([]); // Clear uploaded file URLs
     setIsLoading(true);
     setIsTransitioning(false);
+    useGodViewStore.getState().setProcessing(true);
 
     const startTime = Date.now();
 
@@ -987,6 +990,37 @@ function HomePage() {
       if (!res.ok) throw new Error('Failed to get response');
 
       const data = await res.json();
+
+      // Wire God View store with response fusion data
+      if (data.fusion) {
+        const layerWeights: Record<number, number> = {}
+        for (const la of (data.fusion.layerActivations || [])) {
+          // Map by index — layer activations come as array
+          const layerNum = la.layerNode ?? la.layer
+          if (layerNum != null) layerWeights[layerNum] = (la.effectiveWeight || 0) / 100
+        }
+        useGodViewStore.getState().setActivations({
+          layerWeights: layerWeights as any,
+          dominantLayers: data.fusion.dominantLayers || [],
+          methodology: data.fusion.methodology || null,
+          confidence: data.fusion.confidence || 0,
+          guardReasons: data.guardResult?.issues || [],
+          processingMode: data.fusion.processingMode || null,
+        })
+      }
+      useGodViewStore.getState().setProcessing(false)
+
+      // Push full response metadata to persistent store
+      useSideCanalStore.getState().pushResponseMetadata(frontendQueryId, {
+        fusion: data.fusion,
+        guardResult: data.guardResult,
+        provider: data.provider,
+        metrics: data.metrics,
+        sideCanal: data.sideCanal,
+        gnostic: data.gnostic,
+        query: userMessage.content,
+        timestamp: Date.now(),
+      })
 
       // Handle Side Canal suggestions - refresh from store
       if (data.sideCanal?.suggestions && data.sideCanal.suggestions.length > 0) {
@@ -1123,6 +1157,7 @@ function HomePage() {
       });
     } finally {
       setIsLoading(false);
+      useGodViewStore.getState().setProcessing(false);
       inputRef.current?.focus();
     }
   };
@@ -2546,6 +2581,23 @@ function HomePage() {
           </div>
         )}
 
+        {/* Live Refinement Canal — between messages and input */}
+        <LiveRefinementCanal isVisible={isExpanded && messages.length > 0} isLoading={isLoading} />
+
+        {/* God View Toggle — Neural Tree panel */}
+        {isExpanded && messages.length > 0 && (
+          <div className="max-w-3xl mx-auto px-6 mb-1 flex justify-end">
+            <button
+              onClick={() => useGodViewStore.getState().togglePanel()}
+              className="text-[9px] font-mono text-relic-silver/40 hover:text-relic-silver transition-colors flex items-center gap-1"
+              title="Neural Tree — watch AI reason in real-time"
+            >
+              <span>◊</span>
+              <span className="uppercase tracking-wider">god view</span>
+            </button>
+          </div>
+        )}
+
         {/* Input Section */}
         <InputSection
           isExpanded={isExpanded}
@@ -2804,6 +2856,9 @@ function HomePage() {
         setHistoryPanelOpen={setHistoryPanelOpen}
         messages={messages}
       />
+
+      {/* God View Panel — Neural Tree + Activity Feed */}
+      <GodViewPanel />
 
       {/* Side Mini Chat - Context Watcher - Always visible if there are messages */}
       <SideMiniChat

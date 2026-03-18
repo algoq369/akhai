@@ -104,12 +104,12 @@ export default function Overlays(props: OverlaysProps) {
         <props.ContinueParamWatcher onContinue={props.loadConversation} />
       </Suspense>
 
-      {/* Pipeline History — DISABLED */}
-      {false && <PipelineHistoryPanel
+      {/* Pipeline History */}
+      <PipelineHistoryPanel
         isOpen={props.historyPanelOpen}
         onToggle={() => props.setHistoryPanelOpen(!props.historyPanelOpen)}
         messages={props.messages}
-      />}
+      />
     </>
   )
 }
