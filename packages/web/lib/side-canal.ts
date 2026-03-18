@@ -9,6 +9,79 @@ import { randomBytes } from 'crypto';
 import { LAYERS_KEYWORDS_BY_NAME } from './constants/layer-keywords';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const FREE_MODE = process.env.AKHAI_FREE_MODE === 'true';
+
+/**
+ * Call LLM with OpenRouter free tier fallback when Anthropic is unavailable.
+ * Returns the text content from the response, or null on failure.
+ */
+async function callLLM(prompt: string, maxTokens: number): Promise<string | null> {
+  // Use Anthropic if credits available and not in free mode
+  if (ANTHROPIC_API_KEY && !FREE_MODE) {
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.content?.[0]?.text || null;
+      }
+      // 400/401/402/429 = fall through to OpenRouter
+      const status = res.status;
+      if (status >= 400 && status < 500) {
+        console.warn(`Anthropic API returned ${status}, falling back to OpenRouter`);
+      } else {
+        console.error(`Anthropic API error: ${status}`);
+        return null;
+      }
+    } catch (err) {
+      console.warn('Anthropic API unreachable, falling back to OpenRouter:', err);
+    }
+  }
+
+  // OpenRouter free tier fallback
+  if (!OPENROUTER_API_KEY) {
+    console.warn('No OPENROUTER_API_KEY configured, cannot fall back');
+    return null;
+  }
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-3.3-70b-instruct:free',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: maxTokens,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error('OpenRouter API error:', res.status, await res.text());
+      return null;
+    }
+
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || null;
+  } catch (err) {
+    console.error('OpenRouter API error:', err);
+    return null;
+  }
+}
 
 export interface Topic {
   id: string;
@@ -46,8 +119,8 @@ export async function extractTopics(
   userId: string | null,
   legendMode: boolean = false
 ): Promise<Topic[]> {
-  if (!ANTHROPIC_API_KEY) {
-    console.warn('ANTHROPIC_API_KEY not configured, skipping topic extraction');
+  if (!ANTHROPIC_API_KEY && !OPENROUTER_API_KEY) {
+    console.warn('No API keys configured, skipping topic extraction');
     return [];
   }
 
@@ -72,32 +145,11 @@ Return ONLY a JSON array of topic objects, each with:
 
 Example: [{"name": "Quantum Computing RSA Threat", "description": "How quantum algorithms like Shor's can break RSA encryption", "category": "technology"}, {"name": "Post-Quantum Cryptography Standards", "description": "NIST-approved algorithms resistant to quantum attacks", "category": "technology"}]`;
 
-    const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
-        messages: [
-          {
-            role: 'user',
-            content: topicPrompt,
-          },
-        ],
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      console.error('Failed to extract topics:', await aiResponse.text());
+    const content = await callLLM(topicPrompt, 500);
+    if (!content) {
+      console.error('Failed to extract topics: no LLM response');
       return [];
     }
-
-    const aiData = await aiResponse.json();
-    const content = aiData.content?.[0]?.text || '';
     
     // Parse JSON from response
     let topics: Array<{ name: string; description?: string; category?: string }> = [];
@@ -347,7 +399,7 @@ export async function generateSynopsis(
   queryIds: string[],
   userId: string | null
 ): Promise<string | null> {
-  if (!ANTHROPIC_API_KEY || queryIds.length === 0) {
+  if ((!ANTHROPIC_API_KEY && !OPENROUTER_API_KEY) || queryIds.length === 0) {
     return null;
   }
 
@@ -377,31 +429,7 @@ ${context}
 
 Synopsis:`;
 
-    const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 200,
-        messages: [
-          {
-            role: 'user',
-            content: synopsisPrompt,
-          },
-        ],
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      return null;
-    }
-
-    const aiData = await aiResponse.json();
-    const synopsis = aiData.content?.[0]?.text?.trim() || null;
+    const synopsis = (await callLLM(synopsisPrompt, 200))?.trim() || null;
 
     // Store synopsis
     if (synopsis) {
