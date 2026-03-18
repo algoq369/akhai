@@ -32,7 +32,7 @@ $SSH_APP << 'REMOTE'
 cd ~/app/packages/web
 pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 npm rebuild better-sqlite3
-npx next build
+NODE_OPTIONS="--max-old-space-size=768" npx next build
 REMOTE
 
 # 4. Create/update .env.production if not exists
