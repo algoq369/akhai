@@ -69,6 +69,41 @@ interface DetectionPattern {
 }
 
 const DETECTION_PATTERNS: DetectionPattern[] = [
+  // FREE-TIER TAG PATTERNS ([TECHNICAL], [STRATEGIC], numbered steps, etc.)
+  {
+    type: 'detail',
+    patterns: [
+      /\[(?:TECHNICAL|STRATEGIC|CRITICAL|KEY|SUMMARY|INSIGHT|IMPORTANT|NOTE)\](?::?\s*)/gi,
+      /\[(?:RELATED|NEXT|IMPACT|RISK|OPPORTUNITY|EXAMPLE)\](?::?\s*)/gi,
+    ],
+    extractor: (match) => {
+      const tag = match[0].replace(/[\[\]:]/g, '').trim()
+      const sigilMap: Record<string, string> = {
+        TECHNICAL: '◊', STRATEGIC: '→', CRITICAL: '△', KEY: '◊',
+        SUMMARY: '○', INSIGHT: '⊕', IMPORTANT: '△', NOTE: '◇',
+        RELATED: '☿', NEXT: '→', IMPACT: '⊕', RISK: '△',
+        OPPORTUNITY: '⊕', EXAMPLE: '◇',
+      }
+      return {
+        content: `${sigilMap[tag.toUpperCase()] || '◊'} ${tag}`,
+        confidence: 0.85,
+        expandQuery: `Explain the ${tag.toLowerCase()} aspects in more detail`,
+      }
+    },
+  },
+  {
+    type: 'detail',
+    patterns: [
+      // Numbered steps pattern (1. Step description)
+      /^\d+\.\s+(.{10,80})$/gm,
+    ],
+    extractor: (match) => {
+      return {
+        content: `→ Step progression`,
+        confidence: 0.7,
+      }
+    },
+  },
   // GENERIC CONCEPT PHRASES (catch ANY important multi-word terms)
   {
     type: 'detail',
