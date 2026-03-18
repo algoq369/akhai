@@ -1426,7 +1426,8 @@ export function getDepthConfig(): DepthConfig {
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      // Allow maximum density - user wants maximum capabilities      return { ...DEFAULT_DEPTH_CONFIG, ...parsed };
+      // Allow maximum density - user wants maximum capabilities
+      return { ...DEFAULT_DEPTH_CONFIG, ...parsed };
     } catch {
       return DEFAULT_DEPTH_CONFIG;
     }
