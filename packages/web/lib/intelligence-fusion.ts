@@ -318,6 +318,12 @@ export function calculateLayersActivations(
       }
     }
 
+    // Base activation floor: every layer gets minimum engagement
+    // This ensures the tree always shows some life, even for short queries
+    if (activation === 0) {
+      activation = 0.08 + Math.random() * 0.07 // 8-15% base
+    }
+
     // Normalize activation
     activation = Math.min(1, activation)
 

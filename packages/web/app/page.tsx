@@ -47,6 +47,11 @@ import MetadataStrip from '@/components/MetadataStrip';
 import PipelineHistoryPanel from '@/components/PipelineHistoryPanel';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import { Layer, LAYER_METADATA } from '@/lib/layer-registry';
+
+// Reverse lookup: AI name → Layer enum value
+const AI_NAME_TO_LAYER: Record<string, Layer> = Object.fromEntries(
+  Object.entries(LAYER_METADATA).map(([key, meta]) => [meta.aiName, parseInt(key) as Layer])
+) as Record<string, Layer>;
 import { useSession } from '@/lib/session-manager';
 import { HebrewTermDisplay } from '@/lib/origin-formatter';
 import { analyzeLayerContent } from '@/lib/layer-mapper';
@@ -1066,7 +1071,7 @@ function HomePage() {
                   keywords: data.fusion.layerActivations?.[0]?.keywords || [],
                 },
                 layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                  layerNode: 0,
+                  layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
                   name: s.name,
                   activation: s.effectiveWeight || 0,
                   effectiveWeight: s.effectiveWeight || 0,
@@ -1200,7 +1205,7 @@ function HomePage() {
                     keywords: data.fusion.layerActivations?.[0]?.keywords || [],
                   },
                   layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                    layerNode: 0,
+                    layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
                     name: s.name,
                     activation: s.effectiveWeight || 0,
                     effectiveWeight: s.effectiveWeight || 0,
@@ -1408,7 +1413,7 @@ function HomePage() {
                   keywords: data.fusion.layerActivations?.[0]?.keywords || [],
                 },
                 layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                  layerNode: 0,
+                  layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
                   name: s.name,
                   activation: s.effectiveWeight || 0,
                   effectiveWeight: s.effectiveWeight || 0,
@@ -1572,7 +1577,7 @@ function HomePage() {
                   keywords: data.fusion.layerActivations?.[0]?.keywords || [],
                 },
                 layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                  layerNode: 0,
+                  layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
                   name: s.name,
                   activation: s.effectiveWeight || 0,
                   effectiveWeight: s.effectiveWeight || 0,
@@ -2737,7 +2742,7 @@ function HomePage() {
                         keywords: data.fusion.layerActivations?.[0]?.keywords || [],
                       },
                       layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                        layerNode: 0,
+                        layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
                         name: s.name,
                         activation: s.effectiveWeight || 0,
                         effectiveWeight: s.effectiveWeight || 0,
@@ -2948,7 +2953,7 @@ function HomePage() {
                       keywords: data.fusion.layerActivations?.[0]?.keywords || [],
                     },
                     layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                      layerNode: 0,
+                      layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
                       name: s.name,
                       activation: s.effectiveWeight || 0,
                       effectiveWeight: s.effectiveWeight || 0,
