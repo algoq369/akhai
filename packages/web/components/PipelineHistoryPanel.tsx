@@ -10,6 +10,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSideCanalStore } from '@/lib/stores/side-canal-store'
 import { formatDuration } from '@/lib/thought-stream'
+import { generateReasoningNarrative, type NarrativeEntry } from '@/lib/god-view/reasoning-narrator'
 
 interface Message { id: string; role: 'user' | 'assistant'; content: string }
 interface PipelineHistoryPanelProps {
@@ -18,6 +19,7 @@ interface PipelineHistoryPanelProps {
 
 export default function PipelineHistoryPanel({ isOpen, onToggle, messages }: PipelineHistoryPanelProps) {
   const messageMetadata = useSideCanalStore((s) => s.messageMetadata)
+  const responseMetadata = useSideCanalStore((s) => s.responseMetadata)
   const [expandedMsg, setExpandedMsg] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -220,11 +222,17 @@ export default function PipelineHistoryPanel({ isOpen, onToggle, messages }: Pip
                 <div className="px-4 py-16 text-center text-[9px] text-relic-silver/30">
                   <div className="text-[18px] mb-3 opacity-15">◇</div>no reasoning data yet
                 </div>
-              ) : groups.map((g, i) => (
-                <Entry key={g.messageId} g={g} idx={groups.length - i}
-                  open={expandedMsg === g.messageId}
-                  toggle={() => setExpandedMsg(expandedMsg === g.messageId ? null : g.messageId)} />
-              ))}
+              ) : groups.map((g, i) => {
+                // Find matching response metadata for this query
+                const rm = responseMetadata.find(r => r.data?.query && g.queryText?.includes(r.data.query.slice(0, 20)))
+                const narrative = rm ? generateReasoningNarrative(rm.data) : []
+                return (
+                  <Entry key={g.messageId} g={g} idx={groups.length - i}
+                    open={expandedMsg === g.messageId}
+                    toggle={() => setExpandedMsg(expandedMsg === g.messageId ? null : g.messageId)}
+                    narrative={narrative} />
+                )
+              })}
             </div>
           </motion.div>
         )}
@@ -237,7 +245,7 @@ export default function PipelineHistoryPanel({ isOpen, onToggle, messages }: Pip
 /* Entry — one query's full reasoning trace                      */
 /* ═══════════════════════════════════════════════════════════════ */
 
-function Entry({ g, idx, open, toggle }: { g: any; idx: number; open: boolean; toggle: () => void }) {
+function Entry({ g, idx, open, toggle, narrative = [] }: { g: any; idx: number; open: boolean; toggle: () => void; narrative?: NarrativeEntry[] }) {
   return (
     <div className="border-b border-relic-mist/10 dark:border-relic-slate/10">
       {/* Collapsed */}
@@ -268,8 +276,26 @@ function Entry({ g, idx, open, toggle }: { g: any; idx: number; open: boolean; t
             exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
             <div className="px-4 pb-4 space-y-2.5">
 
-              {/* ── REASONING NARRATIVE ── */}
-              {g.narrativeLines.length > 0 && (
+              {/* ── AI THINKING NARRATIVE (from reasoning-narrator) ── */}
+              {narrative.length > 0 && (
+                <div className="bg-relic-ghost/30 dark:bg-relic-slate/5 rounded-md px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span className="text-[9px] text-indigo-400">◊</span>
+                    <span className="text-[7px] uppercase tracking-widest text-indigo-400/70">AI Thinking</span>
+                  </div>
+                  <div className="space-y-2">
+                    {narrative.map((entry, i) => (
+                      <p key={i} className="text-[9px] leading-relaxed text-relic-slate dark:text-relic-silver/70">
+                        <span className="text-relic-silver/40 mr-1">{entry.sigil}</span>
+                        {entry.text}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── REASONING NARRATIVE (legacy fallback) ── */}
+              {narrative.length === 0 && g.narrativeLines.length > 0 && (
                 <div className="bg-relic-ghost/30 dark:bg-relic-slate/5 rounded-md px-3 py-2.5">
                   <div className="flex items-center gap-1.5 mb-2">
                     <span className="text-[9px] text-indigo-400">∵</span>

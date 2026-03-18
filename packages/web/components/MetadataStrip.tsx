@@ -13,6 +13,7 @@ import { STAGE_META, formatDuration } from '@/lib/thought-stream'
 import type { ThoughtEvent } from '@/lib/thought-stream'
 import { useSideCanalStore } from '@/lib/stores/side-canal-store'
 import PipelineTimeline from '@/components/PipelineTimeline'
+import { generateReasoningNarrative } from '@/lib/god-view/reasoning-narrator'
 
 // Stable empty array to prevent Zustand infinite re-render loop
 const EMPTY_TIMELINE: ThoughtEvent[] = []
@@ -28,6 +29,17 @@ export default function MetadataStrip({ messageId }: MetadataStripProps) {
   const messageTimeline = useSideCanalStore(
     (s) => s.messageMetadata?.[messageId] ?? EMPTY_TIMELINE
   )
+  const responseMetadata = useSideCanalStore((s) => s.responseMetadata)
+
+  // Generate narrative from the latest response metadata
+  const narrative = useMemo(() => {
+    // Find the response metadata that matches this message's timeline
+    if (responseMetadata.length === 0) return []
+    // Use the most recent entry (response metadata is pushed after query completes)
+    const latest = responseMetadata[responseMetadata.length - 1]
+    if (!latest?.data) return []
+    return generateReasoningNarrative(latest.data)
+  }, [responseMetadata])
 
   const [phase, setPhase] = useState<'live' | 'summary' | 'hidden'>('live')
   const [expanded, setExpanded] = useState(false)
@@ -195,32 +207,33 @@ export default function MetadataStrip({ messageId }: MetadataStripProps) {
               transition={{ duration: 0.15 }}
               className="overflow-hidden"
             >
-              <div className="pl-6 py-2 space-y-1.5 font-mono text-[8px] text-relic-silver/60 dark:text-relic-slate/50 border-l-2 border-relic-ghost dark:border-relic-slate/20">
-                {/* FUSION */}
-                {method && (
-                  <div><span className="text-relic-silver/40">◊ FUSION</span> {method}{confidence ? ` · ${Math.round(confidence * 100)}% confidence` : ''}{routingEv?.details?.methodology?.reason ? ` · ${routingEv.details.methodology.reason}` : ''}</div>
-                )}
-                {/* GUARD */}
-                {guardEv?.details?.guard && (
-                  <div><span className="text-relic-silver/40">△ GUARD</span> {guardVerdict}{guardRisk ? ` · risk ${Math.round(guardRisk * 100)}%` : ''}{guardEv.details.guard.checks?.length ? ` · ${guardEv.details.guard.checks.join(', ')}` : ''}</div>
-                )}
-                {/* LAYERS */}
-                {layersEv?.details?.layers && (
-                  <div><span className="text-relic-silver/40">→ LAYERS</span> {Object.values(layersEv.details.layers).filter((l: any) => l.activated).slice(0, 3).map((l: any) => `${l.name} ${Math.round(l.weight)}%`).join(' · ') || 'none activated'}</div>
-                )}
-                {/* PROVIDER */}
-                {model && (
-                  <div><span className="text-relic-silver/40">⊕ PROVIDER</span> {model} · {genEv?.details?.provider || 'unknown'}</div>
-                )}
-                {/* METRICS */}
-                {completeEv?.details?.tokens && (
-                  <div><span className="text-relic-silver/40">○ METRICS</span> {completeEv.details.tokens.input || 0} in / {completeEv.details.tokens.output || 0} out · {dur != null ? formatDuration(dur) : ''}{cost ? ` · $${cost.toFixed(4)}` : cost === 0 ? ' · $0 (free)' : ''}</div>
-                )}
-                {/* ANALYSIS */}
-                {analysisEv?.details?.analysis?.synthesisInsight && (
-                  <div><span className="text-relic-silver/40">◇ ANALYSIS</span> {analysisEv.details.analysis.synthesisInsight}</div>
-                )}
-              </div>
+              {/* AI Reasoning Narrative */}
+              {narrative.length > 0 ? (
+                <div className="pl-6 py-2 space-y-2 font-mono text-[9px] text-relic-slate/70 dark:text-relic-silver/60 border-l-2 border-relic-ghost dark:border-relic-slate/20">
+                  {narrative.map((entry, i) => (
+                    <div key={i} className="leading-relaxed">
+                      <span className="text-relic-silver/40 mr-1">{entry.sigil}</span>
+                      <span className="text-[7px] uppercase tracking-wider text-relic-silver/30 mr-1.5">{entry.category}</span>
+                      {entry.text}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="pl-6 py-2 space-y-1.5 font-mono text-[8px] text-relic-silver/60 dark:text-relic-slate/50 border-l-2 border-relic-ghost dark:border-relic-slate/20">
+                  {method && (
+                    <div><span className="text-relic-silver/40">◊ FUSION</span> {method}{confidence ? ` · ${Math.round(confidence * 100)}% confidence` : ''}{routingEv?.details?.methodology?.reason ? ` · ${routingEv.details.methodology.reason}` : ''}</div>
+                  )}
+                  {guardEv?.details?.guard && (
+                    <div><span className="text-relic-silver/40">△ GUARD</span> {guardVerdict}{guardRisk ? ` · risk ${Math.round(guardRisk * 100)}%` : ''}{guardEv.details.guard.checks?.length ? ` · ${guardEv.details.guard.checks.join(', ')}` : ''}</div>
+                  )}
+                  {model && (
+                    <div><span className="text-relic-silver/40">⊕ PROVIDER</span> {model} · {genEv?.details?.provider || 'unknown'}</div>
+                  )}
+                  {completeEv?.details?.tokens && (
+                    <div><span className="text-relic-silver/40">○ METRICS</span> {completeEv.details.tokens.input || 0} in / {completeEv.details.tokens.output || 0} out · {dur != null ? formatDuration(dur) : ''}{cost ? ` · $${cost.toFixed(4)}` : cost === 0 ? ' · $0 (free)' : ''}</div>
+                  )}
+                </div>
+              )}
               <PipelineTimeline events={messageTimeline} />
             </motion.div>
           )}
