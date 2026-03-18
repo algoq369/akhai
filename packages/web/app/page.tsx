@@ -290,13 +290,19 @@ function HomePage() {
 
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.role === 'assistant') {
-      // Check if already processed
-      if (messageAnnotations[lastMessage.id]) {
-        console.log('[DepthAnnotations] Already processed message:', lastMessage.id);
+      // Skip processing during streaming — content is incomplete
+      if (lastMessage.isStreaming) return;
+
+      // Check if already processed with actual content (not empty placeholder)
+      const existing = messageAnnotations[lastMessage.id];
+      if (existing && existing.length > 0) {
         return;
       }
 
-      console.log('[DepthAnnotations] Processing NEW message:', lastMessage.content.slice(0, 100));
+      // Skip empty content
+      if (!lastMessage.content || lastMessage.content.length < 50) return;
+
+      console.log('[DepthAnnotations] Processing message:', lastMessage.content.slice(0, 100));
 
       // Process the message content for depth annotations
       const annotations = processText(lastMessage.content);

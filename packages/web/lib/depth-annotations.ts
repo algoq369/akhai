@@ -73,16 +73,17 @@ const DETECTION_PATTERNS: DetectionPattern[] = [
   {
     type: 'detail',
     patterns: [
-      /\[(?:TECHNICAL|STRATEGIC|CRITICAL|KEY|SUMMARY|INSIGHT|IMPORTANT|NOTE)\](?::?\s*)/gi,
-      /\[(?:RELATED|NEXT|IMPACT|RISK|OPPORTUNITY|EXAMPLE)\](?::?\s*)/gi,
+      /\[(?:TECHNICAL|STRATEGIC|CRITICAL|KEY|SUMMARY|INSIGHT|IMPORTANT|NOTE|CONSENSUS|ANALYSIS)\](?::?\s*)/gi,
+      /\[(?:RELATED|NEXT|IMPACT|RISK|OPPORTUNITY|EXAMPLE|DRAFT\s*\d*|PERSPECTIVE|OVERVIEW)\](?::?\s*)/gi,
     ],
     extractor: (match) => {
       const tag = match[0].replace(/[\[\]:]/g, '').trim()
       const sigilMap: Record<string, string> = {
         TECHNICAL: '◊', STRATEGIC: '→', CRITICAL: '△', KEY: '◊',
         SUMMARY: '○', INSIGHT: '⊕', IMPORTANT: '△', NOTE: '◇',
-        RELATED: '☿', NEXT: '→', IMPACT: '⊕', RISK: '△',
-        OPPORTUNITY: '⊕', EXAMPLE: '◇',
+        CONSENSUS: '⊕', ANALYSIS: '◊', DRAFT: '→', PERSPECTIVE: '☿',
+        OVERVIEW: '○', RELATED: '☿', NEXT: '→', IMPACT: '⊕',
+        RISK: '△', OPPORTUNITY: '⊕', EXAMPLE: '◇',
       }
       return {
         content: `${sigilMap[tag.toUpperCase()] || '◊'} ${tag}`,
