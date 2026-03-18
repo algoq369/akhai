@@ -135,46 +135,57 @@ export default function MetadataStrip({ messageId }: MetadataStripProps) {
     )
   }
 
-  // ── SUMMARY phase: compact line + expandable timeline ─────────
+  // ── SUMMARY phase: rich compact line + expandable timeline ─────────
   if (phase === 'summary' && messageTimeline.length > 0) {
     const completeEv = messageTimeline.find((e) => e.stage === 'complete')
     const routingEv = messageTimeline.find((e) => e.stage === 'routing')
+    const layersEv = messageTimeline.find((e) => e.stage === 'layers')
+    const guardEv = messageTimeline.find((e) => e.stage === 'guard')
+    const genEv = messageTimeline.find((e) => e.stage === 'generating')
+    const analysisEv = messageTimeline.find((e) => e.stage === 'analysis')
+
     const method = completeEv?.details?.methodology?.selected ?? routingEv?.details?.methodology?.selected
+    const confidence = routingEv?.details?.confidence
     const dur = completeEv?.details?.duration ?? completeEv?.timestamp
     const tok = completeEv?.details?.tokens?.total
+    const cost = completeEv?.details?.cost
+    const guardVerdict = guardEv?.details?.guard?.verdict
+    const guardRisk = guardEv?.details?.guard?.risk
+    const model = genEv?.details?.model
+    const dominantLayer = layersEv?.details?.dominantLayer
     const stageCount = messageTimeline.length
+
+    // Build compact summary segments
+    const segments: Array<{ sigil: string; text: string }> = []
+    if (method) segments.push({ sigil: '◊', text: `${method}${confidence ? ` ${Math.round(confidence * 100)}%` : ''}` })
+    if (guardVerdict) segments.push({ sigil: '△', text: guardVerdict === 'pass' ? 'passed' : guardVerdict })
+    if (dominantLayer) segments.push({ sigil: '→', text: dominantLayer })
+    if (model) segments.push({ sigil: '⊕', text: model.replace(/^meta-llama\//, '') })
+    if (tok) segments.push({ sigil: '○', text: `${tok.toLocaleString()}t` })
+    if (dur != null) segments.push({ sigil: '', text: formatDuration(dur) })
+    if (cost && cost > 0) segments.push({ sigil: '', text: `$${cost.toFixed(4)}` })
 
     return (
       <div className="mt-1">
-        {/* Compact summary — click to expand */}
+        {/* Rich compact summary — click to expand */}
         <button
           type="button"
           onClick={toggleExpand}
-          className="flex items-center gap-1 font-mono text-[9px] text-relic-silver/70 dark:text-relic-slate/60 hover:text-relic-slate dark:hover:text-relic-silver transition-colors pl-4 border-l-2 border-relic-ghost dark:border-relic-slate/20"
+          className="flex items-center gap-1 flex-wrap font-mono text-[9px] text-relic-silver/70 dark:text-relic-slate/60 hover:text-relic-slate dark:hover:text-relic-silver transition-colors pl-4 border-l-2 border-relic-ghost dark:border-relic-slate/20"
         >
           <span className={`transition-transform duration-150 ${expanded ? '' : '-rotate-90'}`}>
             &#9662;
           </span>
-          <span className="uppercase tracking-wider">pipeline</span>
-          <span className="text-relic-ghost dark:text-relic-slate/30">&middot;</span>
-          {method && <span>{method}</span>}
-          {dur != null && (
-            <>
-              <span className="text-relic-ghost dark:text-relic-slate/30">&middot;</span>
-              <span>{formatDuration(dur)}</span>
-            </>
-          )}
-          {tok != null && (
-            <>
-              <span className="text-relic-ghost dark:text-relic-slate/30">&middot;</span>
-              <span>{tok}t</span>
-            </>
-          )}
-          <span className="text-relic-ghost dark:text-relic-slate/30">&middot;</span>
-          <span>{stageCount} stages</span>
+          {segments.map((seg, i) => (
+            <span key={i} className="flex items-center gap-0.5">
+              {i > 0 && <span className="text-relic-ghost dark:text-relic-slate/30">·</span>}
+              {seg.sigil && <span className="text-relic-silver/40">{seg.sigil}</span>}
+              <span>{seg.text}</span>
+            </span>
+          ))}
         </button>
 
-        {/* Expanded timeline */}
+        {/* Expanded: rich detail breakdown */}
         <AnimatePresence>
           {expanded && (
             <motion.div
@@ -184,6 +195,32 @@ export default function MetadataStrip({ messageId }: MetadataStripProps) {
               transition={{ duration: 0.15 }}
               className="overflow-hidden"
             >
+              <div className="pl-6 py-2 space-y-1.5 font-mono text-[8px] text-relic-silver/60 dark:text-relic-slate/50 border-l-2 border-relic-ghost dark:border-relic-slate/20">
+                {/* FUSION */}
+                {method && (
+                  <div><span className="text-relic-silver/40">◊ FUSION</span> {method}{confidence ? ` · ${Math.round(confidence * 100)}% confidence` : ''}{routingEv?.details?.methodology?.reason ? ` · ${routingEv.details.methodology.reason}` : ''}</div>
+                )}
+                {/* GUARD */}
+                {guardEv?.details?.guard && (
+                  <div><span className="text-relic-silver/40">△ GUARD</span> {guardVerdict}{guardRisk ? ` · risk ${Math.round(guardRisk * 100)}%` : ''}{guardEv.details.guard.checks?.length ? ` · ${guardEv.details.guard.checks.join(', ')}` : ''}</div>
+                )}
+                {/* LAYERS */}
+                {layersEv?.details?.layers && (
+                  <div><span className="text-relic-silver/40">→ LAYERS</span> {Object.values(layersEv.details.layers).filter((l: any) => l.activated).slice(0, 3).map((l: any) => `${l.name} ${Math.round(l.weight)}%`).join(' · ') || 'none activated'}</div>
+                )}
+                {/* PROVIDER */}
+                {model && (
+                  <div><span className="text-relic-silver/40">⊕ PROVIDER</span> {model} · {genEv?.details?.provider || 'unknown'}</div>
+                )}
+                {/* METRICS */}
+                {completeEv?.details?.tokens && (
+                  <div><span className="text-relic-silver/40">○ METRICS</span> {completeEv.details.tokens.input || 0} in / {completeEv.details.tokens.output || 0} out · {dur != null ? formatDuration(dur) : ''}{cost ? ` · $${cost.toFixed(4)}` : cost === 0 ? ' · $0 (free)' : ''}</div>
+                )}
+                {/* ANALYSIS */}
+                {analysisEv?.details?.analysis?.synthesisInsight && (
+                  <div><span className="text-relic-silver/40">◇ ANALYSIS</span> {analysisEv.details.analysis.synthesisInsight}</div>
+                )}
+              </div>
               <PipelineTimeline events={messageTimeline} />
             </motion.div>
           )}
