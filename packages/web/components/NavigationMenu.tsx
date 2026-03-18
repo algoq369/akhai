@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import Link from 'next/link'
 
 interface NavigationMenuProps {
   user: any
@@ -15,12 +16,10 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
 
   const menuItems = [
-    { id: 'philosophy', label: 'philosophy', href: '/philosophy', isLink: true, accent: 'violet' },
-    { id: 'intelligence-robot-training', label: 'intelligence & robot training', href: '/idea-factory?tab=customize', isLink: true },
-    { id: 'mindmap', label: 'mindmap', onClick: onMindMapClick, isLink: false },
-    { id: 'pricing', label: '₿', href: '/pricing', isLink: true, accent: 'bitcoin' },
-    // Only show profile link if user is logged in (use button for client-side navigation)
-    ...(user ? [{ id: 'profile', label: 'profile', onClick: () => router.push('/profile'), isLink: false }] : []),
+    { id: 'philosophy', label: 'philosophy', mobileLabel: 'phil', href: '/philosophy', isLink: true, accent: 'violet' },
+    { id: 'intelligence-robot-training', label: 'intelligence & robot', mobileLabel: 'robot', href: '/idea-factory?tab=customize', isLink: true },
+    { id: 'mindmap', label: 'mindmap', mobileLabel: 'map', onClick: onMindMapClick, isLink: false },
+    { id: 'pricing', label: '₿', mobileLabel: '₿', href: '/pricing', isLink: true, accent: 'bitcoin' },
   ]
 
   const isActive = (id: string) => {
@@ -34,7 +33,7 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
   }
 
   return (
-    <nav className="flex items-center gap-2">
+    <nav className="flex items-center gap-2 overflow-hidden flex-shrink-0">
       {menuItems.map((item) => {
         const active = isActive(item.id)
         const hovered = hoveredItem === item.id
@@ -43,9 +42,9 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
           // Special styling for Bitcoin pricing button
           if (item.accent === 'bitcoin') {
             return (
-              <a
+              <Link
                 key={item.id}
-                href={item.href}
+                href={item.href!}
                 onMouseEnter={() => setHoveredItem(item.id)}
                 onMouseLeave={() => setHoveredItem(null)}
                 className={`
@@ -58,18 +57,18 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
                 `}
               >
                 {item.label}
-              </a>
+              </Link>
             )
           }
 
           return (
-            <a
+            <Link
               key={item.id}
-              href={item.href}
+              href={item.href!}
               onMouseEnter={() => setHoveredItem(item.id)}
               onMouseLeave={() => setHoveredItem(null)}
               className={`
-                text-[9px] font-mono transition-all duration-200
+                text-[11px] font-mono transition-all duration-200
                 ${active
                   ? item.accent === 'violet'
                     ? 'text-violet-500 dark:text-violet-400 border-b border-violet-500 dark:border-violet-400'
@@ -81,8 +80,9 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
                 ${hovered ? 'scale-105' : ''}
               `}
             >
-              {item.label}
-            </a>
+              <span className="hidden sm:inline">{item.label}</span>
+              <span className="sm:hidden">{item.mobileLabel}</span>
+            </Link>
           )
         }
 
@@ -94,11 +94,12 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
             onMouseEnter={() => setHoveredItem(item.id)}
             onMouseLeave={() => setHoveredItem(null)}
             className={`
-              text-[9px] font-mono transition-all duration-200
+              text-[11px] font-mono transition-all duration-200
               ${hovered ? 'text-relic-slate dark:text-white scale-105' : 'text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white'}
             `}
           >
-            {item.label}
+            <span className="hidden sm:inline">{item.label}</span>
+            <span className="sm:hidden">{item.mobileLabel}</span>
           </button>
         )
       })}

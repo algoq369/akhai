@@ -1,4 +1,5 @@
 'use client'
+import { generateUUID } from '@/lib/uuid'
 
 /**
  * GRIMOIRE - White Minimalist Single View
@@ -73,7 +74,7 @@ export default function GrimoirePage() {
     if (!input.trim() || isLoading) return
 
     const userMessage: Message = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       role: 'user',
       content: input.trim(),
       createdAt: Date.now()
@@ -100,7 +101,7 @@ export default function GrimoirePage() {
       const data = await response.json()
 
       setMessages(prev => [...prev, {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         role: 'assistant',
         content: data.response,
         createdAt: Date.now(),

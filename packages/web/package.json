@@ -47,7 +47,10 @@
     "youtube-captions-scraper": "^2.0.3",
     "youtube-transcript": "^1.2.1",
     "youtubei.js": "^16.0.1",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "ethers": "^6.13.0",
+    "@reown/appkit": "^1.6.8",
+    "@reown/appkit-adapter-ethers": "^1.6.8"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

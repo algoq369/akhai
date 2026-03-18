@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateWalletMessage, authenticateWallet } from '@/lib/auth';
 
 /**
  * POST /api/auth/wallet
  * Initiate wallet authentication - returns message to sign
+ * NOTE: generateWalletMessage inlined here to avoid loading database.ts at module init
  */
+function generateWalletMessage(address: string): string {
+  const timestamp = Date.now();
+  return `Sign this message to authenticate with AkhAI.\n\nAddress: ${address}\nTimestamp: ${timestamp}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { address } = await request.json();

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import MindMapDiagramView from './MindMapDiagramView'
 import MindMapHistoryView from './MindMapHistoryView'
@@ -116,6 +116,27 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
   useEffect(() => {
     if (!isOpen) return
     fetchData()
+  }, [isOpen])
+
+  // Stable ref for onClose to avoid useEffect re-triggering on every render
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
+  // Push history state when modal opens so browser back closes modal instead of navigating away
+  useEffect(() => {
+    if (!isOpen) return
+
+    window.history.pushState({ mindmapOpen: true }, '', window.location.href)
+
+    const handlePopState = () => {
+      onCloseRef.current()
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
   }, [isOpen])
 
   const categories = useMemo(() => {

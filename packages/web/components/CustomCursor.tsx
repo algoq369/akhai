@@ -6,6 +6,11 @@ export function CustomCursor() {
   const [position, setPosition] = useState({ x: -100, y: -100 })
   const [isHovering, setIsHovering] = useState(false)
   const [isClicking, setIsClicking] = useState(false)
+  const [isTouchDevice, setIsTouchDevice] = useState(false)
+
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  }, [])
 
   useEffect(() => {
     const updatePosition = (e: MouseEvent) => {
@@ -39,6 +44,8 @@ export function CustomCursor() {
       window.removeEventListener('mouseup', handleMouseUp)
     }
   }, [])
+
+  if (isTouchDevice) return null
 
   return (
     <>

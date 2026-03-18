@@ -24,8 +24,8 @@ function PostHogPageTracker({ children }: { children: React.ReactNode }) {
     // Initialize PostHog
     if (!posthog.__loaded) {
       posthog.init(apiKey, {
-        // Use reverse proxy to avoid ad blockers
-        api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
+        // Use reverse proxy to avoid ad blockers (Brave, uBlock, etc.)
+        api_host: '/ingest',
         ui_host: 'https://eu.posthog.com',
 
         // Cookieless tracking

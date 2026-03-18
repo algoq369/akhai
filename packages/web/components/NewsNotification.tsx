@@ -107,7 +107,7 @@ export default function NewsNotification() {
   const duration = items.length * 5
 
   return (
-    <div ref={panelRef} className="fixed top-0 left-0 right-0 z-40" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+    <div ref={panelRef} className="hidden sm:block fixed top-0 left-0 right-0 z-40" style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
       {/* Ticker bar */}
       <div
         className="overflow-hidden bg-white/80 dark:bg-[#0a0a0b]/80 backdrop-blur-sm border-b border-slate-200/30 dark:border-slate-800/30"

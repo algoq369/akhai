@@ -12,14 +12,14 @@ interface LogoSectionProps {
 
 export default function LogoSection({ methodology, expandedMethodology, setExpandedMethodology, diamondRef }: LogoSectionProps) {
   return (
-    <div className="text-center pt-8 pb-4">
-      <h1 className="text-3xl font-light text-relic-slate dark:text-white tracking-[0.3em] mb-1">
+    <div className="text-center pt-4 sm:pt-8 pb-4 px-4">
+      <h1 className="text-2xl sm:text-3xl font-light text-relic-slate dark:text-white tracking-[0.2em] sm:tracking-[0.3em] mb-1">
         A K H A I
       </h1>
-      <p className="text-sm font-light text-relic-silver/60 dark:text-white/50 tracking-wide mb-0.5">
+      <p className="text-xs sm:text-sm font-light text-relic-silver/60 dark:text-white/50 tracking-wide mb-0.5">
         school of thoughts
       </p>
-      <p className="text-[10px] uppercase tracking-[0.2em] text-relic-slate/50 dark:text-white/40 mb-6">
+      <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-relic-slate/50 dark:text-white/40 mb-6">
         SOVEREIGNINTELLIGENCE
       </p>
       {/* Diamond Logo with INLINE methodology explorer */}
@@ -29,7 +29,8 @@ export default function LogoSection({ methodology, expandedMethodology, setExpan
             ◊
           </span>
           <p className="text-[8px] tracking-[0.2em] text-relic-silver/40 mt-2">
-            hover to explore
+            <span className="hidden sm:inline">hover to explore</span>
+            <span className="sm:hidden">tap to explore</span>
           </p>
         </div>
 
@@ -43,7 +44,7 @@ export default function LogoSection({ methodology, expandedMethodology, setExpan
         >
           {expandedMethodology ? (
             /* Rich Data View */
-            <div className="bg-white dark:bg-relic-void backdrop-blur-md border border-relic-mist dark:border-relic-slate/30 shadow-2xl w-[380px]">
+            <div className="bg-white dark:bg-relic-void backdrop-blur-md border border-relic-mist dark:border-relic-slate/30 shadow-2xl w-[calc(100vw-2rem)] sm:w-[380px]">
               {(() => {
                 const detail = METHODOLOGY_DETAILS.find((m) => m.id === expandedMethodology);
                 if (!detail) return null;

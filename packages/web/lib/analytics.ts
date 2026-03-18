@@ -27,6 +27,32 @@ export function resetUser() {
 }
 
 // ── Query Events ──
+export function trackQuery(data: {
+  query: string
+  methodology: string
+  methodologySelected?: string
+  methodologyUsed?: string
+  responseTime?: number
+  tokens?: number
+  cost?: number
+  groundingGuardTriggered?: boolean
+  success?: boolean
+  error?: string
+}) {
+  if (!posthog.__loaded) return
+  posthog.capture('query_completed', {
+    query_length: data.query.length,
+    methodology: data.methodology,
+    methodology_used: data.methodologyUsed || data.methodology,
+    response_time_ms: data.responseTime,
+    tokens_used: data.tokens,
+    cost: data.cost,
+    guard_triggered: data.groundingGuardTriggered,
+    success: data.success,
+    ...(data.error ? { error: data.error } : {}),
+  })
+}
+
 export function trackQuerySubmitted(query: string, methodology: string) {
   if (!posthog.__loaded) return
   posthog.capture('query_submitted', {

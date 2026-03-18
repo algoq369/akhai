@@ -1,4 +1,5 @@
 'use client'
+import { generateUUID } from '@/lib/uuid'
 
 /**
  * GRIMOIRES - White Minimalist with Integrated Chat
@@ -62,7 +63,7 @@ export default function GrimoiresPage() {
     if (!input.trim() || isLoading || !selected) return
 
     const userMessage: Message = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       role: 'user',
       content: input.trim(),
       createdAt: Date.now()
@@ -89,7 +90,7 @@ export default function GrimoiresPage() {
       const data = await response.json()
 
       setMessages(prev => [...prev, {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         role: 'assistant',
         content: data.response,
         createdAt: Date.now()

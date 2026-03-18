@@ -34,7 +34,7 @@ function fngColor(value: number): string {
   return '#22c55e'
 }
 
-export default function FinanceBanner() {
+export default function FinanceBanner({ inline = false }: { inline?: boolean }) {
   const [data, setData] = useState<FinanceData | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -60,10 +60,10 @@ export default function FinanceBanner() {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0a0a0b]/95 backdrop-blur-sm border-t border-slate-200/30 dark:border-slate-800/30"
-      style={{ height: 24, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}
+      className={inline ? '' : 'fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0a0a0b]/95 backdrop-blur-sm border-t border-slate-200/30 dark:border-slate-800/30'}
+      style={inline ? { fontFamily: "'JetBrains Mono', ui-monospace, monospace" } : { height: 24, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}
     >
-      <div className="h-full flex items-center justify-center gap-4 px-4">
+      <div className={`${inline ? '' : 'h-full'} flex items-center justify-center gap-4 ${inline ? '' : 'px-4'}`}>
         {/* Refresh pulse */}
         {refreshing && (
           <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
@@ -75,13 +75,21 @@ export default function FinanceBanner() {
         )}
 
         {/* Price items */}
-        {prices.map((item, i) => (
+        {prices.map((item, i) => {
+          const isBtc = item.symbol === 'BTC'
+          return (
           <span key={item.symbol} className="flex items-center gap-1 flex-shrink-0">
             {i > 0 && <span className="text-slate-300 dark:text-slate-600 text-[8px] mr-1">·</span>}
-            <span className="text-[8px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              {item.symbol}
+            <span
+              className="text-[8px] font-semibold uppercase tracking-wider"
+              style={isBtc ? { color: '#F7931A', textShadow: '0 0 6px rgba(247,147,26,0.5)' } : undefined}
+            >
+              {isBtc ? '₿' : item.symbol}
             </span>
-            <span className="text-[9px] font-medium text-slate-700 dark:text-slate-200">
+            <span
+              className={`text-[9px] font-medium ${isBtc ? '' : 'text-slate-700 dark:text-slate-200'}`}
+              style={isBtc ? { color: '#F7931A', textShadow: '0 0 8px rgba(247,147,26,0.4)' } : undefined}
+            >
               {formatPrice(item.price, item.symbol)}
             </span>
             {item.change !== 0 && (
@@ -90,7 +98,7 @@ export default function FinanceBanner() {
               </span>
             )}
           </span>
-        ))}
+        )})}
 
         {/* Fear & Greed */}
         {data?.sentiment && (

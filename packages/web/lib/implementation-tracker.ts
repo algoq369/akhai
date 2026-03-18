@@ -1,3 +1,4 @@
+import { generateUUID } from '@/lib/uuid'
 /**
  * IMPLEMENTATION TRACKER
  *
@@ -36,7 +37,7 @@ class ImplementationTracker {
     sessionId?: string
     commandUsed?: string
   }): Promise<number> {
-    const sessionId = data.sessionId || crypto.randomUUID()
+    const sessionId = data.sessionId || generateUUID()
     const stmt = db.prepare(
       'INSERT INTO implementation_log (feature_name, feature_type, description, session_id, command_used) VALUES (?, ?, ?, ?, ?)'
     )

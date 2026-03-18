@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import DarkModeToggle from './DarkModeToggle'
 import { LanguageSelectorCompact } from './LanguageSelector'
+import { useDisconnect } from '@reown/appkit/react'
 
 interface User {
   id: string
@@ -20,6 +21,7 @@ interface UserProfileProps {
 
 export default function UserProfile({ onDarkModeToggle, darkMode }: UserProfileProps = {}) {
   const router = useRouter()
+  const { disconnect } = useDisconnect()
   const [user, setUser] = useState<User | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -79,13 +81,9 @@ export default function UserProfile({ onDarkModeToggle, darkMode }: UserProfileP
   const handleLogout = async () => {
     setIsOpen(false)
     try {
-      // Call logout API
       await fetch('/api/auth/logout', { method: 'POST' })
-
-      // Clear local storage
+      await disconnect()
       localStorage.clear()
-
-      // Redirect home
       router.push('/')
       router.refresh()
     } catch (error) {

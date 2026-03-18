@@ -9,6 +9,7 @@ export default function QuickChatPanel() {
   const { isOpen, messages, isLoading, suggestions, close, addMessage, setLoading, clear, clearSuggestions } = useQuickChatStore()
   const [input, setInput] = useState('')
   const [user, setUser] = useState<any>(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Fetch user session and profile data
@@ -18,8 +19,14 @@ export default function QuickChatPanel() {
         const response = await fetch('/api/auth/session')
         const data = await response.json()
         setUser(data.user)
+        // Clear persisted messages when not authenticated
+        if (!data.user && messages.length > 0) {
+          clear()
+        }
       } catch (error) {
         console.error('[QuickChat] Failed to fetch user data:', error)
+      } finally {
+        setAuthChecked(true)
       }
     }
 
@@ -27,6 +34,19 @@ export default function QuickChatPanel() {
       fetchUserData()
     }
   }, [isOpen])
+
+  // Re-check auth on auth-success event
+  useEffect(() => {
+    const handler = async () => {
+      try {
+        const response = await fetch('/api/auth/session')
+        const data = await response.json()
+        setUser(data.user)
+      } catch {}
+    }
+    window.addEventListener('akhai:auth-success', handler)
+    return () => window.removeEventListener('akhai:auth-success', handler)
+  }, [])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -138,7 +158,11 @@ export default function QuickChatPanel() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
-          {messages.length === 0 ? (
+          {!authChecked && messages.length > 0 ? (
+            <div className="flex items-center justify-center h-full text-relic-silver text-[9px] font-mono">
+              ▸ loading...
+            </div>
+          ) : messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-relic-silver text-[9px] font-mono">
               ▸ type your question
             </div>

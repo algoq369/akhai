@@ -33,42 +33,37 @@ export interface ModelSpec {
  * - Multi-perspective consensus ONLY for GTP (where it adds value)
  * - Simpler configuration and predictable behavior
  */
+// Toggle: set to true for free tier (OpenRouter), false for premium (Anthropic Claude)
+const USE_FREE_TIER = !process.env.ANTHROPIC_API_KEY || process.env.AKHAI_FREE_MODE === 'true'
+
+const FREE_PROVIDER: ModelSpec = {
+  provider: 'openrouter',
+  model: 'meta-llama/llama-3.3-70b-instruct:free',
+  reasoning: 'Free tier: Llama 3.3 70B via OpenRouter (GPT-4 class, $0 cost)',
+}
+
+const PREMIUM_PROVIDER: ModelSpec = {
+  provider: 'anthropic',
+  model: 'claude-opus-4-6',
+  reasoning: 'Premium Claude Opus 4.6 for all queries',
+}
+
+const DEFAULT_PROVIDER = USE_FREE_TIER ? FREE_PROVIDER : PREMIUM_PROVIDER
+
 export const METHODOLOGY_PROVIDER_MAP: Record<CoreMethodology, ModelSpec> = {
-  direct: {
-    provider: 'anthropic',
-    model: 'claude-opus-4-6',
-    reasoning: 'Premium Claude Opus 4.6 for all queries',
-  },
-  cod: {
-    provider: 'anthropic',
-    model: 'claude-opus-4-6',
-    reasoning: 'Premium Claude Opus 4.6 for all queries',
-  },
-  bot: {
-    provider: 'anthropic',
-    model: 'claude-opus-4-6',
-    reasoning: 'Premium Claude Opus 4.6 for all queries',
-  },
-  react: {
-    provider: 'anthropic',
-    model: 'claude-opus-4-6',
-    reasoning: 'Premium Claude Opus 4.6 for all queries',
-  },
-  pot: {
-    provider: 'anthropic',
-    model: 'claude-opus-4-6',
-    reasoning: 'Premium Claude Opus 4.6 for all queries',
-  },
+  direct: DEFAULT_PROVIDER,
+  cod: DEFAULT_PROVIDER,
+  bot: DEFAULT_PROVIDER,
+  react: DEFAULT_PROVIDER,
+  pot: DEFAULT_PROVIDER,
   gtp: {
-    provider: 'anthropic', // Mother Base synthesis uses Anthropic
-    model: 'claude-opus-4-6',
-    reasoning: 'Multi-AI consensus: Anthropic + DeepSeek + Mistral + xAI advisors',
+    provider: DEFAULT_PROVIDER.provider,
+    model: DEFAULT_PROVIDER.model,
+    reasoning: USE_FREE_TIER
+      ? 'Free tier: Multi-methodology via Llama 3.3 70B'
+      : 'Multi-AI consensus: Anthropic + DeepSeek + Mistral + xAI advisors',
   },
-  auto: {
-    provider: 'anthropic',
-    model: 'claude-opus-4-6',
-    reasoning: 'Premium Claude Opus 4.6 for all queries',
-  },
+  auto: DEFAULT_PROVIDER,
 }
 
 /**

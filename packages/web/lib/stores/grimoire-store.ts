@@ -8,6 +8,18 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+// Polyfill for crypto.randomUUID (not available over HTTP)
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return generateUUID()
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 export interface Grimoire {
   id: string
   name: string
@@ -146,7 +158,7 @@ export const useGrimoireStore = create<GrimoireStore>()(
       // Grimoire actions
       createGrimoire: (name, description, userId = 'local') => {
         const grimoire: Grimoire = {
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           name,
           description,
           icon: '📜',
@@ -195,7 +207,7 @@ export const useGrimoireStore = create<GrimoireStore>()(
       addMemory: (grimoireId, memory) => {
         const newMemory: Memory = {
           ...memory,
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           grimoireId,
           createdAt: Date.now(),
           relevanceScore: memory.confidence || 0.5, // Initial relevance based on confidence
@@ -269,7 +281,7 @@ export const useGrimoireStore = create<GrimoireStore>()(
       addFile: (grimoireId, file) => {
         const newFile: GrimoireFile = {
           ...file,
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           grimoireId,
           createdAt: Date.now()
         }
@@ -304,7 +316,7 @@ export const useGrimoireStore = create<GrimoireStore>()(
       addLink: (grimoireId, link) => {
         const newLink: GrimoireLink = {
           ...link,
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           grimoireId,
           createdAt: Date.now()
         }

@@ -81,7 +81,7 @@ export default function InputSection(props: InputSectionProps) {
         isVisible={isExpanded && messages.length > 0}
         isLoading={isLoading}
       />
-      <form onSubmit={onSubmit} className="max-w-3xl mx-auto px-6">
+      <form onSubmit={onSubmit} className="max-w-3xl mx-auto px-3 sm:px-6">
         {/* Input Box */}
         <div className="relative transition-all duration-300">
           <input

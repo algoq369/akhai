@@ -1,9 +1,10 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { CustomCursor } from '@/components/CustomCursor'
 import { PostHogProvider } from './providers'
 import { QuickChatProvider } from '@/components/QuickChatProvider'
 import { DepthProvider } from '@/hooks/useDepthAnnotations'
+import Web3Provider from '@/components/Web3Provider'
 import ProfileMenu from '@/components/ProfileMenu'
 import FinanceBanner from '@/components/FinanceBanner'
 // import { FibonacciBackground } from '@/components/FibonacciBackground'
@@ -11,6 +12,12 @@ import FinanceBanner from '@/components/FinanceBanner'
 export const metadata: Metadata = {
   title: 'akhai · sovereign intelligence',
   description: 'Multi-AI consensus research engine',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({
@@ -30,6 +37,33 @@ export default function RootLayout({
             __html: `
               (function() {
                 if (typeof window === 'undefined') return;
+
+                // Polyfill crypto.randomUUID for HTTP (non-secure) contexts
+                try {
+                  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID !== 'function') {
+                    Object.defineProperty(crypto, 'randomUUID', {
+                      value: function() {
+                        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                          var r = (Math.random() * 16) | 0;
+                          var v = c === 'x' ? r : (r & 0x3) | 0x8;
+                          return v.toString(16);
+                        });
+                      },
+                      writable: true,
+                      configurable: true,
+                      enumerable: true
+                    });
+                  }
+                } catch(e) {}
+
+                // Suppress errors from browser extension scripts (in-page.js, inpage.js)
+                window.addEventListener('error', function(e) {
+                  if (e.filename && (e.filename.includes('in-page.js') || e.filename.includes('inpage.js'))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return true;
+                  }
+                }, true);
                 
                 // Wrap Object.defineProperty BEFORE extensions load to prevent redefinition errors
                 const originalDefineProperty = Object.defineProperty;
@@ -148,15 +182,17 @@ export default function RootLayout({
           <ProfileMenu />
         </div>
 
+        <Web3Provider>
         <PostHogProvider>
           <DepthProvider>
             {children}
             <QuickChatProvider />
           </DepthProvider>
         </PostHogProvider>
+        </Web3Provider>
 
         {/* Global Finance Banner - Fixed bottom */}
-        <FinanceBanner />
+        {/* FinanceBanner moved into page.tsx footer */}
       </body>
     </html>
   )

@@ -9,6 +9,18 @@
 
 'use client'
 
+// Polyfill for crypto.randomUUID (not available over HTTP)
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 import { useState, useEffect } from 'react'
 import type { AscentState } from './layer-registry'
 
@@ -28,7 +40,7 @@ export function getSessionId(): string {
 
   if (!sessionId) {
     // Generate new UUID
-    sessionId = crypto.randomUUID()
+    sessionId = generateUUID()
     localStorage.setItem('akhai_session_id', sessionId)
 
     // Also set as cookie for API access
@@ -57,7 +69,7 @@ export function useSession() {
   const resetSession = () => {
     if (typeof window === 'undefined') return
 
-    const newSessionId = crypto.randomUUID()
+    const newSessionId = generateUUID()
     localStorage.setItem('akhai_session_id', newSessionId)
     document.cookie = `akhai_session_id=${newSessionId}; path=/; max-age=31536000; SameSite=Lax`
     setSessionId(newSessionId)

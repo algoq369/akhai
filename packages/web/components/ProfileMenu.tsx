@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { User, Settings, Globe, History, HelpCircle, Crown, LogOut, Trophy } from 'lucide-react'
 import DarkModeToggle from './DarkModeToggle'
+import { useDisconnect } from '@reown/appkit/react'
 
 interface ProfileMenuProps {
   userName?: string
@@ -19,25 +20,32 @@ interface ProfileMenuProps {
 export default function ProfileMenu({ userName: userNameProp, userEmail: userEmailProp, avatarUrl: avatarUrlProp, onLogout }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(true)
+  const { disconnect } = useDisconnect()
   const [showLanguageSelector, setShowLanguageSelector] = useState(false)
   const [showTournamentTooltip, setShowTournamentTooltip] = useState(false)
   const [user, setUser] = useState<{ username: string | null; email: string | null; avatar_url: string | null } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Fetch user session data
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/auth/session')
-        const data = await response.json()
-        if (data.user) {
-          setUser(data.user)
-        }
-      } catch (error) {
-        console.error('Failed to fetch user session:', error)
-      }
+  const fetchUser = async () => {
+    try {
+      const response = await fetch('/api/auth/session')
+      const data = await response.json()
+      setUser(data.user || null)
+    } catch (error) {
+      console.error('Failed to fetch user session:', error)
     }
+  }
+
+  useEffect(() => {
     fetchUser()
+  }, [])
+
+  // Re-fetch session when auth succeeds (wallet sign, GitHub callback, etc.)
+  useEffect(() => {
+    const handler = () => fetchUser()
+    window.addEventListener('akhai:auth-success', handler)
+    return () => window.removeEventListener('akhai:auth-success', handler)
   }, [])
 
   // Use fetched user data or fallback to props
@@ -67,10 +75,10 @@ export default function ProfileMenu({ userName: userNameProp, userEmail: userEma
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
       import('@/lib/analytics').then(({ trackLogout }) => trackLogout())
+      // Disconnect AppKit wallet session
+      await disconnect()
     } catch {}
-    if (onLogout) {
-      onLogout()
-    }
+    if (onLogout) onLogout()
     window.location.reload()
   }
 
