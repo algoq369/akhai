@@ -58,6 +58,7 @@ import { analyzeLayerContent } from '@/lib/layer-mapper';
 import { DepthText } from '@/components/DepthAnnotation';
 import { useDepthAnnotations } from '@/hooks/useDepthAnnotations';
 import LiveRefinementCanal from '@/components/LiveRefinementCanal';
+import ProcessingIndicator from '@/components/ProcessingIndicator';
 import { useGodViewStore } from '@/lib/stores/god-view-store';
 import FileDropZone from '@/components/FileDropZone';
 import CanvasWorkspace from '@/components/canvas/CanvasWorkspace';
@@ -2064,12 +2065,7 @@ function HomePage() {
 
                           {/* TEXT - Always shown after visualizations (skip if streaming with no content) */}
                           {message.isStreaming && !message.content ? (
-                            <div className="flex items-center gap-2 py-1">
-                              <div className="w-3 h-3 border border-relic-mist border-t-relic-slate rounded-full animate-spin" />
-                              <span className="text-[10px] font-mono text-relic-silver">
-                                processing...
-                              </span>
-                            </div>
+                            <ProcessingIndicator messageId={message.id} isVisible={true} />
                           ) : depthConfig.enabled &&
                             messageAnnotations[message.id] &&
                             messageAnnotations[message.id].length > 0 ? (
