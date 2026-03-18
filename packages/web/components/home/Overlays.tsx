@@ -105,11 +105,14 @@ export default function Overlays(props: OverlaysProps) {
       </Suspense>
 
       {/* Pipeline History */}
-      <PipelineHistoryPanel
-        isOpen={props.historyPanelOpen}
-        onToggle={() => props.setHistoryPanelOpen(!props.historyPanelOpen)}
-        messages={props.messages}
-      />
+      {/* Only show metadata panel when conversation has messages */}
+      {props.messages && props.messages.length > 0 && (
+        <PipelineHistoryPanel
+          isOpen={props.historyPanelOpen}
+          onToggle={() => props.setHistoryPanelOpen(!props.historyPanelOpen)}
+          messages={props.messages}
+        />
+      )}
     </>
   )
 }
