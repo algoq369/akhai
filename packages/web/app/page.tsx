@@ -1970,9 +1970,7 @@ function HomePage() {
                         <div className="border-l-2 border-relic-slate/30 pl-4">
                           {/* View Mode Toggle */}
                           {globalVizMode !== 'off' &&
-                            (shouldShowLayers(message.content, !!message.gnostic) ||
-                              shouldShowInsightMap(message.content, !!message.gnostic) ||
-                              shouldShowMindmap(message.content, message.topics)) && (
+                            message.content.length > 200 && (
                               <div className="flex items-center gap-2 mb-3 pb-2 border-b border-relic-mist/30">
                                 <span className="text-[9px] text-relic-silver uppercase tracking-wide">
                                   View:
