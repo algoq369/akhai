@@ -4,7 +4,7 @@
     {
       "name": "AkhAI Web (Next.js)",
       "runtimeExecutable": "/bin/sh",
-      "runtimeArgs": ["-c", "export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH && pnpm --filter web dev"],
+      "runtimeArgs": ["-c", "export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH && AKHAI_FREE_MODE=true pnpm --filter web dev"],
       "port": 3000,
       "autoPort": false
     },

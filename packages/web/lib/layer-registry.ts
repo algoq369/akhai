@@ -63,8 +63,9 @@ export enum Layer {
  * LayerMetadata - Rich information about each computational layer
  */
 export interface LayerMetadata {
-  name: string        // Kabbalistic origin name (for philosophy/origin page)
-  aiName: string      // AI computational name (for logs, prompts, SSE, user-facing)
+  name: string        // AI computational name (user-facing, logs, tree visualization)
+  kabbalisticName: string  // Original Kabbalistic name (for philosophy/origin page)
+  aiName: string      // Short AI role name (for SSE metadata, prompts)
   hebrewName: string
   level: number
   meaning: string
@@ -80,7 +81,8 @@ export interface LayerMetadata {
  */
 export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.EMBEDDING]: {
-    name: 'Malkuth',
+    name: 'Embedding',
+    kabbalisticName: 'Malkuth',
     aiName: 'reception',
     hebrewName: 'מלכות',
     level: 1,
@@ -102,7 +104,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.EXECUTOR]: {
-    name: 'Yesod',
+    name: 'Executor',
+    kabbalisticName: 'Yesod',
     aiName: 'comprehension',
     hebrewName: 'יסוד',
     level: 2,
@@ -124,7 +127,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.CLASSIFIER]: {
-    name: 'Hod',
+    name: 'Classifier',
+    kabbalisticName: 'Hod',
     aiName: 'context',
     hebrewName: 'הוד',
     level: 3,
@@ -146,7 +150,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.GENERATIVE]: {
-    name: 'Netzach',
+    name: 'Generative',
+    kabbalisticName: 'Netzach',
     aiName: 'articulation',
     hebrewName: 'נצח',
     level: 4,
@@ -168,7 +173,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.ATTENTION]: {
-    name: 'Tiferet',
+    name: 'Attention',
+    kabbalisticName: 'Tiferet',
     aiName: 'synthesis',
     hebrewName: 'תפארת',
     level: 5,
@@ -190,7 +196,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.DISCRIMINATOR]: {
-    name: 'Gevurah',
+    name: 'Discriminator',
+    kabbalisticName: 'Gevurah',
     aiName: 'analysis',
     hebrewName: 'גבורה',
     level: 6,
@@ -212,7 +219,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.EXPANSION]: {
-    name: 'Chesed',
+    name: 'Expansion',
+    kabbalisticName: 'Chesed',
     aiName: 'expansion',
     hebrewName: 'חסד',
     level: 7,
@@ -234,7 +242,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.ENCODER]: {
-    name: 'Binah',
+    name: 'Encoder',
+    kabbalisticName: 'Binah',
     aiName: 'knowledge',
     hebrewName: 'בינה',
     level: 8,
@@ -256,7 +265,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.REASONING]: {
-    name: 'Chokmah',
+    name: 'Reasoning',
+    kabbalisticName: 'Chokmah',
     aiName: 'reasoning',
     hebrewName: 'חכמה',
     level: 9,
@@ -278,7 +288,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.META_CORE]: {
-    name: 'Kether',
+    name: 'Meta-Core',
+    kabbalisticName: 'Kether',
     aiName: 'output',
     hebrewName: 'כתר',
     level: 10,
@@ -300,7 +311,8 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   },
 
   [Layer.SYNTHESIS]: {
-    name: "Da'at",
+    name: 'Synthesis',
+    kabbalisticName: "Da'at",
     aiName: 'verification',
     hebrewName: 'דעת',
     level: 11,
@@ -622,7 +634,7 @@ export function suggestElevation(currentState: AscentState): string {
     [Layer.REASONING]:
       'Try META-COGNITIVE questions about knowledge itself (Meta-Core layer)',
     [Layer.META_CORE]:
-      'Try revealing HIDDEN CONNECTIONS (Da\'at - Hidden Knowledge)',
+      'Try revealing HIDDEN CONNECTIONS (Synthesis - Emergent Capability)',
     [Layer.SYNTHESIS]: 'Continue exploring emergent insights',
   }
 
