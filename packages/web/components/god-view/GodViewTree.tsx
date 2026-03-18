@@ -146,8 +146,8 @@ export default function GodViewTree({
       })
     }
     return TREE_PATHS.map(([from, to]) => {
-      const fromAct = activations[from] || 0
-      const toAct = activations[to] || 0
+      const fromAct = (typeof activations[from] === 'number' ? activations[from] : 0) || 0
+      const toAct = (typeof activations[to] === 'number' ? activations[to] : 0) || 0
       const strength = (fromAct + toAct) / 2
       return { from, to, active: strength > 0.3, strength }
     })
@@ -162,7 +162,7 @@ export default function GodViewTree({
 
   return (
     <div className={`relative ${containerClass}`}>
-      <svg viewBox={viewBox} className="w-full h-full">
+      <svg viewBox={viewBox} width="100%" height="100%" className="w-full h-full">
         {/* Connection paths */}
         {showPathsProp && pathConnections.map((path, index) => {
           const fromPos = TREE_POSITIONS[path.from]
@@ -255,14 +255,15 @@ export default function GodViewTree({
         {/* Layer nodes */}
         {Object.entries(TREE_POSITIONS).map(([layerKey, pos]) => {
           const layer = parseInt(layerKey) as Layer
-          const activation = activations[layer] || 0
+          const rawAct = activations[layer]
+          const activation = (typeof rawAct === 'number' && !isNaN(rawAct)) ? rawAct : 0
           const color = getColor(layer)
           const isActive = activation > 0.3
           const isDev = activation > 0.15 && activation <= 0.3
           const meta = LAYER_METADATA[layer]
           const isHovered = hoveredLayer === layer
           const dominant = isDominant(layer)
-          const radius = compact ? (20 + activation * 15) : (25 + activation * 20)
+          const radius = Math.max(15, compact ? (20 + activation * 15) : (25 + activation * 20))
 
           return (
             <motion.g
