@@ -82,7 +82,7 @@ export function generateReasoningNarrative(meta: ResponseMetadata): NarrativeEnt
   const query = meta.query || ''
   const querySnippet = query.length > 40 ? query.slice(0, 40) + '...' : query
 
-  // 1. QUERY UNDERSTANDING
+  // 1. QUERY UNDERSTANDING + METHOD SELECTION
   if (meta.fusion) {
     const method = meta.fusion.methodology || 'direct'
     const conf = meta.fusion.confidence ? Math.round(meta.fusion.confidence * 100) : 0
@@ -90,10 +90,18 @@ export function generateReasoningNarrative(meta: ResponseMetadata): NarrativeEnt
     const keywords = meta.fusion.layerActivations?.[0]?.keywords?.slice(0, 3)
     const keywordNote = keywords?.length ? ` The signals "${keywords.join('", "')}" shaped my routing.` : ''
 
+    let modeNote = ''
+    if (meta.fusion.processingMode) {
+      modeNote = ` Processing in ${meta.fusion.processingMode} mode.`
+    }
+    if (meta.fusion.activeLenses && meta.fusion.activeLenses.length > 0) {
+      modeNote += ` Active lenses: ${meta.fusion.activeLenses.join(', ')}.`
+    }
+
     entries.push({
       sigil: '◊',
       category: 'QUERY',
-      text: `Analyzing "${querySnippet}". Routing through ${method.toUpperCase()} (${conf}% confidence) for ${why}.${keywordNote}`,
+      text: `Analyzing "${querySnippet}". Routing through ${method.toUpperCase()} (${conf}% confidence) for ${why}.${keywordNote}${modeNote}`,
     })
   }
 
@@ -134,23 +142,34 @@ export function generateReasoningNarrative(meta: ResponseMetadata): NarrativeEnt
 
     const scoreText = scoreParts.length > 0 ? scoreParts.join(', ') : 'all clear'
 
-    if (passed && issues.length === 0) {
+    // Explain what each score means
+    const scoreExplanations: string[] = []
+    if (scores.hype != null && scores.hype > 0.1) scoreExplanations.push(`${Math.round(scores.hype * 100)}% hype risk (overly confident claims)`)
+    if (scores.echo != null && scores.echo > 0.1) scoreExplanations.push(`${Math.round(scores.echo * 100)}% echo risk (repeating without adding value)`)
+    if (scores.drift != null && scores.drift > 0.1) scoreExplanations.push(`${Math.round(scores.drift * 100)}% drift risk (straying from the question)`)
+    if (scores.fact != null && scores.fact > 0.1) scoreExplanations.push(`${Math.round(scores.fact * 100)}% factual concern`)
+
+    if (passed && issues.length === 0 && scoreExplanations.length === 0) {
       entries.push({
         sigil: '△',
         category: 'GUARD',
-        text: `Guard passed cleanly (${scoreText}). The response is grounded in verifiable reasoning.`,
+        text: `Guard passed cleanly — no hype patterns, no echo chamber risk, no factual drift. The response is grounded in verifiable reasoning.`,
       })
-    } else if (passed && issues.length > 0) {
+    } else if (passed) {
+      const detailText = scoreExplanations.length > 0
+        ? ` Detected: ${scoreExplanations.join('; ')}.`
+        : ''
+      const issueText = issues.length > 0 ? ` Notes: ${issues.join('; ')}.` : ''
       entries.push({
         sigil: '△',
         category: 'GUARD',
-        text: `Guard passed with notes: ${issues.join('; ')}. Scores: ${scoreText}.`,
+        text: `Guard passed.${detailText}${issueText} Response cleared for delivery.`,
       })
     } else {
       entries.push({
         sigil: '△',
         category: 'GUARD',
-        text: `Guard flagged concerns: ${issues.join('; ')}. Scores: ${scoreText}. Response was refined.`,
+        text: `Guard flagged concerns: ${issues.join('; ')}. ${scoreExplanations.join('; ')}. Response was refined before delivery.`,
       })
     }
   }
@@ -192,5 +211,69 @@ export function generateReasoningNarrative(meta: ResponseMetadata): NarrativeEnt
     })
   }
 
+  // 6. GNOSTIC / ASCENT
+  if (meta.gnostic) {
+    const level = meta.gnostic.progressState?.currentLevel || 1
+    const intent = meta.gnostic.intent
+    const boundary = meta.gnostic.boundary
+
+    let gnosticText = `Ascent level ${level}/11`
+    if (intent) gnosticText += ` — intent: ${intent}`
+    if (boundary) gnosticText += `. Boundary: ${boundary}`
+    gnosticText += '. Each query deepens your journey through the computational layers.'
+
+    entries.push({
+      sigil: '☿',
+      category: 'ASCENT',
+      text: gnosticText,
+    })
+  }
+
   return entries
+}
+
+/**
+ * Generate a narrative line from a single SSE thought event (live during processing).
+ * Called as each SSE event arrives to build the narrative incrementally.
+ */
+export function narrateThoughtEvent(event: { stage: string; data?: string; details?: any; timestamp?: number }): NarrativeEntry | null {
+  switch (event.stage) {
+    case 'received':
+      return { sigil: '◊', category: 'START', text: `Query received. Beginning analysis...` }
+    case 'routing': {
+      const d = event.details || {}
+      const method = d.methodology?.selected || 'direct'
+      const conf = d.confidence ? Math.round(d.confidence * 100) : 0
+      const reason = d.methodology?.reason || ''
+      return { sigil: '→', category: 'ROUTE', text: `Routing to ${method.toUpperCase()} (${conf}%). ${reason}` }
+    }
+    case 'layers': {
+      const d = event.details || {}
+      const dominant = d.dominantLayer || 'unknown'
+      return { sigil: '⊕', category: 'LAYERS', text: `${dominant} layer activated as primary processor.` }
+    }
+    case 'reasoning': {
+      const d = event.details?.reasoning || {}
+      const intent = d.intent || ''
+      return intent ? { sigil: '∵', category: 'REASON', text: `Intent detected: ${intent}` } : null
+    }
+    case 'generating': {
+      const d = event.details || {}
+      const model = (d.model || '').replace(/^meta-llama\//, '')
+      return model ? { sigil: '○', category: 'GEN', text: `Generating via ${model}...` } : null
+    }
+    case 'guard': {
+      const g = event.details?.guard || {}
+      const verdict = g.verdict === 'pass' ? 'passed' : g.verdict || 'checking'
+      return { sigil: '△', category: 'GUARD', text: `Guard ${verdict}.` }
+    }
+    case 'complete': {
+      const d = event.details || {}
+      const dur = d.duration ? `${Math.round(d.duration)}ms` : ''
+      const cost = d.cost ? `$${d.cost.toFixed(4)}` : '$0.00'
+      return { sigil: '○', category: 'DONE', text: `Complete${dur ? ` in ${dur}` : ''} at ${cost}.` }
+    }
+    default:
+      return null
+  }
 }
