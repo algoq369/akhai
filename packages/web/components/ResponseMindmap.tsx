@@ -731,7 +731,7 @@ export default function ResponseMindmap({
 }
 
 export function shouldShowMindmap(content: string, topics?: any[]): boolean {
-  if (topics && topics.length >= 3) return true
+  if (topics && topics.length >= 2) return true
   const concepts = extractConcepts(content)
-  return concepts.length >= 4
+  return concepts.length >= 3
 }
