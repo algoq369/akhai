@@ -18,7 +18,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'כֶּתֶר',
     meaning: 'Crown',
     color: '#9333EA', // Deep Purple
-    shape: '★',
+    shape: '◊',
     annotationType: 'meta-insight'
   },
   reasoning: {
@@ -26,7 +26,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'חָכְמָה',
     meaning: 'Wisdom',
     color: '#3B82F6', // Blue
-    shape: '●',
+    shape: '→',
     annotationType: 'strategic-fact'
   },
   encoder: {
@@ -34,7 +34,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'בִּינָה',
     meaning: 'Understanding',
     color: '#1E40AF', // Dark Blue
-    shape: '◐',
+    shape: '△',
     annotationType: 'pattern'
   },
   expansion: {
@@ -42,7 +42,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'חֶסֶד',
     meaning: 'Mercy',
     color: '#60A5FA', // Light Blue
-    shape: '○',
+    shape: '⊕',
     annotationType: 'context'
   },
   discriminator: {
@@ -50,7 +50,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'גְּבוּרָה',
     meaning: 'Severity',
     color: '#DC2626', // Red
-    shape: '◆',
+    shape: '△',
     annotationType: 'critical-metric'
   },
   attention: {
@@ -58,7 +58,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'תִּפְאֶרֶת',
     meaning: 'Beauty',
     color: '#F59E0B', // Amber
-    shape: '◈',
+    shape: '○',
     annotationType: 'synthesis'
   },
   generative: {
@@ -66,7 +66,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'נֶצַח',
     meaning: 'Victory',
     color: '#10B981', // Emerald
-    shape: '▲',
+    shape: '→',
     annotationType: 'innovation'
   },
   classifier: {
@@ -74,7 +74,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'הוֹד',
     meaning: 'Glory',
     color: '#F97316', // Orange
-    shape: '◇',
+    shape: '○',
     annotationType: 'data-point'
   },
   executor: {
@@ -82,7 +82,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'יְסוֹד',
     meaning: 'Foundation',
     color: '#8B5CF6', // Violet
-    shape: '▣',
+    shape: '○',
     annotationType: 'implementation'
   },
   embedding: {
@@ -90,7 +90,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     hebrew: 'מַלְכוּת',
     meaning: 'Kingdom',
     color: '#78716C', // Stone
-    shape: '■',
+    shape: '○',
     annotationType: 'raw-data'
   }
 }
