@@ -1,4 +1,10 @@
-const { withSentryConfig } = require('@sentry/nextjs')
+// Sentry is optional — gracefully degrade if not installed
+let withSentryConfig
+try {
+  withSentryConfig = require('@sentry/nextjs').withSentryConfig
+} catch {
+  withSentryConfig = (config) => config
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
