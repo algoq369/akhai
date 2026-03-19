@@ -1,32 +1,47 @@
-'use client'
-
-import { useEffect } from 'react'
+'use client';
 
 export default function GlobalError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
-  useEffect(() => {
-    console.error('Global error:', error)
-  }, [error])
-
   return (
-    <html>
-      <body>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Something went wrong!</h2>
-          <pre style={{ marginBottom: '1rem', color: '#666' }}>{error.message}</pre>
-          <button 
-            onClick={() => reset()}
-            style={{ padding: '0.5rem 1rem', background: '#666', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-          >
-            Try again
-          </button>
+    <html lang="en">
+      <body style={{ margin: 0, fontFamily: 'monospace', background: '#0a0a0a', color: '#e5e5e5' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+          }}
+        >
+          <div style={{ textAlign: 'center', maxWidth: '400px', padding: '24px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '8px' }}>⚠</div>
+            <h2 style={{ fontSize: '18px', marginBottom: '16px' }}>Critical Error</h2>
+            <p style={{ fontSize: '13px', color: '#888', marginBottom: '32px' }}>
+              {error.digest ? `ID: ${error.digest}` : 'The application encountered a fatal error'}
+            </p>
+            <button
+              onClick={reset}
+              style={{
+                padding: '12px 24px',
+                fontSize: '13px',
+                fontFamily: 'monospace',
+                background: 'transparent',
+                color: '#e5e5e5',
+                cursor: 'pointer',
+                border: '1px solid #333',
+              }}
+            >
+              ↻ Reload
+            </button>
+          </div>
         </div>
       </body>
     </html>
-  )
+  );
 }

@@ -28,7 +28,8 @@
     "type-check": "turbo run type-check",
     "test": "turbo run test",
     "clean": "turbo run clean && rm -rf node_modules",
-    "clean:workspaces": "turbo run clean"
+    "clean:workspaces": "turbo run clean",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
@@ -37,6 +38,8 @@
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.2.4",
     "turbo": "^1.12.0",
     "typescript": "^5.9.3"
@@ -44,5 +47,10 @@
   "workspaces": [
     "packages/*",
     "apps/*"
-  ]
+  ],
+  "lint-staged": {
+    "packages/web/**/*.{ts,tsx}": [
+      "prettier --write"
+    ]
+  }
 }

@@ -22,6 +22,7 @@
     "@reown/appkit": "^1.6.8",
     "@reown/appkit-adapter-ethers": "^1.6.8",
     "@stripe/stripe-js": "^8.6.0",
+    "@t3-oss/env-nextjs": "^0.13.10",
     "@types/better-sqlite3": "^7.6.13",
     "@types/d3": "^7.4.3",
     "@types/diff": "^8.0.0",
@@ -50,6 +51,7 @@
     "youtube-captions-scraper": "^2.0.3",
     "youtube-transcript": "^1.2.1",
     "youtubei.js": "^16.0.1",
+    "zod": "^4.3.6",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

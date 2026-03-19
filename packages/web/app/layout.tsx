@@ -1,34 +1,34 @@
-import type { Metadata, Viewport } from 'next'
-import './globals.css'
-import { CustomCursor } from '@/components/CustomCursor'
-import { PostHogProvider } from './providers'
-import { QuickChatProvider } from '@/components/QuickChatProvider'
-import { DepthProvider } from '@/hooks/useDepthAnnotations'
-import Web3Provider from '@/components/Web3Provider'
-import ProfileMenu from '@/components/ProfileMenu'
-import FinanceBanner from '@/components/FinanceBanner'
+import type { Metadata, Viewport } from 'next';
+import '@/lib/env'; // Validate environment variables at build time
+import './globals.css';
+import { CustomCursor } from '@/components/CustomCursor';
+import { PostHogProvider } from './providers';
+import { QuickChatProvider } from '@/components/QuickChatProvider';
+import { DepthProvider } from '@/hooks/useDepthAnnotations';
+import Web3Provider from '@/components/Web3Provider';
+import ProfileMenu from '@/components/ProfileMenu';
+import FinanceBanner from '@/components/FinanceBanner';
 // import { FibonacciBackground } from '@/components/FibonacciBackground'
 
 export const metadata: Metadata = {
   title: 'akhai · sovereign intelligence',
   description: 'Multi-AI consensus research engine',
-}
+};
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-}
+};
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◊</text></svg>" />
+        <link
+          rel="icon"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◊</text></svg>"
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Suppress wallet extension errors - runs early in head */}
@@ -183,17 +183,17 @@ export default function RootLayout({
         </div>
 
         <Web3Provider>
-        <PostHogProvider>
-          <DepthProvider>
-            {children}
-            <QuickChatProvider />
-          </DepthProvider>
-        </PostHogProvider>
+          <PostHogProvider>
+            <DepthProvider>
+              {children}
+              <QuickChatProvider />
+            </DepthProvider>
+          </PostHogProvider>
         </Web3Provider>
 
         {/* Global Finance Banner - Fixed bottom */}
         {/* FinanceBanner moved into page.tsx footer */}
       </body>
     </html>
-  )
+  );
 }
