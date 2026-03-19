@@ -11,11 +11,18 @@
     "start": "node dist/server.js",
     "test": "jest"
   },
-  "keywords": ["akhai", "inference", "llama", "mistral", "self-hosted", "vllm"],
+  "keywords": [
+    "akhai",
+    "inference",
+    "llama",
+    "mistral",
+    "self-hosted",
+    "vllm"
+  ],
   "author": "AKHAI Team",
   "license": "MIT",
   "dependencies": {
-    "hono": "^4.0.0",
+    "hono": "^4.12.8",
     "openai": "^4.0.0"
   },
   "devDependencies": {

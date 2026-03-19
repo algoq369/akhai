@@ -11,15 +11,21 @@
     "start": "node dist/server.js",
     "test": "jest"
   },
-  "keywords": ["akhai", "api", "rest", "websocket", "ai"],
+  "keywords": [
+    "akhai",
+    "api",
+    "rest",
+    "websocket",
+    "ai"
+  ],
   "author": "AKHAI Team",
   "license": "MIT",
   "dependencies": {
     "@akhai/inference": "workspace:*",
     "@akhai/tools": "workspace:*",
+    "@hono/node-server": "^1.19.11",
     "dotenv": "^16.3.0",
-    "hono": "^4.0.0",
-    "@hono/node-server": "^1.8.0",
+    "hono": "^4.12.8",
     "nanoid": "^5.0.0"
   },
   "devDependencies": {
