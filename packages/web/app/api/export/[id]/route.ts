@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { searchParams } = new URL(request.url);
   const format = searchParams.get('format') || 'md';
@@ -10,7 +12,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const query = db.prepare('SELECT * FROM queries WHERE id = ?').get(queryId) as any;
     if (!query) return NextResponse.json({ error: 'Query not found' }, { status: 404 });
 
-    const events = db.prepare('SELECT type, data, timestamp FROM events WHERE query_id = ? ORDER BY id ASC').all(queryId) as any[];
+    const events = db
+      .prepare('SELECT type, data, timestamp FROM events WHERE query_id = ? ORDER BY id ASC')
+      .all(queryId) as any[];
 
     if (format === 'md') {
       const markdown = generateMarkdown(query, events);
@@ -47,7 +51,7 @@ function generateMarkdown(query: any, events: any[]): string {
   let redactorOutput = '';
   let finalDecision = '';
 
-  events.forEach(e => {
+  events.forEach((e) => {
     const data = JSON.parse(e.data || '{}');
     if (e.type === 'advisor-complete') advisorResponses.push(data);
     else if (e.type === 'redactor-complete') redactorOutput = data.output;
@@ -56,7 +60,9 @@ function generateMarkdown(query: any, events: any[]): string {
 
   if (advisorResponses.length > 0) {
     md += `## Advisor Responses\n\n`;
-    advisorResponses.forEach(r => md += `### ${r.family} (Slot ${r.slot})\n\n${r.response}\n\n`);
+    advisorResponses.forEach(
+      (r) => (md += `### ${r.family} (Slot ${r.slot})\n\n${r.response}\n\n`)
+    );
   }
 
   if (redactorOutput) md += `## Redactor Synthesis\n\n${redactorOutput}\n\n`;

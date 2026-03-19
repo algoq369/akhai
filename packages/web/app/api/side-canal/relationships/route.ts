@@ -1,17 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
-import { getUserFromSession } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/database';
+import { getUserFromSession } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get('session_token')?.value
-    const user = token ? getUserFromSession(token) : null
+    const token = req.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Fetch topic relationships
-    const relationships = db.prepare(`
+    const relationships = db
+      .prepare(
+        `
       SELECT
         tr.id,
         tr.topic_from as from_id,
@@ -26,14 +30,13 @@ export async function GET(req: NextRequest) {
       WHERE (t1.user_id = ? OR t1.user_id IS NULL)
         AND (t2.user_id = ? OR t2.user_id IS NULL)
       ORDER BY tr.strength DESC
-    `).all(user.id, user.id)
+    `
+      )
+      .all(user.id, user.id);
 
-    return NextResponse.json({ relationships })
+    return NextResponse.json({ relationships });
   } catch (error) {
-    console.error('Failed to fetch relationships:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch relationships' },
-      { status: 500 }
-    )
+    console.error('Failed to fetch relationships:', error);
+    return NextResponse.json({ error: 'Failed to fetch relationships' }, { status: 500 });
   }
 }

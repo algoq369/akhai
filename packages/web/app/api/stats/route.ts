@@ -2,21 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStats } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 type ProviderStatus = 'active' | 'inactive' | 'error';
 
 export async function GET(request: NextRequest) {
   try {
     // Get user from session (optional - allows anonymous usage)
-    const token = request.cookies.get('session_token')?.value
-    const user = token ? getUserFromSession(token) : null
-    const userId = user?.id || null
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id || null;
 
     const stats = getStats(userId);
 
     // Build provider status from database stats and environment variables
-    const providerStatsMap = new Map(
-      stats.providerStats.map((p) => [p.provider, p])
-    );
+    const providerStatsMap = new Map(stats.providerStats.map((p) => [p.provider, p]));
 
     const anthropicStatus: ProviderStatus = process.env.ANTHROPIC_API_KEY ? 'active' : 'inactive';
     const deepseekStatus: ProviderStatus = process.env.DEEPSEEK_API_KEY ? 'active' : 'inactive';
@@ -62,9 +62,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Stats API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch statistics' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch statistics' }, { status: 500 });
   }
 }

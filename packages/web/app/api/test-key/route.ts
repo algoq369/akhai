@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { provider, key } = await request.json();
@@ -29,10 +31,7 @@ export async function POST(request: NextRequest) {
           testResult = await testOpenRouterKey(key);
           break;
         default:
-          return NextResponse.json(
-            { success: false, error: 'Invalid provider' },
-            { status: 400 }
-          );
+          return NextResponse.json({ success: false, error: 'Invalid provider' }, { status: 400 });
       }
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -45,10 +44,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Test key API error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to test API key' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to test API key' }, { status: 500 });
   }
 }
 
@@ -75,7 +71,7 @@ async function testDeepSeekKey(apiKey: string): Promise<boolean> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: 'deepseek-chat',
@@ -92,7 +88,7 @@ async function testXAIKey(apiKey: string): Promise<boolean> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: 'grok-3',
@@ -109,7 +105,7 @@ async function testOpenRouterKey(apiKey: string): Promise<boolean> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       'HTTP-Referer': 'https://akhai.app',
       'X-Title': 'AkhAI',
     },

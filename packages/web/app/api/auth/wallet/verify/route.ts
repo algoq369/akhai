@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateWallet, generateWalletMessage } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/auth/wallet/verify
  * Verify wallet signature and create session
@@ -9,10 +11,18 @@ export async function POST(request: NextRequest) {
   console.log('[DEBUG] POST /api/auth/wallet/verify entry');
   try {
     const { address, signature, message } = await request.json();
-    console.log('[DEBUG] Received:', { address: address?.substring(0, 10), hasSignature: !!signature, messageLength: message?.length });
+    console.log('[DEBUG] Received:', {
+      address: address?.substring(0, 10),
+      hasSignature: !!signature,
+      messageLength: message?.length,
+    });
 
     if (!address || !signature || !message) {
-      console.log('[DEBUG] Missing required fields:', { hasAddress: !!address, hasSignature: !!signature, hasMessage: !!message });
+      console.log('[DEBUG] Missing required fields:', {
+        hasAddress: !!address,
+        hasSignature: !!signature,
+        hasMessage: !!message,
+      });
       return NextResponse.json(
         { error: 'Address, signature, and message are required' },
         { status: 400 }
@@ -22,17 +32,17 @@ export async function POST(request: NextRequest) {
     // Extract timestamp from received message to regenerate expected message
     const timestampMatch = message.match(/Timestamp: (\d+)/);
     const timestamp = timestampMatch ? parseInt(timestampMatch[1]) : Date.now();
-    
+
     // Regenerate expected message with the same timestamp
     const expectedMessage = `Sign this message to authenticate with AkhAI.\n\nAddress: ${address}\nTimestamp: ${timestamp}`;
-    
+
     console.log('[DEBUG] Message comparison:', {
       receivedMessage: message.substring(0, 50),
       expectedMessage: expectedMessage.substring(0, 50),
       messagesMatch: message === expectedMessage,
-      timestampFromMessage: timestamp
+      timestampFromMessage: timestamp,
     });
-    
+
     if (message !== expectedMessage) {
       console.log('[DEBUG] Message format mismatch');
       return NextResponse.json(
@@ -70,13 +80,15 @@ export async function POST(request: NextRequest) {
     const errorInfo = {
       message: error instanceof Error ? error.message : String(error),
       name: error instanceof Error ? error.name : 'Unknown',
-      stack: error instanceof Error ? error.stack?.substring(0, 200) : 'no stack'
+      stack: error instanceof Error ? error.stack?.substring(0, 200) : 'no stack',
     };
     console.error('[DEBUG] Wallet verification error:', errorInfo);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Wallet verification failed', details: errorInfo },
+      {
+        error: error instanceof Error ? error.message : 'Wallet verification failed',
+        details: errorInfo,
+      },
       { status: 500 }
     );
   }
 }
-

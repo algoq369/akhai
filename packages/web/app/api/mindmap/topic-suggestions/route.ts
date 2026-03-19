@@ -1,29 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { NextRequest, NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
+
+export const dynamic = 'force-dynamic';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-})
+});
 
 interface TopicSuggestionsRequest {
-  topicId: string
-  topicName: string
-  topicDescription?: string
-  category?: string
-  relatedTopics: string[]
-  queryCount?: number
-  lastQueries?: string[]
+  topicId: string;
+  topicName: string;
+  topicDescription?: string;
+  category?: string;
+  relatedTopics: string[];
+  queryCount?: number;
+  lastQueries?: string[];
 }
 
 interface TopicSuggestionsResponse {
   suggestions: {
-    deeperQuestions: Array<{ question: string; reasoning: string }>
-    connections: Array<{ targetTopic: string; relationship: string }>
-    researchDirections: Array<{ direction: string; why: string }>
-    practicalActions: Array<{ action: string; outcome: string }>
-  }
-  insights: string[]
-  confidence: number
+    deeperQuestions: Array<{ question: string; reasoning: string }>;
+    connections: Array<{ targetTopic: string; relationship: string }>;
+    researchDirections: Array<{ direction: string; why: string }>;
+    practicalActions: Array<{ action: string; outcome: string }>;
+  };
+  insights: string[];
+  confidence: number;
 }
 
 /**
@@ -39,9 +41,9 @@ interface TopicSuggestionsResponse {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body: TopicSuggestionsRequest = await request.json()
+    const body: TopicSuggestionsRequest = await request.json();
 
-    const { topicName, topicDescription, category, relatedTopics, queryCount, lastQueries } = body
+    const { topicName, topicDescription, category, relatedTopics, queryCount, lastQueries } = body;
 
     // Construct AI prompt
     const systemPrompt = `You are analyzing a knowledge graph topic for a research system.
@@ -75,7 +77,7 @@ Requirements:
 - insights: 3-5 key insights about this topic (concise, valuable observations)
 - confidence: Your confidence in these suggestions (0.0-1.0)
 
-Focus on intellectual depth, practical value, and genuine curiosity. Choose only the BEST suggestion for each category.`
+Focus on intellectual depth, practical value, and genuine curiosity. Choose only the BEST suggestion for each category.`;
 
     const userPrompt = `Topic: ${topicName}
 ${topicDescription ? `Description: ${topicDescription}` : ''}
@@ -84,7 +86,7 @@ ${relatedTopics.length > 0 ? `Related Topics: ${relatedTopics.join(', ')}` : 'Re
 ${queryCount !== undefined ? `Query Count: ${queryCount}` : ''}
 ${lastQueries && lastQueries.length > 0 ? `Recent Queries: ${lastQueries.join('; ')}` : ''}
 
-Generate suggestions that help explore this topic more deeply.`
+Generate suggestions that help explore this topic more deeply.`;
 
     // Call Claude Opus 4.6
     const message = await anthropic.messages.create({
@@ -98,28 +100,28 @@ Generate suggestions that help explore this topic more deeply.`
           content: userPrompt,
         },
       ],
-    })
+    });
 
     // Extract text content
-    const textContent = message.content.find((block) => block.type === 'text')
+    const textContent = message.content.find((block) => block.type === 'text');
     if (!textContent || textContent.type !== 'text') {
-      throw new Error('No text response from AI')
+      throw new Error('No text response from AI');
     }
 
     // Parse JSON response
-    let parsedResponse: TopicSuggestionsResponse
+    let parsedResponse: TopicSuggestionsResponse;
     try {
       // Try to extract JSON from markdown code blocks if present
-      let jsonText = textContent.text.trim()
-      const jsonMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/)
+      let jsonText = textContent.text.trim();
+      const jsonMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {
-        jsonText = jsonMatch[1]
+        jsonText = jsonMatch[1];
       }
 
-      parsedResponse = JSON.parse(jsonText)
+      parsedResponse = JSON.parse(jsonText);
     } catch (parseError) {
-      console.error('Failed to parse AI response:', textContent.text)
-      throw new Error('Invalid JSON response from AI')
+      console.error('Failed to parse AI response:', textContent.text);
+      throw new Error('Invalid JSON response from AI');
     }
 
     // Validate structure
@@ -131,7 +133,7 @@ Generate suggestions that help explore this topic more deeply.`
       !Array.isArray(parsedResponse.suggestions.practicalActions) ||
       !Array.isArray(parsedResponse.insights)
     ) {
-      throw new Error('Invalid response structure from AI')
+      throw new Error('Invalid response structure from AI');
     }
 
     // Validate counts
@@ -141,17 +143,22 @@ Generate suggestions that help explore this topic more deeply.`
       parsedResponse.suggestions.researchDirections.length !== 1 ||
       parsedResponse.suggestions.practicalActions.length !== 1
     ) {
-      console.warn('AI returned incorrect suggestion counts, adjusting...')
+      console.warn('AI returned incorrect suggestion counts, adjusting...');
       // Trim to correct sizes (take first item only)
-      parsedResponse.suggestions.deeperQuestions = parsedResponse.suggestions.deeperQuestions.slice(0, 1)
-      parsedResponse.suggestions.connections = parsedResponse.suggestions.connections.slice(0, 1)
-      parsedResponse.suggestions.researchDirections = parsedResponse.suggestions.researchDirections.slice(0, 1)
-      parsedResponse.suggestions.practicalActions = parsedResponse.suggestions.practicalActions.slice(0, 1)
+      parsedResponse.suggestions.deeperQuestions = parsedResponse.suggestions.deeperQuestions.slice(
+        0,
+        1
+      );
+      parsedResponse.suggestions.connections = parsedResponse.suggestions.connections.slice(0, 1);
+      parsedResponse.suggestions.researchDirections =
+        parsedResponse.suggestions.researchDirections.slice(0, 1);
+      parsedResponse.suggestions.practicalActions =
+        parsedResponse.suggestions.practicalActions.slice(0, 1);
     }
 
-    return NextResponse.json(parsedResponse)
+    return NextResponse.json(parsedResponse);
   } catch (error) {
-    console.error('Topic suggestions API error:', error)
+    console.error('Topic suggestions API error:', error);
 
     // Return fallback suggestions
     return NextResponse.json(
@@ -190,6 +197,6 @@ Generate suggestions that help explore this topic more deeply.`
         confidence: 0.5,
       },
       { status: 500 }
-    )
+    );
   }
 }

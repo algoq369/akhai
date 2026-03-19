@@ -3,11 +3,13 @@
  * Exposes system logs and health status
  */
 
-import { NextResponse } from 'next/server'
-import { getLogsForAPI, clearLogs } from '@/lib/logger'
+import { NextResponse } from 'next/server';
+import { getLogsForAPI, clearLogs } from '@/lib/logger';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const logsData = getLogsForAPI()
+  const logsData = getLogsForAPI();
 
   return NextResponse.json({
     status: 'ok',
@@ -20,13 +22,13 @@ export async function GET() {
       hasXaiKey: !!process.env.XAI_API_KEY,
       nodeEnv: process.env.NODE_ENV || 'development',
     },
-  })
+  });
 }
 
 export async function DELETE() {
-  clearLogs()
+  clearLogs();
   return NextResponse.json({
     status: 'cleared',
     timestamp: new Date().toISOString(),
-  })
+  });
 }

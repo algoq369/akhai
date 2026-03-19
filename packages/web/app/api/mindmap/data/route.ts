@@ -8,14 +8,16 @@
  * - Category-based grouping
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
-import { getUserFromSession } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/database';
+import { getUserFromSession } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 // Configuration
 // NOTE: Removed conversation size filter - all topics should display regardless of conversation length
-const MAX_TOPICS_DISPLAY = 10000  // Maximum topics to show in mind map (increased for full history)
-const CLUSTER_THRESHOLD = 0.3   // Similarity threshold for clustering
+const MAX_TOPICS_DISPLAY = 10000; // Maximum topics to show in mind map (increased for full history)
+const CLUSTER_THRESHOLD = 0.3; // Similarity threshold for clustering
 
 // Invalid topic patterns (prompts, malformed data)
 const INVALID_TOPIC_PATTERNS = [
@@ -25,36 +27,40 @@ const INVALID_TOPIC_PATTERNS = [
   /brief\s+insights/i,
   /json\s+array/i,
   /example:/i,
-  /^\{.*\}$/,     // Pure JSON
-  /^\[.*\]$/,     // Pure array
-  /^```/,         // Code blocks
-]
+  /^\{.*\}$/, // Pure JSON
+  /^\[.*\]$/, // Pure array
+  /^```/, // Code blocks
+];
 
 /**
  * Check if a topic name is valid (not a prompt or malformed data)
  */
 function isValidTopicName(name: string): boolean {
-  if (!name || name.length < 2 || name.length > 100) return false
+  if (!name || name.length < 2 || name.length > 100) return false;
   for (const pattern of INVALID_TOPIC_PATTERNS) {
-    if (pattern.test(name)) return false
+    if (pattern.test(name)) return false;
   }
-  return true
+  return true;
 }
 
 export async function GET(request: NextRequest) {
   try {
     // Get user from session
-    const token = request.cookies.get('session_token')?.value
-    const user = token ? getUserFromSession(token) : null
-    const userId = user?.id || null
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id || null;
 
-    const effectiveUserId = userId || 'anonymous'
+    const effectiveUserId = userId || 'anonymous';
 
     // Check if topics table exists
-    const tablesCheck = db.prepare(`
+    const tablesCheck = db
+      .prepare(
+        `
       SELECT name FROM sqlite_master
       WHERE type='table' AND name='topics'
-    `).all() as Array<{ name: string }>
+    `
+      )
+      .all() as Array<{ name: string }>;
 
     if (tablesCheck.length === 0) {
       // Topics table doesn't exist yet - return empty data
@@ -62,7 +68,7 @@ export async function GET(request: NextRequest) {
         nodes: [],
         links: [],
         clusters: [],
-      })
+      });
     }
 
     // Topics are scoped per user — no migration needed
@@ -70,22 +76,24 @@ export async function GET(request: NextRequest) {
     // Get topics with query count, filtering out topics from large conversations
     // This prevents performance issues with very long conversation threads
     let topics: Array<{
-      id: string
-      name: string
-      description: string | null
-      category: string | null
-      color: string | null
-      pinned: number
-      archived: number
-      ai_instructions: string | null
-      created_at: number
-      query_count: number
-      max_conversation_size: number
-    }> = []
+      id: string;
+      name: string;
+      description: string | null;
+      category: string | null;
+      color: string | null;
+      pinned: number;
+      archived: number;
+      ai_instructions: string | null;
+      created_at: number;
+      query_count: number;
+      max_conversation_size: number;
+    }> = [];
 
     try {
       // Query all topics for the user (no conversation size filtering)
-      topics = db.prepare(`
+      topics = db
+        .prepare(
+          `
         SELECT
           t.id,
           t.name,
@@ -104,34 +112,38 @@ export async function GET(request: NextRequest) {
         GROUP BY t.id
         ORDER BY t.pinned DESC, query_count DESC, t.created_at DESC
         LIMIT ?
-      `).all(effectiveUserId, MAX_TOPICS_DISPLAY) as Array<{
-        id: string
-        name: string
-        description: string | null
-        category: string | null
-        color: string | null
-        pinned: number
-        archived: number
-        ai_instructions: string | null
-        created_at: number
-        query_count: number
-        max_conversation_size: number
-      }>
+      `
+        )
+        .all(effectiveUserId, MAX_TOPICS_DISPLAY) as Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        category: string | null;
+        color: string | null;
+        pinned: number;
+        archived: number;
+        ai_instructions: string | null;
+        created_at: number;
+        query_count: number;
+        max_conversation_size: number;
+      }>;
     } catch (topicsError) {
-      console.error('Error fetching topics:', topicsError)
-      topics = []
+      console.error('Error fetching topics:', topicsError);
+      topics = [];
     }
 
     // Get all relationships
     let relationships: Array<{
-      topic_from: string
-      topic_to: string
-      relationship_type: string
-      strength: number
-    }> = []
+      topic_from: string;
+      topic_to: string;
+      relationship_type: string;
+      strength: number;
+    }> = [];
 
     try {
-      relationships = db.prepare(`
+      relationships = db
+        .prepare(
+          `
         SELECT 
           topic_from,
           topic_to,
@@ -139,21 +151,23 @@ export async function GET(request: NextRequest) {
           strength
         FROM topic_relationships
         WHERE user_id = ?
-      `).all(effectiveUserId) as Array<{
-        topic_from: string
-        topic_to: string
-        relationship_type: string
-        strength: number
-      }>
+      `
+        )
+        .all(effectiveUserId) as Array<{
+        topic_from: string;
+        topic_to: string;
+        relationship_type: string;
+        strength: number;
+      }>;
     } catch (relError) {
-      console.error('Error fetching relationships:', relError)
-      relationships = []
+      console.error('Error fetching relationships:', relError);
+      relationships = [];
     }
 
     // Build nodes, filtering out invalid topic names (prompts, malformed data)
     const nodes = topics
-      .filter(t => isValidTopicName(t.name))
-      .map(t => ({
+      .filter((t) => isValidTopicName(t.name))
+      .map((t) => ({
         id: t.id,
         name: t.name,
         description: t.description,
@@ -164,31 +178,31 @@ export async function GET(request: NextRequest) {
         queryCount: t.query_count,
         ai_instructions: t.ai_instructions,
         cluster: null as string | null, // Will be assigned by clustering
-      }))
+      }));
 
     // Build links
-    const links = relationships.map(r => ({
+    const links = relationships.map((r) => ({
       source: r.topic_from,
       target: r.topic_to,
       type: r.relationship_type,
       strength: r.strength,
-    }))
+    }));
 
     // ============================================================================
     // INTELLIGENT CLUSTERING
     // Groups related topics for better visualization
     // ============================================================================
-    const clusters = generateClusters(nodes, links, relationships)
+    const clusters = generateClusters(nodes, links, relationships);
 
     // Assign cluster IDs to nodes
-    clusters.forEach(cluster => {
-      cluster.nodeIds.forEach(nodeId => {
-        const node = nodes.find(n => n.id === nodeId)
+    clusters.forEach((cluster) => {
+      cluster.nodeIds.forEach((nodeId) => {
+        const node = nodes.find((n) => n.id === nodeId);
         if (node) {
-          node.cluster = cluster.id
+          node.cluster = cluster.id;
         }
-      })
-    })
+      });
+    });
 
     const responseData = {
       nodes,
@@ -198,7 +212,7 @@ export async function GET(request: NextRequest) {
         totalTopics: topics.length,
         clusterCount: clusters.length,
       },
-    }
+    };
 
     // Debug logging
     console.log('[MindMap API] Returning:', {
@@ -206,16 +220,13 @@ export async function GET(request: NextRequest) {
       nodesCount: nodes.length,
       linksCount: links.length,
       clustersCount: clusters.length,
-      maxTopicsLimit: MAX_TOPICS_DISPLAY
-    })
+      maxTopicsLimit: MAX_TOPICS_DISPLAY,
+    });
 
-    return NextResponse.json(responseData)
+    return NextResponse.json(responseData);
   } catch (error) {
-    console.error('Mind map data error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch mind map data' },
-      { status: 500 }
-    )
+    console.error('Mind map data error:', error);
+    return NextResponse.json({ error: 'Failed to fetch mind map data' }, { status: 500 });
   }
 }
 
@@ -228,19 +239,19 @@ export async function GET(request: NextRequest) {
 // ============================================================================
 
 interface ClusterNode {
-  id: string
-  name: string
-  category: string
-  cluster: string | null
+  id: string;
+  name: string;
+  category: string;
+  cluster: string | null;
 }
 
 interface Cluster {
-  id: string
-  name: string
-  category: string
-  nodeIds: string[]
-  size: number
-  color: string
+  id: string;
+  name: string;
+  category: string;
+  nodeIds: string[];
+  size: number;
+  color: string;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -257,92 +268,90 @@ const CATEGORY_COLORS: Record<string, string> = {
   health: '#DB2777',
   education: '#7C3AED',
   other: '#64748B',
-}
+};
 
 function generateClusters(
   nodes: ClusterNode[],
   links: Array<{ source: string; target: string; strength: number }>,
   relationships: Array<{ topic_from: string; topic_to: string; strength: number }>
 ): Cluster[] {
-  if (nodes.length === 0) return []
+  if (nodes.length === 0) return [];
 
   // Step 1: Group by category first
-  const categoryGroups = new Map<string, string[]>()
-  nodes.forEach(node => {
-    const category = node.category || 'other'
+  const categoryGroups = new Map<string, string[]>();
+  nodes.forEach((node) => {
+    const category = node.category || 'other';
     if (!categoryGroups.has(category)) {
-      categoryGroups.set(category, [])
+      categoryGroups.set(category, []);
     }
-    categoryGroups.get(category)!.push(node.id)
-  })
+    categoryGroups.get(category)!.push(node.id);
+  });
 
   // Step 2: Build adjacency map from relationships
-  const adjacency = new Map<string, Set<string>>()
-  relationships.forEach(rel => {
+  const adjacency = new Map<string, Set<string>>();
+  relationships.forEach((rel) => {
     if (!adjacency.has(rel.topic_from)) {
-      adjacency.set(rel.topic_from, new Set())
+      adjacency.set(rel.topic_from, new Set());
     }
     if (!adjacency.has(rel.topic_to)) {
-      adjacency.set(rel.topic_to, new Set())
+      adjacency.set(rel.topic_to, new Set());
     }
-    adjacency.get(rel.topic_from)!.add(rel.topic_to)
-    adjacency.get(rel.topic_to)!.add(rel.topic_from)
-  })
+    adjacency.get(rel.topic_from)!.add(rel.topic_to);
+    adjacency.get(rel.topic_to)!.add(rel.topic_from);
+  });
 
   // Step 3: Refine clusters by connectivity within categories
-  const clusters: Cluster[] = []
-  let clusterIndex = 0
+  const clusters: Cluster[] = [];
+  let clusterIndex = 0;
 
   categoryGroups.forEach((nodeIds, category) => {
     // Find connected components within this category
-    const visited = new Set<string>()
-    const components: string[][] = []
+    const visited = new Set<string>();
+    const components: string[][] = [];
 
-    nodeIds.forEach(nodeId => {
-      if (visited.has(nodeId)) return
+    nodeIds.forEach((nodeId) => {
+      if (visited.has(nodeId)) return;
 
       // BFS to find connected component
-      const component: string[] = []
-      const queue = [nodeId]
+      const component: string[] = [];
+      const queue = [nodeId];
 
       while (queue.length > 0) {
-        const current = queue.shift()!
-        if (visited.has(current)) continue
-        visited.add(current)
-        component.push(current)
+        const current = queue.shift()!;
+        if (visited.has(current)) continue;
+        visited.add(current);
+        component.push(current);
 
         // Add connected nodes that are in the same category
-        const neighbors = adjacency.get(current) || new Set()
-        neighbors.forEach(neighbor => {
+        const neighbors = adjacency.get(current) || new Set();
+        neighbors.forEach((neighbor) => {
           if (!visited.has(neighbor) && nodeIds.includes(neighbor)) {
-            queue.push(neighbor)
+            queue.push(neighbor);
           }
-        })
+        });
       }
 
       if (component.length > 0) {
-        components.push(component)
+        components.push(component);
       }
-    })
+    });
 
     // Create clusters from components
-    components.forEach(component => {
+    components.forEach((component) => {
       // Skip very small clusters (1 node) unless they're pinned
       if (component.length < 2 && components.length > 1) {
         // Merge into largest cluster of same category
-        const largestComponent = components.reduce((a, b) =>
-          a.length > b.length ? a : b
-        )
+        const largestComponent = components.reduce((a, b) => (a.length > b.length ? a : b));
         if (largestComponent !== component) {
-          largestComponent.push(...component)
-          return
+          largestComponent.push(...component);
+          return;
         }
       }
 
       const clusterName = generateClusterName(
         component,
-        nodes.filter(n => component.includes(n.id))
-      )
+        nodes.filter((n) => component.includes(n.id))
+      );
 
       clusters.push({
         id: `cluster-${clusterIndex++}`,
@@ -351,53 +360,68 @@ function generateClusters(
         nodeIds: component,
         size: component.length,
         color: CATEGORY_COLORS[category] || CATEGORY_COLORS.other,
-      })
-    })
-  })
+      });
+    });
+  });
 
   // Sort clusters by size (largest first)
-  clusters.sort((a, b) => b.size - a.size)
+  clusters.sort((a, b) => b.size - a.size);
 
-  return clusters
+  return clusters;
 }
 
 /**
  * Generate a descriptive name for a cluster based on its nodes
  */
 function generateClusterName(nodeIds: string[], nodes: ClusterNode[]): string {
-  if (nodes.length === 0) return 'Unnamed Cluster'
-  if (nodes.length === 1) return nodes[0].name
+  if (nodes.length === 0) return 'Unnamed Cluster';
+  if (nodes.length === 1) return nodes[0].name;
 
   // Find common words in node names
-  const wordCounts = new Map<string, number>()
-  const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'])
+  const wordCounts = new Map<string, number>();
+  const stopWords = new Set([
+    'the',
+    'a',
+    'an',
+    'and',
+    'or',
+    'but',
+    'in',
+    'on',
+    'at',
+    'to',
+    'for',
+    'of',
+    'with',
+    'by',
+  ]);
 
-  nodes.forEach(node => {
-    const words = node.name.toLowerCase().split(/\s+/)
-    const uniqueWords = new Set(words)
-    uniqueWords.forEach(word => {
+  nodes.forEach((node) => {
+    const words = node.name.toLowerCase().split(/\s+/);
+    const uniqueWords = new Set(words);
+    uniqueWords.forEach((word) => {
       if (word.length > 2 && !stopWords.has(word)) {
-        wordCounts.set(word, (wordCounts.get(word) || 0) + 1)
+        wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
       }
-    })
-  })
+    });
+  });
 
   // Find most common meaningful word
-  let bestWord = ''
-  let bestCount = 0
+  let bestWord = '';
+  let bestCount = 0;
   wordCounts.forEach((count, word) => {
     if (count > bestCount) {
-      bestCount = count
-      bestWord = word
+      bestCount = count;
+      bestWord = word;
     }
-  })
+  });
 
   if (bestWord && bestCount > 1) {
     // Capitalize first letter
-    return bestWord.charAt(0).toUpperCase() + bestWord.slice(1) + ' Topics'
+    return bestWord.charAt(0).toUpperCase() + bestWord.slice(1) + ' Topics';
   }
 
   // Fallback to category name
-  const category = nodes[0]?.category || 'other'
-  return category.charAt(0).toUpperCase() + category.slice(1) + ' Topics'
+  const category = nodes[0]?.category || 'other';
+  return category.charAt(0).toUpperCase() + category.slice(1) + ' Topics';
 }

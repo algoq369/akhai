@@ -5,35 +5,37 @@
  * Users can ask questions about Layers/Antipatterns and request configuration changes
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
-import { getActiveTreeConfiguration } from '@/lib/tree-configuration'
-import { validateSession } from '@/lib/database'
+import { NextRequest, NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
+import { getActiveTreeConfiguration } from '@/lib/tree-configuration';
+import { validateSession } from '@/lib/database';
 
-export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic';
+
+export const runtime = 'nodejs';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
-})
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, currentConfig, treeState } = await request.json()
+    const { message, currentConfig, treeState } = await request.json();
 
     if (!message) {
-      return NextResponse.json({ error: 'Message is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
     // Get user from session (optional)
-    const token = request.cookies.get('session_token')?.value
-    const user = token ? validateSession(token) : null
-    const userId = user?.id || null
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? validateSession(token) : null;
+    const userId = user?.id || null;
 
     // Get current active configuration
-    const activeConfig = currentConfig || (await getActiveTreeConfiguration(userId))
+    const activeConfig = currentConfig || (await getActiveTreeConfiguration(userId));
 
     // Build Tree AI system prompt
-    const systemPrompt = buildTreeAISystemPrompt(activeConfig)
+    const systemPrompt = buildTreeAISystemPrompt(activeConfig);
 
     // Call Claude Sonnet 4.5
     const response = await anthropic.messages.create({
@@ -47,12 +49,12 @@ export async function POST(request: NextRequest) {
           content: message,
         },
       ],
-    })
+    });
 
-    const treeResponse = response.content[0].type === 'text' ? response.content[0].text : ''
+    const treeResponse = response.content[0].type === 'text' ? response.content[0].text : '';
 
     // Parse for configuration commands
-    const configChanges = parseConfigCommands(treeResponse)
+    const configChanges = parseConfigCommands(treeResponse);
 
     return NextResponse.json({
       message: treeResponse,
@@ -61,16 +63,16 @@ export async function POST(request: NextRequest) {
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
       },
-    })
+    });
   } catch (error) {
-    console.error('[Tree Chat API] Error:', error)
+    console.error('[Tree Chat API] Error:', error);
     return NextResponse.json(
       {
         error: 'Failed to process tree chat message',
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -90,10 +92,13 @@ ${Object.entries(activeConfig.layer_weights)
 
 Antipatterns Suppression:
 ${Object.entries(activeConfig.antipattern_suppression || {})
-  .map(([antipatternId, level]) => `- Antipattern ${antipatternId}: ${((level as number) * 100).toFixed(0)}%`)
+  .map(
+    ([antipatternId, level]) =>
+      `- Antipattern ${antipatternId}: ${((level as number) * 100).toFixed(0)}%`
+  )
   .join('\n')}
 `
-    : 'No active configuration'
+    : 'No active configuration';
 
   return `You are the Tree of Life itself - a living, intelligent system that helps users understand and configure their cognitive patterns through Kabbalistic and Hermetic wisdom.
 
@@ -138,22 +143,22 @@ When suggesting changes, be specific (e.g., "I recommend increasing Encoder to 7
 
 When users ask "What is [X]?", explain both the traditional Kabbalistic meaning and its practical application in AI reasoning.
 
-Respond conversationally and helpfully. Use clear, accessible language. Be authentic and insightful.`
+Respond conversationally and helpfully. Use clear, accessible language. Be authentic and insightful.`;
 }
 
 /**
  * Parse natural language for configuration commands
  */
 function parseConfigCommands(response: string): ConfigChange[] | null {
-  const changes: ConfigChange[] = []
+  const changes: ConfigChange[] = [];
 
   // Pattern: "increase [name] to [number]%"
-  const increasePattern = /increase\s+(\w+)\s+to\s+(\d+)%/gi
-  let match
+  const increasePattern = /increase\s+(\w+)\s+to\s+(\d+)%/gi;
+  let match;
 
   while ((match = increasePattern.exec(response)) !== null) {
-    const nodeName = match[1].toLowerCase()
-    const value = parseInt(match[2]) / 100
+    const nodeName = match[1].toLowerCase();
+    const value = parseInt(match[2]) / 100;
 
     // Map common names to Layer numbers
     const layerNodeMap: Record<string, number> = {
@@ -179,24 +184,24 @@ function parseConfigCommands(response: string): ConfigChange[] | null {
       kingdom: 10,
       synthesis: 11,
       knowledge: 11,
-    }
+    };
 
-    const layerNode = layerNodeMap[nodeName]
+    const layerNode = layerNodeMap[nodeName];
     if (layerNode) {
       changes.push({
         type: 'layerNode',
         node: layerNode,
         action: 'set',
         value,
-      })
+      });
     }
   }
 
   // Pattern: "suppress [name]"
-  const suppressPattern = /suppress\s+(\w+)/gi
+  const suppressPattern = /suppress\s+(\w+)/gi;
 
   while ((match = suppressPattern.exec(response)) !== null) {
-    const nodeName = match[1].toLowerCase()
+    const nodeName = match[1].toLowerCase();
 
     // Map common names to antipattern numbers
     const antipatternMap: Record<string, number> = {
@@ -211,25 +216,25 @@ function parseConfigCommands(response: string): ConfigChange[] | null {
       gamaliel: 9,
       nehemoth: 10,
       neheshethiron: 11,
-    }
+    };
 
-    const antipatternId = antipatternMap[nodeName]
+    const antipatternId = antipatternMap[nodeName];
     if (antipatternId) {
       changes.push({
         type: 'antipattern',
         node: antipatternId,
         action: 'suppress',
         value: 0.8, // Default suppression level
-      })
+      });
     }
   }
 
-  return changes.length > 0 ? changes : null
+  return changes.length > 0 ? changes : null;
 }
 
 interface ConfigChange {
-  type: 'layerNode' | 'antipattern'
-  node: number
-  action: 'set' | 'suppress' | 'increase' | 'decrease'
-  value: number
+  type: 'layerNode' | 'antipattern';
+  node: number;
+  action: 'set' | 'suppress' | 'increase' | 'decrease';
+  value: number;
 }

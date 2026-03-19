@@ -3,31 +3,33 @@
  * Creates checkout sessions for subscriptions and one-time payments
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
-import { trackServerEvent } from '@/lib/posthog-server'
-import { getAnonymousDistinctId } from '@/lib/posthog-events'
+import { NextRequest, NextResponse } from 'next/server';
+import { stripe } from '@/lib/stripe';
+import { trackServerEvent } from '@/lib/posthog-server';
+import { getAnonymousDistinctId } from '@/lib/posthog-events';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
     const {
       priceId,
       mode, // 'subscription' or 'payment'
       planId,
       userId,
       quantity = 1,
-    } = body
+    } = body;
 
     if (!priceId || !mode) {
       return NextResponse.json(
         { error: 'Missing required fields: priceId, mode' },
         { status: 400 }
-      )
+      );
     }
 
     // Get the base URL for redirects
-    const origin = request.headers.get('origin') || 'http://localhost:3000'
+    const origin = request.headers.get('origin') || 'http://localhost:3000';
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
@@ -74,11 +76,11 @@ export async function POST(request: NextRequest) {
           enabled: true,
         },
       }),
-    })
+    });
 
     // Track checkout started event
     try {
-      const distinctId = userId || getAnonymousDistinctId(request)
+      const distinctId = userId || getAnonymousDistinctId(request);
 
       if (mode === 'subscription') {
         trackServerEvent('checkout_started', distinctId, {
@@ -86,28 +88,28 @@ export async function POST(request: NextRequest) {
           price: body.price || 0,
           billing_period: 'monthly',
           session_id: session.id,
-        })
+        });
       } else {
         trackServerEvent('credits_checkout_started', distinctId, {
           credit_tier: planId,
           price: body.price || 0,
           tokens: body.tokens || 0,
           session_id: session.id,
-        })
+        });
       }
     } catch (trackError) {
-      console.warn('[Checkout] PostHog tracking failed:', trackError)
+      console.warn('[Checkout] PostHog tracking failed:', trackError);
     }
 
     return NextResponse.json({
       sessionId: session.id,
       url: session.url,
-    })
+    });
   } catch (error: any) {
-    console.error('[Checkout] Error creating session:', error)
+    console.error('[Checkout] Error creating session:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create checkout session' },
       { status: 500 }
-    )
+    );
   }
 }

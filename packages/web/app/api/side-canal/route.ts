@@ -10,6 +10,8 @@ import {
 } from '@/lib/side-canal';
 import { db } from '@/lib/database';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/side-canal/topics
  * Get all topics for current user
@@ -20,12 +22,16 @@ export async function GET(request: NextRequest) {
     const user = token ? getUserFromSession(token) : null;
     const userId = user?.id || null;
 
-    const topics = db.prepare(`
+    const topics = db
+      .prepare(
+        `
       SELECT * FROM topics
       WHERE user_id = ?
       ORDER BY created_at DESC
       LIMIT 50
-    `).all(userId) as Array<{
+    `
+      )
+      .all(userId) as Array<{
       id: string;
       name: string;
       description: string | null;
@@ -38,10 +44,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ topics });
   } catch (error) {
     console.error('Side Canal GET error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch topics' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch topics' }, { status: 500 });
   }
 }
 
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Link query to topics
-    const topicIds = topics.map(t => t.id);
+    const topicIds = topics.map((t) => t.id);
     linkQueryToTopics(queryId, topicIds);
 
     // Update topic relationships
@@ -90,10 +93,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Side Canal POST error:', error);
-    return NextResponse.json(
-      { error: 'Failed to extract topics' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to extract topics' }, { status: 500 });
   }
 }
-

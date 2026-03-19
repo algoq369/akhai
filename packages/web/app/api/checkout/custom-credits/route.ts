@@ -3,26 +3,28 @@
  * Creates checkout sessions for custom token credit amounts
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
-import { trackServerEvent } from '@/lib/posthog-server'
-import { getAnonymousDistinctId } from '@/lib/posthog-events'
+import { NextRequest, NextResponse } from 'next/server';
+import { stripe } from '@/lib/stripe';
+import { trackServerEvent } from '@/lib/posthog-server';
+import { getAnonymousDistinctId } from '@/lib/posthog-events';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { amount, tokens } = body
+    const body = await request.json();
+    const { amount, tokens } = body;
 
     // Validate amount
     if (!amount || typeof amount !== 'number' || amount < 5 || amount > 10000) {
       return NextResponse.json(
         { error: 'Invalid amount. Must be between $5 and $10,000' },
         { status: 400 }
-      )
+      );
     }
 
     // Get the base URL for redirects
-    const origin = request.headers.get('origin') || 'http://localhost:3000'
+    const origin = request.headers.get('origin') || 'http://localhost:3000';
 
     // Create checkout session with custom amount
     const session = await stripe.checkout.sessions.create({
@@ -64,29 +66,29 @@ export async function POST(request: NextRequest) {
       invoice_creation: {
         enabled: true,
       },
-    })
+    });
 
     // Track custom credits checkout started
     try {
-      const distinctId = getAnonymousDistinctId(request)
+      const distinctId = getAnonymousDistinctId(request);
       trackServerEvent('custom_credits_checkout_started', distinctId, {
         amount,
         tokens,
         session_id: session.id,
-      })
+      });
     } catch (trackError) {
-      console.warn('[Custom Credits] PostHog tracking failed:', trackError)
+      console.warn('[Custom Credits] PostHog tracking failed:', trackError);
     }
 
     return NextResponse.json({
       sessionId: session.id,
       url: session.url,
-    })
+    });
   } catch (error: any) {
-    console.error('[Custom Credits] Error creating session:', error)
+    console.error('[Custom Credits] Error creating session:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create checkout session' },
       { status: 500 }
-    )
+    );
   }
 }

@@ -11,42 +11,44 @@
  * - conversationId: filter by conversation (optional)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
-import { Layer } from '@/lib/layer-registry'
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/database';
+import { Layer } from '@/lib/layer-registry';
+
+export const dynamic = 'force-dynamic';
 
 interface ActivationDataPoint {
-  queryId: string
-  query: string
-  timestamp: number
-  activations: Record<Layer, number>
-  dominantLayer: Layer
-  keywords: Record<Layer, string[]>
+  queryId: string;
+  query: string;
+  timestamp: number;
+  activations: Record<Layer, number>;
+  dominantLayer: Layer;
+  keywords: Record<Layer, string[]>;
 }
 
 interface AggregatedActivations {
-  current: Record<Layer, number> // Current average activations
-  peak: Record<Layer, number> // Peak activation per Layer
-  total: Record<Layer, number> // Total activation count
-  evolution: ActivationDataPoint[] // Historical evolution
+  current: Record<Layer, number>; // Current average activations
+  peak: Record<Layer, number>; // Peak activation per Layer
+  total: Record<Layer, number>; // Total activation count
+  evolution: ActivationDataPoint[]; // Historical evolution
   stats: {
-    totalQueries: number
-    queriesWithAnalysis: number
+    totalQueries: number;
+    queriesWithAnalysis: number;
     dateRange: {
-      earliest: number
-      latest: number
-    }
-    dominantLayerOverall: Layer
-    averageLevel: number
-  }
+      earliest: number;
+      latest: number;
+    };
+    dominantLayerOverall: Layer;
+    averageLevel: number;
+  };
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const userId = searchParams.get('userId')
-    const conversationId = searchParams.get('conversationId')
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const userId = searchParams.get('userId');
+    const conversationId = searchParams.get('conversationId');
 
     // Build query
     let sqlQuery = `
@@ -58,85 +60,87 @@ export async function GET(request: NextRequest) {
         gnostic_metadata
       FROM queries
       WHERE gnostic_metadata IS NOT NULL
-    `
+    `;
 
-    const params: any[] = []
+    const params: any[] = [];
 
     if (userId) {
-      sqlQuery += ` AND user_id = ?`
-      params.push(userId)
+      sqlQuery += ` AND user_id = ?`;
+      params.push(userId);
     }
 
     if (conversationId) {
-      sqlQuery += ` AND id LIKE ?`
-      params.push(`${conversationId}%`)
+      sqlQuery += ` AND id LIKE ?`;
+      params.push(`${conversationId}%`);
     }
 
-    sqlQuery += ` ORDER BY created_at DESC LIMIT ?`
-    params.push(limit)
+    sqlQuery += ` ORDER BY created_at DESC LIMIT ?`;
+    params.push(limit);
 
     // Execute query
-    const stmt = db.prepare(sqlQuery)
+    const stmt = db.prepare(sqlQuery);
     const rows = stmt.all(...params) as Array<{
-      id: string
-      query: string
-      created_at: number
-      result: string | null
-      gnostic_metadata: string | null
-    }>
+      id: string;
+      query: string;
+      created_at: number;
+      result: string | null;
+      gnostic_metadata: string | null;
+    }>;
 
     // Parse gnostic metadata and extract activations
-    const dataPoints: ActivationDataPoint[] = []
-    const activationSum: Record<Layer, number> = initializeLayerRecord()
-    const activationPeak: Record<Layer, number> = initializeLayerRecord()
-    const activationCount: Record<Layer, number> = initializeLayerRecord()
+    const dataPoints: ActivationDataPoint[] = [];
+    const activationSum: Record<Layer, number> = initializeLayerRecord();
+    const activationPeak: Record<Layer, number> = initializeLayerRecord();
+    const activationCount: Record<Layer, number> = initializeLayerRecord();
 
     for (const row of rows) {
-      if (!row.gnostic_metadata) continue
+      if (!row.gnostic_metadata) continue;
 
       try {
-        const gnostic = JSON.parse(row.gnostic_metadata)
+        const gnostic = JSON.parse(row.gnostic_metadata);
 
-        if (!gnostic.layerAnalysis?.activations) continue
+        if (!gnostic.layerAnalysis?.activations) continue;
 
-        const activations = {} as Record<Layer, number>
-        const keywords = {} as Record<Layer, string[]>
+        const activations = {} as Record<Layer, number>;
+        const keywords = {} as Record<Layer, string[]>;
 
         // Extract activations and keywords from detailed analysis
         if (Array.isArray(gnostic.layerAnalysis.activations)) {
           // New format: array of activation objects
           for (const activation of gnostic.layerAnalysis.activations) {
-            const layerNode = activation.layerNode as Layer
-            activations[layerNode] = activation.activation
-            keywords[layerNode] = activation.keywords || []
+            const layerNode = activation.layerNode as Layer;
+            activations[layerNode] = activation.activation;
+            keywords[layerNode] = activation.keywords || [];
           }
         } else {
           // Old format: just numbers
-          for (const [layerNodeStr, activation] of Object.entries(gnostic.layerAnalysis.activations)) {
-            const layerNode = Number(layerNodeStr) as Layer
-            activations[layerNode] = activation as number
-            keywords[layerNode] = []
+          for (const [layerNodeStr, activation] of Object.entries(
+            gnostic.layerAnalysis.activations
+          )) {
+            const layerNode = Number(layerNodeStr) as Layer;
+            activations[layerNode] = activation as number;
+            keywords[layerNode] = [];
           }
         }
 
         // Find dominant Layer
-        let maxActivation = 0
-        let dominantLayer = Layer.EMBEDDING
+        let maxActivation = 0;
+        let dominantLayer = Layer.EMBEDDING;
 
         for (const [layerNodeStr, activation] of Object.entries(activations)) {
-          const layerNode = Number(layerNodeStr) as Layer
+          const layerNode = Number(layerNodeStr) as Layer;
 
           // Accumulate statistics
-          activationSum[layerNode] += activation
-          activationCount[layerNode] += activation > 0.1 ? 1 : 0
+          activationSum[layerNode] += activation;
+          activationCount[layerNode] += activation > 0.1 ? 1 : 0;
 
           if (activation > activationPeak[layerNode]) {
-            activationPeak[layerNode] = activation
+            activationPeak[layerNode] = activation;
           }
 
           if (activation > maxActivation) {
-            maxActivation = activation
-            dominantLayer = layerNode
+            maxActivation = activation;
+            dominantLayer = layerNode;
           }
         }
 
@@ -147,47 +151,49 @@ export async function GET(request: NextRequest) {
           activations,
           dominantLayer,
           keywords,
-        })
+        });
       } catch (parseError) {
-        console.warn('[TreeActivations] Failed to parse gnostic metadata:', parseError)
+        console.warn('[TreeActivations] Failed to parse gnostic metadata:', parseError);
       }
     }
 
     // Calculate current average activations
-    const currentActivations: Record<Layer, number> = initializeLayerRecord()
-    const totalQueries = dataPoints.length
+    const currentActivations: Record<Layer, number> = initializeLayerRecord();
+    const totalQueries = dataPoints.length;
 
     if (totalQueries > 0) {
-      for (const layerNode of Object.values(Layer).filter((v): v is Layer => typeof v === 'number')) {
-        currentActivations[layerNode] = activationSum[layerNode] / totalQueries
+      for (const layerNode of Object.values(Layer).filter(
+        (v): v is Layer => typeof v === 'number'
+      )) {
+        currentActivations[layerNode] = activationSum[layerNode] / totalQueries;
       }
     }
 
     // Find overall dominant Layer
-    let overallMax = 0
-    let dominantLayerOverall = Layer.EMBEDDING
+    let overallMax = 0;
+    let dominantLayerOverall = Layer.EMBEDDING;
 
     for (const [layerNode, activation] of Object.entries(currentActivations)) {
       if (activation > overallMax) {
-        overallMax = activation
-        dominantLayerOverall = Number(layerNode) as Layer
+        overallMax = activation;
+        dominantLayerOverall = Number(layerNode) as Layer;
       }
     }
 
     // Calculate average level (weighted average of Layer numbers)
-    let weightedSum = 0
-    let totalWeight = 0
+    let weightedSum = 0;
+    let totalWeight = 0;
 
     for (const [layerNodeStr, activation] of Object.entries(currentActivations)) {
-      const layerNode = Number(layerNodeStr) as Layer
-      weightedSum += layerNode * activation
-      totalWeight += activation
+      const layerNode = Number(layerNodeStr) as Layer;
+      weightedSum += layerNode * activation;
+      totalWeight += activation;
     }
 
-    const averageLevel = totalWeight > 0 ? weightedSum / totalWeight : 1
+    const averageLevel = totalWeight > 0 ? weightedSum / totalWeight : 1;
 
     // Reverse data points for chronological order
-    dataPoints.reverse()
+    dataPoints.reverse();
 
     // Build response
     const aggregated: AggregatedActivations = {
@@ -205,19 +211,16 @@ export async function GET(request: NextRequest) {
         dominantLayerOverall,
         averageLevel,
       },
-    }
+    };
 
     return NextResponse.json(aggregated, {
       headers: {
         'Cache-Control': 'no-store, must-revalidate',
       },
-    })
+    });
   } catch (error) {
-    console.error('[TreeActivations] Error fetching activations:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch tree activations' },
-      { status: 500 }
-    )
+    console.error('[TreeActivations] Error fetching activations:', error);
+    return NextResponse.json({ error: 'Failed to fetch tree activations' }, { status: 500 });
   }
 }
 
@@ -237,5 +240,5 @@ function initializeLayerRecord(): Record<Layer, number> {
     [Layer.REASONING]: 0,
     [Layer.META_CORE]: 0,
     [Layer.SYNTHESIS]: 0,
-  }
+  };
 }

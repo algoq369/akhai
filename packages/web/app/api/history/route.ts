@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRecentQueries } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   // Default to 10000 to return all conversations (pagination not yet implemented)
@@ -10,9 +12,9 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get user from session (optional - allows anonymous usage)
-    const token = request.cookies.get('session_token')?.value
-    const user = token ? getUserFromSession(token) : null
-    const userId = user?.id || null
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id || null;
 
     // No session = no history
     if (!userId) {

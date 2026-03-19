@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { query } = await request.json();
 
     if (!query || typeof query !== 'string') {
-      return NextResponse.json(
-        { error: 'Query is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
     // Create comparison ID
@@ -44,9 +43,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

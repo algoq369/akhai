@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromSession } from '@/lib/auth';
 import { getSuggestions } from '@/lib/side-canal';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/side-canal/suggestions
  * Get suggestions for current conversation topics
@@ -20,10 +22,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ suggestions });
   } catch (error) {
     console.error('Suggestions GET error:', error);
-    return NextResponse.json(
-      { error: 'Failed to get suggestions' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to get suggestions' }, { status: 500 });
   }
 }
-

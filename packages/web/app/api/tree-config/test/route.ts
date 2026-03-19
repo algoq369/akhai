@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { generateAntipatternReport, formatJSONAnnotation } from '@/lib/antipattern'
-import type { TreeConfiguration } from '@/lib/tree-configuration'
+import { NextRequest, NextResponse } from 'next/server';
+import { generateAntipatternReport, formatJSONAnnotation } from '@/lib/antipattern';
+import type { TreeConfiguration } from '@/lib/tree-configuration';
 
-export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic';
+
+export const runtime = 'nodejs';
 
 /**
  * POST /api/tree-config/test
@@ -11,47 +13,44 @@ export const runtime = 'nodejs'
  * Returns response, metrics, and annotation.
  */
 export async function POST(request: NextRequest) {
-  const startTime = Date.now()
+  const startTime = Date.now();
 
   try {
-    const body = await request.json()
-    const { query, weights, processingMode = 'weighted' } = body
+    const body = await request.json();
+    const { query, weights, processingMode = 'weighted' } = body;
 
     if (!query) {
-      return NextResponse.json(
-        { error: 'Query is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
     // Build tree config override
     const treeConfigOverride: Partial<TreeConfiguration> = {
       layer_weights: weights || {},
-      processing_mode: processingMode
-    }
+      processing_mode: processingMode,
+    };
 
     // Call the simple-query API internally
     const queryResponse = await fetch(new URL('/api/simple-query', request.url).toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': request.headers.get('cookie') || ''
+        Cookie: request.headers.get('cookie') || '',
       },
       body: JSON.stringify({
         query,
-        treeConfigOverride
-      })
-    })
+        treeConfigOverride,
+      }),
+    });
 
     if (!queryResponse.ok) {
-      const errorData = await queryResponse.json().catch(() => ({}))
+      const errorData = await queryResponse.json().catch(() => ({}));
       return NextResponse.json(
         { error: errorData.error || 'Query failed' },
         { status: queryResponse.status }
-      )
+      );
     }
 
-    const data = await queryResponse.json()
+    const data = await queryResponse.json();
 
     // Generate antipattern report
     const antipatternReport = generateAntipatternReport(
@@ -67,12 +66,12 @@ export async function POST(request: NextRequest) {
         antipattern_suppression: {},
         pillar_balance: { left: 0.33, middle: 0.34, right: 0.33 },
         created_at: Date.now(),
-        updated_at: Date.now()
+        updated_at: Date.now(),
       },
       data.response
-    )
+    );
 
-    const processingTime = Date.now() - startTime
+    const processingTime = Date.now() - startTime;
 
     return NextResponse.json({
       success: true,
@@ -82,18 +81,18 @@ export async function POST(request: NextRequest) {
       metrics: {
         tokens: data.metrics?.tokens || 0,
         cost: data.metrics?.cost || 0,
-        latency: processingTime
+        latency: processingTime,
       },
       gnostic: data.gnostic,
       guardResult: data.guardResult,
       antipatternReport: antipatternReport,
-      antipatternAnnotation: formatJSONAnnotation(antipatternReport)
-    })
+      antipatternAnnotation: formatJSONAnnotation(antipatternReport),
+    });
   } catch (error) {
-    console.error('Tree config test error:', error)
+    console.error('Tree config test error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Test failed' },
       { status: 500 }
-    )
+    );
   }
 }

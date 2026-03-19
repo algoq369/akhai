@@ -1,43 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { queries } from '@/lib/query-store'
-import { getQuery } from '@/lib/database'
-import { getUserFromSession } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { queries } from '@/lib/query-store';
+import { getQuery } from '@/lib/database';
+import { getUserFromSession } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 interface QueryResult {
-  id: string
-  query: string
-  flow: string
-  status: string
-  result: string | null
-  tokens_used: number | null
-  cost: number | null
-  created_at: number | null
-  completed_at: number | null
+  id: string;
+  query: string;
+  flow: string;
+  status: string;
+  result: string | null;
+  tokens_used: number | null;
+  cost: number | null;
+  created_at: number | null;
+  completed_at: number | null;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: queryId } = await params
-  console.log(`[API GET] Fetching query: ${queryId}`)
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: queryId } = await params;
+  console.log(`[API GET] Fetching query: ${queryId}`);
 
   try {
     // Get user from session (optional - allows anonymous usage)
-    const token = request.cookies.get('session_token')?.value
-    const user = token ? getUserFromSession(token) : null
-    const userId = user?.id || null
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id || null;
 
     // First check in-memory store
-    const memoryQuery = queries.get(queryId)
+    const memoryQuery = queries.get(queryId);
 
     if (memoryQuery) {
-      console.log(`[API GET] Found query in memory:`, memoryQuery.status)
-      console.log(`[API DEBUG] Full memoryQuery:`, JSON.stringify(memoryQuery, null, 2))
-      console.log(`[API DEBUG] result.finalAnswer:`, memoryQuery.result?.finalAnswer)
+      console.log(`[API GET] Found query in memory:`, memoryQuery.status);
+      console.log(`[API DEBUG] Full memoryQuery:`, JSON.stringify(memoryQuery, null, 2));
+      console.log(`[API DEBUG] result.finalAnswer:`, memoryQuery.result?.finalAnswer);
 
       // Since tokens/cost are only in database, we need to fetch them (scoped to user)
-      const dbQuery = getQuery(queryId, userId) as QueryResult | undefined
+      const dbQuery = getQuery(queryId, userId) as QueryResult | undefined;
 
       return NextResponse.json({
         id: queryId,
@@ -53,28 +52,28 @@ export async function GET(
           cost: dbQuery?.cost || 0,
         },
         createdAt: dbQuery?.created_at || null,
-        error: memoryQuery.error
-      })
+        error: memoryQuery.error,
+      });
     }
 
     // Fallback to database (scoped to user)
-    console.log(`[API GET] Query not in memory, checking database...`)
-    const dbQuery = getQuery(queryId, userId) as QueryResult | undefined
+    console.log(`[API GET] Query not in memory, checking database...`);
+    const dbQuery = getQuery(queryId, userId) as QueryResult | undefined;
 
     if (dbQuery) {
-      console.log(`[API GET] Found query in database`)
+      console.log(`[API GET] Found query in database`);
 
       // Parse the result JSON string
-      let parsedResult = null
+      let parsedResult = null;
       try {
         if (dbQuery.result) {
-          parsedResult = JSON.parse(dbQuery.result)
+          parsedResult = JSON.parse(dbQuery.result);
         }
       } catch (e) {
-        console.error('[API GET] Failed to parse result JSON:', e)
+        console.error('[API GET] Failed to parse result JSON:', e);
       }
 
-      console.log(`[API DEBUG] Parsed result:`, parsedResult)
+      console.log(`[API DEBUG] Parsed result:`, parsedResult);
 
       return NextResponse.json({
         id: dbQuery.id,
@@ -88,21 +87,20 @@ export async function GET(
           latency: parsedResult?.duration ? parsedResult.duration * 1000 : 0,
           cost: dbQuery.cost || 0,
         },
-        createdAt: dbQuery.created_at || null
-      })
+        createdAt: dbQuery.created_at || null,
+      });
     }
 
-    console.log(`[API GET] Query not found: ${queryId}`)
-    return NextResponse.json(
-      { error: 'Query not found', id: queryId },
-      { status: 404 }
-    )
-
+    console.log(`[API GET] Query not found: ${queryId}`);
+    return NextResponse.json({ error: 'Query not found', id: queryId }, { status: 404 });
   } catch (error) {
-    console.error('[API GET] Error fetching query:', error)
+    console.error('[API GET] Error fetching query:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch query', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to fetch query',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
-    )
+    );
   }
 }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleGitHubCallback } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/auth/github/callback
  * Handle GitHub OAuth callback
@@ -35,8 +37,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('GitHub callback error:', error);
     return NextResponse.redirect(
-      new URL(`/?error=${encodeURIComponent(error instanceof Error ? error.message : 'authentication_failed')}`, request.url)
+      new URL(
+        `/?error=${encodeURIComponent(error instanceof Error ? error.message : 'authentication_failed')}`,
+        request.url
+      )
     );
   }
 }
-

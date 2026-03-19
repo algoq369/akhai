@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import {
-  queries,
-  addQueryEvent,
-  createQueryRecord,
-  updateQueryStatus,
-} from '@/lib/query-store';
+import { queries, addQueryEvent, createQueryRecord, updateQueryStatus } from '@/lib/query-store';
 import { trackUsage, updateQuery } from '@/lib/database';
-import { executeFlowAWithEvents, executeFlowBWithEvents, executeGTPWithEvents } from '@/lib/akhai-executor';
+import {
+  executeFlowAWithEvents,
+  executeFlowBWithEvents,
+  executeGTPWithEvents,
+} from '@/lib/akhai-executor';
 import type { ModelFamily } from '@akhai/core';
 import { classifyQuery } from '@/lib/query-classifier';
+
+export const dynamic = 'force-dynamic';
 
 // Methodology-specific instruction prefixes
 // These create distinct execution paths for each methodology
@@ -110,22 +111,24 @@ export async function POST(request: NextRequest) {
           status: 429,
           headers: {
             'X-RateLimit-Remaining': '0',
-            'Retry-After': '60'
-          }
+            'Retry-After': '60',
+          },
         }
       );
     }
 
     const { query, flow, methodology, conversationHistory = [] } = await request.json();
 
-    console.log('=== QUERY RECEIVED ===', { query: query?.substring(0, 50), methodology, flow, historyLength: conversationHistory.length });
+    console.log('=== QUERY RECEIVED ===', {
+      query: query?.substring(0, 50),
+      methodology,
+      flow,
+      historyLength: conversationHistory.length,
+    });
 
     // Security: Input validation
     if (!query || typeof query !== 'string') {
-      return NextResponse.json(
-        { error: 'Query is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
     if (query.length > MAX_QUERY_LENGTH) {
@@ -173,15 +176,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ queryId });
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 async function processQuery(queryId: string, flowType: string, conversationHistory: any[] = []) {
-  console.log('=== PROCESS QUERY CALLED ===', { queryId, flowType, historyLength: conversationHistory.length });
+  console.log('=== PROCESS QUERY CALLED ===', {
+    queryId,
+    flowType,
+    historyLength: conversationHistory.length,
+  });
 
   const queryData = queries.get(queryId);
   if (!queryData) return;
@@ -220,16 +224,21 @@ async function processQuery(queryId: string, flowType: string, conversationHisto
           const changeEmoji = priceData.change24h >= 0 ? '📈' : '📉';
           const changeColor = priceData.change24h >= 0 ? '+' : '';
 
-          const response = `**${priceData.symbol} Price: $${priceData.price.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}**
+          const response = `**${priceData.symbol} Price: $${priceData.price.toLocaleString(
+            'en-US',
+            {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }
+          )}**
 
 ${changeEmoji} 24h Change: ${changeColor}${priceData.change24h.toFixed(2)}%
 
 _Live data from ${priceData.source} • Updated just now_`;
 
-          console.log(`💰 [Crypto] ${priceData.symbol} = $${priceData.price} (${changeColor}${priceData.change24h.toFixed(2)}%)`);
+          console.log(
+            `💰 [Crypto] ${priceData.symbol} = $${priceData.price} (${changeColor}${priceData.change24h.toFixed(2)}%)`
+          );
 
           // Update query with real-time crypto data
           updateQueryStatus(queryId, 'complete', {
@@ -239,10 +248,14 @@ _Live data from ${priceData.source} • Updated just now_`;
           });
 
           // No tokens used, no cost (free CoinGecko API)
-          updateQuery(queryId, {
-            tokens_used: 0,
-            cost: 0,
-          }, null);
+          updateQuery(
+            queryId,
+            {
+              tokens_used: 0,
+              cost: 0,
+            },
+            null
+          );
 
           addQueryEvent(queryId, 'complete', {
             totalCost: 0,
@@ -254,7 +267,9 @@ _Live data from ${priceData.source} • Updated just now_`;
 
           return;
         } else {
-          console.log(`⚠️ [Crypto] Failed to fetch price for ${cryptoCheck.symbol}, falling back to AI`);
+          console.log(
+            `⚠️ [Crypto] Failed to fetch price for ${cryptoCheck.symbol}, falling back to AI`
+          );
           // Fall through to AI call if crypto fetch fails
         }
       }
@@ -305,7 +320,7 @@ Respond directly and accurately. Use conversation context when relevant.`,
       const totalTokens = inputTokens + outputTokens;
 
       // Estimate cost for Claude Sonnet 4 (rough: $3/1M input, $15/1M output)
-      const estimatedCost = (inputTokens * 0.000003) + (outputTokens * 0.000015);
+      const estimatedCost = inputTokens * 0.000003 + outputTokens * 0.000015;
 
       // Track usage for Mother Base
       trackUsage('anthropic', 'claude-sonnet-4-20250514', inputTokens, outputTokens, estimatedCost);
@@ -318,10 +333,14 @@ Respond directly and accurately. Use conversation context when relevant.`,
       });
 
       // Update database
-      updateQuery(queryId, {
-        tokens_used: totalTokens,
-        cost: estimatedCost,
-      }, null);
+      updateQuery(
+        queryId,
+        {
+          tokens_used: totalTokens,
+          cost: estimatedCost,
+        },
+        null
+      );
 
       addQueryEvent(queryId, 'complete', {
         totalCost: estimatedCost,
@@ -350,7 +369,7 @@ Respond directly and accurately. Use conversation context when relevant.`,
     updateQueryStatus(queryId, 'error', undefined, errorMessage);
     addQueryEvent(queryId, 'error', {
       message: errorMessage,
-      hint: 'Add your API keys in the Settings page to enable query execution.'
+      hint: 'Add your API keys in the Settings page to enable query execution.',
     });
     return;
   }
@@ -511,10 +530,14 @@ Respond directly and accurately. Use conversation context when relevant.`,
     updateQueryStatus(queryId, 'complete', result);
 
     // Also update tokens_used and cost in database
-    updateQuery(queryId, {
-      tokens_used: totalTokens,
-      cost: totalCost,
-    }, null);
+    updateQuery(
+      queryId,
+      {
+        tokens_used: totalTokens,
+        cost: totalCost,
+      },
+      null
+    );
 
     // Emit completion event
     addQueryEvent(queryId, 'complete', {
@@ -546,7 +569,7 @@ Respond directly and accurately. Use conversation context when relevant.`,
     updateQueryStatus(queryId, 'error', undefined, errorMessage);
     addQueryEvent(queryId, 'error', {
       message: errorMessage,
-      hint: hint || 'Please try again later.'
+      hint: hint || 'Please try again later.',
     });
   }
 }

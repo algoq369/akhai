@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getRecentQueries } from '@/lib/database';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const dbQueries = getRecentQueries(10);
@@ -17,9 +19,6 @@ export async function GET() {
     return NextResponse.json({ queries });
   } catch (error) {
     console.error('Recent queries API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch recent queries' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch recent queries' }, { status: 500 });
   }
 }

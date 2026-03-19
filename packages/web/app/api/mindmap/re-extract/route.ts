@@ -3,26 +3,27 @@
  * Useful when topics weren't extracted initially
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/database'
-import { getUserFromSession } from '@/lib/auth'
-import { extractTopics, linkQueryToTopics, updateTopicRelationships } from '@/lib/side-canal'
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/database';
+import { getUserFromSession } from '@/lib/auth';
+import { extractTopics, linkQueryToTopics, updateTopicRelationships } from '@/lib/side-canal';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get('session_token')?.value
-    const user = token ? getUserFromSession(token) : null
-    const userId = user?.id || null
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id || null;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     // Get recent queries with responses
-    const queries = db.prepare(`
+    const queries = db
+      .prepare(
+        `
       SELECT id, query, result
       FROM queries
       WHERE user_id = ? 
@@ -30,35 +31,37 @@ export async function POST(request: NextRequest) {
         AND result IS NOT NULL
       ORDER BY created_at DESC
       LIMIT 20
-    `).all(userId) as Array<{
-      id: string
-      query: string
-      result: string | null
-    }>
+    `
+      )
+      .all(userId) as Array<{
+      id: string;
+      query: string;
+      result: string | null;
+    }>;
 
-    let extractedCount = 0
+    let extractedCount = 0;
 
     for (const q of queries) {
       try {
-        if (!q.result) continue
-        
-        const resultData = JSON.parse(q.result)
-        // Handle both response formats: {response: ...} or {finalAnswer: ...}
-        const response = resultData?.response || resultData?.finalAnswer || ''
+        if (!q.result) continue;
 
-        if (!response || typeof response !== 'string') continue
+        const resultData = JSON.parse(q.result);
+        // Handle both response formats: {response: ...} or {finalAnswer: ...}
+        const response = resultData?.response || resultData?.finalAnswer || '';
+
+        if (!response || typeof response !== 'string') continue;
 
         // Extract topics
-        const topics = await extractTopics(q.query, response, userId)
+        const topics = await extractTopics(q.query, response, userId);
 
         if (topics.length > 0) {
-          const topicIds = topics.map(t => t.id)
-          linkQueryToTopics(q.id, topicIds)
-          updateTopicRelationships(topicIds, userId)
-          extractedCount += topics.length
+          const topicIds = topics.map((t) => t.id);
+          linkQueryToTopics(q.id, topicIds);
+          updateTopicRelationships(topicIds, userId);
+          extractedCount += topics.length;
         }
       } catch (error) {
-        console.error(`Failed to extract topics for query ${q.id}:`, error)
+        console.error(`Failed to extract topics for query ${q.id}:`, error);
       }
     }
 
@@ -66,13 +69,9 @@ export async function POST(request: NextRequest) {
       success: true,
       queriesProcessed: queries.length,
       topicsExtracted: extractedCount,
-    })
+    });
   } catch (error) {
-    console.error('Re-extract topics error:', error)
-    return NextResponse.json(
-      { error: 'Failed to re-extract topics' },
-      { status: 500 }
-    )
+    console.error('Re-extract topics error:', error);
+    return NextResponse.json({ error: 'Failed to re-extract topics' }, { status: 500 });
   }
 }
-

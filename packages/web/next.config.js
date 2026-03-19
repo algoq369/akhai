@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -79,4 +81,12 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withSentryConfig(nextConfig, {
+  // Sentry is configured but source map upload is disabled until DSN is set
+  // To enable: add SENTRY_DSN, SENTRY_ORG, SENTRY_PROJECT, SENTRY_AUTH_TOKEN to .env.local
+  silent: true,
+  disableServerWebpackPlugin: true,
+  disableClientWebpackPlugin: true,
+  tunnelRoute: '/monitoring',
+  hideSourceMaps: true,
+});

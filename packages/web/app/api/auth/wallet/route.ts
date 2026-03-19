@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/auth/wallet
  * Initiate wallet authentication - returns message to sign
@@ -15,10 +17,7 @@ export async function POST(request: NextRequest) {
     const { address } = await request.json();
 
     if (!address || typeof address !== 'string') {
-      return NextResponse.json(
-        { error: 'Wallet address is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
     }
 
     const message = generateWalletMessage(address);
@@ -35,4 +34,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

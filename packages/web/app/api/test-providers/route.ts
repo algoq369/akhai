@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 async function testProvider(
   name: string,
   url: string,
@@ -28,10 +30,10 @@ async function testProvider(
 
     return { ok: true, latency };
   } catch (e: any) {
-    return { 
-      ok: false, 
-      latency: Date.now() - start, 
-      error: e.name === 'AbortError' ? 'Timeout after 30s' : e.message 
+    return {
+      ok: false,
+      latency: Date.now() - start,
+      error: e.name === 'AbortError' ? 'Timeout after 30s' : e.message,
     };
   }
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // In-memory settings storage (would be database in production)
 let settingsStore = {
   apiKeys: {
@@ -39,10 +41,7 @@ export async function GET() {
     return NextResponse.json(maskedSettings);
   } catch (error) {
     console.error('Settings GET error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch settings' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
   }
 }
 
@@ -52,10 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Validate settings structure
     if (!settings || typeof settings !== 'object') {
-      return NextResponse.json(
-        { error: 'Invalid settings format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid settings format' }, { status: 400 });
     }
 
     // Update settings store
@@ -97,10 +93,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Settings POST error:', error);
-    return NextResponse.json(
-      { error: 'Failed to save settings' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
   }
 }
 

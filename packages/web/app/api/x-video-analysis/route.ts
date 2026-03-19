@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { extractTweetId, fetchXThread, extractVideos } from '@/lib/tools/x-thread-fetcher';
 import Anthropic from '@anthropic-ai/sdk';
 
+export const dynamic = 'force-dynamic';
+
 // Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -38,17 +40,11 @@ export async function POST(request: NextRequest) {
     const { url, userId, analysisPrompt } = body;
 
     if (!url) {
-      return NextResponse.json(
-        { error: 'X/Twitter URL is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'X/Twitter URL is required' }, { status: 400 });
     }
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required. Please log in.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'User ID is required. Please log in.' }, { status: 401 });
     }
 
     // Extract tweet ID
@@ -66,25 +62,23 @@ export async function POST(request: NextRequest) {
       thread = await fetchXThread(tweetId, userId);
     } catch (error: any) {
       return NextResponse.json(
-        { error: error.message || 'Failed to fetch X content. Please connect your X account in settings.' },
+        {
+          error:
+            error.message ||
+            'Failed to fetch X content. Please connect your X account in settings.',
+        },
         { status: 401 }
       );
     }
 
     if (!thread) {
-      return NextResponse.json(
-        { error: 'Tweet not found or inaccessible' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Tweet not found or inaccessible' }, { status: 404 });
     }
 
     // Extract videos
     const videos = extractVideos(thread);
     if (videos.length === 0) {
-      return NextResponse.json(
-        { error: 'No videos found in this tweet' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'No videos found in this tweet' }, { status: 404 });
     }
 
     // For now, analyze the first video's preview image
@@ -95,14 +89,13 @@ export async function POST(request: NextRequest) {
     // Fetch the preview image
     const imageData = await fetchVideoPreview(previewUrl);
     if (!imageData) {
-      return NextResponse.json(
-        { error: 'Failed to fetch video preview' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to fetch video preview' }, { status: 500 });
     }
 
     // Analyze with Claude Vision
-    const prompt = analysisPrompt || 'Analyze this video thumbnail. What can you see? What is the likely content of this video?';
+    const prompt =
+      analysisPrompt ||
+      'Analyze this video thumbnail. What can you see? What is the likely content of this video?';
 
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
@@ -128,7 +121,8 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    const analysis = message.content[0].type === 'text' ? message.content[0].text : 'No analysis available';
+    const analysis =
+      message.content[0].type === 'text' ? message.content[0].text : 'No analysis available';
 
     return NextResponse.json({
       success: true,
@@ -141,7 +135,6 @@ export async function POST(request: NextRequest) {
       analysis,
       note: 'Currently analyzing video preview/thumbnail. Full video frame extraction coming soon.',
     });
-
   } catch (error: any) {
     console.error('X video analysis error:', error);
     return NextResponse.json(

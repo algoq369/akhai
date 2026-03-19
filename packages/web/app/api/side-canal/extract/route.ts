@@ -8,6 +8,8 @@ import {
   updateTopicRelationships,
 } from '@/lib/side-canal';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/side-canal/extract
  * Trigger topic extraction for a query
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Link query to topics
-    const topicIds = topics.map(t => t.id);
+    const topicIds = topics.map((t) => t.id);
     linkQueryToTopics(queryId, topicIds);
 
     // Update topic relationships
@@ -53,10 +55,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Side Canal extract error:', error);
-    return NextResponse.json(
-      { error: 'Failed to extract topics' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to extract topics' }, { status: 500 });
   }
 }
-

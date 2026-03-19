@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/auth/session
  * Get current user session
@@ -9,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     // Dynamic import to avoid build issues
     const { getUserFromSession } = await import('@/lib/auth');
-    
+
     const token = request.cookies.get('session_token')?.value;
 
     if (!token) {

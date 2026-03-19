@@ -3,15 +3,15 @@ import { queries, loadQuery } from '@/lib/query-store';
 import { subscribeToQuery, clearQuerySubscribers } from '@/lib/event-emitter';
 import { validateSession, getQuery } from '@/lib/database';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   // Security: Authentication check
   // Get session token from cookie or Authorization header
-  const sessionToken = request.cookies.get('session')?.value ||
+  const sessionToken =
+    request.cookies.get('session')?.value ||
     request.headers.get('Authorization')?.replace('Bearer ', '');
 
   // Validate query ownership
@@ -22,7 +22,7 @@ export async function GET(
     if (!sessionToken) {
       return new Response(JSON.stringify({ error: 'Authentication required' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -30,7 +30,7 @@ export async function GET(
     if (!user) {
       return new Response(JSON.stringify({ error: 'Invalid session' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -38,7 +38,7 @@ export async function GET(
     if (dbQuery.user_id !== user.id) {
       return new Response(JSON.stringify({ error: 'Access denied' }), {
         status: 403,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
   }
@@ -114,13 +114,13 @@ export async function GET(
           if (queryData.status === 'complete' && queryData.result) {
             sendEvent({
               type: 'result',
-              data: queryData.result
+              data: queryData.result,
             });
           }
           // Send final complete/error event
           sendEvent({
             type: queryData.status === 'complete' ? 'complete' : 'error',
-            data: queryData.error ? { message: queryData.error } : {}
+            data: queryData.error ? { message: queryData.error } : {},
           });
           cleanup();
           return;
@@ -159,7 +159,6 @@ export async function GET(
             cleanup();
           }
         }, 600000);
-
       } catch (error) {
         console.error('Stream error:', error);
         sendEvent({
@@ -175,7 +174,7 @@ export async function GET(
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }

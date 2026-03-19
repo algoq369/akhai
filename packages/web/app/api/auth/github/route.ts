@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/auth/github
  * Initiate GitHub OAuth flow
@@ -15,7 +17,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       error: 'GitHub OAuth not configured',
       message: 'Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to .env.local',
-      configured: false
+      configured: false,
     });
   }
 }
