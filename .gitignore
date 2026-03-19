@@ -150,3 +150,11 @@ out/
 
 # Exclude history files with potential sensitive data
 .specstory/history/
+
+
+# Internal planning/prompt files (never commit)
+CC_PROMPT_*.md
+CLI_PROMPT_*.md
+GOD_VIEW_*.md
+SESSION_RESUME_*.md
+*_TRACKER.md
