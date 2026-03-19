@@ -56,7 +56,7 @@ export default function LiveRefinementCanal({ isVisible, isLoading }: LiveRefine
             <button
               type="button"
               onClick={() => setCollapsed(!collapsed)}
-              className="w-full flex items-center justify-between px-3 py-1 text-[9px] font-mono uppercase tracking-wider text-relic-silver dark:text-relic-slate hover:text-relic-slate dark:hover:text-relic-silver transition-colors"
+              className="w-full flex items-center justify-between px-3 py-0.5 text-[8px] font-mono uppercase tracking-wider text-relic-silver dark:text-relic-slate hover:text-relic-slate dark:hover:text-relic-silver transition-colors"
             >
               <span className="flex items-center gap-1.5">
                 <span className={`transition-transform duration-200 ${collapsed ? '-rotate-90' : ''}`}>&#9662;</span>
@@ -91,7 +91,7 @@ export default function LiveRefinementCanal({ isVisible, isLoading }: LiveRefine
                   {liveRefinements.length > 0 && (
                     <div
                       ref={scrollRef}
-                      className="max-h-[80px] overflow-y-auto px-3 py-1 space-y-0.5 scrollbar-thin"
+                      className="max-h-[50px] overflow-y-auto px-3 py-0.5 space-y-0.5 scrollbar-thin"
                     >
                       {liveRefinements.map((r) => {
                         const colors = TYPE_COLORS[r.type]
@@ -110,7 +110,7 @@ export default function LiveRefinementCanal({ isVisible, isLoading }: LiveRefine
                   )}
 
                   {/* Input */}
-                  <form onSubmit={handleSubmit} className="px-3 pb-2 pt-1">
+                  <form onSubmit={handleSubmit} className="px-3 pb-1 pt-0.5">
                     <input
                       type="text"
                       value={input}

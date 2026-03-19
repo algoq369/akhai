@@ -2167,27 +2167,7 @@ function HomePage() {
                             </div>
                           )}
 
-                          {/* Refinement Action Buttons */}
-                          {message.role === 'assistant' && !isLoading && !message.isStreaming && (
-                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-relic-mist/20 dark:border-relic-slate/20">
-                              {(['refine', 'enhance', 'correct', 'expand'] as const).map(
-                                (action) => (
-                                  <button
-                                    key={action}
-                                    onClick={() => handleRefinement(action, message.content)}
-                                    className="text-[8px] font-mono text-relic-silver/50 hover:text-relic-slate dark:hover:text-relic-ghost transition-colors"
-                                  >
-                                    {action}
-                                  </button>
-                                )
-                              )}
-                              {refinementCounts[message.id] > 0 && (
-                                <span className="text-[7px] font-mono text-indigo-400 ml-2">
-                                  refined &times;{refinementCounts[message.id]}
-                                </span>
-                              )}
-                            </div>
-                          )}
+                          {/* Refinement moved to LiveRefinementCanal below input */}
 
                           {/* Inline Visualize Button */}
                           {(shouldShowLayers(message.content, !!message.gnostic) ||
