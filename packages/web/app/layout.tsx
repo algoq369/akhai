@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import '@/lib/env'; // Validate environment variables at build time
 import './globals.css';
+import { OpenPanelComponent } from '@openpanel/nextjs';
 import { CustomCursor } from '@/components/CustomCursor';
 import { PostHogProvider } from './providers';
 import { QuickChatProvider } from '@/components/QuickChatProvider';
@@ -184,6 +185,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <Web3Provider>
           <PostHogProvider>
+            <OpenPanelComponent
+              clientId={process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID || ''}
+              trackScreenViews={true}
+              trackOutgoingLinks={true}
+              trackAttributes={true}
+              disabled={!process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID}
+            />
             <DepthProvider>
               {children}
               <QuickChatProvider />
