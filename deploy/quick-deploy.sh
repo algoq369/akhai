@@ -14,6 +14,12 @@ REMOTE_WEB="/home/akhai/app/packages/web"
 echo "━━━ AkhAI Quick Deploy ━━━"
 echo ""
 
+# Step 0: Rebuild better-sqlite3 for current Node.js version
+echo "🔧 Rebuilding better-sqlite3..."
+cd "$LOCAL_WEB/../.."
+rm -rf node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3/build 2>/dev/null
+npm rebuild better-sqlite3 2>/dev/null || true
+
 # Step 1: Clean stale cache + build locally (fast on M3)
 echo "⚡ Building locally..."
 cd "$LOCAL_WEB"
