@@ -5,11 +5,11 @@ export function middleware(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const cspHeader = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://eu.i.posthog.com`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://eu.i.posthog.com https://openpanel.dev`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' blob: data: https:`,
     "font-src 'self' data:",
-    `connect-src 'self' https://eu.i.posthog.com https://eu.posthog.com https://api.anthropic.com https://openrouter.ai https://api.brave.com wss:`,
+    `connect-src 'self' https://eu.i.posthog.com https://eu.posthog.com https://api.anthropic.com https://openrouter.ai https://api.brave.com https://openpanel.dev https://api.openpanel.dev https://*.ingest.de.sentry.io wss:`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
