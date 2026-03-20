@@ -2,14 +2,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const cspHeader = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://eu.i.posthog.com https://openpanel.dev`,
-    "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' blob: data: https:`,
-    "font-src 'self' data:",
-    `connect-src 'self' https://eu.i.posthog.com https://eu.posthog.com https://api.anthropic.com https://openrouter.ai https://api.brave.com https://openpanel.dev https://api.openpanel.dev https://*.ingest.de.sentry.io wss:`,
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://eu.i.posthog.com https://openpanel.dev",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' blob: data: https:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self' https://eu.i.posthog.com https://eu.posthog.com https://api.anthropic.com https://openrouter.ai https://api.brave.com https://openpanel.dev https://api.openpanel.dev https://*.ingest.de.sentry.io wss:",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -26,9 +25,6 @@ export function middleware(request: NextRequest) {
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('Content-Security-Policy', cspHeader);
-
-  // Pass nonce to server components via header
-  response.headers.set('x-nonce', nonce);
 
   return response;
 }
