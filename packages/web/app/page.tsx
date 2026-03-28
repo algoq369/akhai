@@ -1,74 +1,20 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import FinanceBanner from '@/components/FinanceBanner';
-import { motion } from 'framer-motion';
-import { generateId, Message } from '@/lib/chat-store';
-import { useSideCanalStore } from '@/lib/stores/side-canal-store';
-import { useSettingsStore } from '@/lib/stores/settings-store';
-import { useLayerStore } from '@/lib/stores/layer-store';
-import { useGrimoireStore } from '@/lib/stores/grimoire-store';
-import GuardWarning from '@/components/GuardWarning';
-import { InstinctModeConsole } from '@/components/InstinctModeConsole';
-import LayerConsole from '@/components/LayerConsole';
-import TreeConfigurationModal from '@/components/TreeConfigurationModal';
-import QChat from '@/components/QChat';
-// MethodologyExplorer removed - now using inline CSS hover
-import AuthModal from '@/components/AuthModal';
-// UserProfile is now global in layout.tsx
-import { getCurrentLanguage, type SupportedLanguage } from '@/components/LanguageSelector';
-import { getTranslation } from '@/lib/translations';
-import SuggestionToast from '@/components/SuggestionToast';
-import TopicsPanel from '@/components/TopicsPanel';
-import MindMap from '@/components/MindMap';
-import SideMiniChat from '@/components/SideMiniChat';
-import NavigationMenu from '@/components/NavigationMenu';
-import ChatDashboard from '@/components/ChatDashboard';
-import SideChat from '@/components/SideChat';
-import NewsNotification from '@/components/NewsNotification';
+import { useHomePageState } from '@/hooks/useHomePageState';
+import ChatHeader from '@/components/sections/ChatHeader';
+import ChatMessages from '@/components/sections/ChatMessages';
+import LogoSection from '@/components/home/LogoSection';
 import FooterBar from '@/components/home/FooterBar';
 import Overlays from '@/components/home/Overlays';
 import InputSection from '@/components/home/InputSection';
-import LogoSection from '@/components/home/LogoSection';
-import FunctionIndicators from '@/components/FunctionIndicators';
-import MethodologyChangePrompt from '@/components/MethodologyChangePrompt';
-import MethodologyFrame from '@/components/MethodologyFrame';
-import SuperSaiyanIcon from '@/components/SuperSaiyanIcon';
-import ResponseMindmap, { shouldShowMindmap } from '@/components/ResponseMindmap';
-import InsightMindmap, { shouldShowInsightMap } from '@/components/InsightMindmap';
-import LayerResponse, { shouldShowLayers } from '@/components/LayerResponse';
-import ConversationConsole, { InlineConsole } from '@/components/ConversationConsole';
-import { LayerTreeFull } from '@/components/LayerTreeFull';
-import AntipatternBadge from '@/components/AntipatternBadge';
-import IntelligenceBadge from '@/components/IntelligenceBadge';
-import MetadataStrip from '@/components/MetadataStrip';
-import ViewTabs from '@/components/sections/ViewTabs';
-import ChatHeader from '@/components/sections/ChatHeader';
-import ChatMessages from '@/components/sections/ChatMessages';
-import PipelineHistoryPanel from '@/components/PipelineHistoryPanel';
-import DarkModeToggle from '@/components/DarkModeToggle';
-import { Layer, LAYER_METADATA } from '@/lib/layer-registry';
-
-// Reverse lookup: AI name → Layer enum value
-const AI_NAME_TO_LAYER: Record<string, Layer> = Object.fromEntries(
-  Object.entries(LAYER_METADATA).map(([key, meta]) => [meta.aiName, parseInt(key) as Layer])
-) as Record<string, Layer>;
-import { useSession } from '@/lib/session-manager';
-import { HebrewTermDisplay } from '@/lib/origin-formatter';
-import { analyzeLayerContent } from '@/lib/layer-mapper';
-import { DepthText } from '@/components/DepthAnnotation';
-import { useDepthAnnotations } from '@/hooks/useDepthAnnotations';
-import LiveRefinementCanal from '@/components/LiveRefinementCanal';
-import ProcessingIndicator from '@/components/ProcessingIndicator';
-import { useGodViewStore } from '@/lib/stores/god-view-store';
 import FileDropZone from '@/components/FileDropZone';
 import CanvasWorkspace from '@/components/canvas/CanvasWorkspace';
-import type { QueryCard } from '@/components/canvas/QueryCardsPanel';
-import type { VisualNode, VisualEdge } from '@/components/canvas/VisualsPanel';
-
-import { METHODOLOGIES, METHODOLOGY_DETAILS } from '@/lib/methodology-data';
+import LiveRefinementCanal from '@/components/LiveRefinementCanal';
+import SideChat from '@/components/SideChat';
+import SideMiniChat from '@/components/SideMiniChat';
+import { METHODOLOGIES } from '@/lib/methodology-data';
 
 /**
  * Helper component to watch URL parameters
@@ -88,1647 +34,56 @@ function ContinueParamWatcher({ onContinue }: { onContinue: (id: string) => void
   return null;
 }
 
-// Analytics helper — PostHog tracking for queries
-const trackQuery = (data: Record<string, any>) => {
-  if (typeof window !== 'undefined' && (window as any).posthog) {
-    (window as any).posthog.capture('query_event', data);
-  }
-};
-
 function HomePage() {
-  const [currentLang, setCurrentLang] = useState<SupportedLanguage>('en');
-  const [query, setQuery] = useState('');
-  const [methodology, setMethodology] = useState('auto');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-  const [uploadedFileUrls, setUploadedFileUrls] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [hoveredMethod, setHoveredMethod] = useState<string | null>(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-  const [isBlinking, setIsBlinking] = useState<string | null>(null);
-  const [loadingSuggestions, setLoadingSuggestions] = useState<string | null>(null);
-  const [guardSuggestions, setGuardSuggestions] = useState<
-    Record<string, { refine?: string[]; pivot?: string[] }>
-  >({});
-  const [darkMode, setDarkMode] = useState(false);
-  const [expandedMethodology, setExpandedMethodology] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  // topicSuggestions and showTopicsPanel now managed by Side Canal store
-  const [showMindMap, setShowMindMap] = useState(false);
-  const [mindMapInitialView, setMindMapInitialView] = useState<'graph' | 'history' | 'report'>(
-    'graph'
-  );
-  const [showDashboard, setShowDashboard] = useState(false);
-  const [showLayerDashboard, setShowLayerDashboard] = useState(false);
-  const [legendMode, setLegendMode] = useState(false);
-  const [sideChats, setSideChats] = useState<
-    Array<{ id: string; methodology: string; messages: Message[] }>
-  >([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [continuingConversation, setContinuingConversation] = useState<string | null>(null);
-  const [showMethodologyPrompt, setShowMethodologyPrompt] = useState(false);
-  const [pendingMethodology, setPendingMethodology] = useState<string | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [mindmapVisibility, setMindmapVisibility] = useState<Record<string, boolean>>({});
-  const [vizMode, setVizMode] = useState<Record<string, 'layers' | 'insight' | 'text' | 'mindmap'>>(
-    {}
-  );
-  const [gnosticVisibility, setGnosticVisibility] = useState<Record<string, boolean>>({});
-  const [deepDiveQuery, setDeepDiveQuery] = useState<string>(''); // NEW: For Deep Dive → Mini Chat
-  const [messageAnnotations, setMessageAnnotations] = useState<Record<string, any[]>>({}); // Store annotations per message
-  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(undefined); // NEW: For sharing conversation
-  const [refinementCounts, setRefinementCounts] = useState<Record<string, number>>({}); // Track refinement count per re-queried response
-  const pendingRefinementCount = useRef(0); // Pending count to apply to next assistant response
-
-  // Canvas Mode State
-  const [isCanvasMode, setIsCanvasMode] = useState(false);
-
-  // Gnostic Session Management - Track user's ascent journey
-  const { sessionId, isClient } = useSession();
-
-  // Depth Annotations Hook
-  const {
-    processText,
-    reset: resetDepthAnnotations,
-    config: depthConfig,
-    setConfig: setDepthConfig,
-  } = useDepthAnnotations();
-
-  // Instinct Mode Settings
-  const { settings } = useSettingsStore();
-  const { instinctMode, instinctConfig } = settings;
-
-  // Canvas Data Adapters - Convert messages to canvas format
-  const queryCards = useMemo<QueryCard[]>(() => {
-    return messages
-      .filter((m) => m.role === 'user')
-      .map((m, idx) => {
-        // Find the assistant response that follows this user message
-        const userIndex = messages.indexOf(m);
-        const nextAssistant = messages.find((r, i) => r.role === 'assistant' && i > userIndex);
-        return {
-          id: m.id,
-          query: m.content,
-          response: nextAssistant?.content || '',
-          timestamp: new Date(),
-          methodology: methodology,
-        };
-      });
-  }, [messages, methodology]);
-
-  const visualNodes = useMemo<VisualNode[]>(() => {
-    // Extract key concepts from messages for mindmap
-    const nodes: VisualNode[] = [];
-    messages.forEach((m, idx) => {
-      if (m.role === 'assistant' && m.content.length > 50) {
-        // Create a node for each significant response
-        nodes.push({
-          id: `node-${m.id}`,
-          label: m.content.slice(0, 40) + '...',
-          type: 'concept',
-          x: 100 + (idx % 3) * 150,
-          y: 100 + Math.floor(idx / 3) * 120,
-        });
-      }
-    });
-    return nodes;
-  }, [messages]);
-
-  const visualEdges = useMemo<VisualEdge[]>(() => {
-    // Create edges between consecutive nodes
-    return visualNodes.slice(1).map((node, idx) => ({
-      id: `edge-${idx}`,
-      source: visualNodes[idx].id,
-      target: node.id,
-    }));
-  }, [visualNodes]);
-
-  // Log depth config on mount
-  useEffect(() => {
-    console.log('[DepthAnnotations] Config loaded:', depthConfig);
-    console.log('[DepthAnnotations] LocalStorage:', localStorage.getItem('akhai-depth-config'));
-  }, []);
-
-  // Process depth annotations when new assistant messages arrive
-  useEffect(() => {
-    console.log(
-      '[DepthAnnotations] Effect triggered - config.enabled:',
-      depthConfig.enabled,
-      'messages:',
-      messages.length
-    );
-
-    if (!depthConfig.enabled) {
-      console.log('[DepthAnnotations] Disabled - toggle is OFF');
-      return;
-    }
-
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === 'assistant') {
-      // Skip processing during streaming — content is incomplete
-      if (lastMessage.isStreaming) return;
-
-      // Check if already processed with actual content (not empty placeholder)
-      const existing = messageAnnotations[lastMessage.id];
-      if (existing && existing.length > 0) {
-        return;
-      }
-
-      // Skip empty content
-      if (!lastMessage.content || lastMessage.content.length < 50) return;
-
-      console.log('[DepthAnnotations] Processing message:', lastMessage.content.slice(0, 100));
-
-      // Process the message content for depth annotations
-      const annotations = processText(lastMessage.content);
-
-      console.log('[DepthAnnotations] Detected annotations:', annotations.length, annotations);
-
-      if (annotations.length > 0) {
-        setMessageAnnotations((prev) => ({
-          ...prev,
-          [lastMessage.id]: annotations,
-        }));
-      } else {
-        console.log('[DepthAnnotations] No annotations detected - text may not match patterns');
-        // Still mark as processed to avoid repeated attempts
-        setMessageAnnotations((prev) => ({
-          ...prev,
-          [lastMessage.id]: [],
-        }));
-      }
-    }
-  }, [messages, depthConfig.enabled, processText]);
-
-  // Re-process all annotations when density changes
-  const prevDensityRef = useRef(depthConfig.density);
-  useEffect(() => {
-    if (prevDensityRef.current !== depthConfig.density) {
-      prevDensityRef.current = depthConfig.density;
-      if (!depthConfig.enabled) return;
-      // Clear and reprocess all assistant messages
-      const newAnnotations: Record<string, any[]> = {};
-      messages
-        .filter((m) => m.role === 'assistant' && m.content)
-        .forEach((m) => {
-          const anns = processText(m.content);
-          newAnnotations[m.id] = anns;
-        });
-      setMessageAnnotations(newAnnotations);
-    }
-  }, [depthConfig.density, depthConfig.enabled, messages, processText]);
-
-  // Apply pending refinement count to new assistant messages
-  useEffect(() => {
-    if (pendingRefinementCount.current > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (
-        lastMessage &&
-        lastMessage.role === 'assistant' &&
-        !lastMessage.isStreaming &&
-        !refinementCounts[lastMessage.id]
-      ) {
-        setRefinementCounts((prev) => ({
-          ...prev,
-          [lastMessage.id]: pendingRefinementCount.current,
-        }));
-        pendingRefinementCount.current = 0;
-      }
-    }
-  }, [messages]);
-
-  // Clear Deep Dive query after Mini Chat receives it
-  useEffect(() => {
-    if (deepDiveQuery) {
-      const timer = setTimeout(() => {
-        setDeepDiveQuery('');
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [deepDiveQuery]);
-
-  // Side Canal Store Integration
-  const {
-    enabled: sideCanalEnabled,
-    contextInjectionEnabled,
-    autoExtractEnabled,
-    suggestions: topicSuggestions,
-    toastVisible: topicToastVisible,
-    panelOpen: showTopicsPanel,
-    extractAndStoreTopics,
-    refreshSuggestions,
-    removeSuggestion,
-    setToastVisible: setTopicToastVisible,
-    setPanelOpen: setShowTopicsPanel,
-    toggleEnabled: setSideCanalEnabled,
-    toggleContextInjection: setContextInjectionEnabled,
-    currentTopics,
-  } = useSideCanalStore();
-
-  // Force topics panel closed
-  useEffect(() => {
-    if (showTopicsPanel) setShowTopicsPanel(false);
-  }, []);
-
-  // Listen for auth modal trigger from ProfileMenu / anywhere
-  useEffect(() => {
-    const showHandler = () => setShowAuthModal(true);
-    const successHandler = () => checkSession();
-    window.addEventListener('akhai:show-auth', showHandler);
-    window.addEventListener('akhai:auth-success', successHandler);
-    return () => {
-      window.removeEventListener('akhai:show-auth', showHandler);
-      window.removeEventListener('akhai:auth-success', successHandler);
-    };
-  }, []);
-
-  // Side Canal topics → AI insights for canvas
-  const topicInsights = useMemo(() => {
-    if (!currentTopics || currentTopics.length === 0) return [];
-    return currentTopics.map((t) => ({
-      id: `topic-${t.id}`,
-      text: `${t.name}${t.description ? ' — ' + t.description : ''}`,
-      category: 'insight' as const,
-      confidence: 80,
-      metricsCount: 1,
-    }));
-  }, [currentTopics]);
-
-  // Intelligence toggles
-  const [realtimeDataEnabled, setRealtimeDataEnabled] = useState(false);
-  const [newsNotificationsEnabled, setNewsNotificationsEnabled] = useState(false);
-
-  // Console feature toggles
-  const [instinctModeEnabled, setInstinctModeEnabled] = useState(false);
-  const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
-  const [auditEnabled, setAuditEnabled] = useState(false);
-  const [mindmapConnectorEnabled, setMindmapConnectorEnabled] = useState(false);
-  const [pipelineEnabled, setPipelineEnabled] = useState(true);
-  const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
-  const [hiddenPipelines, setHiddenPipelines] = useState<Set<string>>(new Set());
-  const toggleMsgPipeline = (msgId: string) => {
-    setHiddenPipelines((prev) => {
-      const next = new Set(prev);
-      if (next.has(msgId)) next.delete(msgId);
-      else next.add(msgId);
-      return next;
-    });
-  };
-  const [selectedModel, setSelectedModel] = useState('claude');
-  const [globalVizMode, setGlobalVizMode] = useState<'off' | 'synthesis' | 'insight'>('synthesis');
-
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const diamondRef = useRef<HTMLDivElement>(null);
-
-  // Extract topics from response and update message (for mindmap visualization)
-  const extractTopicsForMessage = useCallback(
-    async (messageId: string, query: string, response: string) => {
-      // Skip if Side Canal is disabled or auto-extract is off
-      if (!sideCanalEnabled || !autoExtractEnabled) {
-        return;
-      }
-
-      try {
-        // Call store action to extract and store topics
-        const topics = await extractAndStoreTopics(query, response, messageId);
-
-        if (topics && topics.length > 0) {
-          // Update the message with extracted topics (for mindmap visualization)
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === messageId
-                ? {
-                    ...m,
-                    topics: topics.map((t: any) => ({
-                      id: t.id,
-                      name: t.name,
-                      category: t.category,
-                    })),
-                  }
-                : m
-            )
-          );
-        }
-      } catch (error) {
-        console.error('[Side Canal] Topic extraction error:', error);
-      }
-    },
-    [sideCanalEnabled, autoExtractEnabled, extractAndStoreTopics]
-  );
-
-  // Auto-Synopsis Background Task (Side Canal)
-  // Generates synopses for topics with new queries every 5 minutes
-  useEffect(() => {
-    const { autoSynopsisEnabled, currentTopics, generateSynopsisForTopic } =
-      useSideCanalStore.getState();
-
-    if (!sideCanalEnabled || !autoSynopsisEnabled) {
-      return;
-    }
-
-    // Generate synopses for current topics on mount (if any)
-    if (currentTopics.length > 0) {
-      currentTopics.forEach((topic) => {
-        generateSynopsisForTopic(topic.id).catch((error) => {
-          console.error('[Side Canal] Auto-synopsis failed for topic:', topic.id, error);
-        });
-      });
-    }
-
-    // Set up interval for periodic synopsis generation
-    const interval = setInterval(
-      () => {
-        const state = useSideCanalStore.getState();
-        if (state.autoSynopsisEnabled && state.currentTopics.length > 0) {
-          state.currentTopics.forEach((topic) => {
-            state.generateSynopsisForTopic(topic.id).catch((error) => {
-              console.error('[Side Canal] Auto-synopsis failed for topic:', topic.id, error);
-            });
-          });
-        }
-      },
-      5 * 60 * 1000
-    ); // 5 minutes
-
-    return () => clearInterval(interval);
-  }, [sideCanalEnabled]); // Re-run when Side Canal is toggled
-
-  // Dark mode initialization and sync
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setDarkMode(savedDarkMode);
-    if (savedDarkMode) {
-      document.documentElement.classList.add('dark');
-    }
-
-    // Listen for dark mode changes from other components
-    const handleDarkModeChange = (e: CustomEvent) => {
-      setDarkMode(e.detail.darkMode);
-    };
-
-    window.addEventListener('darkModeChange' as any, handleDarkModeChange as any);
-
-    return () => {
-      window.removeEventListener('darkModeChange' as any, handleDarkModeChange as any);
-    };
-  }, []);
-
-  // Toggle dark mode
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode((prev) => {
-      const newValue = !prev;
-      localStorage.setItem('darkMode', String(newValue));
-      if (newValue) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-
-      // Notify other components about dark mode change
-      const event = new CustomEvent('darkModeChange', { detail: { darkMode: newValue } });
-      window.dispatchEvent(event);
-
-      return newValue;
-    });
-  }, []);
-
-  // Check user session on mount
-  useEffect(() => {
-    try {
-      checkSession();
-
-      // Initialize language from storage
-      const lang = getCurrentLanguage();
-      setCurrentLang(lang);
-
-      // Listen for language changes
-      const handleLanguageChange = (e: CustomEvent<SupportedLanguage>) => {
-        setCurrentLang(e.detail);
-      };
-      window.addEventListener('languagechange', handleLanguageChange as EventListener);
-
-      // Check for conversation continuation from URL
-      const params = new URLSearchParams(window.location.search);
-      const continueId = params.get('continue');
-      if (continueId) {
-        setCurrentConversationId(continueId);
-        loadConversation(continueId);
-      }
-
-      // Check for legend mode in localStorage
-      try {
-        const savedLegendMode = localStorage.getItem('legendMode') === 'true';
-        if (savedLegendMode) {
-          setLegendMode(true);
-        }
-      } catch (e) {}
-
-      return () => {
-        window.removeEventListener('languagechange', handleLanguageChange as EventListener);
-      };
-    } catch (error) {
-      console.error('Mount error:', error);
-    }
-  }, []);
-
-  const checkSession = async () => {
-    try {
-      const response = await fetch('/api/auth/session');
-      const data = await response.json();
-      setUser(data.user);
-      // Identify user in PostHog
-      if (data.user?.id) {
-        const { identifyUser } = await import('@/lib/analytics');
-        identifyUser(data.user.id, {
-          username: data.user.username,
-          email: data.user.email,
-          authProvider: data.user.auth_provider,
-        });
-      }
-    } catch (error) {
-      console.error('Session check error:', error);
-    }
-  };
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const loadConversation = useCallback(async (queryId: string) => {
-    try {
-      console.log('[History] Fetching conversation for:', queryId);
-      const res = await fetch(`/api/history/${queryId}/conversation`);
-      console.log('[History] Response status:', res.status);
-      if (res.ok) {
-        const data = await res.json();
-        console.log('[History] Data received:', data.messages?.length, 'messages');
-        if (data.messages && data.messages.length > 0) {
-          const loadedMessages = data.messages.map((msg: any) => ({
-            id: generateId(),
-            role: msg.role,
-            content: msg.content,
-            timestamp: new Date(msg.timestamp * 1000),
-            methodology: msg.methodology,
-            gnostic: msg.gnostic || null,
-            pipelineEvents: msg.pipelineEvents || null,
-          }));
-
-          // Restore pipeline metadata into Zustand store for MetadataStrip
-          loadedMessages.forEach((msg: any) => {
-            if (msg.role === 'assistant' && msg.pipelineEvents?.length > 0) {
-              msg.pipelineEvents.forEach((ev: any) => {
-                useSideCanalStore.getState().pushMetadata({
-                  ...ev,
-                  messageId: msg.id,
-                });
-              });
-            }
-          });
-
-          console.log('[History] Setting messages:', loadedMessages.length);
-          setMessages(loadedMessages);
-          setContinuingConversation(queryId);
-          setIsExpanded(true);
-          console.log('[History] Conversation loaded successfully');
-          // Clear URL param
-          window.history.replaceState({}, '', '/');
-          setTimeout(() => setContinuingConversation(null), 3000);
-        } else {
-          console.warn('[History] No messages in response');
-        }
-      } else {
-        console.error('[History] Failed to fetch:', res.status);
-      }
-    } catch (error) {
-      console.error('[History] Failed to load conversation:', error);
-    }
-  }, []); // Empty deps - setState functions are stable
-
-  // Legend mode detection in query input
-  const handleQueryChange = (value: string) => {
-    setQuery(value);
-    // Check for legend mode trigger
-    if (value.toLowerCase().includes('algoq369')) {
-      setLegendMode(true);
-      localStorage.setItem('legendMode', 'true');
-      // Remove trigger from query
-      setQuery(value.replace(/algoq369/gi, '').trim());
-    }
-  };
-
-  // Handle methodology switching
-  const handleMethodologySwitch = (newMethodology: string, option: 'same' | 'side' | 'new') => {
-    if (option === 'same') {
-      setMethodology(newMethodology);
-    } else if (option === 'side') {
-      const sideChatId = generateId();
-      setSideChats((prev) => [
-        ...prev,
-        {
-          id: sideChatId,
-          methodology: newMethodology,
-          messages: [],
-        },
-      ]);
-      setActiveChatId(sideChatId);
-    } else if (option === 'new') {
-      setMessages([]);
-      setMethodology(newMethodology);
-      setQuery('');
-    }
-  };
-
-  // Handle guard toggle
-  const handleGuardToggle = (
-    feature: 'suggestions' | 'bias' | 'hype' | 'echo' | 'drift' | 'factuality',
-    enabled: boolean
-  ) => {
-    // Store in localStorage for persistence
-    localStorage.setItem(`guard_${feature}`, enabled ? 'true' : 'false');
-  };
-
-  // Check for topic suggestions after messages update
-  useEffect(() => {
-    if (messages.length > 0 && sideCanalEnabled) {
-      // Refresh suggestions from store when messages change
-      refreshSuggestions().catch(console.error);
-    }
-  }, [messages, sideCanalEnabled, refreshSuggestions]);
-
-  // Extract visible page content for context
-  const getPageContext = useCallback(() => {
-    try {
-      // Get all visible text content from the main content area
-      const mainContent = document.querySelector('main');
-      if (!mainContent) return undefined;
-
-      // Extract text from messages (if in chat mode)
-      if (isExpanded && messages.length > 0) {
-        const messageTexts = messages
-          .slice(-5) // Last 5 messages for context
-          .map((m) => `${m.role === 'user' ? 'User' : 'AkhAI'}: ${m.content}`)
-          .join('\n\n');
-
-        return `Current conversation context:\n${messageTexts}`;
-      }
-
-      // Extract text from visible content on page
-      const visibleText = Array.from(
-        mainContent.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, span')
-      )
-        .filter((el) => {
-          const style = window.getComputedStyle(el);
-          return (
-            style.display !== 'none' &&
-            style.visibility !== 'hidden' &&
-            el.textContent &&
-            el.textContent.trim().length > 10
-          );
-        })
-        .map((el) => el.textContent?.trim())
-        .filter(Boolean)
-        .slice(0, 10) // Limit to first 10 elements
-        .join('\n');
-
-      return visibleText || undefined;
-    } catch (error) {
-      console.error('Failed to extract page context:', error);
-      return undefined;
-    }
-  }, [isExpanded, messages]);
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setAttachedFiles((prev) => [...prev, ...newFiles].slice(0, 5)); // Max 5 files
-
-      // Upload files immediately
-      const formData = new FormData();
-      newFiles.forEach((file) => formData.append('files', file));
-
-      try {
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const urls = data.files.map((f: any) => f.url);
-          setUploadedFileUrls((prev) => [...prev, ...urls]);
-          console.log('Files uploaded:', data.files);
-        } else {
-          const error = await response.json();
-          console.error('Upload failed:', error);
-        }
-      } catch (error) {
-        console.error('Upload error:', error);
-      }
-    }
-  };
-
-  const triggerFileSelect = () => {
-    fileInputRef.current?.click();
-  };
-
-  // Refinement handler — adds refinement instruction to side canal, then re-submits the user's original query
-  const handleRefinement = useCallback(
-    (type: string, _originalContent: string) => {
-      const { addRefinement } = useSideCanalStore.getState();
-
-      const refinementText =
-        type === 'refine'
-          ? 'Please refine and improve this response'
-          : type === 'enhance'
-            ? 'Please enhance with more depth and detail'
-            : type === 'correct'
-              ? 'Please verify accuracy and correct any issues'
-              : 'Please expand on the key points';
-
-      addRefinement(refinementText);
-
-      // Increment pending count — will be applied to the next assistant response
-      pendingRefinementCount.current += 1;
-
-      // Re-submit the original user query (refinements auto-included via pipeline at line ~991)
-      const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
-      if (lastUserMessage) {
-        setQuery(lastUserMessage.content);
-        // Trigger submit after query state updates
-        setTimeout(() => {
-          const form = document.querySelector('form');
-          if (form) form.requestSubmit();
-        }, 100);
-      }
-    },
-    [messages]
-  );
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!query.trim() || isLoading) {
-      return;
-    }
-
-    // Reset depth annotations for new query
-    resetDepthAnnotations();
-
-    // Start transition animation
-    setIsTransitioning(true);
-
-    // Track query in PostHog
-    import('@/lib/analytics').then(({ trackQuerySubmitted }) => {
-      trackQuerySubmitted(query, methodology || 'auto');
-    });
-
-    // Wait for transition animation before proceeding
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // Process attached files if any
-    const processedFiles = await Promise.all(
-      attachedFiles.map(async (file) => {
-        if (file.type.startsWith('image/')) {
-          // Convert image to base64
-          const reader = new FileReader();
-          return new Promise<any>((resolve) => {
-            reader.onloadend = () => {
-              const base64 = (reader.result as string).split(',')[1];
-              resolve({
-                type: 'image',
-                name: file.name,
-                mimeType: file.type,
-                data: base64,
-              });
-            };
-            reader.readAsDataURL(file);
-          });
-        } else if (file.type === 'application/pdf') {
-          // Handle PDF - convert to base64 in chunks to avoid stack overflow
-          const arrayBuffer = await file.arrayBuffer();
-          const bytes = new Uint8Array(arrayBuffer);
-          let binary = '';
-          const chunkSize = 8192;
-          for (let i = 0; i < bytes.length; i += chunkSize) {
-            const chunk = bytes.slice(i, i + chunkSize);
-            binary += String.fromCharCode.apply(null, Array.from(chunk));
-          }
-          const base64 = btoa(binary);
-          return {
-            type: 'pdf',
-            name: file.name,
-            data: base64,
-          };
-        } else {
-          // Handle text documents
-          const text = await file.text();
-          return {
-            type: 'document',
-            name: file.name,
-            content: text,
-          };
-        }
-      })
-    );
-
-    const userMessage: Message = {
-      id: generateId(),
-      role: 'user',
-      content: query.trim(),
-      timestamp: new Date(),
-    };
-
-    // Add user message and expand interface
-    setMessages((prev) => [...prev, userMessage]);
-    setIsExpanded(true);
-    setQuery('');
-    setAttachedFiles([]); // Clear attached files
-    const currentFileUrls = uploadedFileUrls; // Capture URLs before clearing
-    setUploadedFileUrls([]); // Clear uploaded file URLs
-    setIsLoading(true);
-    setIsTransitioning(false);
-    useGodViewStore.getState().setProcessing(true);
-
-    const startTime = Date.now();
-
-    try {
-      const currentChatId = activeChatId || 'main';
-      const pageContext = getPageContext();
-      const { liveRefinements } = useSideCanalStore.getState();
-      const grimoireState = useGrimoireStore.getState();
-      const activeGrimoire = grimoireState.activeGrimoireId
-        ? grimoireState.getGrimoire(grimoireState.activeGrimoireId)
-        : null;
-      const grimoireMemories = activeGrimoire
-        ? grimoireState.getActiveMemories(activeGrimoire.id).slice(0, 10)
-        : [];
-      // Pre-generate IDs so SSE can connect BEFORE the fetch
-      const assistantMsgId = generateId();
-      const frontendQueryId = Math.random().toString(36).slice(2, 10);
-
-      // Add placeholder assistant message so MetadataStrip can render live
-      const placeholderMessage: Message = {
-        id: assistantMsgId,
-        role: 'assistant',
-        content: '',
-        timestamp: new Date(),
-        isStreaming: true,
-      };
-      setMessages((prev) => [...prev, placeholderMessage]);
-
-      // Connect Metadata Thought Stream (SSE) BEFORE fetch so we catch live events
-      let evtSource: EventSource | null = null;
-      try {
-        evtSource = new EventSource(`/api/thought-stream?queryId=${frontendQueryId}`);
-        evtSource.onmessage = (ev) => {
-          try {
-            const thought = JSON.parse(ev.data) as import('@/lib/thought-stream').ThoughtEvent;
-            thought.messageId = assistantMsgId;
-            useSideCanalStore.getState().pushMetadata(thought);
-            if (thought.stage === 'complete' || thought.stage === 'error') {
-              evtSource?.close();
-            }
-          } catch (e) {
-            console.warn('Thought stream parse error:', e);
-          }
-        };
-        evtSource.onerror = () => {
-          evtSource?.close();
-          evtSource = null;
-        };
-      } catch (e) {
-        console.warn('Thought stream connection failed:', e);
-      }
-
-      const res = await fetch('/api/simple-query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-session-id': sessionId, // GNOSTIC: Send session ID for Ascent Tracker
-        },
-        body: JSON.stringify({
-          query: userMessage.content,
-          methodology,
-          conversationHistory: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          legendMode,
-          chatId: currentChatId,
-          pageContext,
-          instinctMode,
-          instinctConfig,
-          layersWeights: useLayerStore.getState().weights,
-          liveRefinements: liveRefinements.length > 0 ? liveRefinements : undefined,
-          grimoireContext: activeGrimoire
-            ? {
-                id: activeGrimoire.id,
-                name: activeGrimoire.name,
-                instructions: activeGrimoire.instructions,
-                memories: grimoireMemories.map((m) => m.content),
-              }
-            : undefined,
-          attachments: processedFiles.length > 0 ? processedFiles : undefined,
-          fileUrls: currentFileUrls.length > 0 ? currentFileUrls : undefined,
-          queryId: frontendQueryId,
-        }),
-      });
-
-      if (!res.ok) throw new Error('Failed to get response');
-
-      const data = await res.json();
-
-      // Wire God View store with response fusion data
-      if (data.fusion) {
-        const layerWeights: Record<number, number> = {};
-        for (const la of data.fusion.layerActivations || []) {
-          // Map by index — layer activations come as array
-          const layerNum = la.layerNode ?? la.layer;
-          if (layerNum != null) layerWeights[layerNum] = (la.effectiveWeight || 0) / 100;
-        }
-        useGodViewStore.getState().setActivations({
-          layerWeights: layerWeights as any,
-          dominantLayers: data.fusion.dominantLayers || [],
-          methodology: data.fusion.methodology || null,
-          confidence: data.fusion.confidence || 0,
-          guardReasons: data.guardResult?.issues || [],
-          processingMode: data.fusion.processingMode || null,
-        });
-      }
-      useGodViewStore.getState().setProcessing(false);
-
-      // Push full response metadata to persistent store
-      useSideCanalStore.getState().pushResponseMetadata(frontendQueryId, {
-        fusion: data.fusion,
-        guardResult: data.guardResult,
-        provider: data.provider,
-        metrics: data.metrics,
-        sideCanal: data.sideCanal,
-        gnostic: data.gnostic,
-        query: userMessage.content,
-        timestamp: Date.now(),
-      });
-
-      // Handle Side Canal suggestions - refresh from store
-      if (data.sideCanal?.suggestions && data.sideCanal.suggestions.length > 0) {
-        // Suggestions are now managed by the store, refresh will be triggered automatically
-        // by the extractTopicsForMessage callback
-      }
-
-      // Poll for the result if we got a queryId
-      if (data.queryId) {
-        // Set conversation ID for sharing
-        setCurrentConversationId(data.queryId);
-        await pollForResult(data.queryId, startTime, assistantMsgId);
-      } else {
-        // 🔍 DIAGNOSTIC: Log received gnostic data from API
-        console.log('🌳 FRONTEND: Received API response with gnostic:', {
-          hasGnostic: !!data.gnostic,
-          gnosticKeys: data.gnostic ? Object.keys(data.gnostic) : [],
-          layerAnalysis: data.gnostic?.layerAnalysis,
-          activations: data.gnostic?.layerAnalysis?.activations,
-        });
-
-        // Check for grounding guard failures
-        const guardFailed = data.guardResult && !data.guardResult.passed;
-
-        // Immediate response (store guard result, hide if failed)
-        const assistantMessage: Message = {
-          id: assistantMsgId,
-          role: 'assistant',
-          content: data.response || data.finalDecision || 'No response',
-          methodology: data.methodology || methodology,
-          metrics: data.metrics,
-          timestamp: new Date(),
-          guardResult: guardFailed ? data.guardResult : undefined,
-          guardAction: guardFailed ? 'pending' : undefined,
-          isHidden: guardFailed,
-          gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-          // INTELLIGENCE: Map fusion response to intelligence interface
-          intelligence: data.fusion
-            ? {
-                analysis: {
-                  complexity: data.fusion.confidence || 0,
-                  queryType: data.fusion.methodology || 'direct',
-                  keywords: data.fusion.layerActivations?.[0]?.keywords || [],
-                },
-                layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                  layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
-                  name: s.name,
-                  activation: s.effectiveWeight || 0,
-                  effectiveWeight: s.effectiveWeight || 0,
-                })),
-                dominantLayers: data.fusion.dominantLayers || [],
-                pathActivations: [],
-                methodologySelection: {
-                  selected: data.fusion.methodology || 'direct',
-                  confidence: data.fusion.confidence || 0,
-                  alternatives: [],
-                },
-                guard: {
-                  recommendation: data.fusion.guardRecommendation || 'proceed',
-                  reasons: [],
-                },
-                instinct: {
-                  enabled: (data.fusion.activeLenses || []).length > 0,
-                  activeLenses: data.fusion.activeLenses || [],
-                },
-                processing: {
-                  mode: data.fusion.processingMode || 'weighted',
-                  extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000,
-                },
-                timing: {
-                  fusionMs: data.fusion.processingTimeMs || 0,
-                },
-              }
-            : undefined,
-        };
-
-        // 🔍 DIAGNOSTIC: Log message with gnostic before setting state
-        console.log('🌳 FRONTEND: Created message with gnostic:', {
-          messageId: assistantMessage.id,
-          hasGnostic: !!assistantMessage.gnostic,
-          gnosticData: assistantMessage.gnostic,
-        });
-
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId ? { ...assistantMessage, isStreaming: false } : m
-          )
-        );
-
-        // Extract topics for mindmap (async, non-blocking)
-        extractTopicsForMessage(assistantMessage.id, userMessage.content, assistantMessage.content);
-
-        // Track analytics
-        const responseTime = Date.now() - startTime;
-        trackQuery({
-          query: userMessage.content,
-          methodology: methodology,
-          methodologySelected: methodology,
-          methodologyUsed: data.methodology || methodology,
-          responseTime,
-          tokens: data.metrics?.tokens || 0,
-          cost: data.metrics?.cost || 0,
-          groundingGuardTriggered: guardFailed,
-          success: true,
-        });
-      }
-    } catch (error) {
-      console.error('Query error:', error);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.isStreaming
-            ? {
-                ...m,
-                content: 'Sorry, there was an error processing your query. Please try again.',
-                isStreaming: false,
-              }
-            : m
-        )
-      );
-
-      // Track failed query
-      const responseTime = Date.now() - startTime;
-      trackQuery({
-        query: userMessage.content,
-        methodology: methodology,
-        methodologySelected: methodology,
-        methodologyUsed: methodology,
-        responseTime,
-        tokens: 0,
-        cost: 0,
-        groundingGuardTriggered: false,
-        success: false,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-      });
-    } finally {
-      setIsLoading(false);
-      useGodViewStore.getState().setProcessing(false);
-      inputRef.current?.focus();
-    }
-  };
-
-  const pollForResult = async (queryId: string, startTime: number, messageId?: string) => {
-    const maxAttempts = 30;
-    let attempts = 0;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/query/${queryId}`);
-        if (!res.ok) {
-          console.warn('Poll failed:', res.status);
-          return;
-        }
-
-        const data = await res.json();
-
-        if (data.status === 'complete') {
-          // Check for grounding guard failures
-          const guardFailed = data.guardResult && !data.guardResult.passed;
-
-          const assistantMessage: Message = {
-            id: messageId || generateId(),
-            role: 'assistant',
-            content: data.response || data.finalDecision || 'No response',
-            methodology: data.methodology,
-            metrics: data.metrics,
-            timestamp: new Date(),
-            guardResult: guardFailed ? data.guardResult : undefined,
-            guardAction: guardFailed ? 'pending' : undefined,
-            isHidden: guardFailed,
-            gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-            // INTELLIGENCE: Map fusion response to intelligence interface
-            intelligence: data.fusion
-              ? {
-                  analysis: {
-                    complexity: data.fusion.confidence || 0,
-                    queryType: data.fusion.methodology || 'direct',
-                    keywords: data.fusion.layerActivations?.[0]?.keywords || [],
-                  },
-                  layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                    layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
-                    name: s.name,
-                    activation: s.effectiveWeight || 0,
-                    effectiveWeight: s.effectiveWeight || 0,
-                  })),
-                  dominantLayers: data.fusion.dominantLayers || [],
-                  pathActivations: [],
-                  methodologySelection: {
-                    selected: data.fusion.methodology || 'direct',
-                    confidence: data.fusion.confidence || 0,
-                    alternatives: [],
-                  },
-                  guard: {
-                    recommendation: data.fusion.guardRecommendation || 'proceed',
-                    reasons: [],
-                  },
-                  instinct: {
-                    enabled: (data.fusion.activeLenses || []).length > 0,
-                    activeLenses: data.fusion.activeLenses || [],
-                  },
-                  processing: {
-                    mode: data.fusion.processingMode || 'weighted',
-                    extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000,
-                  },
-                  timing: {
-                    fusionMs: data.fusion.processingTimeMs || 0,
-                  },
-                }
-              : undefined,
-          };
-          // Replace placeholder if it exists, otherwise append
-          setMessages((prev) => {
-            const hasPlaceholder = prev.some((m) => m.id === assistantMessage.id);
-            if (hasPlaceholder) {
-              return prev.map((m) =>
-                m.id === assistantMessage.id ? { ...assistantMessage, isStreaming: false } : m
-              );
-            }
-            return [...prev, assistantMessage];
-          });
-          setIsLoading(false);
-
-          // Extract topics for mindmap (async, non-blocking)
-          const lastUserMessage = messages[messages.length - 1];
-          if (lastUserMessage?.role === 'user') {
-            extractTopicsForMessage(
-              assistantMessage.id,
-              lastUserMessage.content,
-              assistantMessage.content
-            );
-          }
-
-          // Track analytics
-          const responseTime = Date.now() - startTime;
-          trackQuery({
-            query: messages[messages.length - 1]?.content || '',
-            methodology: methodology,
-            methodologySelected: methodology,
-            methodologyUsed: data.methodology || methodology,
-            responseTime,
-            tokens: data.metrics?.tokens || 0,
-            cost: data.metrics?.cost || 0,
-            groundingGuardTriggered: guardFailed,
-            success: true,
-          });
-
-          return;
-        }
-
-        if (data.status === 'error') {
-          const errorMessage: Message = {
-            id: generateId(),
-            role: 'assistant',
-            content: data.error || 'An error occurred',
-            timestamp: new Date(),
-          };
-          setMessages((prev) => [...prev, errorMessage]);
-          setIsLoading(false);
-
-          // Track failed query
-          const responseTime = Date.now() - startTime;
-          trackQuery({
-            query: messages[messages.length - 1]?.content || '',
-            methodology: methodology,
-            methodologySelected: methodology,
-            methodologyUsed: methodology,
-            responseTime,
-            tokens: 0,
-            cost: 0,
-            groundingGuardTriggered: false,
-            success: false,
-            errorMessage: data.error || 'Unknown error',
-          });
-
-          return;
-        }
-
-        // Continue polling
-        if (attempts < maxAttempts) {
-          attempts++;
-          setTimeout(poll, 1000);
-        } else {
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
-        setIsLoading(false);
-      }
-    };
-
-    poll();
-  };
-
-  // Guard action handlers
-  const handleGuardContinue = (messageId: string) => {
-    const message = messages.find((m) => m.id === messageId);
-    console.log('[Guard Continue] Clicked for message:', messageId);
-    console.log('[Guard Continue] Message content length:', message?.content?.length || 0);
-    console.log('[Guard Continue] Message content preview:', message?.content?.substring(0, 100));
-
-    if (!message?.content || message.content === 'No response') {
-      console.error('[Guard Continue] WARNING: Message has no content! This should not happen.');
-      console.error('[Guard Continue] Full message:', message);
-    }
-
-    setMessages((prev) =>
-      prev.map((m) => (m.id === messageId ? { ...m, guardAction: 'accepted', isHidden: false } : m))
-    );
-  };
-
-  const handleGuardRefine = async (messageId: string, refinedQuery?: string) => {
-    if (refinedQuery) {
-      // User selected a suggestion - submit it directly
-      // IMPORTANT: Capture current messages BEFORE any state updates (stale closure fix)
-      const currentMessages = [...messages];
-
-      // Mark the original flagged message as "refined" - keep alert visible but hide response content
-      // This preserves the context of what was flagged and what action was taken
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageId
-            ? { ...m, guardAction: 'refined', guardActionQuery: refinedQuery, isHidden: true }
-            : m
-        )
-      );
-
-      // Add refined query as new user message
-      const userMessage: Message = {
-        id: generateId(),
-        role: 'user',
-        content: `🔄 Refined: ${refinedQuery}`,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMessage]);
-      setIsLoading(true);
-
-      // Build conversation history - EXCLUDE the flagged message (user rejected it)
-      const conversationHistory = [
-        ...currentMessages
-          .filter((m) => m.id !== messageId && !m.isHidden) // Exclude flagged/hidden messages
-          .map((m) => ({ role: m.role, content: m.content })),
-        { role: 'user' as const, content: refinedQuery },
-      ];
-
-      // Submit the refined query
-      try {
-        const pageContext = getPageContext();
-        const res = await fetch('/api/simple-query', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-session-id': sessionId, // GNOSTIC: Send session ID for Ascent Tracker
-          },
-          body: JSON.stringify({
-            query: refinedQuery,
-            methodology,
-            conversationHistory,
-            legendMode,
-            chatId: activeChatId || 'main',
-            pageContext,
-            instinctMode,
-            instinctConfig,
-            layersWeights: useLayerStore.getState().weights,
-          }),
-        });
-
-        const data = await res.json();
-
-        const assistantMessage: Message = {
-          id: generateId(),
-          role: 'assistant',
-          content: data.response || data.finalDecision || 'No response',
-          methodology: data.methodology || methodology,
-          metrics: data.metrics,
-          timestamp: new Date(),
-          guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
-          guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
-          isHidden: data.guardResult?.passed === false,
-          gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-          // INTELLIGENCE: Map fusion response to intelligence interface
-          intelligence: data.fusion
-            ? {
-                analysis: {
-                  complexity: data.fusion.confidence || 0,
-                  queryType: data.fusion.methodology || 'direct',
-                  keywords: data.fusion.layerActivations?.[0]?.keywords || [],
-                },
-                layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                  layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
-                  name: s.name,
-                  activation: s.effectiveWeight || 0,
-                  effectiveWeight: s.effectiveWeight || 0,
-                })),
-                dominantLayers: data.fusion.dominantLayers || [],
-                pathActivations: [],
-                methodologySelection: {
-                  selected: data.fusion.methodology || 'direct',
-                  confidence: data.fusion.confidence || 0,
-                  alternatives: [],
-                },
-                guard: {
-                  recommendation: data.fusion.guardRecommendation || 'proceed',
-                  reasons: [],
-                },
-                instinct: {
-                  enabled: (data.fusion.activeLenses || []).length > 0,
-                  activeLenses: data.fusion.activeLenses || [],
-                },
-                processing: {
-                  mode: data.fusion.processingMode || 'weighted',
-                  extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000,
-                },
-                timing: {
-                  fusionMs: data.fusion.processingTimeMs || 0,
-                },
-              }
-            : undefined,
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-      } catch (error) {
-        console.error('Refine query error:', error);
-        const errorMessage: Message = {
-          id: generateId(),
-          role: 'assistant',
-          content: 'Sorry, there was an error processing your refined query.',
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Generate refinement suggestions
-      setLoadingSuggestions(messageId);
-
-      const message = messages.find((m) => m.id === messageId);
-      const messageIndex = messages.findIndex((m) => m.id === messageId);
-      const originalQuery = messageIndex > 0 ? messages[messageIndex - 1]?.content : '';
-
-      // Get conversation context (last few messages for context)
-      const recentMessages = messages
-        .slice(Math.max(0, messageIndex - 4), messageIndex + 1)
-        .map((m) => ({ role: m.role, content: m.content }));
-
-      try {
-        const res = await fetch('/api/guard-suggestions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            originalQuery,
-            guardResult: message?.guardResult,
-            action: 'refine',
-            legendMode,
-            conversationContext: recentMessages,
-            aiResponse: message?.content,
-          }),
-        });
-
-        const data = await res.json();
-        setGuardSuggestions((prev) => ({
-          ...prev,
-          [messageId]: { ...prev[messageId], refine: data.suggestions },
-        }));
-      } catch (error) {
-        console.error('Failed to generate refine suggestions:', error);
-        setGuardSuggestions((prev) => ({
-          ...prev,
-          [messageId]: { ...prev[messageId], refine: [] },
-        }));
-      } finally {
-        setLoadingSuggestions(null);
-      }
-    }
-  };
-
-  const handleGuardPivot = async (messageId: string, pivotQuery?: string) => {
-    if (pivotQuery) {
-      // User selected a suggestion - submit it directly
-      // IMPORTANT: Capture current messages BEFORE any state updates (stale closure fix)
-      const currentMessages = [...messages];
-
-      // Mark the original flagged message as "pivoted" - keep alert visible but hide response content
-      // This preserves the context of what was flagged and what action was taken
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageId
-            ? { ...m, guardAction: 'pivoted', guardActionQuery: pivotQuery, isHidden: true }
-            : m
-        )
-      );
-
-      // Add pivot query as new user message
-      const userMessage: Message = {
-        id: generateId(),
-        role: 'user',
-        content: `📍 Pivoted: ${pivotQuery}`,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMessage]);
-      setIsLoading(true);
-
-      // Build conversation history - EXCLUDE the flagged message (user rejected it)
-      const conversationHistory = [
-        ...currentMessages
-          .filter((m) => m.id !== messageId && !m.isHidden) // Exclude flagged/hidden messages
-          .map((m) => ({ role: m.role, content: m.content })),
-        { role: 'user' as const, content: pivotQuery },
-      ];
-
-      // Submit the pivot query
-      try {
-        const pageContext = getPageContext();
-        const res = await fetch('/api/simple-query', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-session-id': sessionId, // GNOSTIC: Send session ID for Ascent Tracker
-          },
-          body: JSON.stringify({
-            query: pivotQuery,
-            methodology,
-            conversationHistory,
-            legendMode,
-            chatId: activeChatId || 'main',
-            pageContext,
-            instinctMode,
-            instinctConfig,
-          }),
-        });
-
-        const data = await res.json();
-
-        const assistantMessage: Message = {
-          id: generateId(),
-          role: 'assistant',
-          content: data.response || data.finalDecision || 'No response',
-          methodology: data.methodology || methodology,
-          metrics: data.metrics,
-          timestamp: new Date(),
-          guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
-          guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
-          isHidden: data.guardResult?.passed === false,
-          gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-          // INTELLIGENCE: Map fusion response to intelligence interface
-          intelligence: data.fusion
-            ? {
-                analysis: {
-                  complexity: data.fusion.confidence || 0,
-                  queryType: data.fusion.methodology || 'direct',
-                  keywords: data.fusion.layerActivations?.[0]?.keywords || [],
-                },
-                layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                  layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
-                  name: s.name,
-                  activation: s.effectiveWeight || 0,
-                  effectiveWeight: s.effectiveWeight || 0,
-                })),
-                dominantLayers: data.fusion.dominantLayers || [],
-                pathActivations: [],
-                methodologySelection: {
-                  selected: data.fusion.methodology || 'direct',
-                  confidence: data.fusion.confidence || 0,
-                  alternatives: [],
-                },
-                guard: {
-                  recommendation: data.fusion.guardRecommendation || 'proceed',
-                  reasons: [],
-                },
-                instinct: {
-                  enabled: (data.fusion.activeLenses || []).length > 0,
-                  activeLenses: data.fusion.activeLenses || [],
-                },
-                processing: {
-                  mode: data.fusion.processingMode || 'weighted',
-                  extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000,
-                },
-                timing: {
-                  fusionMs: data.fusion.processingTimeMs || 0,
-                },
-              }
-            : undefined,
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-      } catch (error) {
-        console.error('Pivot query error:', error);
-        const errorMessage: Message = {
-          id: generateId(),
-          role: 'assistant',
-          content: 'Sorry, there was an error processing your pivot query.',
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Generate pivot suggestions
-      setLoadingSuggestions(messageId);
-
-      const message = messages.find((m) => m.id === messageId);
-      const messageIndex = messages.findIndex((m) => m.id === messageId);
-      const originalQuery = messageIndex > 0 ? messages[messageIndex - 1]?.content : '';
-
-      // Get conversation context (last few messages for context)
-      const recentMessages = messages
-        .slice(Math.max(0, messageIndex - 4), messageIndex + 1)
-        .map((m) => ({ role: m.role, content: m.content }));
-
-      try {
-        const res = await fetch('/api/guard-suggestions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            originalQuery,
-            guardResult: message?.guardResult,
-            action: 'pivot',
-            legendMode,
-            conversationContext: recentMessages,
-            aiResponse: message?.content,
-          }),
-        });
-
-        const data = await res.json();
-        setGuardSuggestions((prev) => ({
-          ...prev,
-          [messageId]: { ...prev[messageId], pivot: data.suggestions },
-        }));
-      } catch (error) {
-        console.error('Failed to generate pivot suggestions:', error);
-        setGuardSuggestions((prev) => ({
-          ...prev,
-          [messageId]: { ...prev[messageId], pivot: [] },
-        }));
-      } finally {
-        setLoadingSuggestions(null);
-      }
-    }
-  };
-
-  const handleMethodologyClick = (id: string) => {
-    // If conversation is in progress, show prompt
-    if (messages.length > 0) {
-      setPendingMethodology(id);
-      setShowMethodologyPrompt(true);
-    } else {
-      // No conversation yet, directly set methodology
-      setMethodology(id);
-      setIsBlinking(id);
-      import('@/lib/analytics').then(({ trackMethodologyChanged }) =>
-        trackMethodologyChanged(methodology, id)
-      );
-      setTimeout(() => setIsBlinking(null), 300);
-    }
-  };
-
-  // Handle methodology prompt choices
-  const handleContinueInCurrentChat = () => {
-    if (pendingMethodology) {
-      setMethodology(pendingMethodology);
-      setIsBlinking(pendingMethodology);
-      setTimeout(() => setIsBlinking(null), 300);
-    }
-    setShowMethodologyPrompt(false);
-    setPendingMethodology(null);
-  };
-
-  const handleStartNewChat = () => {
-    if (pendingMethodology) {
-      // Clear current conversation and start fresh with new methodology
-      setMessages([]);
-      setMethodology(pendingMethodology);
-      setIsExpanded(false);
-      setIsBlinking(pendingMethodology);
-      setTimeout(() => setIsBlinking(null), 300);
-    }
-    setShowMethodologyPrompt(false);
-    setPendingMethodology(null);
-  };
-
-  const handleCancelMethodologyChange = () => {
-    setShowMethodologyPrompt(false);
-    setPendingMethodology(null);
-  };
-
-  const handleMethodHover = (
-    m: (typeof METHODOLOGIES)[0],
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const containerRect = containerRef.current?.getBoundingClientRect();
-    if (containerRect) {
-      setTooltipPos({
-        x: rect.left + rect.width / 2 - containerRect.left,
-        y: rect.bottom - containerRect.top + 8,
-      });
-    }
-    setHoveredMethod(m.id);
-  };
-
-  const handleNewChat = () => {
-    setMessages([]);
-    setIsExpanded(false);
-    setQuery('');
-    setCurrentConversationId(undefined);
-    setContinuingConversation(null);
-    setMessageAnnotations({});
-    resetDepthAnnotations();
-  };
+  const s = useHomePageState();
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-colors duration-300 ${darkMode ? 'bg-relic-void' : 'bg-white'}`}
+      className={`min-h-screen flex flex-col transition-colors duration-300 ${s.darkMode ? 'bg-relic-void' : 'bg-white'}`}
       style={{ paddingTop: 22 }}
     >
       {/* Global File Drop Zone */}
       <FileDropZone
-        onFilesChange={setAttachedFiles}
+        onFilesChange={s.setAttachedFiles}
         onUploadComplete={(files) => {
           const urls = files.map((f) => f.url);
           console.log('📎 page.tsx: File URLs stored in state:', urls);
-          setUploadedFileUrls(urls);
+          s.setUploadedFileUrls(urls);
         }}
         maxFiles={5}
         maxSizeMB={10}
       />
 
       {/* Header - Only show when expanded */}
-      {isExpanded && (
+      {s.isExpanded && (
         <ChatHeader
-          isCanvasMode={isCanvasMode}
-          methodology={methodology}
-          onNewChat={handleNewChat}
+          isCanvasMode={s.isCanvasMode}
+          methodology={s.methodology}
+          onNewChat={s.handleNewChat}
           onToggleCanvas={() => {
-            setIsCanvasMode(!isCanvasMode);
-            if (!isCanvasMode)
+            s.setIsCanvasMode(!s.isCanvasMode);
+            if (!s.isCanvasMode)
               import('@/lib/analytics').then(({ trackCanvasOpened }) => trackCanvasOpened());
           }}
           onOpenMindMap={(view) => {
-            setMindMapInitialView(view);
-            setShowMindMap(true);
+            s.setMindMapInitialView(view);
+            s.setShowMindMap(true);
           }}
         />
       )}
 
       {/* Main Content */}
       <main
-        className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded && !isCanvasMode ? 'ml-60' : ''} ${''}`}
+        className={`flex-1 flex flex-col transition-all duration-500 ease-out ${s.isExpanded && !s.isCanvasMode ? 'ml-60' : ''}`}
       >
         {/* Canvas Mode */}
-        {isCanvasMode && isExpanded && (
+        {s.isCanvasMode && s.isExpanded && (
           <CanvasWorkspace
-            queryCards={queryCards}
-            visualNodes={visualNodes}
-            visualEdges={visualEdges}
+            queryCards={s.queryCards}
+            visualNodes={s.visualNodes}
+            visualEdges={s.visualEdges}
             onQuerySelect={(id) => {
-              setIsCanvasMode(false);
+              s.setIsCanvasMode(false);
               requestAnimationFrame(() => {
                 setTimeout(() => {
                   const el = document.querySelector(`[data-message-id="${id}"]`);
@@ -1744,502 +99,217 @@ function HomePage() {
               });
             }}
             onNodeSelect={(id) => console.log('Selected node:', id)}
-            onSwitchToClassic={() => setIsCanvasMode(false)}
-            aiInsights={topicInsights}
+            onSwitchToClassic={() => s.setIsCanvasMode(false)}
+            aiInsights={s.topicInsights}
           />
         )}
 
-        {/* Classic Mode - Logo Section - Fixed at TOP when not expanded */}
-        {!isCanvasMode && !isExpanded && (
+        {/* Classic Mode - Logo Section */}
+        {!s.isCanvasMode && !s.isExpanded && (
           <LogoSection
-            methodology={methodology}
-            expandedMethodology={expandedMethodology}
-            setExpandedMethodology={setExpandedMethodology}
-            diamondRef={diamondRef}
+            methodology={s.methodology}
+            expandedMethodology={s.expandedMethodology}
+            setExpandedMethodology={s.setExpandedMethodology}
+            diamondRef={s.diamondRef}
           />
         )}
 
-        {/* Spacer to push query to center when not expanded */}
-        {!isExpanded && <div className="flex-1" />}
+        {!s.isExpanded && <div className="flex-1" />}
 
-        {/* Diamond for expanded mode only - small version */}
-        {isExpanded && !isCanvasMode && (
+        {s.isExpanded && !s.isCanvasMode && (
           <div className="text-center py-3 mb-2">
             <span className="text-2xl font-extralight opacity-50 text-relic-mist">◊</span>
           </div>
         )}
 
-        {/* Messages Area - Appears when expanded (Classic Mode only) */}
-        {isExpanded && !isCanvasMode && (
+        {/* Messages Area */}
+        {s.isExpanded && !s.isCanvasMode && (
           <ChatMessages
-            messages={messages}
-            methodology={methodology}
-            vizMode={vizMode}
-            setVizMode={setVizMode}
-            globalVizMode={globalVizMode}
-            depthConfig={depthConfig}
-            setDepthConfig={setDepthConfig}
-            messageAnnotations={messageAnnotations}
-            mindmapVisibility={mindmapVisibility}
-            setMindmapVisibility={setMindmapVisibility}
-            gnosticVisibility={gnosticVisibility}
-            setGnosticVisibility={setGnosticVisibility}
-            pipelineEnabled={pipelineEnabled}
-            hiddenPipelines={hiddenPipelines}
-            toggleMsgPipeline={toggleMsgPipeline}
-            loadingSuggestions={loadingSuggestions}
-            guardSuggestions={guardSuggestions}
-            messagesEndRef={messagesEndRef}
-            setQuery={setQuery}
-            setShowMindMap={setShowMindMap}
-            setDeepDiveQuery={setDeepDiveQuery}
-            handleGuardRefine={handleGuardRefine}
-            handleGuardPivot={handleGuardPivot}
-            handleGuardContinue={handleGuardContinue}
+            messages={s.messages}
+            methodology={s.methodology}
+            vizMode={s.vizMode}
+            setVizMode={s.setVizMode}
+            globalVizMode={s.globalVizMode}
+            depthConfig={s.depthConfig}
+            setDepthConfig={s.setDepthConfig}
+            messageAnnotations={s.messageAnnotations}
+            mindmapVisibility={s.mindmapVisibility}
+            setMindmapVisibility={s.setMindmapVisibility}
+            gnosticVisibility={s.gnosticVisibility}
+            setGnosticVisibility={s.setGnosticVisibility}
+            pipelineEnabled={s.pipelineEnabled}
+            hiddenPipelines={s.hiddenPipelines}
+            toggleMsgPipeline={s.toggleMsgPipeline}
+            loadingSuggestions={s.loadingSuggestions}
+            guardSuggestions={s.guardSuggestions}
+            messagesEndRef={s.messagesEndRef}
+            setQuery={s.setQuery}
+            setShowMindMap={s.setShowMindMap}
+            setDeepDiveQuery={s.setDeepDiveQuery}
+            handleGuardRefine={s.handleGuardRefine}
+            handleGuardPivot={s.handleGuardPivot}
+            handleGuardContinue={s.handleGuardContinue}
           />
         )}
 
-        {/* Live Refinement Canal — between messages and input */}
-        <LiveRefinementCanal isVisible={isExpanded && messages.length > 0} isLoading={isLoading} />
-
-        {/* God View toggle removed — AI Layers VIEW tab serves this purpose */}
+        <LiveRefinementCanal
+          isVisible={s.isExpanded && s.messages.length > 0}
+          isLoading={s.isLoading}
+        />
 
         {/* Input Section */}
         <InputSection
-          isExpanded={isExpanded}
-          isLoading={isLoading}
-          isTransitioning={isTransitioning}
-          query={query}
-          onQueryChange={handleQueryChange}
-          onSubmit={handleSubmit}
-          inputRef={inputRef}
-          fileInputRef={fileInputRef}
-          attachedFiles={attachedFiles}
-          setAttachedFiles={setAttachedFiles}
-          onFileSelect={handleFileSelect}
-          triggerFileSelect={triggerFileSelect}
-          methodology={methodology}
-          onMethodologyClick={handleMethodologyClick}
-          showLayerDashboard={showLayerDashboard}
-          setShowLayerDashboard={setShowLayerDashboard}
-          instinctModeEnabled={instinctModeEnabled}
-          setInstinctModeEnabled={setInstinctModeEnabled}
-          suggestionsEnabled={suggestionsEnabled}
-          setSuggestionsEnabled={setSuggestionsEnabled}
-          auditEnabled={auditEnabled}
-          setAuditEnabled={setAuditEnabled}
-          mindmapConnectorEnabled={mindmapConnectorEnabled}
-          setMindmapConnectorEnabled={setMindmapConnectorEnabled}
-          sideCanalEnabled={sideCanalEnabled}
-          setSideCanalEnabled={setSideCanalEnabled}
-          pipelineEnabled={pipelineEnabled}
-          setPipelineEnabled={setPipelineEnabled}
-          selectedModel={selectedModel}
-          setSelectedModel={setSelectedModel}
-          globalVizMode={globalVizMode}
-          setGlobalVizMode={setGlobalVizMode}
-          user={user}
-          legendMode={legendMode}
-          darkMode={darkMode}
-          onMethodologySwitch={handleMethodologySwitch}
-          onGuardToggle={handleGuardToggle}
+          isExpanded={s.isExpanded}
+          isLoading={s.isLoading}
+          isTransitioning={s.isTransitioning}
+          query={s.query}
+          onQueryChange={s.handleQueryChange}
+          onSubmit={s.handleSubmit}
+          inputRef={s.inputRef}
+          fileInputRef={s.fileInputRef}
+          attachedFiles={s.attachedFiles}
+          setAttachedFiles={s.setAttachedFiles}
+          onFileSelect={s.handleFileSelect}
+          triggerFileSelect={s.triggerFileSelect}
+          methodology={s.methodology}
+          onMethodologyClick={s.handleMethodologyClick}
+          showLayerDashboard={s.showLayerDashboard}
+          setShowLayerDashboard={s.setShowLayerDashboard}
+          instinctModeEnabled={s.instinctModeEnabled}
+          setInstinctModeEnabled={s.setInstinctModeEnabled}
+          suggestionsEnabled={s.suggestionsEnabled}
+          setSuggestionsEnabled={s.setSuggestionsEnabled}
+          auditEnabled={s.auditEnabled}
+          setAuditEnabled={s.setAuditEnabled}
+          mindmapConnectorEnabled={s.mindmapConnectorEnabled}
+          setMindmapConnectorEnabled={s.setMindmapConnectorEnabled}
+          sideCanalEnabled={s.sideCanalEnabled}
+          setSideCanalEnabled={s.setSideCanalEnabled}
+          pipelineEnabled={s.pipelineEnabled}
+          setPipelineEnabled={s.setPipelineEnabled}
+          selectedModel={s.selectedModel}
+          setSelectedModel={s.setSelectedModel}
+          globalVizMode={s.globalVizMode}
+          setGlobalVizMode={s.setGlobalVizMode}
+          user={s.user}
+          legendMode={s.legendMode}
+          darkMode={s.darkMode}
+          onMethodologySwitch={s.handleMethodologySwitch}
+          onGuardToggle={s.handleGuardToggle}
           onLegendModeToggle={(enabled) => {
-            setLegendMode(enabled);
-            if (enabled) {
-              localStorage.setItem('legendMode', 'true');
-            } else {
-              localStorage.removeItem('legendMode');
-            }
+            s.setLegendMode(enabled);
+            if (enabled) localStorage.setItem('legendMode', 'true');
+            else localStorage.removeItem('legendMode');
           }}
-          toggleDarkMode={toggleDarkMode}
-          messages={messages}
+          toggleDarkMode={s.toggleDarkMode}
+          messages={s.messages}
         />
 
-        {/* Bottom spacer to balance the centering when not expanded */}
-        {!isExpanded && <div className="flex-1" />}
+        {!s.isExpanded && <div className="flex-1" />}
       </main>
 
       {/* Continuing Conversation Indicator */}
-      {continuingConversation && (
+      {s.continuingConversation && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-relic-ghost border border-relic-mist px-4 py-2 rounded-md animate-chat-continue">
           <span className="text-xs text-relic-slate font-mono">Continuing conversation...</span>
         </div>
       )}
 
-      {/* Legend Mode - No top notification, only footer toggle */}
-
       {/* Side Chats */}
-      {sideChats.map((sideChat) => (
+      {s.sideChats.map((sideChat) => (
         <SideChat
           key={sideChat.id}
           id={sideChat.id}
           methodology={sideChat.methodology}
           messages={sideChat.messages}
           onClose={() => {
-            setSideChats((prev) => prev.filter((c) => c.id !== sideChat.id));
-            if (activeChatId === sideChat.id) {
-              setActiveChatId(null);
-            }
+            s.setSideChats((prev) => prev.filter((c) => c.id !== sideChat.id));
+            if (s.activeChatId === sideChat.id) s.setActiveChatId(null);
           }}
-          onMinimize={() => {
-            // Toggle minimized state
-          }}
-          onSendMessage={async (query) => {
-            // Handle message sending for side chat
-            const userMessage: Message = {
-              id: generateId(),
-              role: 'user',
-              content: query,
-              timestamp: new Date(),
-            };
-            setSideChats((prev) =>
-              prev.map((c) =>
-                c.id === sideChat.id ? { ...c, messages: [...c.messages, userMessage] } : c
-              )
-            );
-            setIsLoading(true);
-
-            try {
-              const pageContext = getPageContext();
-              const res = await fetch('/api/simple-query', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-session-id': sessionId, // GNOSTIC: Send session ID for Ascent Tracker
-                },
-                body: JSON.stringify({
-                  query,
-                  methodology: sideChat.methodology,
-                  conversationHistory: sideChat.messages.map((m) => ({
-                    role: m.role,
-                    content: m.content,
-                  })),
-                  legendMode,
-                  chatId: sideChat.id,
-                  pageContext,
-                  instinctMode,
-                  instinctConfig,
-                }),
-              });
-
-              const data = await res.json();
-              const assistantMessage: Message = {
-                id: generateId(),
-                role: 'assistant',
-                content: data.response || 'No response',
-                methodology: data.methodology || sideChat.methodology,
-                metrics: data.metrics,
-                timestamp: new Date(),
-                guardResult: data.guardResult?.passed === false ? data.guardResult : undefined,
-                guardAction: data.guardResult?.passed === false ? 'pending' : undefined,
-                isHidden: data.guardResult?.passed === false,
-                gnostic: data.gnostic, // GNOSTIC: Capture metadata from API
-                // INTELLIGENCE: Map fusion response to intelligence interface
-                intelligence: data.fusion
-                  ? {
-                      analysis: {
-                        complexity: data.fusion.confidence || 0,
-                        queryType: data.fusion.methodology || 'direct',
-                        keywords: data.fusion.layerActivations?.[0]?.keywords || [],
-                      },
-                      layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                        layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
-                        name: s.name,
-                        activation: s.effectiveWeight || 0,
-                        effectiveWeight: s.effectiveWeight || 0,
-                      })),
-                      dominantLayers: data.fusion.dominantLayers || [],
-                      pathActivations: [],
-                      methodologySelection: {
-                        selected: data.fusion.methodology || 'direct',
-                        confidence: data.fusion.confidence || 0,
-                        alternatives: [],
-                      },
-                      guard: {
-                        recommendation: data.fusion.guardRecommendation || 'proceed',
-                        reasons: [],
-                      },
-                      instinct: {
-                        enabled: (data.fusion.activeLenses || []).length > 0,
-                        activeLenses: data.fusion.activeLenses || [],
-                      },
-                      processing: {
-                        mode: data.fusion.processingMode || 'weighted',
-                        extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000,
-                      },
-                      timing: {
-                        fusionMs: data.fusion.processingTimeMs || 0,
-                      },
-                    }
-                  : undefined,
-              };
-              setSideChats((prev) =>
-                prev.map((c) =>
-                  c.id === sideChat.id ? { ...c, messages: [...c.messages, assistantMessage] } : c
-                )
-              );
-            } catch (error) {
-              console.error('Side chat error:', error);
-            } finally {
-              setIsLoading(false);
-            }
-          }}
-          isLoading={isLoading && activeChatId === sideChat.id}
-          guardSuggestions={guardSuggestions}
-          onRefine={(suggestion) => {
-            // Handle refine for side chat
-          }}
-          onPivot={(suggestion) => {
-            // Handle pivot for side chat
-          }}
-          onContinue={() => {
-            // Handle continue for side chat
-          }}
+          onMinimize={() => {}}
+          onSendMessage={(query) => s.handleSideChatSendMessage(sideChat, query)}
+          isLoading={s.isLoading && s.activeChatId === sideChat.id}
+          guardSuggestions={s.guardSuggestions}
+          onRefine={() => {}}
+          onPivot={() => {}}
+          onContinue={() => {}}
         />
       ))}
 
       {/* Footer - Only when not expanded */}
-      {!isExpanded && (
+      {!s.isExpanded && (
         <FooterBar
-          user={user}
-          showLayerDashboard={showLayerDashboard}
-          setShowLayerDashboard={setShowLayerDashboard}
+          user={s.user}
+          showLayerDashboard={s.showLayerDashboard}
+          setShowLayerDashboard={s.setShowLayerDashboard}
           onMindMapClick={() => {
-            setMindMapInitialView('graph');
-            setShowMindMap(true);
+            s.setMindMapInitialView('graph');
+            s.setShowMindMap(true);
             import('@/lib/analytics').then(({ trackMindmapOpened }) => trackMindmapOpened('graph'));
           }}
         />
       )}
 
-      {/* Overlays — modals, toasts, watchers */}
+      {/* Overlays */}
       <Overlays
-        showTopicsPanel={showTopicsPanel}
-        setShowTopicsPanel={setShowTopicsPanel}
-        setShowMindMap={setShowMindMap}
-        showMindMap={showMindMap}
+        showTopicsPanel={s.showTopicsPanel}
+        setShowTopicsPanel={s.setShowTopicsPanel}
+        setShowMindMap={s.setShowMindMap}
+        showMindMap={s.showMindMap}
         onCloseMindMap={() => {
-          setShowMindMap(false);
-          setMindMapInitialView('graph');
+          s.setShowMindMap(false);
+          s.setMindMapInitialView('graph');
         }}
         onSendMindMapQuery={(q) => {
-          setQuery(q);
+          s.setQuery(q);
           setTimeout(() => {
-            const form = inputRef.current?.closest('form');
+            const form = s.inputRef.current?.closest('form');
             if (form) form.requestSubmit();
           }, 100);
         }}
-        userId={user?.id || null}
-        mindMapInitialView={mindMapInitialView}
-        showAuthModal={showAuthModal}
-        onCloseAuth={() => setShowAuthModal(false)}
+        userId={s.user?.id || null}
+        mindMapInitialView={s.mindMapInitialView}
+        showAuthModal={s.showAuthModal}
+        onCloseAuth={() => s.setShowAuthModal(false)}
         onAuthSuccess={() => {
-          checkSession();
-          setShowAuthModal(false);
+          s.checkSession();
+          s.setShowAuthModal(false);
         }}
-        topicSuggestions={topicSuggestions}
-        onRemoveSuggestion={removeSuggestion}
+        topicSuggestions={s.topicSuggestions}
+        onRemoveSuggestion={s.removeSuggestion}
         onSuggestionClick={(suggestion) => {
-          setQuery(suggestion.topicName + ' ');
-          if (inputRef.current) {
-            inputRef.current.focus();
-          }
+          s.setQuery(suggestion.topicName + ' ');
+          if (s.inputRef.current) s.inputRef.current.focus();
         }}
-        showMethodologyPrompt={showMethodologyPrompt}
+        showMethodologyPrompt={s.showMethodologyPrompt}
         methodologyName={
-          pendingMethodology
-            ? METHODOLOGIES.find((m) => m.id === pendingMethodology)?.name || pendingMethodology
+          s.pendingMethodology
+            ? METHODOLOGIES.find((m) => m.id === s.pendingMethodology)?.name || s.pendingMethodology
             : ''
         }
-        onContinueInCurrentChat={handleContinueInCurrentChat}
-        onStartNewChat={handleStartNewChat}
-        onCancelMethodologyChange={handleCancelMethodologyChange}
-        showLayerDashboard={showLayerDashboard}
-        onCloseLayerDashboard={() => setShowLayerDashboard(false)}
+        onContinueInCurrentChat={s.handleContinueInCurrentChat}
+        onStartNewChat={s.handleStartNewChat}
+        onCancelMethodologyChange={s.handleCancelMethodologyChange}
+        showLayerDashboard={s.showLayerDashboard}
+        onCloseLayerDashboard={() => s.setShowLayerDashboard(false)}
         ContinueParamWatcher={ContinueParamWatcher}
-        loadConversation={loadConversation}
-        historyPanelOpen={historyPanelOpen}
-        setHistoryPanelOpen={setHistoryPanelOpen}
-        messages={messages}
+        loadConversation={s.loadConversation}
+        historyPanelOpen={s.historyPanelOpen}
+        setHistoryPanelOpen={s.setHistoryPanelOpen}
+        messages={s.messages}
       />
 
-      {/* God View Panel removed — AI Layers VIEW tab serves this purpose */}
-
-      {/* Side Mini Chat - Context Watcher - Always visible if there are messages */}
+      {/* Side Mini Chat */}
       <SideMiniChat
-        isVisible={messages.length > 0}
-        draggable={isCanvasMode}
-        defaultPosition={isCanvasMode ? { left: 10, top: 500 } : undefined}
-        messages={messages}
-        externalQuery={deepDiveQuery}
-        conversationId={currentConversationId}
-        onSendQuery={async (queryText) => {
-          // Check if already loading
-          if (isLoading || !queryText.trim()) return;
-
-          // Set the query text
-          setQuery(queryText);
-
-          // Wait a moment for React state to update
-          await new Promise((resolve) => setTimeout(resolve, 50));
-
-          // Start transition animation
-          setIsTransitioning(true);
-
-          // Wait for transition animation
-          await new Promise((resolve) => setTimeout(resolve, 800));
-
-          const userMessage: Message = {
-            id: generateId(),
-            role: 'user',
-            content: queryText.trim(),
-            timestamp: new Date(),
-          };
-
-          // Add user message and expand interface
-          setMessages((prev) => [...prev, userMessage]);
-          setIsExpanded(true);
-          setQuery('');
-          setIsLoading(true);
-          setIsTransitioning(false);
-
-          const startTime = Date.now();
-
-          try {
-            const currentChatId = activeChatId || 'main';
-            const pageContext = getPageContext();
-            const res = await fetch('/api/simple-query', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-session-id': sessionId,
-              },
-              body: JSON.stringify({
-                query: userMessage.content,
-                methodology,
-                conversationHistory: messages.map((m) => ({
-                  role: m.role,
-                  content: m.content,
-                })),
-                legendMode,
-                chatId: currentChatId,
-                pageContext,
-                instinctMode,
-                instinctConfig,
-              }),
-            });
-
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-            }
-
-            const data = await res.json();
-
-            // Handle methodology-specific responses
-            const aiMessage: Message = {
-              id: generateId(),
-              role: 'assistant',
-              content: data.response,
-              timestamp: new Date(),
-              methodology: data.methodologyUsed,
-              topics: data.topics,
-              gnostic: data.gnostic,
-              // INTELLIGENCE: Map fusion response to intelligence interface
-              intelligence: data.fusion
-                ? {
-                    analysis: {
-                      complexity: data.fusion.confidence || 0,
-                      queryType: data.fusion.methodology || 'direct',
-                      keywords: data.fusion.layerActivations?.[0]?.keywords || [],
-                    },
-                    layerActivations: (data.fusion.layerActivations || []).map((s: any) => ({
-                      layerNode: AI_NAME_TO_LAYER[s.name] ?? 0,
-                      name: s.name,
-                      activation: s.effectiveWeight || 0,
-                      effectiveWeight: s.effectiveWeight || 0,
-                    })),
-                    dominantLayers: data.fusion.dominantLayers || [],
-                    pathActivations: [],
-                    methodologySelection: {
-                      selected: data.fusion.methodology || 'direct',
-                      confidence: data.fusion.confidence || 0,
-                      alternatives: [],
-                    },
-                    guard: {
-                      recommendation: data.fusion.guardRecommendation || 'proceed',
-                      reasons: [],
-                    },
-                    instinct: {
-                      enabled: (data.fusion.activeLenses || []).length > 0,
-                      activeLenses: data.fusion.activeLenses || [],
-                    },
-                    processing: {
-                      mode: data.fusion.processingMode || 'weighted',
-                      extendedThinkingBudget: data.fusion.extendedThinkingBudget || 3000,
-                    },
-                    timing: {
-                      fusionMs: data.fusion.processingTimeMs || 0,
-                    },
-                  }
-                : undefined,
-            };
-
-            setMessages((prev) => [...prev, aiMessage]);
-
-            // Auto-track Gnostic progression
-            if (data.gnostic?.progressState) {
-              console.log(
-                `[GNOSTIC] Ascent Level: ${data.gnostic.progressState.currentLevel} (${data.gnostic.progressState.levelName})`
-              );
-            }
-
-            // Analytics tracking
-            const latency = Date.now() - startTime;
-            if (typeof window !== 'undefined' && (window as any).posthog) {
-              (window as any).posthog.capture('query_completed', {
-                methodology: data.methodologyUsed,
-                latency,
-                tokens: data.metrics?.tokens,
-                cost: data.metrics?.cost,
-                guardPassed: data.guardResult?.passed,
-                legendMode,
-              });
-            }
-          } catch (error) {
-            console.error('Query error:', error);
-            const errorMessage: Message = {
-              id: generateId(),
-              role: 'assistant',
-              content: 'An error occurred while processing your query. Please try again.',
-              timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, errorMessage]);
-          } finally {
-            setIsLoading(false);
-          }
-        }}
-        onPromoteToMain={(query, response) => {
-          // Add mini chat exchange to main chat
-          const userMsg: Message = {
-            id: generateId(),
-            role: 'user',
-            content: `[Promoted from Side Chat] ${query}`,
-            timestamp: new Date(),
-          };
-          const aiMsg: Message = {
-            id: generateId(),
-            role: 'assistant',
-            content: response,
-            timestamp: new Date(),
-            methodology: 'direct',
-          };
-          setMessages((prev) => [...prev, userMsg, aiMsg]);
-          if (!isExpanded) setIsExpanded(true);
-        }}
+        isVisible={s.messages.length > 0}
+        draggable={s.isCanvasMode}
+        defaultPosition={s.isCanvasMode ? { left: 10, top: 500 } : undefined}
+        messages={s.messages}
+        externalQuery={s.deepDiveQuery}
+        conversationId={s.currentConversationId}
+        onSendQuery={(queryText) => s.handleMiniChatSendQuery(queryText)}
+        onPromoteToMain={(query, response) => s.handlePromoteToMain(query, response)}
       />
-
-      {/* MethodologyChangePrompt, NewsNotification, TreeConfigurationModal,
-         ContinueParamWatcher, PipelineHistoryPanel → now in Overlays */}
     </div>
   );
 }

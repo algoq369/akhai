@@ -1,0 +1,743 @@
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { generateId, Message } from '@/lib/chat-store';
+import { useSideCanalStore } from '@/lib/stores/side-canal-store';
+import { useSettingsStore } from '@/lib/stores/settings-store';
+import { useSession } from '@/lib/session-manager';
+import { useDepthAnnotations } from '@/hooks/useDepthAnnotations';
+import { getCurrentLanguage, type SupportedLanguage } from '@/components/LanguageSelector';
+import type { QueryCard } from '@/components/canvas/QueryCardsPanel';
+import type { VisualNode, VisualEdge } from '@/components/canvas/VisualsPanel';
+import { useHomePageHandlers } from './useHomePageHandlers';
+
+export function useHomePageState() {
+  // ─── Language ────────────────────────────────────────────
+  const [currentLang, setCurrentLang] = useState<SupportedLanguage>('en');
+
+  // ─── Chat state ──────────────────────────────────────────
+  const [query, setQuery] = useState('');
+  const [methodology, setMethodology] = useState('auto');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [uploadedFileUrls, setUploadedFileUrls] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // ─── UI state ────────────────────────────────────────────
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hoveredMethod, setHoveredMethod] = useState<string | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [isBlinking, setIsBlinking] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState(false);
+  const [expandedMethodology, setExpandedMethodology] = useState<string | null>(null);
+  const [continuingConversation, setContinuingConversation] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // ─── Guard state ─────────────────────────────────────────
+  const [loadingSuggestions, setLoadingSuggestions] = useState<string | null>(null);
+  const [guardSuggestions, setGuardSuggestions] = useState<
+    Record<string, { refine?: string[]; pivot?: string[] }>
+  >({});
+
+  // ─── Auth state ──────────────────────────────────────────
+  const [user, setUser] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // ─── MindMap / Dashboard ─────────────────────────────────
+  const [showMindMap, setShowMindMap] = useState(false);
+  const [mindMapInitialView, setMindMapInitialView] = useState<'graph' | 'history' | 'report'>(
+    'graph'
+  );
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [showLayerDashboard, setShowLayerDashboard] = useState(false);
+
+  // ─── Feature flags / toggles ─────────────────────────────
+  const [legendMode, setLegendMode] = useState(false);
+  const [instinctModeEnabled, setInstinctModeEnabled] = useState(false);
+  const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
+  const [auditEnabled, setAuditEnabled] = useState(false);
+  const [mindmapConnectorEnabled, setMindmapConnectorEnabled] = useState(false);
+  const [pipelineEnabled, setPipelineEnabled] = useState(true);
+  const [selectedModel, setSelectedModel] = useState('claude');
+  const [realtimeDataEnabled, setRealtimeDataEnabled] = useState(false);
+  const [newsNotificationsEnabled, setNewsNotificationsEnabled] = useState(false);
+
+  // ─── Visualization state ─────────────────────────────────
+  const [vizMode, setVizMode] = useState<Record<string, 'layers' | 'insight' | 'text' | 'mindmap'>>(
+    {}
+  );
+  const [globalVizMode, setGlobalVizMode] = useState<'off' | 'synthesis' | 'insight'>('synthesis');
+  const [mindmapVisibility, setMindmapVisibility] = useState<Record<string, boolean>>({});
+  const [gnosticVisibility, setGnosticVisibility] = useState<Record<string, boolean>>({});
+
+  // ─── Side chats ──────────────────────────────────────────
+  const [sideChats, setSideChats] = useState<
+    Array<{ id: string; methodology: string; messages: Message[] }>
+  >([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
+  // ─── Methodology prompt ──────────────────────────────────
+  const [showMethodologyPrompt, setShowMethodologyPrompt] = useState(false);
+  const [pendingMethodology, setPendingMethodology] = useState<string | null>(null);
+
+  // ─── Pipeline ────────────────────────────────────────────
+  const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
+  const [hiddenPipelines, setHiddenPipelines] = useState<Set<string>>(new Set());
+  const toggleMsgPipeline = (msgId: string) => {
+    setHiddenPipelines((prev) => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId);
+      else next.add(msgId);
+      return next;
+    });
+  };
+
+  // ─── Deep Dive ───────────────────────────────────────────
+  const [deepDiveQuery, setDeepDiveQuery] = useState<string>('');
+
+  // ─── Annotations / Refinement ────────────────────────────
+  const [messageAnnotations, setMessageAnnotations] = useState<Record<string, any[]>>({});
+  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(undefined);
+  const [refinementCounts, setRefinementCounts] = useState<Record<string, number>>({});
+  const pendingRefinementCount = useRef(0);
+
+  // ─── Canvas Mode ─────────────────────────────────────────
+  const [isCanvasMode, setIsCanvasMode] = useState(false);
+
+  // ─── Refs ────────────────────────────────────────────────
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const diamondRef = useRef<HTMLDivElement>(null);
+
+  // ─── Gnostic Session Management ──────────────────────────
+  const { sessionId, isClient } = useSession();
+
+  // ─── Depth Annotations Hook ──────────────────────────────
+  const {
+    processText,
+    reset: resetDepthAnnotations,
+    config: depthConfig,
+    setConfig: setDepthConfig,
+  } = useDepthAnnotations();
+
+  // ─── Instinct Mode Settings ──────────────────────────────
+  const { settings } = useSettingsStore();
+  const { instinctMode, instinctConfig } = settings;
+
+  // ─── Canvas Data Adapters ────────────────────────────────
+  const queryCards = useMemo<QueryCard[]>(() => {
+    return messages
+      .filter((m) => m.role === 'user')
+      .map((m, idx) => {
+        const userIndex = messages.indexOf(m);
+        const nextAssistant = messages.find((r, i) => r.role === 'assistant' && i > userIndex);
+        return {
+          id: m.id,
+          query: m.content,
+          response: nextAssistant?.content || '',
+          timestamp: new Date(),
+          methodology: methodology,
+        };
+      });
+  }, [messages, methodology]);
+
+  const visualNodes = useMemo<VisualNode[]>(() => {
+    const nodes: VisualNode[] = [];
+    messages.forEach((m, idx) => {
+      if (m.role === 'assistant' && m.content.length > 50) {
+        nodes.push({
+          id: `node-${m.id}`,
+          label: m.content.slice(0, 40) + '...',
+          type: 'concept',
+          x: 100 + (idx % 3) * 150,
+          y: 100 + Math.floor(idx / 3) * 120,
+        });
+      }
+    });
+    return nodes;
+  }, [messages]);
+
+  const visualEdges = useMemo<VisualEdge[]>(() => {
+    return visualNodes.slice(1).map((node, idx) => ({
+      id: `edge-${idx}`,
+      source: visualNodes[idx].id,
+      target: node.id,
+    }));
+  }, [visualNodes]);
+
+  // ─── Side Canal Store Integration ────────────────────────
+  const {
+    enabled: sideCanalEnabled,
+    contextInjectionEnabled,
+    autoExtractEnabled,
+    suggestions: topicSuggestions,
+    toastVisible: topicToastVisible,
+    panelOpen: showTopicsPanel,
+    extractAndStoreTopics,
+    refreshSuggestions,
+    removeSuggestion,
+    setToastVisible: setTopicToastVisible,
+    setPanelOpen: setShowTopicsPanel,
+    toggleEnabled: setSideCanalEnabled,
+    toggleContextInjection: setContextInjectionEnabled,
+    currentTopics,
+  } = useSideCanalStore();
+
+  // Side Canal topics → AI insights for canvas
+  const topicInsights = useMemo(() => {
+    if (!currentTopics || currentTopics.length === 0) return [];
+    return currentTopics.map((t) => ({
+      id: `topic-${t.id}`,
+      text: `${t.name}${t.description ? ' — ' + t.description : ''}`,
+      category: 'insight' as const,
+      confidence: 80,
+      metricsCount: 1,
+    }));
+  }, [currentTopics]);
+
+  // ─── Page Context helper (used by handlers) ──────────────
+  const getPageContext = useCallback(() => {
+    try {
+      const mainContent = document.querySelector('main');
+      if (!mainContent) return undefined;
+
+      if (isExpanded && messages.length > 0) {
+        const messageTexts = messages
+          .slice(-5)
+          .map((m) => `${m.role === 'user' ? 'User' : 'AkhAI'}: ${m.content}`)
+          .join('\n\n');
+        return `Current conversation context:\n${messageTexts}`;
+      }
+
+      const visibleText = Array.from(
+        mainContent.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, span')
+      )
+        .filter((el) => {
+          const style = window.getComputedStyle(el);
+          return (
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            el.textContent &&
+            el.textContent.trim().length > 10
+          );
+        })
+        .map((el) => el.textContent?.trim())
+        .filter(Boolean)
+        .slice(0, 10)
+        .join('\n');
+
+      return visibleText || undefined;
+    } catch (error) {
+      console.error('Failed to extract page context:', error);
+      return undefined;
+    }
+  }, [isExpanded, messages]);
+
+  // ═══════════════ Handlers hook ═══════════════════════════
+  const handlers = useHomePageHandlers({
+    query,
+    setQuery,
+    methodology,
+    setMethodology,
+    messages,
+    setMessages,
+    attachedFiles,
+    setAttachedFiles,
+    uploadedFileUrls,
+    setUploadedFileUrls,
+    isLoading,
+    setIsLoading,
+    isExpanded,
+    setIsExpanded,
+    setIsBlinking,
+    setLoadingSuggestions,
+    setGuardSuggestions,
+    darkMode,
+    setDarkMode,
+    legendMode,
+    setLegendMode,
+    setShowMethodologyPrompt,
+    pendingMethodology,
+    setPendingMethodology,
+    setIsTransitioning,
+    setCurrentConversationId,
+    setContinuingConversation,
+    setMessageAnnotations,
+    sideChats,
+    setSideChats,
+    activeChatId,
+    setActiveChatId,
+    hoveredMethod,
+    setHoveredMethod,
+    setTooltipPos,
+    fileInputRef,
+    inputRef,
+    containerRef,
+    pendingRefinementCount,
+    sessionId,
+    sideCanalEnabled,
+    autoExtractEnabled,
+    extractAndStoreTopics,
+    getPageContext,
+    resetDepthAnnotations,
+  });
+
+  // ═══════════════ useEffect hooks ═════════════════════════
+
+  // Log depth config on mount
+  useEffect(() => {
+    console.log('[DepthAnnotations] Config loaded:', depthConfig);
+    console.log('[DepthAnnotations] LocalStorage:', localStorage.getItem('akhai-depth-config'));
+  }, []);
+
+  // Process depth annotations when new assistant messages arrive
+  useEffect(() => {
+    console.log(
+      '[DepthAnnotations] Effect triggered - config.enabled:',
+      depthConfig.enabled,
+      'messages:',
+      messages.length
+    );
+
+    if (!depthConfig.enabled) {
+      console.log('[DepthAnnotations] Disabled - toggle is OFF');
+      return;
+    }
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === 'assistant') {
+      if (lastMessage.isStreaming) return;
+
+      const existing = messageAnnotations[lastMessage.id];
+      if (existing && existing.length > 0) return;
+
+      if (!lastMessage.content || lastMessage.content.length < 50) return;
+
+      console.log('[DepthAnnotations] Processing message:', lastMessage.content.slice(0, 100));
+
+      const annotations = processText(lastMessage.content);
+
+      console.log('[DepthAnnotations] Detected annotations:', annotations.length, annotations);
+
+      if (annotations.length > 0) {
+        setMessageAnnotations((prev) => ({
+          ...prev,
+          [lastMessage.id]: annotations,
+        }));
+      } else {
+        console.log('[DepthAnnotations] No annotations detected - text may not match patterns');
+        setMessageAnnotations((prev) => ({
+          ...prev,
+          [lastMessage.id]: [],
+        }));
+      }
+    }
+  }, [messages, depthConfig.enabled, processText]);
+
+  // Re-process all annotations when density changes
+  const prevDensityRef = useRef(depthConfig.density);
+  useEffect(() => {
+    if (prevDensityRef.current !== depthConfig.density) {
+      prevDensityRef.current = depthConfig.density;
+      if (!depthConfig.enabled) return;
+      const newAnnotations: Record<string, any[]> = {};
+      messages
+        .filter((m) => m.role === 'assistant' && m.content)
+        .forEach((m) => {
+          const anns = processText(m.content);
+          newAnnotations[m.id] = anns;
+        });
+      setMessageAnnotations(newAnnotations);
+    }
+  }, [depthConfig.density, depthConfig.enabled, messages, processText]);
+
+  // Apply pending refinement count to new assistant messages
+  useEffect(() => {
+    if (pendingRefinementCount.current > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (
+        lastMessage &&
+        lastMessage.role === 'assistant' &&
+        !lastMessage.isStreaming &&
+        !refinementCounts[lastMessage.id]
+      ) {
+        setRefinementCounts((prev) => ({
+          ...prev,
+          [lastMessage.id]: pendingRefinementCount.current,
+        }));
+        pendingRefinementCount.current = 0;
+      }
+    }
+  }, [messages]);
+
+  // Clear Deep Dive query after Mini Chat receives it
+  useEffect(() => {
+    if (deepDiveQuery) {
+      const timer = setTimeout(() => {
+        setDeepDiveQuery('');
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [deepDiveQuery]);
+
+  // Force topics panel closed
+  useEffect(() => {
+    if (showTopicsPanel) setShowTopicsPanel(false);
+  }, []);
+
+  // Listen for auth modal trigger from ProfileMenu / anywhere
+  const checkSession = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/session');
+      const data = await response.json();
+      setUser(data.user);
+      if (data.user?.id) {
+        const { identifyUser } = await import('@/lib/analytics');
+        identifyUser(data.user.id, {
+          username: data.user.username,
+          email: data.user.email,
+          authProvider: data.user.auth_provider,
+        });
+      }
+    } catch (error) {
+      console.error('Session check error:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const showHandler = () => setShowAuthModal(true);
+    const successHandler = () => checkSession();
+    window.addEventListener('akhai:show-auth', showHandler);
+    window.addEventListener('akhai:auth-success', successHandler);
+    return () => {
+      window.removeEventListener('akhai:show-auth', showHandler);
+      window.removeEventListener('akhai:auth-success', successHandler);
+    };
+  }, [checkSession]);
+
+  // Auto-Synopsis Background Task (Side Canal)
+  useEffect(() => {
+    const { autoSynopsisEnabled, currentTopics, generateSynopsisForTopic } =
+      useSideCanalStore.getState();
+
+    if (!sideCanalEnabled || !autoSynopsisEnabled) return;
+
+    if (currentTopics.length > 0) {
+      currentTopics.forEach((topic) => {
+        generateSynopsisForTopic(topic.id).catch((error) => {
+          console.error('[Side Canal] Auto-synopsis failed for topic:', topic.id, error);
+        });
+      });
+    }
+
+    const interval = setInterval(
+      () => {
+        const state = useSideCanalStore.getState();
+        if (state.autoSynopsisEnabled && state.currentTopics.length > 0) {
+          state.currentTopics.forEach((topic) => {
+            state.generateSynopsisForTopic(topic.id).catch((error) => {
+              console.error('[Side Canal] Auto-synopsis failed for topic:', topic.id, error);
+            });
+          });
+        }
+      },
+      5 * 60 * 1000
+    );
+
+    return () => clearInterval(interval);
+  }, [sideCanalEnabled]);
+
+  // Dark mode initialization and sync
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(savedDarkMode);
+    if (savedDarkMode) {
+      document.documentElement.classList.add('dark');
+    }
+
+    const handleDarkModeChange = (e: CustomEvent) => {
+      setDarkMode(e.detail.darkMode);
+    };
+
+    window.addEventListener('darkModeChange' as any, handleDarkModeChange as any);
+    return () => {
+      window.removeEventListener('darkModeChange' as any, handleDarkModeChange as any);
+    };
+  }, []);
+
+  // Load conversation helper
+  const loadConversation = useCallback(async (queryId: string) => {
+    try {
+      console.log('[History] Fetching conversation for:', queryId);
+      const res = await fetch(`/api/history/${queryId}/conversation`);
+      console.log('[History] Response status:', res.status);
+      if (res.ok) {
+        const data = await res.json();
+        console.log('[History] Data received:', data.messages?.length, 'messages');
+        if (data.messages && data.messages.length > 0) {
+          const loadedMessages = data.messages.map((msg: any) => ({
+            id: generateId(),
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp * 1000),
+            methodology: msg.methodology,
+            gnostic: msg.gnostic || null,
+            pipelineEvents: msg.pipelineEvents || null,
+          }));
+
+          // Restore pipeline metadata into Zustand store for MetadataStrip
+          loadedMessages.forEach((msg: any) => {
+            if (msg.role === 'assistant' && msg.pipelineEvents?.length > 0) {
+              msg.pipelineEvents.forEach((ev: any) => {
+                useSideCanalStore.getState().pushMetadata({
+                  ...ev,
+                  messageId: msg.id,
+                });
+              });
+            }
+          });
+
+          console.log('[History] Setting messages:', loadedMessages.length);
+          setMessages(loadedMessages);
+          setContinuingConversation(queryId);
+          setIsExpanded(true);
+          console.log('[History] Conversation loaded successfully');
+          window.history.replaceState({}, '', '/');
+          setTimeout(() => setContinuingConversation(null), 3000);
+        } else {
+          console.warn('[History] No messages in response');
+        }
+      } else {
+        console.error('[History] Failed to fetch:', res.status);
+      }
+    } catch (error) {
+      console.error('[History] Failed to load conversation:', error);
+    }
+  }, []);
+
+  // Check user session on mount
+  useEffect(() => {
+    try {
+      checkSession();
+
+      const lang = getCurrentLanguage();
+      setCurrentLang(lang);
+
+      const handleLanguageChange = (e: CustomEvent<SupportedLanguage>) => {
+        setCurrentLang(e.detail);
+      };
+      window.addEventListener('languagechange', handleLanguageChange as EventListener);
+
+      const params = new URLSearchParams(window.location.search);
+      const continueId = params.get('continue');
+      if (continueId) {
+        setCurrentConversationId(continueId);
+        loadConversation(continueId);
+      }
+
+      try {
+        const savedLegendMode = localStorage.getItem('legendMode') === 'true';
+        if (savedLegendMode) {
+          setLegendMode(true);
+        }
+      } catch (e) {}
+
+      return () => {
+        window.removeEventListener('languagechange', handleLanguageChange as EventListener);
+      };
+    } catch (error) {
+      console.error('Mount error:', error);
+    }
+  }, []);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Check for topic suggestions after messages update
+  useEffect(() => {
+    if (messages.length > 0 && sideCanalEnabled) {
+      refreshSuggestions().catch(console.error);
+    }
+  }, [messages, sideCanalEnabled, refreshSuggestions]);
+
+  // ═══════════════ Return everything ═══════════════════════
+  return {
+    // Language
+    currentLang,
+    setCurrentLang,
+
+    // Chat state
+    query,
+    setQuery,
+    methodology,
+    setMethodology,
+    messages,
+    setMessages,
+    attachedFiles,
+    setAttachedFiles,
+    uploadedFileUrls,
+    setUploadedFileUrls,
+    isLoading,
+    setIsLoading,
+
+    // UI state
+    isExpanded,
+    setIsExpanded,
+    hoveredMethod,
+    setHoveredMethod,
+    tooltipPos,
+    setTooltipPos,
+    isBlinking,
+    setIsBlinking,
+    darkMode,
+    setDarkMode,
+    expandedMethodology,
+    setExpandedMethodology,
+    continuingConversation,
+    setContinuingConversation,
+    isTransitioning,
+    setIsTransitioning,
+
+    // Guard state
+    loadingSuggestions,
+    setLoadingSuggestions,
+    guardSuggestions,
+    setGuardSuggestions,
+
+    // Auth state
+    user,
+    setUser,
+    showAuthModal,
+    setShowAuthModal,
+    checkSession,
+
+    // MindMap / Dashboard
+    showMindMap,
+    setShowMindMap,
+    mindMapInitialView,
+    setMindMapInitialView,
+    showDashboard,
+    setShowDashboard,
+    showLayerDashboard,
+    setShowLayerDashboard,
+
+    // Feature flags / toggles
+    legendMode,
+    setLegendMode,
+    instinctModeEnabled,
+    setInstinctModeEnabled,
+    suggestionsEnabled,
+    setSuggestionsEnabled,
+    auditEnabled,
+    setAuditEnabled,
+    mindmapConnectorEnabled,
+    setMindmapConnectorEnabled,
+    pipelineEnabled,
+    setPipelineEnabled,
+    selectedModel,
+    setSelectedModel,
+    realtimeDataEnabled,
+    setRealtimeDataEnabled,
+    newsNotificationsEnabled,
+    setNewsNotificationsEnabled,
+
+    // Visualization state
+    vizMode,
+    setVizMode,
+    globalVizMode,
+    setGlobalVizMode,
+    mindmapVisibility,
+    setMindmapVisibility,
+    gnosticVisibility,
+    setGnosticVisibility,
+
+    // Side chats
+    sideChats,
+    setSideChats,
+    activeChatId,
+    setActiveChatId,
+
+    // Methodology prompt
+    showMethodologyPrompt,
+    setShowMethodologyPrompt,
+    pendingMethodology,
+    setPendingMethodology,
+
+    // Pipeline
+    historyPanelOpen,
+    setHistoryPanelOpen,
+    hiddenPipelines,
+    setHiddenPipelines,
+    toggleMsgPipeline,
+
+    // Deep Dive
+    deepDiveQuery,
+    setDeepDiveQuery,
+
+    // Annotations / Refinement
+    messageAnnotations,
+    setMessageAnnotations,
+    currentConversationId,
+    setCurrentConversationId,
+    refinementCounts,
+    setRefinementCounts,
+    pendingRefinementCount,
+
+    // Canvas Mode
+    isCanvasMode,
+    setIsCanvasMode,
+
+    // Refs
+    fileInputRef,
+    messagesEndRef,
+    inputRef,
+    containerRef,
+    diamondRef,
+
+    // Session
+    sessionId,
+    isClient,
+
+    // Depth Annotations
+    depthConfig,
+    setDepthConfig,
+    processText,
+    resetDepthAnnotations,
+
+    // Instinct Mode Settings (from store)
+    instinctMode,
+    instinctConfig,
+
+    // Canvas data
+    queryCards,
+    visualNodes,
+    visualEdges,
+
+    // Side Canal store values
+    sideCanalEnabled,
+    setSideCanalEnabled,
+    contextInjectionEnabled,
+    setContextInjectionEnabled,
+    autoExtractEnabled,
+    topicSuggestions,
+    topicToastVisible,
+    setTopicToastVisible,
+    showTopicsPanel,
+    setShowTopicsPanel,
+    extractAndStoreTopics,
+    refreshSuggestions,
+    removeSuggestion,
+    currentTopics,
+    topicInsights,
+
+    // Load conversation (used by ContinueParamWatcher and Overlays)
+    loadConversation,
+
+    // All handlers from useHomePageHandlers
+    ...handlers,
+  };
+}
+
+export type HomePageState = ReturnType<typeof useHomePageState>;
