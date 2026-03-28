@@ -123,34 +123,7 @@ function HomePage() {
         )}
 
         {/* Messages Area */}
-        {s.isExpanded && !s.isCanvasMode && (
-          <ChatMessages
-            messages={s.messages}
-            methodology={s.methodology}
-            vizMode={s.vizMode}
-            setVizMode={s.setVizMode}
-            globalVizMode={s.globalVizMode}
-            depthConfig={s.depthConfig}
-            setDepthConfig={s.setDepthConfig}
-            messageAnnotations={s.messageAnnotations}
-            mindmapVisibility={s.mindmapVisibility}
-            setMindmapVisibility={s.setMindmapVisibility}
-            gnosticVisibility={s.gnosticVisibility}
-            setGnosticVisibility={s.setGnosticVisibility}
-            pipelineEnabled={s.pipelineEnabled}
-            hiddenPipelines={s.hiddenPipelines}
-            toggleMsgPipeline={s.toggleMsgPipeline}
-            loadingSuggestions={s.loadingSuggestions}
-            guardSuggestions={s.guardSuggestions}
-            messagesEndRef={s.messagesEndRef}
-            setQuery={s.setQuery}
-            setShowMindMap={s.setShowMindMap}
-            setDeepDiveQuery={s.setDeepDiveQuery}
-            handleGuardRefine={s.handleGuardRefine}
-            handleGuardPivot={s.handleGuardPivot}
-            handleGuardContinue={s.handleGuardContinue}
-          />
-        )}
+        {s.isExpanded && !s.isCanvasMode && <ChatMessages {...s.chatMessagesProps} />}
 
         <LiveRefinementCanal
           isVisible={s.isExpanded && s.messages.length > 0}
@@ -158,52 +131,7 @@ function HomePage() {
         />
 
         {/* Input Section */}
-        <InputSection
-          isExpanded={s.isExpanded}
-          isLoading={s.isLoading}
-          isTransitioning={s.isTransitioning}
-          query={s.query}
-          onQueryChange={s.handleQueryChange}
-          onSubmit={s.handleSubmit}
-          inputRef={s.inputRef}
-          fileInputRef={s.fileInputRef}
-          attachedFiles={s.attachedFiles}
-          setAttachedFiles={s.setAttachedFiles}
-          onFileSelect={s.handleFileSelect}
-          triggerFileSelect={s.triggerFileSelect}
-          methodology={s.methodology}
-          onMethodologyClick={s.handleMethodologyClick}
-          showLayerDashboard={s.showLayerDashboard}
-          setShowLayerDashboard={s.setShowLayerDashboard}
-          instinctModeEnabled={s.instinctModeEnabled}
-          setInstinctModeEnabled={s.setInstinctModeEnabled}
-          suggestionsEnabled={s.suggestionsEnabled}
-          setSuggestionsEnabled={s.setSuggestionsEnabled}
-          auditEnabled={s.auditEnabled}
-          setAuditEnabled={s.setAuditEnabled}
-          mindmapConnectorEnabled={s.mindmapConnectorEnabled}
-          setMindmapConnectorEnabled={s.setMindmapConnectorEnabled}
-          sideCanalEnabled={s.sideCanalEnabled}
-          setSideCanalEnabled={s.setSideCanalEnabled}
-          pipelineEnabled={s.pipelineEnabled}
-          setPipelineEnabled={s.setPipelineEnabled}
-          selectedModel={s.selectedModel}
-          setSelectedModel={s.setSelectedModel}
-          globalVizMode={s.globalVizMode}
-          setGlobalVizMode={s.setGlobalVizMode}
-          user={s.user}
-          legendMode={s.legendMode}
-          darkMode={s.darkMode}
-          onMethodologySwitch={s.handleMethodologySwitch}
-          onGuardToggle={s.handleGuardToggle}
-          onLegendModeToggle={(enabled) => {
-            s.setLegendMode(enabled);
-            if (enabled) localStorage.setItem('legendMode', 'true');
-            else localStorage.removeItem('legendMode');
-          }}
-          toggleDarkMode={s.toggleDarkMode}
-          messages={s.messages}
-        />
+        <InputSection {...s.inputSectionProps} />
 
         {!s.isExpanded && <div className="flex-1" />}
       </main>
@@ -252,51 +180,13 @@ function HomePage() {
 
       {/* Overlays */}
       <Overlays
-        showTopicsPanel={s.showTopicsPanel}
-        setShowTopicsPanel={s.setShowTopicsPanel}
-        setShowMindMap={s.setShowMindMap}
-        showMindMap={s.showMindMap}
-        onCloseMindMap={() => {
-          s.setShowMindMap(false);
-          s.setMindMapInitialView('graph');
-        }}
-        onSendMindMapQuery={(q) => {
-          s.setQuery(q);
-          setTimeout(() => {
-            const form = s.inputRef.current?.closest('form');
-            if (form) form.requestSubmit();
-          }, 100);
-        }}
-        userId={s.user?.id || null}
-        mindMapInitialView={s.mindMapInitialView}
-        showAuthModal={s.showAuthModal}
-        onCloseAuth={() => s.setShowAuthModal(false)}
-        onAuthSuccess={() => {
-          s.checkSession();
-          s.setShowAuthModal(false);
-        }}
-        topicSuggestions={s.topicSuggestions}
-        onRemoveSuggestion={s.removeSuggestion}
-        onSuggestionClick={(suggestion) => {
-          s.setQuery(suggestion.topicName + ' ');
-          if (s.inputRef.current) s.inputRef.current.focus();
-        }}
-        showMethodologyPrompt={s.showMethodologyPrompt}
+        {...s.overlaysProps}
         methodologyName={
           s.pendingMethodology
             ? METHODOLOGIES.find((m) => m.id === s.pendingMethodology)?.name || s.pendingMethodology
             : ''
         }
-        onContinueInCurrentChat={s.handleContinueInCurrentChat}
-        onStartNewChat={s.handleStartNewChat}
-        onCancelMethodologyChange={s.handleCancelMethodologyChange}
-        showLayerDashboard={s.showLayerDashboard}
-        onCloseLayerDashboard={() => s.setShowLayerDashboard(false)}
         ContinueParamWatcher={ContinueParamWatcher}
-        loadConversation={s.loadConversation}
-        historyPanelOpen={s.historyPanelOpen}
-        setHistoryPanelOpen={s.setHistoryPanelOpen}
-        messages={s.messages}
       />
 
       {/* Side Mini Chat */}

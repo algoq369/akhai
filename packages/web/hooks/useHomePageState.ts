@@ -562,8 +562,128 @@ export function useHomePageState() {
     }
   }, [messages, sideCanalEnabled, refreshSuggestions]);
 
+  // ═══════════════ Prop bundles for thin orchestrator ═══════
+  const chatMessagesProps = {
+    messages,
+    methodology,
+    vizMode,
+    setVizMode,
+    globalVizMode,
+    depthConfig,
+    setDepthConfig,
+    messageAnnotations,
+    mindmapVisibility,
+    setMindmapVisibility,
+    gnosticVisibility,
+    setGnosticVisibility,
+    pipelineEnabled,
+    hiddenPipelines,
+    toggleMsgPipeline,
+    loadingSuggestions,
+    guardSuggestions,
+    messagesEndRef,
+    setQuery,
+    setShowMindMap,
+    setDeepDiveQuery,
+    handleGuardRefine: handlers.handleGuardRefine,
+    handleGuardPivot: handlers.handleGuardPivot,
+    handleGuardContinue: handlers.handleGuardContinue,
+  } as const;
+
+  const inputSectionProps = {
+    isExpanded,
+    isLoading,
+    isTransitioning,
+    query,
+    onQueryChange: handlers.handleQueryChange,
+    onSubmit: handlers.handleSubmit,
+    inputRef,
+    fileInputRef,
+    attachedFiles,
+    setAttachedFiles,
+    onFileSelect: handlers.handleFileSelect,
+    triggerFileSelect: handlers.triggerFileSelect,
+    methodology,
+    onMethodologyClick: handlers.handleMethodologyClick,
+    showLayerDashboard,
+    setShowLayerDashboard,
+    instinctModeEnabled,
+    setInstinctModeEnabled,
+    suggestionsEnabled,
+    setSuggestionsEnabled,
+    auditEnabled,
+    setAuditEnabled,
+    mindmapConnectorEnabled,
+    setMindmapConnectorEnabled,
+    sideCanalEnabled,
+    setSideCanalEnabled,
+    pipelineEnabled,
+    setPipelineEnabled,
+    selectedModel,
+    setSelectedModel,
+    globalVizMode,
+    setGlobalVizMode,
+    user,
+    legendMode,
+    darkMode,
+    onMethodologySwitch: handlers.handleMethodologySwitch,
+    onGuardToggle: handlers.handleGuardToggle,
+    onLegendModeToggle: (enabled: boolean) => {
+      setLegendMode(enabled);
+      if (enabled) localStorage.setItem('legendMode', 'true');
+      else localStorage.removeItem('legendMode');
+    },
+    toggleDarkMode: handlers.toggleDarkMode,
+    messages,
+  } as const;
+
+  const overlaysProps = {
+    showTopicsPanel,
+    setShowTopicsPanel,
+    setShowMindMap,
+    showMindMap,
+    onCloseMindMap: () => {
+      setShowMindMap(false);
+      setMindMapInitialView('graph');
+    },
+    onSendMindMapQuery: (q: string) => {
+      setQuery(q);
+      setTimeout(() => {
+        const form = inputRef.current?.closest('form');
+        if (form) form.requestSubmit();
+      }, 100);
+    },
+    userId: user?.id || null,
+    mindMapInitialView,
+    showAuthModal,
+    onCloseAuth: () => setShowAuthModal(false),
+    onAuthSuccess: () => {
+      checkSession();
+      setShowAuthModal(false);
+    },
+    topicSuggestions,
+    onRemoveSuggestion: removeSuggestion,
+    onSuggestionClick: (suggestion: any) => {
+      setQuery(suggestion.topicName + ' ');
+      if (inputRef.current) inputRef.current.focus();
+    },
+    showMethodologyPrompt,
+    onContinueInCurrentChat: handlers.handleContinueInCurrentChat,
+    onStartNewChat: handlers.handleStartNewChat,
+    onCancelMethodologyChange: handlers.handleCancelMethodologyChange,
+    showLayerDashboard,
+    onCloseLayerDashboard: () => setShowLayerDashboard(false),
+    loadConversation,
+    historyPanelOpen,
+    setHistoryPanelOpen,
+    messages,
+  } as const;
+
   // ═══════════════ Return everything ═══════════════════════
   return {
+    chatMessagesProps,
+    inputSectionProps,
+    overlaysProps,
     // Language
     currentLang,
     setCurrentLang,
