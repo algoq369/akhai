@@ -33,7 +33,9 @@ type NodeType =
   | 'drawing'
   | 'table'
   | 'timeline'
-  | 'radar';
+  | 'radar'
+  | 'goal'
+  | 'milestone';
 
 interface CanvasNode {
   id: string;
@@ -810,7 +812,9 @@ export default function CanvasWorkspace({
   const [connecting, setConnecting] = useState<{ fromId: string; mx: number; my: number } | null>(
     null
   );
-  const [tool, setTool] = useState<'select' | 'connect' | 'note' | 'pencil'>('select');
+  const [tool, setTool] = useState<'select' | 'connect' | 'note' | 'pencil' | 'goal' | 'milestone'>(
+    'select'
+  );
   const [hovered, setHovered] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [generating, setGenerating] = useState<string | null>(null); // "diagram" | "chart" | null
@@ -1052,6 +1056,44 @@ export default function CanvasWorkspace({
         setEditingNote(id);
         return;
       }
+      if (tool === 'goal' && canvasRef.current) {
+        const pos = getCanvasPos(e);
+        const id = `goal-${Date.now()}`;
+        setNodes((prev) => [
+          ...prev,
+          {
+            id,
+            type: 'goal',
+            x: pos.x,
+            y: pos.y,
+            w: 200,
+            h: 70,
+            data: { text: 'New goal...', color: '#dcfce7' },
+          },
+        ]);
+        setTool('select');
+        setEditingNote(id);
+        return;
+      }
+      if (tool === 'milestone' && canvasRef.current) {
+        const pos = getCanvasPos(e);
+        const id = `ms-${Date.now()}`;
+        setNodes((prev) => [
+          ...prev,
+          {
+            id,
+            type: 'milestone',
+            x: pos.x,
+            y: pos.y,
+            w: 180,
+            h: 60,
+            data: { text: 'Milestone...', color: '#ede9fe' },
+          },
+        ]);
+        setTool('select');
+        setEditingNote(id);
+        return;
+      }
       setIsPanning(true);
       panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
       setSelected(null);
@@ -1208,6 +1250,8 @@ export default function CanvasWorkspace({
             { id: 'pencil', icon: '✏', label: 'pencil' },
             { id: 'connect', icon: '⟶', label: 'connect' },
             { id: 'note', icon: '✎', label: 'note' },
+            { id: 'goal', icon: '◎', label: 'goal' },
+            { id: 'milestone', icon: '◇', label: 'milestone' },
           ] as const
         ).map((t) => (
           <button
@@ -1279,6 +1323,48 @@ export default function CanvasWorkspace({
             {generating === btn.type ? '◌ generating...' : `${btn.icon} ${btn.type}`}
           </button>
         ))}
+
+        <button
+          onClick={() => {
+            if (nodes.filter((n) => n.type === 'query').length === 0) return;
+            const summaryText = nodes
+              .filter((n) => n.type === 'query')
+              .map((n, i) => `${i + 1}. ${n.data.query?.substring(0, 60) || 'Query'}`)
+              .join('\n');
+            const id = `note-summary-${Date.now()}`;
+            setNodes((prev) => [
+              ...prev,
+              {
+                id,
+                type: 'note',
+                x: 450,
+                y: 40,
+                w: 280,
+                h: 120,
+                data: { text: `AI Summary:\n${summaryText}`, color: '#e0e7ff' },
+              },
+            ]);
+          }}
+          disabled={nodes.filter((n) => n.type === 'query').length === 0}
+          title={
+            nodes.filter((n) => n.type === 'query').length > 0
+              ? 'Generate summary from all queries'
+              : 'No queries on canvas'
+          }
+          style={{
+            fontSize: 9,
+            padding: '3px 8px',
+            borderRadius: 3,
+            border: '1px solid #6366f1',
+            background: 'transparent',
+            color: nodes.filter((n) => n.type === 'query').length > 0 ? '#6366f1' : '#cbd5e1',
+            cursor: nodes.filter((n) => n.type === 'query').length > 0 ? 'pointer' : 'not-allowed',
+            fontFamily: 'inherit',
+            opacity: nodes.filter((n) => n.type === 'query').length > 0 ? 1 : 0.5,
+          }}
+        >
+          ✦ summary
+        </button>
 
         {selected && (
           <button
@@ -1381,15 +1467,15 @@ export default function CanvasWorkspace({
           overflow: 'hidden',
           position: 'relative',
           cursor:
-            tool === 'pencil'
+            tool === 'pencil' ||
+            tool === 'note' ||
+            tool === 'connect' ||
+            tool === 'goal' ||
+            tool === 'milestone'
               ? 'crosshair'
-              : tool === 'note'
-                ? 'crosshair'
-                : tool === 'connect'
-                  ? 'crosshair'
-                  : isPanning
-                    ? 'grabbing'
-                    : 'grab',
+              : isPanning
+                ? 'grabbing'
+                : 'grab',
         }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -1812,6 +1898,112 @@ export default function CanvasWorkspace({
                       />
                     ) : (
                       <div style={{ fontSize: 9, color: '#78716c', lineHeight: 1.5 }}>
+                        {node.data.text}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Goal node */}
+                {node.type === 'goal' && (
+                  <div
+                    onDoubleClick={() => setEditingNote(node.id)}
+                    style={{ height: '100%', padding: '6px 10px', borderLeft: '3px solid #22c55e' }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 7,
+                        color: '#16a34a',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        marginBottom: 2,
+                      }}
+                    >
+                      ◎ Goal
+                    </div>
+                    {editingNote === node.id ? (
+                      <textarea
+                        autoFocus
+                        value={node.data.text}
+                        onChange={(e) =>
+                          setNodes((prev) =>
+                            prev.map((n) =>
+                              n.id === node.id
+                                ? { ...n, data: { ...n.data, text: e.target.value } }
+                                : n
+                            )
+                          )
+                        }
+                        onBlur={() => setEditingNote(null)}
+                        style={{
+                          width: '100%',
+                          height: 'calc(100% - 16px)',
+                          border: 'none',
+                          background: 'transparent',
+                          fontSize: 9,
+                          color: '#166534',
+                          fontFamily: 'inherit',
+                          resize: 'none',
+                          outline: 'none',
+                          lineHeight: 1.5,
+                        }}
+                      />
+                    ) : (
+                      <div style={{ fontSize: 9, color: '#166534', lineHeight: 1.5 }}>
+                        {node.data.text}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Milestone node */}
+                {node.type === 'milestone' && (
+                  <div
+                    onDoubleClick={() => setEditingNote(node.id)}
+                    style={{ height: '100%', padding: '6px 10px', borderLeft: '3px solid #8b5cf6' }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 7,
+                        color: '#7c3aed',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        marginBottom: 2,
+                      }}
+                    >
+                      ◇ Milestone
+                    </div>
+                    {editingNote === node.id ? (
+                      <textarea
+                        autoFocus
+                        value={node.data.text}
+                        onChange={(e) =>
+                          setNodes((prev) =>
+                            prev.map((n) =>
+                              n.id === node.id
+                                ? { ...n, data: { ...n.data, text: e.target.value } }
+                                : n
+                            )
+                          )
+                        }
+                        onBlur={() => setEditingNote(null)}
+                        style={{
+                          width: '100%',
+                          height: 'calc(100% - 16px)',
+                          border: 'none',
+                          background: 'transparent',
+                          fontSize: 9,
+                          color: '#5b21b6',
+                          fontFamily: 'inherit',
+                          resize: 'none',
+                          outline: 'none',
+                          lineHeight: 1.5,
+                        }}
+                      />
+                    ) : (
+                      <div style={{ fontSize: 9, color: '#5b21b6', lineHeight: 1.5 }}>
                         {node.data.text}
                       </div>
                     )}
