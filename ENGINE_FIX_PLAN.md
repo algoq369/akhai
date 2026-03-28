@@ -301,13 +301,13 @@ Visual testing in browser — I do this with Claude in Chrome:
 ```
 [✅] FIX 1: better-sqlite3 auto-rebuild (6b60a7a)
 [✅] FIX 2: SSE complete event (already working — 9 stages fire)
-[ ] FIX 3: MetadataStrip live rendering (CLI)
-[✅] FIX 4: Layer names in SSE (88106f8)
-[ ] FIX 5: Reasoning narrative enrichment (CLI)
-[✅] FIX 6: Fusion methodology override (f2dbb72)
-[ ] FIX 7: VIEW tabs verification
-[ ] FIX 8: Depth annotations verification
-[ ] FIX 9: Canvas view verification
+[✅] FIX 3: MetadataStrip live rendering (35a7fc2) — isStreaming prop + phase logic
+[✅] FIX 4: Layer names in SSE (88106f8) — all 11 correct
+[✅] FIX 5: Reasoning narrative enrichment (35a7fc2) — natural language SSE
+[✅] FIX 6: Fusion methodology override (f2dbb72) — honors user choice
+[⚠️] FIX 7: VIEW tabs — data flows exist, needs visual browser verification
+[⚠️] FIX 8: Depth annotations — enabled by default, needs visual verification
+[⚠️] FIX 9: Canvas — 780 lines imported, needs visual verification
 ```
 
 ## COMMIT PLAN
