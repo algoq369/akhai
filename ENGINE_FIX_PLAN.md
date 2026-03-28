@@ -305,9 +305,9 @@ Visual testing in browser — I do this with Claude in Chrome:
 [✅] FIX 4: Layer names in SSE (88106f8) — all 11 correct
 [✅] FIX 5: Reasoning narrative enrichment (35a7fc2) — natural language SSE
 [✅] FIX 6: Fusion methodology override (f2dbb72) — honors user choice
-[⚠️] FIX 7: VIEW tabs — data flows exist, needs visual browser verification
-[⚠️] FIX 8: Depth annotations — enabled by default, needs visual verification
-[⚠️] FIX 9: Canvas — 780 lines imported, needs visual verification
+[✅] FIX 7: VIEW tabs (924699b) — shouldShow thresholds lowered, plain-prose fallback
+[✅] FIX 8: Depth annotations (4fc6a92) — plain-text fallback patterns (metric/connection/fact)
+[✅] FIX 9: Canvas toolbar (5289fcb) — zoom in/out/reset buttons + empty state
 ```
 
 ## COMMIT PLAN
