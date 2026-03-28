@@ -2,6 +2,10 @@
 Sovereign multi-AI consensus research engine. Visual-first, gnostic approach.
 TypeScript monorepo (pnpm). "Code Relic" grey-only design.
 
+## ⚡ MANDATORY: Read WEBNA_STANDARDS.md BEFORE starting any work.
+## It defines the engineering discipline this project now follows.
+## If WEBNA_STANDARDS.md and this file conflict, WEBNA_STANDARDS.md wins.
+
 ## EDITING RULES (MANDATORY — NEVER IGNORE)
 - DO NOT reformat existing code. No quote changes, no semicolons, no import reordering.
 - DO NOT run prettier, eslint --fix, or any formatter on existing files.
