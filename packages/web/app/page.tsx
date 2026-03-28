@@ -44,6 +44,7 @@ import { LayerTreeFull } from '@/components/LayerTreeFull';
 import AntipatternBadge from '@/components/AntipatternBadge';
 import IntelligenceBadge from '@/components/IntelligenceBadge';
 import MetadataStrip from '@/components/MetadataStrip';
+import ViewTabs from '@/components/sections/ViewTabs';
 import PipelineHistoryPanel from '@/components/PipelineHistoryPanel';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import { Layer, LAYER_METADATA } from '@/lib/layer-registry';
@@ -391,19 +392,21 @@ function HomePage() {
   } = useSideCanalStore();
 
   // Force topics panel closed
-  useEffect(() => { if (showTopicsPanel) setShowTopicsPanel(false) }, [])
+  useEffect(() => {
+    if (showTopicsPanel) setShowTopicsPanel(false);
+  }, []);
 
   // Listen for auth modal trigger from ProfileMenu / anywhere
   useEffect(() => {
-    const showHandler = () => setShowAuthModal(true)
-    const successHandler = () => checkSession()
-    window.addEventListener('akhai:show-auth', showHandler)
-    window.addEventListener('akhai:auth-success', successHandler)
+    const showHandler = () => setShowAuthModal(true);
+    const successHandler = () => checkSession();
+    window.addEventListener('akhai:show-auth', showHandler);
+    window.addEventListener('akhai:auth-success', successHandler);
     return () => {
-      window.removeEventListener('akhai:show-auth', showHandler)
-      window.removeEventListener('akhai:auth-success', successHandler)
-    }
-  }, [])
+      window.removeEventListener('akhai:show-auth', showHandler);
+      window.removeEventListener('akhai:auth-success', successHandler);
+    };
+  }, []);
 
   // Side Canal topics → AI insights for canvas
   const topicInsights = useMemo(() => {
@@ -603,12 +606,12 @@ function HomePage() {
       setUser(data.user);
       // Identify user in PostHog
       if (data.user?.id) {
-        const { identifyUser } = await import('@/lib/analytics')
+        const { identifyUser } = await import('@/lib/analytics');
         identifyUser(data.user.id, {
           username: data.user.username,
           email: data.user.email,
           authProvider: data.user.auth_provider,
-        })
+        });
       }
     } catch (error) {
       console.error('Session check error:', error);
@@ -845,8 +848,8 @@ function HomePage() {
 
     // Track query in PostHog
     import('@/lib/analytics').then(({ trackQuerySubmitted }) => {
-      trackQuerySubmitted(query, methodology || 'auto')
-    })
+      trackQuerySubmitted(query, methodology || 'auto');
+    });
 
     // Wait for transition animation before proceeding
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -986,12 +989,14 @@ function HomePage() {
           instinctConfig,
           layersWeights: useLayerStore.getState().weights,
           liveRefinements: liveRefinements.length > 0 ? liveRefinements : undefined,
-          grimoireContext: activeGrimoire ? {
-            id: activeGrimoire.id,
-            name: activeGrimoire.name,
-            instructions: activeGrimoire.instructions,
-            memories: grimoireMemories.map(m => m.content),
-          } : undefined,
+          grimoireContext: activeGrimoire
+            ? {
+                id: activeGrimoire.id,
+                name: activeGrimoire.name,
+                instructions: activeGrimoire.instructions,
+                memories: grimoireMemories.map((m) => m.content),
+              }
+            : undefined,
           attachments: processedFiles.length > 0 ? processedFiles : undefined,
           fileUrls: currentFileUrls.length > 0 ? currentFileUrls : undefined,
           queryId: frontendQueryId,
@@ -1004,11 +1009,11 @@ function HomePage() {
 
       // Wire God View store with response fusion data
       if (data.fusion) {
-        const layerWeights: Record<number, number> = {}
-        for (const la of (data.fusion.layerActivations || [])) {
+        const layerWeights: Record<number, number> = {};
+        for (const la of data.fusion.layerActivations || []) {
           // Map by index — layer activations come as array
-          const layerNum = la.layerNode ?? la.layer
-          if (layerNum != null) layerWeights[layerNum] = (la.effectiveWeight || 0) / 100
+          const layerNum = la.layerNode ?? la.layer;
+          if (layerNum != null) layerWeights[layerNum] = (la.effectiveWeight || 0) / 100;
         }
         useGodViewStore.getState().setActivations({
           layerWeights: layerWeights as any,
@@ -1017,9 +1022,9 @@ function HomePage() {
           confidence: data.fusion.confidence || 0,
           guardReasons: data.guardResult?.issues || [],
           processingMode: data.fusion.processingMode || null,
-        })
+        });
       }
-      useGodViewStore.getState().setProcessing(false)
+      useGodViewStore.getState().setProcessing(false);
 
       // Push full response metadata to persistent store
       useSideCanalStore.getState().pushResponseMetadata(frontendQueryId, {
@@ -1031,7 +1036,7 @@ function HomePage() {
         gnostic: data.gnostic,
         query: userMessage.content,
         timestamp: Date.now(),
-      })
+      });
 
       // Handle Side Canal suggestions - refresh from store
       if (data.sideCanal?.suggestions && data.sideCanal.suggestions.length > 0) {
@@ -1679,7 +1684,9 @@ function HomePage() {
       // No conversation yet, directly set methodology
       setMethodology(id);
       setIsBlinking(id);
-      import('@/lib/analytics').then(({ trackMethodologyChanged }) => trackMethodologyChanged(methodology, id))
+      import('@/lib/analytics').then(({ trackMethodologyChanged }) =>
+        trackMethodologyChanged(methodology, id)
+      );
       setTimeout(() => setIsBlinking(null), 300);
     }
   };
@@ -1769,7 +1776,13 @@ function HomePage() {
               <div className="flex items-center gap-3">
                 {/* Canvas Mode Toggle */}
                 <button
-                  onClick={() => { setIsCanvasMode(!isCanvasMode); if (!isCanvasMode) import('@/lib/analytics').then(({ trackCanvasOpened }) => trackCanvasOpened()) }}
+                  onClick={() => {
+                    setIsCanvasMode(!isCanvasMode);
+                    if (!isCanvasMode)
+                      import('@/lib/analytics').then(({ trackCanvasOpened }) =>
+                        trackCanvasOpened()
+                      );
+                  }}
                   className={`flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-medium transition-all ${
                     isCanvasMode
                       ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300'
@@ -1822,9 +1835,7 @@ function HomePage() {
 
       {/* Main Content */}
       <main
-        className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded && !isCanvasMode ? 'ml-60' : ''} ${
-          ''
-        }`}
+        className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isExpanded && !isCanvasMode ? 'ml-60' : ''} ${''}`}
       >
         {/* Canvas Mode */}
         {isCanvasMode && isExpanded && (
@@ -1974,98 +1985,20 @@ function HomePage() {
                       {/* Actual Response - Shows if not hidden */}
                       {!message.isHidden && (
                         <div className="border-l-2 border-relic-slate/30 pl-4">
-                          {/* View Mode Toggle */}
-                          {globalVizMode !== 'off' &&
-                            message.content.length > 200 && (
-                              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-relic-mist/30">
-                                <span className="text-[9px] text-relic-silver uppercase tracking-wide">
-                                  View:
-                                </span>
-                                <button
-                                  onClick={() =>
-                                    setVizMode((prev) => ({ ...prev, [message.id]: 'layers' }))
-                                  }
-                                  className={`px-2 py-1 text-[9px] rounded-md transition-all ${
-                                    (vizMode[message.id] || 'layers') === 'layers'
-                                      ? 'bg-indigo-100 text-indigo-700 font-medium'
-                                      : 'text-relic-silver hover:bg-relic-ghost'
-                                  }`}
-                                >
-                                  ◎ AI Layers
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    setVizMode((prev) => ({ ...prev, [message.id]: 'insight' }))
-                                  }
-                                  className={`px-2 py-1 text-[9px] rounded-md transition-all ${
-                                    vizMode[message.id] === 'insight'
-                                      ? 'bg-purple-100 text-purple-700 font-medium'
-                                      : 'text-relic-silver hover:bg-relic-ghost'
-                                  }`}
-                                >
-                                  ◇ Insight
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    setVizMode((prev) => ({ ...prev, [message.id]: 'mindmap' }))
-                                  }
-                                  className={`px-2 py-1 text-[9px] rounded-md transition-all ${
-                                    vizMode[message.id] === 'mindmap'
-                                      ? 'bg-emerald-100 text-emerald-700 font-medium'
-                                      : 'text-relic-silver hover:bg-relic-ghost'
-                                  }`}
-                                >
-                                  ◈ Mindmap
-                                </button>
-                              </div>
-                            )}
-
-                          {/* LAYERS VIEW - Sovereign Intelligence Tree */}
-                          {globalVizMode !== 'off' &&
-                            (vizMode[message.id] || 'layers') === 'layers' &&
-                            shouldShowLayers(message.content, !!message.gnostic) && (
-                              <LayerResponse
-                                content={message.content}
-                                query={messages[messages.indexOf(message) - 1]?.content || ''}
-                                methodology={message.methodology || methodology}
-                                onSwitchToInsight={() =>
-                                  setVizMode((prev) => ({ ...prev, [message.id]: 'insight' }))
-                                }
-                                onOpenMindMap={() => setShowMindMap(true)}
-                                onDeepDive={(query) => setDeepDiveQuery(query)}
-                              />
-                            )}
-
-                          {/* INSIGHT MINDMAP - Grokipedia-style knowledge graph */}
-                          {globalVizMode !== 'off' &&
-                            vizMode[message.id] === 'insight' &&
-                            shouldShowInsightMap(message.content, !!message.gnostic) && (
-                              <InsightMindmap
-                                content={message.content}
-                                query={messages[messages.indexOf(message) - 1]?.content || ''}
-                                methodology={message.methodology || methodology}
-                                onSwitchToLayers={() =>
-                                  setVizMode((prev) => ({ ...prev, [message.id]: 'layers' }))
-                                }
-                                onOpenMindMap={() => setShowMindMap(true)}
-                              />
-                            )}
-
-                          {/* MINDMAP VIEW - Visual concept map */}
-                          {globalVizMode !== 'off' &&
-                            vizMode[message.id] === 'mindmap' &&
-                            shouldShowMindmap(message.content, message.topics) && (
-                              <div className="mb-6">
-                                <ResponseMindmap
-                                  content={message.content}
-                                  topics={message.topics}
-                                  isVisible={true}
-                                  onToggle={() => {}}
-                                  methodology={message.methodology || methodology}
-                                  query={messages[messages.indexOf(message) - 1]?.content || ''}
-                                />
-                              </div>
-                            )}
+                          <ViewTabs
+                            message={message}
+                            previousUserQuery={
+                              messages[messages.indexOf(message) - 1]?.content || ''
+                            }
+                            currentVizMode={vizMode[message.id]}
+                            globalVizMode={globalVizMode}
+                            methodology={methodology}
+                            onSetVizMode={(mode) =>
+                              setVizMode((prev) => ({ ...prev, [message.id]: mode }))
+                            }
+                            onOpenMindMap={() => setShowMindMap(true)}
+                            onDeepDive={(query) => setDeepDiveQuery(query)}
+                          />
 
                           {/* TEXT - Always shown after visualizations (skip if streaming with no content) */}
                           {message.isStreaming && !message.content ? (
@@ -2773,7 +2706,7 @@ function HomePage() {
           onMindMapClick={() => {
             setMindMapInitialView('graph');
             setShowMindMap(true);
-            import('@/lib/analytics').then(({ trackMindmapOpened }) => trackMindmapOpened('graph'))
+            import('@/lib/analytics').then(({ trackMindmapOpened }) => trackMindmapOpened('graph'));
           }}
         />
       )}
