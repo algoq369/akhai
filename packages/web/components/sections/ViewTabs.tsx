@@ -1,8 +1,8 @@
 'use client';
 
-import LayerResponse, { shouldShowLayers } from '@/components/LayerResponse';
-import InsightMindmap, { shouldShowInsightMap } from '@/components/InsightMindmap';
-import ResponseMindmap, { shouldShowMindmap } from '@/components/ResponseMindmap';
+import LayerResponse from '@/components/LayerResponse';
+import InsightMindmap from '@/components/InsightMindmap';
+import ResponseMindmap from '@/components/ResponseMindmap';
 import type { Message } from '@/lib/chat-store';
 
 export interface ViewTabsProps {
@@ -67,48 +67,42 @@ export default function ViewTabs({
         </div>
       )}
 
-      {/* LAYERS VIEW - Sovereign Intelligence Tree */}
-      {globalVizMode !== 'off' &&
-        effectiveVizMode === 'layers' &&
-        shouldShowLayers(message.content, !!message.gnostic) && (
-          <LayerResponse
-            content={message.content}
-            query={previousUserQuery}
-            methodology={message.methodology || methodology}
-            onSwitchToInsight={() => onSetVizMode('insight')}
-            onOpenMindMap={onOpenMindMap}
-            onDeepDive={(query) => onDeepDive(query)}
-          />
-        )}
+      {/* LAYERS VIEW - Always show when tab visible (content > 200 chars) */}
+      {globalVizMode !== 'off' && effectiveVizMode === 'layers' && message.content.length > 200 && (
+        <LayerResponse
+          content={message.content}
+          query={previousUserQuery}
+          methodology={message.methodology || methodology}
+          onSwitchToInsight={() => onSetVizMode('insight')}
+          onOpenMindMap={onOpenMindMap}
+          onDeepDive={(query) => onDeepDive(query)}
+        />
+      )}
 
-      {/* INSIGHT MINDMAP - Grokipedia-style knowledge graph */}
-      {globalVizMode !== 'off' &&
-        currentVizMode === 'insight' &&
-        shouldShowInsightMap(message.content, !!message.gnostic) && (
-          <InsightMindmap
-            content={message.content}
-            query={previousUserQuery}
-            methodology={message.methodology || methodology}
-            onSwitchToLayers={() => onSetVizMode('layers')}
-            onOpenMindMap={onOpenMindMap}
-          />
-        )}
+      {/* INSIGHT MINDMAP - Always show when tab selected + content > 200 */}
+      {globalVizMode !== 'off' && currentVizMode === 'insight' && message.content.length > 200 && (
+        <InsightMindmap
+          content={message.content}
+          query={previousUserQuery}
+          methodology={message.methodology || methodology}
+          onSwitchToLayers={() => onSetVizMode('layers')}
+          onOpenMindMap={onOpenMindMap}
+        />
+      )}
 
-      {/* MINDMAP VIEW - Visual concept map */}
-      {globalVizMode !== 'off' &&
-        currentVizMode === 'mindmap' &&
-        shouldShowMindmap(message.content, message.topics) && (
-          <div className="mb-6">
-            <ResponseMindmap
-              content={message.content}
-              topics={message.topics}
-              isVisible={true}
-              onToggle={() => {}}
-              methodology={message.methodology || methodology}
-              query={previousUserQuery}
-            />
-          </div>
-        )}
+      {/* MINDMAP VIEW - Always show when tab selected + content > 200 */}
+      {globalVizMode !== 'off' && currentVizMode === 'mindmap' && message.content.length > 200 && (
+        <div className="mb-6">
+          <ResponseMindmap
+            content={message.content}
+            topics={message.topics}
+            isVisible={true}
+            onToggle={() => {}}
+            methodology={message.methodology || methodology}
+            query={previousUserQuery}
+          />
+        </div>
+      )}
     </>
   );
 }
