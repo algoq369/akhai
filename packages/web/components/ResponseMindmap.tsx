@@ -1,34 +1,34 @@
-'use client'
+'use client';
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
   SparklesIcon,
   ArrowsPointingOutIcon,
   ArrowsPointingInIcon,
   XMarkIcon,
   BookOpenIcon,
-  LinkIcon
-} from '@heroicons/react/24/outline'
+  LinkIcon,
+} from '@heroicons/react/24/outline';
 
 interface MindmapNode {
-  id: string
-  label: string
-  fullText: string
-  level: number
-  parentId?: string
-  category?: string
-  x?: number
-  y?: number
+  id: string;
+  label: string;
+  fullText: string;
+  level: number;
+  parentId?: string;
+  category?: string;
+  x?: number;
+  y?: number;
 }
 
 interface ResponseMindmapProps {
-  content: string
-  topics?: Array<{ id: string; name: string; category?: string }>
-  isVisible: boolean
-  onToggle: () => void
-  methodology?: string
-  query?: string
+  content: string;
+  topics?: Array<{ id: string; name: string; category?: string }>;
+  isVisible: boolean;
+  onToggle: () => void;
+  methodology?: string;
+  query?: string;
 }
 
 // Beautiful gradient colors
@@ -41,18 +41,18 @@ const NODE_GRADIENTS = [
   { from: '#a8edea', to: '#fed6e3' },
   { from: '#ff9a9e', to: '#fecfef' },
   { from: '#ffecd2', to: '#fcb69f' },
-]
+];
 
 // Methodology colors
 const METHODOLOGY_COLORS: Record<string, { from: string; to: string }> = {
-  'direct': { from: '#ef4444', to: '#f97316' },
-  'cod': { from: '#f97316', to: '#eab308' },
-  'bot': { from: '#eab308', to: '#84cc16' },
-  'react': { from: '#22c55e', to: '#14b8a6' },
-  'pot': { from: '#3b82f6', to: '#6366f1' },
-  'gtp': { from: '#8b5cf6', to: '#a855f7' },
-  'auto': { from: '#64748b', to: '#475569' },
-}
+  direct: { from: '#ef4444', to: '#f97316' },
+  cod: { from: '#f97316', to: '#eab308' },
+  bot: { from: '#eab308', to: '#84cc16' },
+  react: { from: '#22c55e', to: '#14b8a6' },
+  pot: { from: '#3b82f6', to: '#6366f1' },
+  gtp: { from: '#8b5cf6', to: '#a855f7' },
+  auto: { from: '#64748b', to: '#475569' },
+};
 
 // Generate tailored footer content based on query analysis
 function generateTailoredFooter(
@@ -63,103 +63,112 @@ function generateTailoredFooter(
   isExpanded: boolean,
   selectedNode: MindmapNode | null
 ): { focus: string; quality: string; action: string } {
-  const conceptCount = nodes.length - 1
-  const rootLabel = nodes[0]?.label || 'concepts'
+  const conceptCount = nodes.length - 1;
+  const rootLabel = nodes[0]?.label || 'concepts';
 
   // Analyze query intent
-  const queryLower = query?.toLowerCase() || ''
-  const hasHow = queryLower.includes('how')
-  const hasWhat = queryLower.includes('what')
-  const hasWhy = queryLower.includes('why')
-  const hasCompare = queryLower.includes('compare') || queryLower.includes('vs') || queryLower.includes('versus') || queryLower.includes('difference')
-  const hasList = queryLower.includes('list') || /\d+\./.test(query || '')
-  const hasExplain = queryLower.includes('explain') || queryLower.includes('describe')
-  const hasCreate = queryLower.includes('create') || queryLower.includes('build') || queryLower.includes('design')
+  const queryLower = query?.toLowerCase() || '';
+  const hasHow = queryLower.includes('how');
+  const hasWhat = queryLower.includes('what');
+  const hasWhy = queryLower.includes('why');
+  const hasCompare =
+    queryLower.includes('compare') ||
+    queryLower.includes('vs') ||
+    queryLower.includes('versus') ||
+    queryLower.includes('difference');
+  const hasList = queryLower.includes('list') || /\d+\./.test(query || '');
+  const hasExplain = queryLower.includes('explain') || queryLower.includes('describe');
+  const hasCreate =
+    queryLower.includes('create') || queryLower.includes('build') || queryLower.includes('design');
 
   // Extract subject from query
-  const queryWords = query?.split(/\s+/).filter(w => w.length > 3) || []
-  const primarySubject = nodes[1]?.label || queryWords[queryWords.length - 1] || 'topic'
+  const queryWords = query?.split(/\s+/).filter((w) => w.length > 3) || [];
+  const primarySubject = nodes[1]?.label || queryWords[queryWords.length - 1] || 'topic';
 
   // Detect topic patterns
-  const hasNumbers = nodes.some(n => /\d+/.test(n.label))
-  const hasQuestions = nodes.some(n => /\?/.test(n.fullText))
-  const categories = topics ? new Set(topics.filter(t => t.category).map(t => t.category)) : new Set()
+  const hasNumbers = nodes.some((n) => /\d+/.test(n.label));
+  const hasQuestions = nodes.some((n) => /\?/.test(n.fullText));
+  const categories = topics
+    ? new Set(topics.filter((t) => t.category).map((t) => t.category))
+    : new Set();
 
   // Generate FOCUS line (tailored to query type)
-  let focus = ''
+  let focus = '';
   if (hasCompare) {
-    focus = `Comparative analysis mapping ${conceptCount} distinguishing factors for "${primarySubject}" — radial structure reveals contrast points across ${methodology} methodology with spatial organization highlighting differences.`
+    focus = `Comparative analysis mapping ${conceptCount} distinguishing factors for "${primarySubject}" — radial structure reveals contrast points across ${methodology} methodology with spatial organization highlighting differences.`;
   } else if (hasHow) {
-    focus = `Procedural knowledge map extracting ${conceptCount} implementation steps for "${primarySubject}" — ${methodology} methodology captures sequential and parallel pathways with interconnected concept relationships.`
+    focus = `Procedural knowledge map extracting ${conceptCount} implementation steps for "${primarySubject}" — ${methodology} methodology captures sequential and parallel pathways with interconnected concept relationships.`;
   } else if (hasWhat) {
-    focus = `Definitional framework identifying ${conceptCount} core aspects of "${primarySubject}" — hierarchical visualization anchored to "${rootLabel}" with categorical concept distribution.`
+    focus = `Definitional framework identifying ${conceptCount} core aspects of "${primarySubject}" — hierarchical visualization anchored to "${rootLabel}" with categorical concept distribution.`;
   } else if (hasWhy) {
-    focus = `Causal reasoning graph mapping ${conceptCount} explanatory factors for "${primarySubject}" — ${methodology} methodology surfaces cause-effect relationships through radial concept clustering.`
+    focus = `Causal reasoning graph mapping ${conceptCount} explanatory factors for "${primarySubject}" — ${methodology} methodology surfaces cause-effect relationships through radial concept clustering.`;
   } else if (hasList || hasNumbers) {
-    focus = `Structured enumeration visualizing ${conceptCount} sequential elements from "${rootLabel}" — numbered hierarchy with radial layout preserving logical ordering from ${methodology} response.`
+    focus = `Structured enumeration visualizing ${conceptCount} sequential elements from "${rootLabel}" — numbered hierarchy with radial layout preserving logical ordering from ${methodology} response.`;
   } else if (hasCreate || hasExplain) {
-    focus = `Constructive knowledge map decomposing "${primarySubject}" into ${conceptCount} foundational concepts — ${methodology} methodology reveals building blocks with spatial organization for synthesis.`
+    focus = `Constructive knowledge map decomposing "${primarySubject}" into ${conceptCount} foundational concepts — ${methodology} methodology reveals building blocks with spatial organization for synthesis.`;
   } else {
-    focus = `Conceptual map extracting ${conceptCount} key topics from ${methodology} methodology response — hierarchical visualization centered on "${rootLabel}" with radial concept distribution for spatial knowledge organization.`
+    focus = `Conceptual map extracting ${conceptCount} key topics from ${methodology} methodology response — hierarchical visualization centered on "${rootLabel}" with radial concept distribution for spatial knowledge organization.`;
   }
 
   // Generate QUALITY line (tailored to extraction type and content)
-  let quality = ''
+  let quality = '';
   if (topics && topics.length > 0) {
-    const categoryText = categories.size > 0 ? ` across ${categories.size} ${categories.size === 1 ? 'category' : 'categories'}` : ''
-    quality = `Topic-driven extraction with ${conceptCount} confirmed topics${categoryText} — AI-verified against response content with ${Math.round((topics.length / Math.max(conceptCount, 1)) * 100)}% coverage confidence.`
+    const categoryText =
+      categories.size > 0
+        ? ` across ${categories.size} ${categories.size === 1 ? 'category' : 'categories'}`
+        : '';
+    quality = `Topic-driven extraction with ${conceptCount} confirmed topics${categoryText} — AI-verified against response content with ${Math.round((topics.length / Math.max(conceptCount, 1)) * 100)}% coverage confidence.`;
   } else if (hasNumbers) {
-    quality = `Numbered pattern extraction preserving sequential structure — ${conceptCount} ordered concepts with ${nodes.filter(n => /^\d+/.test(n.label)).length} explicit enumerations maintaining logical flow integrity.`
+    quality = `Numbered pattern extraction preserving sequential structure — ${conceptCount} ordered concepts with ${nodes.filter((n) => /^\d+/.test(n.label)).length} explicit enumerations maintaining logical flow integrity.`;
   } else if (hasQuestions) {
-    quality = `Question-aware extraction identifying ${conceptCount} inquiry-driven concepts — preserves interrogative structure with ${nodes.filter(n => /\?/.test(n.fullText)).length} question nodes for exploratory navigation.`
+    quality = `Question-aware extraction identifying ${conceptCount} inquiry-driven concepts — preserves interrogative structure with ${nodes.filter((n) => /\?/.test(n.fullText)).length} question nodes for exploratory navigation.`;
   } else {
-    const boldCount = nodes.filter(n => n.fullText.includes('**')).length
-    const headerCount = nodes.filter(n => n.fullText.startsWith('#')).length
-    quality = `Pattern-based extraction from ${headerCount} headers and ${boldCount} emphasized terms — ${conceptCount} distinct concepts with semantic deduplication at ${Math.round((conceptCount / Math.max(nodes.length, 1)) * 100)}% retention.`
+    const boldCount = nodes.filter((n) => n.fullText.includes('**')).length;
+    const headerCount = nodes.filter((n) => n.fullText.startsWith('#')).length;
+    quality = `Pattern-based extraction from ${headerCount} headers and ${boldCount} emphasized terms — ${conceptCount} distinct concepts with semantic deduplication at ${Math.round((conceptCount / Math.max(nodes.length, 1)) * 100)}% retention.`;
   }
 
   // Generate ACTION line (tailored to current state and content type)
-  let action = ''
+  let action = '';
   if (isExpanded && selectedNode) {
-    const relatedCount = nodes.filter(n => n.level === 1).length
-    action = `Detail view active for "${selectedNode.label}" — revealing full context with ${selectedNode.level === 0 ? relatedCount + ' connected concepts' : 'parent relationships'}. Click other nodes to navigate concept network or drag to reorganize spatial layout.`
+    const relatedCount = nodes.filter((n) => n.level === 1).length;
+    action = `Detail view active for "${selectedNode.label}" — revealing full context with ${selectedNode.level === 0 ? relatedCount + ' connected concepts' : 'parent relationships'}. Click other nodes to navigate concept network or drag to reorganize spatial layout.`;
   } else if (isExpanded) {
     const interactionHints = hasCompare
       ? 'compare side-by-side by opening multiple detail panels'
       : hasHow
-      ? 'explore step-by-step by clicking sequential nodes'
-      : 'drill into any concept for full context'
-    action = `Interactive exploration enabled: Click nodes to ${interactionHints}. Drag to reorganize — spatial positioning aids memory retention. ${conceptCount} concepts ready for deep-dive analysis.`
+        ? 'explore step-by-step by clicking sequential nodes'
+        : 'drill into any concept for full context';
+    action = `Interactive exploration enabled: Click nodes to ${interactionHints}. Drag to reorganize — spatial positioning aids memory retention. ${conceptCount} concepts ready for deep-dive analysis.`;
   } else {
     const previewHint = hasCompare
       ? 'comparison matrix'
       : hasList
-      ? 'ordered workflow'
-      : hasHow
-      ? 'implementation roadmap'
-      : 'concept relationships'
-    action = `Compact preview of ${conceptCount}-topic ${previewHint}. Click expand (↗) for interactive mode with draggable nodes, detail panels, and full-text exploration of "${primarySubject}".`
+        ? 'ordered workflow'
+        : hasHow
+          ? 'implementation roadmap'
+          : 'concept relationships';
+    action = `Compact preview of ${conceptCount}-topic ${previewHint}. Click expand (↗) for interactive mode with draggable nodes, detail panels, and full-text exploration of "${primarySubject}".`;
   }
 
-  return { focus, quality, action }
+  return { focus, quality, action };
 }
 
 function extractConcepts(content: string): MindmapNode[] {
-  const nodes: MindmapNode[] = []
-  
+  const nodes: MindmapNode[] = [];
+
   // Get first meaningful sentence for root
-  const sentences = content.split(/[.!?]/).filter(s => s.trim().length > 10)
-  const firstSentence = sentences[0]?.trim() || 'Response'
-  const rootLabel = firstSentence.length > 28 
-    ? firstSentence.substring(0, 25) + '...' 
-    : firstSentence
-  
-  nodes.push({ 
-    id: 'root', 
-    label: rootLabel, 
+  const sentences = content.split(/[.!?]/).filter((s) => s.trim().length > 10);
+  const firstSentence = sentences[0]?.trim() || 'Response';
+  const rootLabel =
+    firstSentence.length > 28 ? firstSentence.substring(0, 25) + '...' : firstSentence;
+
+  nodes.push({
+    id: 'root',
+    label: rootLabel,
     fullText: firstSentence,
-    level: 0 
-  })
+    level: 0,
+  });
 
   // Extract concepts with their full context
   const patterns = [
@@ -167,35 +176,50 @@ function extractConcepts(content: string): MindmapNode[] {
     { regex: /^#+\s*(.+)$/gm, type: 'header' },
     { regex: /^[-•*]\s*(.+)$/gm, type: 'bullet' },
     { regex: /^\d+\.\s*(.+)$/gm, type: 'numbered' },
-  ]
+  ];
 
-  const conceptMap = new Map<string, string>()
-  
+  const conceptMap = new Map<string, string>();
+
   patterns.forEach(({ regex }) => {
-    let match
+    let match;
     while ((match = regex.exec(content)) !== null) {
-      const fullText = match[1]?.trim().replace(/[*#]/g, '').trim()
+      const fullText = match[1]?.trim().replace(/[*#]/g, '').trim();
       if (fullText && fullText.length > 2 && fullText.length < 200) {
-        const label = fullText.length > 20 ? fullText.substring(0, 17) + '...' : fullText
+        const label = fullText.length > 20 ? fullText.substring(0, 17) + '...' : fullText;
         if (!conceptMap.has(label)) {
-          conceptMap.set(label, fullText)
+          conceptMap.set(label, fullText);
         }
       }
     }
-  })
+  });
+
+  // Fallback for plain prose: extract key sentences as concepts
+  if (conceptMap.size < 3) {
+    sentences.slice(1, 9).forEach((s) => {
+      const trimmed = s.trim();
+      if (trimmed.length > 15 && trimmed.length < 200) {
+        const label = trimmed.length > 20 ? trimmed.substring(0, 17) + '...' : trimmed;
+        if (!conceptMap.has(label)) {
+          conceptMap.set(label, trimmed);
+        }
+      }
+    });
+  }
 
   // Convert to nodes (max 8)
-  Array.from(conceptMap.entries()).slice(0, 8).forEach(([label, fullText], index) => {
-    nodes.push({
-      id: `concept-${index}`,
-      label,
-      fullText,
-      level: 1,
-      parentId: 'root',
-    })
-  })
+  Array.from(conceptMap.entries())
+    .slice(0, 8)
+    .forEach(([label, fullText], index) => {
+      nodes.push({
+        id: `concept-${index}`,
+        label,
+        fullText,
+        level: 1,
+        parentId: 'root',
+      });
+    });
 
-  return nodes
+  return nodes;
 }
 
 export default function ResponseMindmap({
@@ -204,22 +228,29 @@ export default function ResponseMindmap({
   isVisible,
   onToggle,
   methodology = 'auto',
-  query
+  query,
 }: ResponseMindmapProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [hoveredNode, setHoveredNode] = useState<string | null>(null)
-  const [selectedNode, setSelectedNode] = useState<MindmapNode | null>(null)
-  const [nodePositions, setNodePositions] = useState<Record<string, { x: number; y: number }>>({})
-  const [isDragging, setIsDragging] = useState(false)
-  const [draggedNode, setDraggedNode] = useState<string | null>(null)
-  const [showLinkMenu, setShowLinkMenu] = useState(false)
-  const svgRef = useRef<SVGSVGElement>(null)
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<MindmapNode | null>(null);
+  const [nodePositions, setNodePositions] = useState<Record<string, { x: number; y: number }>>({});
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedNode, setDraggedNode] = useState<string | null>(null);
+  const [showLinkMenu, setShowLinkMenu] = useState(false);
+  const svgRef = useRef<SVGSVGElement>(null);
 
-  const accentGradient = METHODOLOGY_COLORS[methodology] || METHODOLOGY_COLORS.auto
+  const accentGradient = METHODOLOGY_COLORS[methodology] || METHODOLOGY_COLORS.auto;
 
   const nodes = useMemo(() => {
     if (topics && topics.length > 0) {
-      const mapped: MindmapNode[] = [{ id: 'root', label: 'Key Concepts', fullText: 'Main concepts from this response', level: 0 }]
+      const mapped: MindmapNode[] = [
+        {
+          id: 'root',
+          label: 'Key Concepts',
+          fullText: 'Main concepts from this response',
+          level: 0,
+        },
+      ];
       topics.slice(0, 8).forEach((topic, i) => {
         mapped.push({
           id: topic.id || `topic-${i}`,
@@ -228,104 +259,111 @@ export default function ResponseMindmap({
           level: 1,
           parentId: 'root',
           category: topic.category,
-        })
-      })
-      return mapped
+        });
+      });
+      return mapped;
     }
-    return extractConcepts(content)
-  }, [content, topics])
+    return extractConcepts(content);
+  }, [content, topics]);
 
-  const shouldShow = nodes.length >= 4
-  const conceptCount = nodes.length - 1
+  const shouldShow = nodes.length >= 4;
+  const conceptCount = nodes.length - 1;
 
   // Generate tailored footer content
-  const footerContent = useMemo(() =>
-    generateTailoredFooter(query, nodes, topics, methodology, isExpanded, selectedNode),
+  const footerContent = useMemo(
+    () => generateTailoredFooter(query, nodes, topics, methodology, isExpanded, selectedNode),
     [query, nodes, topics, methodology, isExpanded, selectedNode]
-  )
+  );
 
   // Dynamic dimensions based on expansion and detail panel
   const dimensions = useMemo(() => {
     if (selectedNode) {
-      return { width: 640, height: 450 }
+      return { width: 640, height: 450 };
     }
-    return isExpanded
-      ? { width: 640, height: 450 }
-      : { width: 380, height: 260 }
-  }, [isExpanded, selectedNode])
+    return isExpanded ? { width: 640, height: 450 } : { width: 380, height: 260 };
+  }, [isExpanded, selectedNode]);
 
   // Calculate positions
   const positionedNodes = useMemo(() => {
-    const graphWidth = selectedNode ? 400 : dimensions.width
-    const centerX = graphWidth / 2
-    const centerY = dimensions.height / 2
-    const radius = Math.min(graphWidth, dimensions.height) * 0.30
+    const graphWidth = selectedNode ? 400 : dimensions.width;
+    const centerX = graphWidth / 2;
+    const centerY = dimensions.height / 2;
+    const radius = Math.min(graphWidth, dimensions.height) * 0.3;
 
     return nodes.map((node, index) => {
       if (nodePositions[node.id]) {
-        return { ...node, ...nodePositions[node.id] }
+        return { ...node, ...nodePositions[node.id] };
       }
-      
+
       if (node.level === 0) {
-        return { ...node, x: centerX, y: centerY }
+        return { ...node, x: centerX, y: centerY };
       }
-      
-      const childNodes = nodes.filter(n => n.level === 1)
-      const childIndex = childNodes.findIndex(n => n.id === node.id)
-      const angleStep = (2 * Math.PI) / childNodes.length
-      const angle = angleStep * childIndex - Math.PI / 2
-      
+
+      const childNodes = nodes.filter((n) => n.level === 1);
+      const childIndex = childNodes.findIndex((n) => n.id === node.id);
+      const angleStep = (2 * Math.PI) / childNodes.length;
+      const angle = angleStep * childIndex - Math.PI / 2;
+
       return {
         ...node,
         x: centerX + radius * Math.cos(angle),
         y: centerY + radius * Math.sin(angle),
-      }
-    })
-  }, [nodes, dimensions, nodePositions, selectedNode])
+      };
+    });
+  }, [nodes, dimensions, nodePositions, selectedNode]);
 
   // Drag handlers
-  const handleMouseDown = useCallback((nodeId: string, e: React.MouseEvent) => {
-    if (selectedNode) return // Don't drag when detail panel is open
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
-    setDraggedNode(nodeId)
-  }, [selectedNode])
+  const handleMouseDown = useCallback(
+    (nodeId: string, e: React.MouseEvent) => {
+      if (selectedNode) return; // Don't drag when detail panel is open
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+      setDraggedNode(nodeId);
+    },
+    [selectedNode]
+  );
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging || !draggedNode || !svgRef.current) return
-    
-    const svg = svgRef.current
-    const rect = svg.getBoundingClientRect()
-    const graphWidth = selectedNode ? 400 : dimensions.width
-    const x = Math.max(40, Math.min(graphWidth - 40, e.clientX - rect.left))
-    const y = Math.max(40, Math.min(dimensions.height - 40, e.clientY - rect.top))
-    
-    setNodePositions(prev => ({
-      ...prev,
-      [draggedNode]: { x, y }
-    }))
-  }, [isDragging, draggedNode, dimensions, selectedNode])
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isDragging || !draggedNode || !svgRef.current) return;
+
+      const svg = svgRef.current;
+      const rect = svg.getBoundingClientRect();
+      const graphWidth = selectedNode ? 400 : dimensions.width;
+      const x = Math.max(40, Math.min(graphWidth - 40, e.clientX - rect.left));
+      const y = Math.max(40, Math.min(dimensions.height - 40, e.clientY - rect.top));
+
+      setNodePositions((prev) => ({
+        ...prev,
+        [draggedNode]: { x, y },
+      }));
+    },
+    [isDragging, draggedNode, dimensions, selectedNode]
+  );
 
   const handleMouseUp = useCallback(() => {
-    setIsDragging(false)
-    setDraggedNode(null)
-  }, [])
+    setIsDragging(false);
+    setDraggedNode(null);
+  }, []);
 
-  const handleNodeClick = useCallback((node: MindmapNode, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!isDragging) {
-      setSelectedNode(selectedNode?.id === node.id ? null : node)
-      if (!isExpanded) setIsExpanded(true)
-    }
-  }, [isDragging, selectedNode, isExpanded])
+  const handleNodeClick = useCallback(
+    (node: MindmapNode, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!isDragging) {
+        setSelectedNode(selectedNode?.id === node.id ? null : node);
+        if (!isExpanded) setIsExpanded(true);
+      }
+    },
+    [isDragging, selectedNode, isExpanded]
+  );
 
   // Close detail panel when clicking outside
   const handleCanvasClick = useCallback(() => {
-    if (selectedNode) setSelectedNode(null)
-  }, [selectedNode])
+    if (selectedNode) setSelectedNode(null);
+  }, [selectedNode]);
 
-  if (!shouldShow && !isVisible) return null
+  if (!shouldShow && !isVisible) return null;
 
   return (
     <div className="mt-4">
@@ -338,7 +376,9 @@ export default function ResponseMindmap({
             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
         }`}
       >
-        <SparklesIcon className={`w-3.5 h-3.5 transition-transform ${isVisible ? 'rotate-12' : 'group-hover:rotate-12'}`} />
+        <SparklesIcon
+          className={`w-3.5 h-3.5 transition-transform ${isVisible ? 'rotate-12' : 'group-hover:rotate-12'}`}
+        />
         <span>{isVisible ? 'hide map' : 'visualize'}</span>
         {!isVisible && (
           <span className="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[9px]">
@@ -369,7 +409,7 @@ export default function ResponseMindmap({
                 className="absolute inset-0 opacity-30 dark:opacity-10 pointer-events-none"
                 style={{
                   backgroundImage: `radial-gradient(circle at 1px 1px, #e5e7eb 1px, transparent 0)`,
-                  backgroundSize: '20px 20px'
+                  backgroundSize: '20px 20px',
                 }}
               />
 
@@ -385,8 +425,8 @@ export default function ResponseMindmap({
                 )}
                 <button
                   onClick={() => {
-                    setIsExpanded(!isExpanded)
-                    if (!isExpanded) setSelectedNode(null)
+                    setIsExpanded(!isExpanded);
+                    if (!isExpanded) setSelectedNode(null);
                   }}
                   className="p-1.5 rounded-lg bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm"
                 >
@@ -427,75 +467,88 @@ export default function ResponseMindmap({
                       <stop offset="100%" stopColor={accentGradient.to} />
                     </linearGradient>
                     {NODE_GRADIENTS.map((grad, i) => (
-                      <linearGradient key={i} id={`nodeGrad${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                      <linearGradient
+                        key={i}
+                        id={`nodeGrad${i}`}
+                        x1="0%"
+                        y1="0%"
+                        x2="100%"
+                        y2="100%"
+                      >
                         <stop offset="0%" stopColor={grad.from} />
                         <stop offset="100%" stopColor={grad.to} />
                       </linearGradient>
                     ))}
                     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                      <feGaussianBlur stdDeviation="4" result="coloredBlur" />
                       <feMerge>
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
                       </feMerge>
                     </filter>
                     <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15"/>
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15" />
                     </filter>
                   </defs>
 
                   {/* Connections */}
-                  {positionedNodes.filter(n => n.parentId).map(node => {
-                    const parent = positionedNodes.find(p => p.id === node.parentId)
-                    if (!parent || !node.x || !node.y || !parent.x || !parent.y) return null
-                    
-                    const isActive = hoveredNode === node.id || selectedNode?.id === node.id
-                    
-                    const mx = (parent.x + node.x) / 2
-                    const my = (parent.y + node.y) / 2 - 15
+                  {positionedNodes
+                    .filter((n) => n.parentId)
+                    .map((node) => {
+                      const parent = positionedNodes.find((p) => p.id === node.parentId);
+                      if (!parent || !node.x || !node.y || !parent.x || !parent.y) return null;
 
-                    return (
-                      <motion.path
-                        key={`line-${node.id}`}
-                        d={`M ${parent.x} ${parent.y} Q ${mx} ${my} ${node.x} ${node.y}`}
-                        fill="none"
-                        stroke={isActive ? accentGradient.from : '#e2e8f0'}
-                        strokeWidth={isActive ? 2.5 : 1.5}
-                        strokeLinecap="round"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: isActive ? 1 : 0.5 }}
-                        transition={{ duration: 0.4, delay: 0.1 }}
-                      />
-                    )
-                  })}
+                      const isActive = hoveredNode === node.id || selectedNode?.id === node.id;
+
+                      const mx = (parent.x + node.x) / 2;
+                      const my = (parent.y + node.y) / 2 - 15;
+
+                      return (
+                        <motion.path
+                          key={`line-${node.id}`}
+                          d={`M ${parent.x} ${parent.y} Q ${mx} ${my} ${node.x} ${node.y}`}
+                          fill="none"
+                          stroke={isActive ? accentGradient.from : '#e2e8f0'}
+                          strokeWidth={isActive ? 2.5 : 1.5}
+                          strokeLinecap="round"
+                          initial={{ pathLength: 0, opacity: 0 }}
+                          animate={{ pathLength: 1, opacity: isActive ? 1 : 0.5 }}
+                          transition={{ duration: 0.4, delay: 0.1 }}
+                        />
+                      );
+                    })}
 
                   {/* Nodes */}
                   {positionedNodes.map((node, index) => {
-                    const isRoot = node.level === 0
-                    const isHovered = hoveredNode === node.id
-                    const isSelected = selectedNode?.id === node.id
-                    const isDraggingThis = draggedNode === node.id
-                    
-                    const nodeWidth = isRoot ? (isExpanded ? 140 : 110) : (isExpanded ? 120 : 90)
-                    const nodeHeight = isRoot ? 40 : 34
-                    const gradientId = isRoot ? 'rootGrad' : `nodeGrad${index % NODE_GRADIENTS.length}`
-                    
-                    if (!node.x || !node.y) return null
-                    
+                    const isRoot = node.level === 0;
+                    const isHovered = hoveredNode === node.id;
+                    const isSelected = selectedNode?.id === node.id;
+                    const isDraggingThis = draggedNode === node.id;
+
+                    const nodeWidth = isRoot ? (isExpanded ? 140 : 110) : isExpanded ? 120 : 90;
+                    const nodeHeight = isRoot ? 40 : 34;
+                    const gradientId = isRoot
+                      ? 'rootGrad'
+                      : `nodeGrad${index % NODE_GRADIENTS.length}`;
+
+                    if (!node.x || !node.y) return null;
+
                     return (
                       <motion.g
                         key={node.id}
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={{ 
-                          scale: isDraggingThis ? 1.1 : (isSelected ? 1.05 : 1), 
-                          opacity: 1 
+                        animate={{
+                          scale: isDraggingThis ? 1.1 : isSelected ? 1.05 : 1,
+                          opacity: 1,
                         }}
                         transition={{ duration: 0.25, delay: index * 0.03 }}
                         onMouseEnter={() => setHoveredNode(node.id)}
                         onMouseLeave={() => setHoveredNode(null)}
                         onMouseDown={(e) => handleMouseDown(node.id, e)}
                         onClick={(e) => handleNodeClick(node, e)}
-                        style={{ cursor: selectedNode ? 'pointer' : (isDragging ? 'grabbing' : 'grab') }}
+                        style={{
+                          cursor: selectedNode ? 'pointer' : isDragging ? 'grabbing' : 'grab',
+                        }}
                       >
                         <rect
                           x={node.x - nodeWidth / 2}
@@ -504,14 +557,18 @@ export default function ResponseMindmap({
                           height={nodeHeight}
                           rx={4}
                           fill={`url(#${gradientId})`}
-                          filter={isHovered || isSelected || isDraggingThis ? 'url(#glow)' : 'url(#shadow)'}
+                          filter={
+                            isHovered || isSelected || isDraggingThis
+                              ? 'url(#glow)'
+                              : 'url(#shadow)'
+                          }
                           className="transition-all duration-150"
                           style={{
                             stroke: isSelected ? '#3b82f6' : 'transparent',
                             strokeWidth: isSelected ? 3 : 0,
                           }}
                         />
-                        
+
                         <text
                           x={node.x}
                           y={node.y}
@@ -526,11 +583,10 @@ export default function ResponseMindmap({
                         >
                           {node.label.length > (isExpanded ? 18 : 14)
                             ? node.label.substring(0, isExpanded ? 16 : 12) + '…'
-                            : node.label
-                          }
+                            : node.label}
                         </text>
                       </motion.g>
-                    )
+                    );
                   })}
                 </svg>
 
@@ -553,12 +609,16 @@ export default function ResponseMindmap({
                               background: `linear-gradient(135deg, ${
                                 selectedNode.level === 0
                                   ? accentGradient.from
-                                  : NODE_GRADIENTS[nodes.indexOf(selectedNode) % NODE_GRADIENTS.length]?.from || '#667eea'
+                                  : NODE_GRADIENTS[
+                                      nodes.indexOf(selectedNode) % NODE_GRADIENTS.length
+                                    ]?.from || '#667eea'
                               }, ${
                                 selectedNode.level === 0
                                   ? accentGradient.to
-                                  : NODE_GRADIENTS[nodes.indexOf(selectedNode) % NODE_GRADIENTS.length]?.to || '#764ba2'
-                              })`
+                                  : NODE_GRADIENTS[
+                                      nodes.indexOf(selectedNode) % NODE_GRADIENTS.length
+                                    ]?.to || '#764ba2'
+                              })`,
                             }}
                           >
                             <BookOpenIcon className="w-5 h-5 text-white" />
@@ -592,21 +652,25 @@ export default function ResponseMindmap({
                               </span>
                             </div>
                             <div className="space-y-1">
-                              {nodes.filter(n => n.level === 1).map((n, i) => (
-                                <button
-                                  key={n.id}
-                                  onClick={() => setSelectedNode(n)}
-                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
-                                >
-                                  <div
-                                    className="w-2 h-2 rounded-full flex-shrink-0"
-                                    style={{
-                                      background: `linear-gradient(135deg, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].from}, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].to})`
-                                    }}
-                                  />
-                                  <span className="text-xs text-slate-600 dark:text-slate-400 truncate">{n.label}</span>
-                                </button>
-                              ))}
+                              {nodes
+                                .filter((n) => n.level === 1)
+                                .map((n, i) => (
+                                  <button
+                                    key={n.id}
+                                    onClick={() => setSelectedNode(n)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
+                                  >
+                                    <div
+                                      className="w-2 h-2 rounded-full flex-shrink-0"
+                                      style={{
+                                        background: `linear-gradient(135deg, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].from}, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].to})`,
+                                      }}
+                                    />
+                                    <span className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                                      {n.label}
+                                    </span>
+                                  </button>
+                                ))}
                             </div>
                           </div>
                         ) : (
@@ -614,7 +678,9 @@ export default function ResponseMindmap({
                             <div className="flex items-center justify-between gap-2 mb-2">
                               <div className="flex items-center gap-2">
                                 <LinkIcon className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Related Topics</span>
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                  Related Topics
+                                </span>
                               </div>
                               <button
                                 onClick={() => setShowLinkMenu(!showLinkMenu)}
@@ -630,31 +696,37 @@ export default function ResponseMindmap({
                               <div
                                 className="w-2 h-2 rounded-full flex-shrink-0"
                                 style={{
-                                  background: `linear-gradient(135deg, ${accentGradient.from}, ${accentGradient.to})`
+                                  background: `linear-gradient(135deg, ${accentGradient.from}, ${accentGradient.to})`,
                                 }}
                               />
-                              <span className="text-xs text-slate-600 dark:text-slate-400 truncate">{nodes[0].label}</span>
+                              <span className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                                {nodes[0].label}
+                              </span>
                             </button>
                             {showLinkMenu && (
                               <div className="mt-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                                <div className="text-[8px] text-slate-400 uppercase tracking-wider mb-2">All Topics</div>
+                                <div className="text-[8px] text-slate-400 uppercase tracking-wider mb-2">
+                                  All Topics
+                                </div>
                                 <div className="space-y-1 max-h-[120px] overflow-y-auto">
                                   {nodes.slice(1).map((n, i) => (
                                     <button
                                       key={n.id}
                                       onClick={() => {
-                                        setSelectedNode(n)
-                                        setShowLinkMenu(false)
+                                        setSelectedNode(n);
+                                        setShowLinkMenu(false);
                                       }}
                                       className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left"
                                     >
                                       <div
                                         className="w-2 h-2 rounded-full flex-shrink-0"
                                         style={{
-                                          background: `linear-gradient(135deg, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].from}, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].to})`
+                                          background: `linear-gradient(135deg, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].from}, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].to})`,
                                         }}
                                       />
-                                      <span className="text-[10px] text-slate-600 dark:text-slate-400 truncate">{n.label}</span>
+                                      <span className="text-[10px] text-slate-600 dark:text-slate-400 truncate">
+                                        {n.label}
+                                      </span>
                                     </button>
                                   ))}
                                 </div>
@@ -684,18 +756,32 @@ export default function ResponseMindmap({
                     <div className="flex items-center gap-1.5">
                       <div
                         className="w-2 h-2 rounded-full"
-                        style={{ background: `linear-gradient(135deg, ${accentGradient.from}, ${accentGradient.to})` }}
+                        style={{
+                          background: `linear-gradient(135deg, ${accentGradient.from}, ${accentGradient.to})`,
+                        }}
                       />
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Topics:</span>
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{conceptCount}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                        Topics:
+                      </span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                        {conceptCount}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Root:</span>
-                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium max-w-[150px] truncate">{nodes[0]?.label}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                        Root:
+                      </span>
+                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium max-w-[150px] truncate">
+                        {nodes[0]?.label}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Method:</span>
-                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium uppercase">{methodology}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                        Method:
+                      </span>
+                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium uppercase">
+                        {methodology}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -703,19 +789,25 @@ export default function ResponseMindmap({
                 {/* 3-Line Synthetic Explanation - Tailored to Query */}
                 <div className="space-y-1.5">
                   <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">Focus:</span>
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">
+                      Focus:
+                    </span>
                     <p className="text-[10px] text-slate-700 dark:text-slate-300 leading-relaxed">
                       {footerContent.focus}
                     </p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide flex-shrink-0">Quality:</span>
+                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide flex-shrink-0">
+                      Quality:
+                    </span>
                     <p className="text-[10px] text-slate-700 dark:text-slate-300 leading-relaxed">
                       {footerContent.quality}
                     </p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide flex-shrink-0">Action:</span>
+                    <span className="text-[9px] text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide flex-shrink-0">
+                      Action:
+                    </span>
                     <p className="text-[10px] text-slate-700 dark:text-slate-300 leading-relaxed">
                       {footerContent.action}
                     </p>
@@ -727,11 +819,11 @@ export default function ResponseMindmap({
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
 export function shouldShowMindmap(content: string, topics?: any[]): boolean {
-  if (topics && topics.length >= 2) return true
-  const concepts = extractConcepts(content)
-  return concepts.length >= 3
+  if (topics && topics.length >= 2) return true;
+  const concepts = extractConcepts(content);
+  return concepts.length >= 3;
 }
