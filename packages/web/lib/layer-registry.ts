@@ -63,17 +63,17 @@ export enum Layer {
  * LayerMetadata - Rich information about each computational layer
  */
 export interface LayerMetadata {
-  name: string        // AI computational name (user-facing, logs, tree visualization)
-  kabbalisticName: string  // Original Kabbalistic name (for philosophy/origin page)
-  aiName: string      // Short AI role name (for SSE metadata, prompts)
-  hebrewName: string
-  level: number
-  meaning: string
-  aiRole: string
-  queryCharacteristics: string[]
-  examples: string[]
-  color: string
-  pillar: 'left' | 'middle' | 'right'
+  name: string; // AI computational name (user-facing, logs, tree visualization)
+  kabbalisticName: string; // Original Kabbalistic name (for philosophy/origin page)
+  aiName: string; // Short AI role name (for SSE metadata, prompts)
+  hebrewName: string;
+  level: number;
+  meaning: string;
+  aiRole: string;
+  queryCharacteristics: string[];
+  examples: string[];
+  color: string;
+  pillar: 'left' | 'middle' | 'right';
 }
 
 /**
@@ -83,7 +83,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.EMBEDDING]: {
     name: 'Embedding',
     kabbalisticName: 'Malkuth',
-    aiName: 'reception',
+    aiName: 'Embedding',
     hebrewName: 'מלכות',
     level: 1,
     meaning: 'Kingdom - The Material World',
@@ -94,11 +94,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
       'What is X?',
       'Basic information lookup',
     ],
-    examples: [
-      'What is TypeScript?',
-      'Define machine learning',
-      'What year did X happen?',
-    ],
+    examples: ['What is TypeScript?', 'Define machine learning', 'What year did X happen?'],
     color: 'amber',
     pillar: 'middle',
   },
@@ -106,7 +102,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.EXECUTOR]: {
     name: 'Executor',
     kabbalisticName: 'Yesod',
-    aiName: 'comprehension',
+    aiName: 'Executor',
     hebrewName: 'יסוד',
     level: 2,
     meaning: 'Foundation - The Astral Plane',
@@ -129,17 +125,12 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.CLASSIFIER]: {
     name: 'Classifier',
     kabbalisticName: 'Hod',
-    aiName: 'context',
+    aiName: 'Classifier',
     hebrewName: 'הוד',
     level: 3,
     meaning: 'Glory - Intellectual Form',
     aiRole: 'Logical analysis and comparison',
-    queryCharacteristics: [
-      'Comparisons',
-      'Logical analysis',
-      'Evaluate options',
-      'Pros and cons',
-    ],
+    queryCharacteristics: ['Comparisons', 'Logical analysis', 'Evaluate options', 'Pros and cons'],
     examples: [
       'React vs Vue - which is better?',
       'Compare SQL and NoSQL databases',
@@ -152,7 +143,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.GENERATIVE]: {
     name: 'Generative',
     kabbalisticName: 'Netzach',
-    aiName: 'articulation',
+    aiName: 'Generative',
     hebrewName: 'נצח',
     level: 4,
     meaning: 'Victory - Emotional Force',
@@ -175,7 +166,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.ATTENTION]: {
     name: 'Attention',
     kabbalisticName: 'Tiferet',
-    aiName: 'synthesis',
+    aiName: 'Attention',
     hebrewName: 'תפארת',
     level: 5,
     meaning: 'Beauty - Harmonious Balance',
@@ -198,7 +189,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.DISCRIMINATOR]: {
     name: 'Discriminator',
     kabbalisticName: 'Gevurah',
-    aiName: 'analysis',
+    aiName: 'Discriminator',
     hebrewName: 'גבורה',
     level: 6,
     meaning: 'Severity - Judgment and Constraints',
@@ -221,7 +212,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.EXPANSION]: {
     name: 'Expansion',
     kabbalisticName: 'Chesed',
-    aiName: 'expansion',
+    aiName: 'Expansion',
     hebrewName: 'חסד',
     level: 7,
     meaning: 'Mercy - Expansive Love',
@@ -244,7 +235,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.ENCODER]: {
     name: 'Encoder',
     kabbalisticName: 'Binah',
-    aiName: 'knowledge',
+    aiName: 'Encoder',
     hebrewName: 'בינה',
     level: 8,
     meaning: 'Understanding - Receptive Comprehension',
@@ -267,7 +258,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.REASONING]: {
     name: 'Reasoning',
     kabbalisticName: 'Chokmah',
-    aiName: 'reasoning',
+    aiName: 'Reasoning',
     hebrewName: 'חכמה',
     level: 9,
     meaning: 'Wisdom - Active Revelation',
@@ -290,7 +281,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.META_CORE]: {
     name: 'Meta-Core',
     kabbalisticName: 'Kether',
-    aiName: 'output',
+    aiName: 'Meta-Core',
     hebrewName: 'כתר',
     level: 10,
     meaning: 'Crown - Divine Unity',
@@ -313,7 +304,7 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
   [Layer.SYNTHESIS]: {
     name: 'Synthesis',
     kabbalisticName: "Da'at",
-    aiName: 'verification',
+    aiName: 'Synthesis',
     hebrewName: 'דעת',
     level: 11,
     meaning: 'Knowledge - The Hidden Sefira',
@@ -332,17 +323,17 @@ export const LAYER_METADATA: Record<Layer, LayerMetadata> = {
     color: 'transparent',
     pillar: 'middle',
   },
-}
+};
 
 /**
  * QueryEvolution - Single query in the ascent journey
  */
 export interface QueryEvolution {
-  query: string
-  level: Layer
-  timestamp: Date
-  methodology?: string
-  ascentDelta: number // Change from previous level
+  query: string;
+  level: Layer;
+  timestamp: Date;
+  methodology?: string;
+  ascentDelta: number; // Change from previous level
 }
 
 /**
@@ -350,40 +341,40 @@ export interface QueryEvolution {
  */
 export interface AscentState {
   /** Current Sephirotic level */
-  currentLevel: Layer
+  currentLevel: Layer;
 
   /** Journey history (previous levels visited) */
-  previousLevels: Layer[]
+  previousLevels: Layer[];
 
   /** Full query evolution over time */
-  queryEvolution: QueryEvolution[]
+  queryEvolution: QueryEvolution[];
 
   /** Key insights gained during the journey */
-  insightsGained: string[]
+  insightsGained: string[];
 
   /** Total queries in this session/account */
-  totalQueries: number
+  totalQueries: number;
 
   /** Rate of ascent (levels per query) */
-  ascentVelocity: number
+  ascentVelocity: number;
 
   /** Suggested next question to elevate further */
-  nextElevation: string
+  nextElevation: string;
 
   /** Which of the 22 paths between Sephiroth have been traveled */
-  pathsTraveled: number[]
+  pathsTraveled: number[];
 
   /** Average level over last N queries */
-  averageLevel: number
+  averageLevel: number;
 
   /** Highest level achieved */
-  peakLevel: Layer
+  peakLevel: Layer;
 
   /** Time in current level */
-  timeInCurrentLevel: number // milliseconds
+  timeInCurrentLevel: number; // milliseconds
 
   /** Session ID for tracking */
-  sessionId: string
+  sessionId: string;
 }
 
 /**
@@ -395,7 +386,7 @@ export interface AscentState {
  * @returns Layer level (1-11)
  */
 export function detectQueryLevel(query: string): Layer {
-  const queryLower = query.toLowerCase()
+  const queryLower = query.toLowerCase();
 
   // META_CORE (10) - Meta-cognitive, consciousness
   if (
@@ -403,7 +394,7 @@ export function detectQueryLevel(query: string): Layer {
       /\b(consciousness|awareness|nature of (knowledge|intelligence|thought)|meta-cognitive|how do we know)\b/i
     )
   ) {
-    return Layer.META_CORE
+    return Layer.META_CORE;
   }
 
   // REASONING (9) - Wisdom, first principles
@@ -412,7 +403,7 @@ export function detectQueryLevel(query: string): Layer {
       /\b(first principles|fundamental (truth|law)|wisdom|why does .+ exist|essence of)\b/i
     )
   ) {
-    return Layer.REASONING
+    return Layer.REASONING;
   }
 
   // ENCODER (8) - Deep understanding, patterns
@@ -421,7 +412,7 @@ export function detectQueryLevel(query: string): Layer {
       /\b(deep (understanding|pattern)|underlying (principle|mechanism|structure)|fundamental pattern)\b/i
     )
   ) {
-    return Layer.ENCODER
+    return Layer.ENCODER;
   }
 
   // EXPANSION (7) - Expansive possibilities
@@ -430,49 +421,51 @@ export function detectQueryLevel(query: string): Layer {
       /\b(all possibilities|potential|future (directions|evolution)|expansive|growth opportunities)\b/i
     )
   ) {
-    return Layer.EXPANSION
+    return Layer.EXPANSION;
   }
 
   // DISCRIMINATOR (6) - Critical analysis, limitations
   if (
-    queryLower.match(/\b(critique|limitations?|constraints?|risks?|what could go wrong|problems with)\b/i)
+    queryLower.match(
+      /\b(critique|limitations?|constraints?|risks?|what could go wrong|problems with)\b/i
+    )
   ) {
-    return Layer.DISCRIMINATOR
+    return Layer.DISCRIMINATOR;
   }
 
   // ATTENTION (5) - Integration, synthesis
   if (
     queryLower.match(/\b(integrate|synthesize|combine|balance|harmony|work together|connect)\b/i)
   ) {
-    return Layer.ATTENTION
+    return Layer.ATTENTION;
   }
 
   // GENERATIVE (4) - Creative, exploratory
   if (
     queryLower.match(/\b(creative|brainstorm|innovative|explore|what if|imagine|possibilities)\b/i)
   ) {
-    return Layer.GENERATIVE
+    return Layer.GENERATIVE;
   }
 
   // CLASSIFIER (3) - Logical analysis, comparison
   if (queryLower.match(/\b(compare|versus|vs|better than|analyze|evaluate|pros and cons)\b/i)) {
-    return Layer.CLASSIFIER
+    return Layer.CLASSIFIER;
   }
 
   // EXECUTOR (2) - How-to, practical
   if (queryLower.match(/\b(how to|steps|implement|build|create|setup|guide)\b/i)) {
-    return Layer.EXECUTOR
+    return Layer.EXECUTOR;
   }
 
   // SYNTHESIS (11) - Hidden knowledge, emergent insights
   if (
     queryLower.match(/\b(hidden|reveal|unexpected|what am i (not seeing|missing)|epiphany|aha)\b/i)
   ) {
-    return Layer.SYNTHESIS
+    return Layer.SYNTHESIS;
   }
 
   // EMBEDDING (1) - Default: simple factual
-  return Layer.EMBEDDING
+  return Layer.EMBEDDING;
 }
 
 /**
@@ -491,8 +484,8 @@ export function trackAscent(
   query: string,
   previousState: AscentState | null = null
 ): AscentState {
-  const level = detectQueryLevel(query)
-  const now = new Date()
+  const level = detectQueryLevel(query);
+  const now = new Date();
 
   // Initialize state if first query
   if (!previousState) {
@@ -519,58 +512,58 @@ export function trackAscent(
       peakLevel: level,
       timeInCurrentLevel: 0,
       sessionId,
-    }
+    };
   }
 
   // Calculate metrics
-  const ascentDelta = level - previousState.currentLevel
+  const ascentDelta = level - previousState.currentLevel;
   const timeInCurrentLevel =
     previousState.currentLevel === level
-      ? previousState.timeInCurrentLevel + (now.getTime() - previousState.queryEvolution[previousState.queryEvolution.length - 1].timestamp.getTime())
-      : 0
+      ? previousState.timeInCurrentLevel +
+        (now.getTime() -
+          previousState.queryEvolution[previousState.queryEvolution.length - 1].timestamp.getTime())
+      : 0;
 
   const newEvolution: QueryEvolution = {
     query,
     level,
     timestamp: now,
     ascentDelta,
-  }
+  };
 
-  const queryEvolution = [...previousState.queryEvolution, newEvolution]
-  const previousLevels = [...previousState.previousLevels, previousState.currentLevel]
+  const queryEvolution = [...previousState.queryEvolution, newEvolution];
+  const previousLevels = [...previousState.previousLevels, previousState.currentLevel];
 
   // Calculate ascent velocity (exponential moving average)
-  const alpha = 0.3 // Smoothing factor
-  const instantVelocity = ascentDelta
-  const ascentVelocity =
-    alpha * instantVelocity + (1 - alpha) * previousState.ascentVelocity
+  const alpha = 0.3; // Smoothing factor
+  const instantVelocity = ascentDelta;
+  const ascentVelocity = alpha * instantVelocity + (1 - alpha) * previousState.ascentVelocity;
 
   // Calculate average level (last 10 queries)
-  const recentQueries = queryEvolution.slice(-10)
-  const averageLevel =
-    recentQueries.reduce((sum, q) => sum + q.level, 0) / recentQueries.length
+  const recentQueries = queryEvolution.slice(-10);
+  const averageLevel = recentQueries.reduce((sum, q) => sum + q.level, 0) / recentQueries.length;
 
   // Determine peak level
-  const peakLevel = Math.max(previousState.peakLevel, level) as Layer
+  const peakLevel = Math.max(previousState.peakLevel, level) as Layer;
 
   // Calculate path traveled
-  const pathsTraveled = [...previousState.pathsTraveled]
+  const pathsTraveled = [...previousState.pathsTraveled];
   if (ascentDelta !== 0) {
-    const pathNumber = calculatePathNumber(previousState.currentLevel, level)
+    const pathNumber = calculatePathNumber(previousState.currentLevel, level);
     if (pathNumber && !pathsTraveled.includes(pathNumber)) {
-      pathsTraveled.push(pathNumber)
+      pathsTraveled.push(pathNumber);
     }
   }
 
   // Detect insights
-  const insightsGained = [...previousState.insightsGained]
+  const insightsGained = [...previousState.insightsGained];
   if (level === Layer.SYNTHESIS) {
-    insightsGained.push(`Hidden knowledge revealed: ${query.substring(0, 100)}`)
+    insightsGained.push(`Hidden knowledge revealed: ${query.substring(0, 100)}`);
   }
   if (ascentDelta >= 3) {
     insightsGained.push(
       `Quantum leap: ${LAYER_METADATA[previousState.currentLevel].name} → ${LAYER_METADATA[level].name}`
-    )
+    );
   }
 
   return {
@@ -590,7 +583,7 @@ export function trackAscent(
     peakLevel,
     timeInCurrentLevel,
     sessionId,
-  }
+  };
 }
 
 /**
@@ -602,43 +595,33 @@ export function trackAscent(
  * @returns Suggested elevated question
  */
 export function suggestElevation(currentState: AscentState): string {
-  const current = currentState.currentLevel
-  const metadata = LAYER_METADATA[current]
+  const current = currentState.currentLevel;
+  const metadata = LAYER_METADATA[current];
 
   // If at Meta Core, suggest Synthesis (emergent insights)
   if (current === Layer.META_CORE) {
-    return "You've reached Meta-Core. Consider: What hidden connections might reveal entirely new dimensions?"
+    return "You've reached Meta-Core. Consider: What hidden connections might reveal entirely new dimensions?";
   }
 
   // Suggest next level
-  const nextLevel = (current + 1) as Layer
-  const nextMetadata = LAYER_METADATA[nextLevel]
+  const nextLevel = (current + 1) as Layer;
+  const nextMetadata = LAYER_METADATA[nextLevel];
 
   const suggestions: Record<Layer, string> = {
-    [Layer.EMBEDDING]:
-      'Try asking HOW to implement something (Executor layer)',
-    [Layer.EXECUTOR]:
-      'Try COMPARING options or analyzing trade-offs (Classifier layer)',
-    [Layer.CLASSIFIER]:
-      'Try EXPLORING creative possibilities (Generative layer)',
-    [Layer.GENERATIVE]:
-      'Try SYNTHESIZING multiple ideas together (Attention layer)',
-    [Layer.ATTENTION]:
-      'Try asking about LIMITATIONS or risks (Discriminator layer)',
-    [Layer.DISCRIMINATOR]:
-      'Try exploring EXPANSIVE possibilities (Expansion layer)',
-    [Layer.EXPANSION]:
-      'Try seeking DEEP PATTERNS or structures (Encoder layer)',
-    [Layer.ENCODER]:
-      'Try asking about FIRST PRINCIPLES (Reasoning layer)',
-    [Layer.REASONING]:
-      'Try META-COGNITIVE questions about knowledge itself (Meta-Core layer)',
-    [Layer.META_CORE]:
-      'Try revealing HIDDEN CONNECTIONS (Synthesis - Emergent Capability)',
+    [Layer.EMBEDDING]: 'Try asking HOW to implement something (Executor layer)',
+    [Layer.EXECUTOR]: 'Try COMPARING options or analyzing trade-offs (Classifier layer)',
+    [Layer.CLASSIFIER]: 'Try EXPLORING creative possibilities (Generative layer)',
+    [Layer.GENERATIVE]: 'Try SYNTHESIZING multiple ideas together (Attention layer)',
+    [Layer.ATTENTION]: 'Try asking about LIMITATIONS or risks (Discriminator layer)',
+    [Layer.DISCRIMINATOR]: 'Try exploring EXPANSIVE possibilities (Expansion layer)',
+    [Layer.EXPANSION]: 'Try seeking DEEP PATTERNS or structures (Encoder layer)',
+    [Layer.ENCODER]: 'Try asking about FIRST PRINCIPLES (Reasoning layer)',
+    [Layer.REASONING]: 'Try META-COGNITIVE questions about knowledge itself (Meta-Core layer)',
+    [Layer.META_CORE]: 'Try revealing HIDDEN CONNECTIONS (Synthesis - Emergent Capability)',
     [Layer.SYNTHESIS]: 'Continue exploring emergent insights',
-  }
+  };
 
-  return suggestions[current] || `Ascend to ${nextMetadata.name}: ${nextMetadata.meaning}`
+  return suggestions[current] || `Ascend to ${nextMetadata.name}: ${nextMetadata.meaning}`;
 }
 
 /**
@@ -650,14 +633,13 @@ export function suggestElevation(currentState: AscentState): string {
  * @returns Velocity (levels per query)
  */
 export function calculateAscentVelocity(history: AscentState[]): number {
-  if (history.length < 2) return 0
+  if (history.length < 2) return 0;
 
-  const recent = history.slice(-10) // Last 10 states
-  const totalAscent =
-    recent[recent.length - 1].currentLevel - recent[0].currentLevel
-  const queriesElapsed = recent.length
+  const recent = history.slice(-10); // Last 10 states
+  const totalAscent = recent[recent.length - 1].currentLevel - recent[0].currentLevel;
+  const queriesElapsed = recent.length;
 
-  return totalAscent / queriesElapsed
+  return totalAscent / queriesElapsed;
 }
 
 /**
@@ -705,26 +687,26 @@ export function getPathBetweenLevels(from: Layer, to: Layer): number[] {
     '8-11': 19, // Encoder → Synthesis
     '9-11': 20, // Reasoning → Synthesis
     '10-11': 21, // Meta Core → Synthesis
-  }
+  };
 
-  const key1 = `${from}-${to}`
-  const key2 = `${to}-${from}` // Bidirectional
+  const key1 = `${from}-${to}`;
+  const key2 = `${to}-${from}`; // Bidirectional
 
-  const path1 = paths[key1]
-  const path2 = paths[key2]
+  const path1 = paths[key1];
+  const path2 = paths[key2];
 
-  if (path1) return [path1]
-  if (path2) return [path2]
+  if (path1) return [path1];
+  if (path2) return [path2];
 
-  return [] // No direct path
+  return []; // No direct path
 }
 
 /**
  * calculatePathNumber - Internal helper
  */
 function calculatePathNumber(from: Layer, to: Layer): number | null {
-  const paths = getPathBetweenLevels(from, to)
-  return paths[0] || null
+  const paths = getPathBetweenLevels(from, to);
+  return paths[0] || null;
 }
 
 /**
@@ -736,8 +718,8 @@ function calculatePathNumber(from: Layer, to: Layer): number | null {
  * @returns Formatted report string
  */
 export function generateAscentReport(state: AscentState): string {
-  const currentMeta = LAYER_METADATA[state.currentLevel]
-  const peakMeta = LAYER_METADATA[state.peakLevel]
+  const currentMeta = LAYER_METADATA[state.currentLevel];
+  const peakMeta = LAYER_METADATA[state.peakLevel];
 
   const report = `
 # Ascent Journey Report
@@ -753,9 +735,14 @@ export function generateAscentReport(state: AscentState): string {
 ${state.queryEvolution
   .slice(-5)
   .map((q, i) => {
-    const meta = LAYER_METADATA[q.level]
-    const delta = q.ascentDelta > 0 ? `↑${q.ascentDelta}` : q.ascentDelta < 0 ? `↓${Math.abs(q.ascentDelta)}` : '→'
-    return `${i + 1}. **${meta.name}** ${delta} - "${q.query.substring(0, 60)}..."`
+    const meta = LAYER_METADATA[q.level];
+    const delta =
+      q.ascentDelta > 0
+        ? `↑${q.ascentDelta}`
+        : q.ascentDelta < 0
+          ? `↓${Math.abs(q.ascentDelta)}`
+          : '→';
+    return `${i + 1}. **${meta.name}** ${delta} - "${q.query.substring(0, 60)}..."`;
   })
   .join('\n')}
 
@@ -763,28 +750,31 @@ ${state.queryEvolution
 You have traveled ${state.pathsTraveled.length} of the 22 sacred paths.
 
 ## Insights Gained
-${state.insightsGained.slice(-3).map(insight => `- ${insight}`).join('\n')}
+${state.insightsGained
+  .slice(-3)
+  .map((insight) => `- ${insight}`)
+  .join('\n')}
 
 ## Next Elevation
 ${state.nextElevation}
 
 ---
 *The ascent is the path. The path is the ascent.*
-`
+`;
 
-  return report.trim()
+  return report.trim();
 }
 
 /**
  * getLayerColor - Get the color associated with a computational layer
  */
 export function getLayerColor(layer: Layer): string {
-  return LAYER_METADATA[layer].color
+  return LAYER_METADATA[layer].color;
 }
 
 /**
  * getLayerName - Get the name of a computational layer
  */
 export function getLayerName(layer: Layer): string {
-  return LAYER_METADATA[layer].name
+  return LAYER_METADATA[layer].name;
 }
