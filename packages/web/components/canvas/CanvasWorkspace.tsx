@@ -1251,91 +1251,34 @@ export default function CanvasWorkspace({
 
         <div style={{ width: 1, height: 14, background: '#e2e8f0', margin: '0 2px' }} />
 
-        {/* Diagram/Chart generation — only when a query is selected */}
-        {selectedIsQuery && (
-          <>
-            <button
-              onClick={() => handleGenerate('diagram')}
-              disabled={!!generating}
-              style={{
-                fontSize: 9,
-                padding: '3px 8px',
-                borderRadius: 3,
-                border: '1px solid #8b5cf6',
-                background: generating === 'diagram' ? '#8b5cf615' : 'transparent',
-                color: '#8b5cf6',
-                cursor: generating ? 'wait' : 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {generating === 'diagram' ? '◌ generating...' : '◈ diagram'}
-            </button>
-            <button
-              onClick={() => handleGenerate('chart')}
-              disabled={!!generating}
-              style={{
-                fontSize: 9,
-                padding: '3px 8px',
-                borderRadius: 3,
-                border: '1px solid #10b981',
-                background: generating === 'chart' ? '#10b98115' : 'transparent',
-                color: '#10b981',
-                cursor: generating ? 'wait' : 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {generating === 'chart' ? '◌ generating...' : '▥ chart'}
-            </button>
-            <button
-              onClick={() => handleGenerate('table')}
-              disabled={!!generating}
-              style={{
-                fontSize: 9,
-                padding: '3px 8px',
-                borderRadius: 3,
-                border: '1px solid #f59e0b',
-                background: generating === 'table' ? '#f59e0b15' : 'transparent',
-                color: '#f59e0b',
-                cursor: generating ? 'wait' : 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {generating === 'table' ? '◌ generating...' : '⊞ table'}
-            </button>
-            <button
-              onClick={() => handleGenerate('timeline')}
-              disabled={!!generating}
-              style={{
-                fontSize: 9,
-                padding: '3px 8px',
-                borderRadius: 3,
-                border: '1px solid #0ea5e9',
-                background: generating === 'timeline' ? '#0ea5e915' : 'transparent',
-                color: '#0ea5e9',
-                cursor: generating ? 'wait' : 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {generating === 'timeline' ? '◌ generating...' : '◉ timeline'}
-            </button>
-            <button
-              onClick={() => handleGenerate('radar')}
-              disabled={!!generating}
-              style={{
-                fontSize: 9,
-                padding: '3px 8px',
-                borderRadius: 3,
-                border: '1px solid #ec4899',
-                background: generating === 'radar' ? '#ec489915' : 'transparent',
-                color: '#ec4899',
-                cursor: generating ? 'wait' : 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {generating === 'radar' ? '◌ generating...' : '⬡ radar'}
-            </button>
-          </>
-        )}
+        {/* Diagram/Chart generation — always visible, disabled when no query selected */}
+        {[
+          { type: 'diagram' as const, icon: '◈', color: '#8b5cf6' },
+          { type: 'chart' as const, icon: '▥', color: '#10b981' },
+          { type: 'table' as const, icon: '⊞', color: '#f59e0b' },
+          { type: 'timeline' as const, icon: '◉', color: '#0ea5e9' },
+          { type: 'radar' as const, icon: '⬡', color: '#ec4899' },
+        ].map((btn) => (
+          <button
+            key={btn.type}
+            onClick={() => selectedIsQuery && handleGenerate(btn.type)}
+            disabled={!selectedIsQuery || !!generating}
+            title={selectedIsQuery ? `Generate ${btn.type}` : 'Select a query card first'}
+            style={{
+              fontSize: 9,
+              padding: '3px 8px',
+              borderRadius: 3,
+              border: `1px solid ${selectedIsQuery ? btn.color : '#e2e8f0'}`,
+              background: generating === btn.type ? `${btn.color}15` : 'transparent',
+              color: selectedIsQuery ? btn.color : '#cbd5e1',
+              cursor: !selectedIsQuery ? 'not-allowed' : generating ? 'wait' : 'pointer',
+              fontFamily: 'inherit',
+              opacity: selectedIsQuery ? 1 : 0.5,
+            }}
+          >
+            {generating === btn.type ? '◌ generating...' : `${btn.icon} ${btn.type}`}
+          </button>
+        ))}
 
         {selected && (
           <button
