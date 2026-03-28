@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       queryId,
       stage: 'received',
       timestamp: Date.now() - startTime,
-      data: `query: "${query.slice(0, 50)}${query.length > 50 ? '...' : ''}"`,
+      data: `Analyzing your question about ${query.split(/\s+/).slice(0, 5).join(' ')}...`,
       details: {},
     });
 
@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
       queryId,
       stage: 'routing',
       timestamp: Date.now() - startTime,
-      data: `${selectedMethod.id} ${fusionResult ? Math.round(fusionResult.confidence * 100) + '%' : ''}`,
+      data: `Using ${selectedMethod.id}${selectedMethod.reason ? ` — ${selectedMethod.reason}` : ''}${fusionResult ? `. Confidence: ${Math.round(fusionResult.confidence * 100)}%` : ''}`,
       details: {
         methodology: {
           selected: selectedMethod.id,
@@ -364,7 +364,7 @@ export async function POST(request: NextRequest) {
         queryId,
         stage: 'layers',
         timestamp: Date.now() - startTime,
-        data: `dominant: ${dominantName}`,
+        data: `Activating ${dominantName} · ${fusionResult.dominantLayers.length} layers engaged`,
         details: {
           layers: layerDetails,
           dominantLayer: dominantName,
@@ -530,8 +530,8 @@ export async function POST(request: NextRequest) {
       stage: 'reasoning',
       timestamp: Date.now() - startTime,
       data: metaCoreState
-        ? `${metaCoreState.humanIntention}`
-        : `${selectedMethod.reason || 'Processing query'}`,
+        ? `${metaCoreState.humanIntention}. Approach: ${selectedMethod.reason || selectedMethod.id}`
+        : `${selectedMethod.reason || 'Processing query'}. Approach: ${selectedMethod.id}`,
       details: {
         reasoning: {
           intent: metaCoreState?.humanIntention || 'Analyzing query',
@@ -630,7 +630,7 @@ export async function POST(request: NextRequest) {
       queryId,
       stage: 'generating',
       timestamp: Date.now() - startTime,
-      data: `${selectedProvider} · ${selectedMethod.id}`,
+      data: `Generating with ${providerSpec.model} via ${selectedProvider}...`,
       details: {
         model: providerSpec.model,
         provider: selectedProvider,
@@ -679,7 +679,10 @@ export async function POST(request: NextRequest) {
       queryId,
       stage: 'guard',
       timestamp: Date.now() - startTime,
-      data: guardResult && !guardResult.passed ? 'warning triggered' : 'passed',
+      data:
+        guardResult && !guardResult.passed
+          ? `Guard: warning. ${guardResult.issues?.length ? guardResult.issues.join(', ') : 'Issues detected'}`
+          : `Guard: passed. No issues detected`,
       details: {
         guard: {
           verdict: guardResult && !guardResult.passed ? 'warn' : 'pass',
@@ -1017,7 +1020,7 @@ export async function POST(request: NextRequest) {
       queryId,
       stage: 'complete',
       timestamp: Date.now() - startTime,
-      data: `${formatDuration(Date.now() - startTime)} · ${tokens} tokens · $${cost.toFixed(4)}`,
+      data: `Complete · ${formatDuration(Date.now() - startTime)} · ${tokens} tokens · $${cost.toFixed(4)}`,
       details: {
         duration: Date.now() - startTime,
         tokens: { input: inputTokens, output: outputTokens, total: tokens },

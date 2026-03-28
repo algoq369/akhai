@@ -306,7 +306,7 @@ export default function ChatMessages({
                           &#9671;
                         </button>
                         {pipelineEnabled && !hiddenPipelines.has(message.id) && (
-                          <MetadataStrip messageId={message.id} />
+                          <MetadataStrip messageId={message.id} isStreaming={message.isStreaming} />
                         )}
                       </div>
                     )}
