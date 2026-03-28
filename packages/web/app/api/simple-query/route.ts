@@ -949,7 +949,7 @@ export async function POST(request: NextRequest) {
       // ============================================================================
       fusion: fusionResult
         ? {
-            methodology: fusionResult.selectedMethodology,
+            methodology: selectedMethod.id, // Always show the ACTUAL method used, not fusion's suggestion
             confidence: fusionResult.confidence,
             layerActivations: fusionResult.layerActivations.slice(0, 5).map((s) => ({
               name: s.name,
