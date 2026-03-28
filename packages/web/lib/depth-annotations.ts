@@ -1293,6 +1293,44 @@ const DETECTION_PATTERNS: DetectionPattern[] = [
       return { content: `ᶠ Definition: ${text.substring(0, 60)}`, confidence: 0.6 };
     },
   },
+
+  // BROAD FALLBACKS — ensure minimum 3+ annotations per response
+  {
+    type: 'detail',
+    patterns: [
+      // Long sentences (> 80 chars) are substantive claims worth annotating
+      /[A-Z][^.!?]{80,}[.!?]/g,
+    ],
+    extractor: (match) => {
+      return { content: `◊ ${match[0].trim().substring(0, 50)}...`, confidence: 0.45 };
+    },
+  },
+  {
+    type: 'detail',
+    patterns: [
+      // Parenthetical explanations indicate detail worth noting
+      /[^.!?\n]*\([^)]{8,}\)[^.!?\n]*/g,
+    ],
+    extractor: (match) => {
+      const text = match[0].trim();
+      if (text.length < 20) return null;
+      return { content: `◊ Detail: ${text.substring(0, 55)}`, confidence: 0.5 };
+    },
+  },
+  {
+    type: 'connection',
+    patterns: [
+      // Comma-separated lists of 3+ items indicate relationships
+      /[^.!?\n]*(?:[^,]+,){2,}[^.!?\n]*/g,
+    ],
+    extractor: (match) => {
+      const text = match[0].trim();
+      if (text.length < 30) return null;
+      const commaCount = (text.match(/,/g) || []).length;
+      if (commaCount < 2) return null;
+      return { content: `☿ Enumeration: ${text.substring(0, 50)}`, confidence: 0.4 };
+    },
+  },
 ];
 
 // ============ HEBREW/KABBALISTIC TERM DETECTION ============
