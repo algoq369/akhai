@@ -413,7 +413,72 @@ export default function LayerResponse({
     };
   }, [insights, grouped]);
 
-  if (insights.length < 2) return null;
+  if (insights.length < 2) {
+    const words = content.split(/\s+/).filter((w) => w.length > 0);
+    const sentences = content.split(/[.!?]+/).filter((s) => s.trim().length > 0);
+    const keywords = [
+      ...new Set(
+        words.filter((w) => w.length > 4 && /^[a-zA-Z]+$/.test(w)).map((w) => w.toLowerCase())
+      ),
+    ].slice(0, 3);
+    const summary = content
+      .replace(/[#*`\-]/g, '')
+      .trim()
+      .substring(0, 200);
+
+    return (
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
+        <div className="rounded-xl border border-slate-200/60 dark:border-relic-slate/30 bg-white dark:bg-relic-slate/20 overflow-hidden shadow-sm">
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-relic-slate/30">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-sm">
+                <SparklesIcon className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
+                  Response Analysis
+                </h3>
+                <p className="text-[10px] text-slate-500 dark:text-relic-ghost/70 font-mono">
+                  {words.length} words · {sentences.length} sentences
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 space-y-3">
+            {keywords.length > 0 && (
+              <div>
+                <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                  Keywords
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {keywords.map((kw, i) => (
+                    <span
+                      key={i}
+                      className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-400 font-mono"
+                    >
+                      {kw}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div>
+              <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                Summary
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                {summary}
+                {summary.length >= 200 ? '...' : ''}
+              </p>
+            </div>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 italic pt-1">
+              Layer analysis available with more structured responses
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">

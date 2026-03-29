@@ -363,7 +363,46 @@ export default function ResponseMindmap({
     if (selectedNode) setSelectedNode(null);
   }, [selectedNode]);
 
-  if (!shouldShow && !isVisible) return null;
+  if (!shouldShow && !isVisible) {
+    const conceptLabels = nodes.filter((n) => n.level > 0).map((n) => n.fullText);
+
+    return (
+      <div className="mt-4">
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+            <SparklesIcon className="w-4 h-4 text-slate-500" />
+            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+              Topic Map
+            </span>
+            <span className="text-[9px] text-slate-400 dark:text-slate-500">
+              {conceptLabels.length} concepts
+            </span>
+          </div>
+          <div className="p-3">
+            {conceptLabels.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {conceptLabels.map((label, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-1 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] text-slate-600 dark:text-slate-400"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                Extracting concepts from response
+              </p>
+            )}
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 italic mt-3">
+              Topic map — extracted concepts
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4">
