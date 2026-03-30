@@ -466,49 +466,49 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             }
             break;
 
-          // Buffer of Thoughts events
-          case 'bot-init':
+          // Self-Consistency events
+          case 'sc-init':
             setIsBoT(true);
             if (data.data?.config) {
               setMaxBufferSize(data.data.config.maxBufferSize || 10);
               setDistillationStrategy(data.data.config.distillationStrategy || 'hierarchical');
             }
-            addReasoningStep('BoT Initialize', 'Buffer of Thoughts methodology activated');
+            addReasoningStep('SC Initialize', 'Self-Consistency methodology activated');
             break;
 
-          case 'bot-thought-added':
+          case 'sc-thought-added':
             if (data.data?.thought) {
               setThoughtBuffer((prev) => [...prev, data.data.thought]);
               setBufferSize((prev) => prev + 1);
               addReasoningStep(
-                'BoT Thought',
+                'SC Thought',
                 `New thought added (depth ${data.data.thought.depth}): ${data.data.thought.content.substring(0, 50)}...`
               );
             }
             break;
 
-          case 'bot-distillation-start':
+          case 'sc-distillation-start':
             setIsDistilling(true);
             setDistillationProgress(0);
             addReasoningStep(
-              'BoT Distillation',
+              'SC Distillation',
               `Starting distillation (${data.data?.bufferSize || bufferSize} thoughts, strategy: ${data.data?.strategy || distillationStrategy})`
             );
             break;
 
-          case 'bot-distillation-progress':
+          case 'sc-distillation-progress':
             if (data.data?.progress !== undefined) {
               setDistillationProgress(data.data.progress);
             }
             break;
 
-          case 'bot-distillation-complete':
+          case 'sc-distillation-complete':
             setIsDistilling(false);
             setDistillationProgress(1);
             if (data.data?.metaBuffer) {
               setMetaBuffers((prev) => [...prev, data.data.metaBuffer]);
               addReasoningStep(
-                'BoT Meta-Buffer',
+                'SC Meta-Buffer',
                 `Distillation complete: ${data.data.metaBuffer.keyInsights.length} key insights, ${data.data.metaBuffer.tokensSaved} tokens saved`
               );
             }
@@ -517,7 +517,7 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             setBufferSize(0);
             break;
 
-          case 'bot-buffer-update':
+          case 'sc-buffer-update':
             if (data.data?.snapshot) {
               setThoughtBuffer(data.data.snapshot.thoughts || []);
               setMetaBuffers(data.data.snapshot.metaBuffers || []);
@@ -525,7 +525,7 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             }
             break;
 
-          case 'bot-solution-path':
+          case 'sc-solution-path':
             if (data.data?.path) {
               const pathIds = data.data.path.map((t: ThoughtNode) => t.id);
               setThoughtBuffer((prev) =>

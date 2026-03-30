@@ -41,7 +41,7 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     ],
     examples: [
       '"What is Bitcoin?" → routes to direct',
-      '"Calculate 25 * 36" → routes to pot',
+      '"Calculate 25 * 36" → routes to pas',
       '"Explain how to build an app step by step" → routes to cod',
     ],
     metrics: {

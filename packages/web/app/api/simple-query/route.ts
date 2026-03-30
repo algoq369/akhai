@@ -1257,7 +1257,7 @@ function selectMethodology(query: string, requested: string) {
 
   const queryLower = query.toLowerCase();
 
-  // Math/computation → pot (check BEFORE simple queries)
+  // Math/computation → pas (check BEFORE simple queries)
   if (
     queryLower.includes('calculate') ||
     queryLower.includes('compute') ||
@@ -1273,7 +1273,7 @@ function selectMethodology(query: string, requested: string) {
     return { id: 'direct', reason: 'Simple query - direct response optimal' };
   }
 
-  // Complex context requiring buffering → bot
+  // Complex context requiring buffering → sc
   if (
     queryLower.includes('given that') ||
     queryLower.includes('assuming') ||

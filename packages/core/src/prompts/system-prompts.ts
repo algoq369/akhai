@@ -103,8 +103,8 @@ Key principles:
 - Verify atoms don't contradict each other
 - Contract atoms into unified response
 `,
-  bot: `
-### BUFFER OF THOUGHTS (BoT) MODE
+  sc: `
+### SELF-CONSISTENCY (SC) MODE
 Structured analysis using thought templates.
 - Identify the best template: Analytical, Procedural, Comparative, Investigative, or Creative
 - Apply the template structure systematically

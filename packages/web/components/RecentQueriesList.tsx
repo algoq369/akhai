@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 interface QueryItem {
   id: string;
   query: string;
-  flow: string; // Methodology name (direct, cod, bot, etc.)
+  flow: string; // Methodology name (direct, cod, sc, etc.)
   status: 'pending' | 'processing' | 'complete' | 'error';
   timestamp: number;
 }
@@ -19,8 +19,8 @@ export default function RecentQueriesList() {
     // Fetch recent queries from API
     const fetchQueries = () => {
       fetch('/api/stats/recent')
-        .then(res => res.json())
-        .then(data => {
+        .then((res) => res.json())
+        .then((data) => {
           setQueries(data.queries || []);
           setLoading(false);
         })
@@ -89,17 +89,17 @@ export default function RecentQueriesList() {
 
   return (
     <div className="space-y-2">
-      {queries.map(item => (
+      {queries.map((item) => (
         <Link
           key={item.id}
           href={`/query/${item.id}`}
           className="block bg-gray-800/50 backdrop-blur-sm rounded-lg p-3 border border-gray-700 hover:border-gray-600 transition"
         >
           <div className="flex items-start justify-between mb-1.5">
-            <p className="text-sm font-medium text-gray-300 line-clamp-1 flex-1">
-              {item.query}
-            </p>
-            <span className={`ml-3 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${getStatusBadge(item.status)}`}>
+            <p className="text-sm font-medium text-gray-300 line-clamp-1 flex-1">{item.query}</p>
+            <span
+              className={`ml-3 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${getStatusBadge(item.status)}`}
+            >
               {item.status}
             </span>
           </div>
