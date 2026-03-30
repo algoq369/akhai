@@ -563,9 +563,9 @@ function suggestMethodology(activations: Record<Layer, number>, query: string): 
     return 'react';
   }
 
-  // High Executor (implementation) + math → PoT
+  // High Executor (implementation) + math → PaS
   if (activations[Layer.EXECUTOR] > 0.7 && /\d+.*[+\-*/]/.test(query)) {
-    return 'pot';
+    return 'pas';
   }
 
   // High Reasoning + Meta-Core (wisdom + meta) → CoD

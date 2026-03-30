@@ -286,7 +286,12 @@ function MethodologyTab({ currentMethodology, onMethodologyChange }: Methodology
     { id: 'cod', symbol: '⋯', name: 'Chain of Draft', description: 'Iterative refinement process' },
     { id: 'sc', symbol: '◇', name: 'Self-Consistency', description: 'Multi-path majority voting' },
     { id: 'react', symbol: '⟳', name: 'ReAct', description: 'Tools: search, calculator, etc.' },
-    { id: 'pot', symbol: '△', name: 'Program of Thought', description: 'Code-based computation' },
+    {
+      id: 'pas',
+      symbol: '△',
+      name: 'Plan-and-Solve',
+      description: 'Decompose then execute step by step',
+    },
     { id: 'gtp', symbol: '◯', name: 'GTP Consensus', description: 'Multi-AI agreement synthesis' },
   ];
 

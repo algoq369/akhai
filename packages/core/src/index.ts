@@ -121,7 +121,7 @@ export {
 } from './methodologies/react.js';
 
 // ============================================================================
-// PROGRAM OF THOUGHT (POT) - Code-Based Reasoning
+// PLAN-AND-SOLVE (PAS) - Wang et al., ACL 2023
 // ============================================================================
 
 export {
@@ -130,7 +130,7 @@ export {
   type PoTResult,
   type PoTStep,
   type PoTStepType,
-} from './methodologies/pot.js';
+} from './methodologies/pas.js';
 
 // ============================================================================
 // METHODOLOGY TYPES & REGISTRY

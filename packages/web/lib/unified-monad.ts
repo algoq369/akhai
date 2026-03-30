@@ -750,7 +750,7 @@ function evaluateMethods(
   signature: QuerySignature,
   userGnosis: UserGnosisState
 ): MethodEvaluation[] {
-  const methods = ['direct', 'cod', 'sc', 'react', 'pot', 'gtp', 'auto'];
+  const methods = ['direct', 'cod', 'sc', 'react', 'pas', 'gtp', 'auto'];
 
   return methods.map((method) => {
     let score = 0.5;
@@ -790,7 +790,7 @@ function evaluateMethods(
         }
         break;
 
-      case 'pot':
+      case 'pas':
         if (signature.domain.includes('technology')) {
           score = 0.8;
           strengths.push('Code-based reasoning');

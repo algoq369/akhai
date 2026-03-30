@@ -49,7 +49,7 @@ const METHODOLOGIES = {
   cod: { symbol: '⋯', name: 'cod', color: chalk.hex('#f97316'), desc: 'Code optimized' },
   sc: { symbol: '◇', name: 'sc', color: chalk.yellow, desc: 'Self-Consistency' },
   react: { symbol: '⟳', name: 'react', color: chalk.green, desc: 'Multi-step reasoning' },
-  pot: { symbol: '△', name: 'pot', color: chalk.blue, desc: 'Potential exploration' },
+  pas: { symbol: '△', name: 'pas', color: chalk.blue, desc: 'Plan-and-Solve' },
   gtp: { symbol: '◯', name: 'gtp', color: chalk.magenta, desc: 'Multi-AI consensus' },
 };
 

@@ -9,7 +9,7 @@
  * - cod: Chain of Draft, 92% cheaper than CoT (~8s, Tier 2)
  * - sc: Self-Consistency, Wang et al. ICLR 2023 (~18s, Tier 2)
  * - react: Tool-augmented reasoning (~20s, Tier 3)
- * - pot: Program of Thought, code-based computation (~12s, Tier 4)
+ * - pas: Plan-and-Solve, Wang et al. ACL 2023 (~12s, Tier 4)
  * - gtp: Multi-AI consensus with Self-Consistency (~30s, Tier 5)
  * - auto: Smart selector (meta, default)
  *
@@ -22,7 +22,7 @@
  * - cod: procedural, how-to, cost-efficient sequential reasoning
  * - sc: complex analysis, comparisons, planning (multi-path voting)
  * - react: requires external tools (search, calculate)
- * - pot: mathematical, financial, numerical tasks
+ * - pas: mathematical, financial, numerical tasks
  * - gtp: multi-perspective, critical decisions, verification
  * - Default fallback: cod (most cost-efficient)
  */
@@ -189,7 +189,7 @@ export class MethodologySelector {
       cod: 0,
       sc: 0,
       react: 0,
-      pot: 0,
+      pas: 0,
       aot: 0,
       gtp: 0,
     };
@@ -200,7 +200,7 @@ export class MethodologySelector {
       cod: [],
       sc: [],
       react: [],
-      pot: [],
+      pas: [],
       aot: [],
       gtp: [],
     };
@@ -336,7 +336,7 @@ export class MethodologySelector {
     }
 
     // =======================
-    // POT (Program of Thought) Scoring
+    // PAS (Plan-and-Solve) Scoring
     // =======================
     // Best for: mathematical, financial, numerical tasks
     const computationalPatterns = [
@@ -348,13 +348,13 @@ export class MethodologySelector {
     ];
 
     if (computationalPatterns.some(p => p.test(analysis.query))) {
-      scores.pot += 0.85;
-      reasons.pot.push('Computational/numerical task');
+      scores.pas += 0.85;
+      reasons.pas.push('Computational/numerical task');
     }
 
     if (analysis.keywords.some(kw => ['math', 'calculate', 'compute', 'solve', 'equation'].includes(kw))) {
-      scores.pot += 0.5;
-      reasons.pot.push('Mathematical keywords detected');
+      scores.pas += 0.5;
+      reasons.pas.push('Mathematical keywords detected');
     }
 
     // =======================

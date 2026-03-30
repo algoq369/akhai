@@ -5,7 +5,7 @@
  * cost-efficiency, and accuracy.
  */
 
-export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pot' | 'gtp' | 'auto';
+export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'gtp' | 'auto';
 export type ProviderFamily = 'anthropic' | 'deepseek' | 'mistral' | 'xai' | 'openrouter';
 
 export interface ProviderConfig {
@@ -55,7 +55,7 @@ export const METHODOLOGY_PROVIDER_MAP: Record<CoreMethodology, ModelSpec> = {
   cod: DEFAULT_PROVIDER,
   sc: DEFAULT_PROVIDER,
   react: DEFAULT_PROVIDER,
-  pot: DEFAULT_PROVIDER,
+  pas: DEFAULT_PROVIDER,
   gtp: {
     provider: DEFAULT_PROVIDER.provider,
     model: DEFAULT_PROVIDER.model,

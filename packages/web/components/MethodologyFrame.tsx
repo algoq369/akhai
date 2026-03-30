@@ -75,9 +75,9 @@ const METHODOLOGIES: Methodology[] = [
     cost: '$0.024',
   },
   {
-    id: 'pot',
-    name: 'POT',
-    fullName: 'Plan of Thought',
+    id: 'pas',
+    name: 'PAS',
+    fullName: 'Plan-and-Solve',
     symbol: '△',
     color: '#3b82f6',
     tokens: '3k-6k',

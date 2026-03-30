@@ -12,7 +12,7 @@
  * Phase 2: AI-Powered Classification with Opus 4.5
  */
 
-export type Methodology = 'direct' | 'cod' | 'sc' | 'react' | 'pot' | 'gtp' | 'auto';
+export type Methodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'gtp' | 'auto';
 
 export interface QueryClassification {
   isSimple: boolean;

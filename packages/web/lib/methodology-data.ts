@@ -78,10 +78,10 @@ export const METHODOLOGIES: MethodologyItem[] = [
     savings: '0%',
   },
   {
-    id: 'pot',
+    id: 'pas',
     symbol: '△',
-    name: 'pot',
-    tooltip: 'Code computation',
+    name: 'pas',
+    tooltip: 'Plan-and-Solve',
     tokens: '3k-6k',
     latency: '~15s',
     cost: '$0.018',
@@ -252,10 +252,10 @@ export const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     },
   },
   {
-    id: 'pot',
+    id: 'pas',
     symbol: '△',
-    name: 'pot',
-    fullName: 'Program of Thought',
+    name: 'pas',
+    fullName: 'Plan-and-Solve',
     description:
       'Computational reasoning with pseudocode, step-by-step execution, and verification. Perfect for math and logical problems.',
     howItWorks: [

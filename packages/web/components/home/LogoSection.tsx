@@ -1,16 +1,21 @@
-'use client'
+'use client';
 
-import { RefObject } from 'react'
-import { METHODOLOGIES, METHODOLOGY_DETAILS } from '@/lib/methodology-data'
+import { RefObject } from 'react';
+import { METHODOLOGIES, METHODOLOGY_DETAILS } from '@/lib/methodology-data';
 
 interface LogoSectionProps {
-  methodology: string
-  expandedMethodology: string | null
-  setExpandedMethodology: (v: string | null) => void
-  diamondRef: RefObject<HTMLDivElement | null>
+  methodology: string;
+  expandedMethodology: string | null;
+  setExpandedMethodology: (v: string | null) => void;
+  diamondRef: RefObject<HTMLDivElement | null>;
 }
 
-export default function LogoSection({ methodology, expandedMethodology, setExpandedMethodology, diamondRef }: LogoSectionProps) {
+export default function LogoSection({
+  methodology,
+  expandedMethodology,
+  setExpandedMethodology,
+  diamondRef,
+}: LogoSectionProps) {
   return (
     <div className="text-center pt-4 sm:pt-8 pb-4 px-4">
       <h1 className="text-2xl sm:text-3xl font-light text-relic-slate dark:text-white tracking-[0.2em] sm:tracking-[0.3em] mb-1">
@@ -48,7 +53,7 @@ export default function LogoSection({ methodology, expandedMethodology, setExpan
               {(() => {
                 const detail = METHODOLOGY_DETAILS.find((m) => m.id === expandedMethodology);
                 if (!detail) return null;
-                const isCoding = detail.id === 'pot';
+                const isCoding = detail.id === 'pas';
                 const isResearch = detail.id === 'react';
                 return (
                   <>
@@ -125,24 +130,40 @@ export default function LogoSection({ methodology, expandedMethodology, setExpan
                       {/* Metrics */}
                       <div className="pt-1.5 border-t border-relic-mist/20 dark:border-relic-slate/10 grid grid-cols-3 gap-2">
                         <div>
-                          <span className="text-[8px] uppercase text-relic-silver dark:text-relic-ghost block">Tokens</span>
-                          <span className="text-[10px] font-mono text-relic-slate dark:text-white">{detail.metrics.tokens}</span>
+                          <span className="text-[8px] uppercase text-relic-silver dark:text-relic-ghost block">
+                            Tokens
+                          </span>
+                          <span className="text-[10px] font-mono text-relic-slate dark:text-white">
+                            {detail.metrics.tokens}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-[8px] uppercase text-relic-silver dark:text-relic-ghost block">Latency</span>
-                          <span className="text-[10px] font-mono text-relic-slate dark:text-white">{detail.metrics.latency}</span>
+                          <span className="text-[8px] uppercase text-relic-silver dark:text-relic-ghost block">
+                            Latency
+                          </span>
+                          <span className="text-[10px] font-mono text-relic-slate dark:text-white">
+                            {detail.metrics.latency}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-[8px] uppercase text-relic-silver dark:text-relic-ghost block">Cost</span>
-                          <span className="text-[10px] font-mono text-relic-slate dark:text-white">{detail.metrics.cost}</span>
+                          <span className="text-[8px] uppercase text-relic-silver dark:text-relic-ghost block">
+                            Cost
+                          </span>
+                          <span className="text-[10px] font-mono text-relic-slate dark:text-white">
+                            {detail.metrics.cost}
+                          </span>
                         </div>
                       </div>
 
                       {/* Example */}
                       {detail.examples[0] && (
                         <div className="pt-1.5 border-t border-relic-mist/20 dark:border-relic-slate/10">
-                          <p className="text-[8px] uppercase tracking-wider text-relic-silver dark:text-relic-ghost mb-0.5">Example</p>
-                          <p className="text-[9px] italic text-relic-slate dark:text-relic-ghost leading-tight">{detail.examples[0]}</p>
+                          <p className="text-[8px] uppercase tracking-wider text-relic-silver dark:text-relic-ghost mb-0.5">
+                            Example
+                          </p>
+                          <p className="text-[9px] italic text-relic-slate dark:text-relic-ghost leading-tight">
+                            {detail.examples[0]}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -181,5 +202,5 @@ export default function LogoSection({ methodology, expandedMethodology, setExpan
         </div>
       </div>
     </div>
-  )
+  );
 }

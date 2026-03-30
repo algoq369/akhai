@@ -25,7 +25,7 @@ export type CoreMethodology =
   | 'cod'       // Tier 2: Chain of Draft (cost-optimized)
   | 'sc'        // Tier 2: Self-Consistency (Wang et al., ICLR 2023)
   | 'react'     // Tier 3: Tool-augmented reasoning
-  | 'pot'       // Tier 4: Program of Thought (computational)
+  | 'pas'       // Tier 4: Plan-and-Solve (Wang et al., ACL 2023)
   | 'gtp'       // Tier 5: Consensus (includes Self-Consistency)
   | 'auto';     // Meta: Auto-selector
 
@@ -184,7 +184,7 @@ export const METHODOLOGY_INFO: Record<CoreMethodology, MethodologyInfo> = {
     costPer1K: 0.02,
     bestFor: ['search', 'calculate', 'external-data'],
   },
-  pot: {
+  pas: {
     name: 'Program of Thought',
     tier: 4,
     icon: '💻',

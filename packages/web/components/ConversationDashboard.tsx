@@ -60,8 +60,8 @@ const METHODOLOGIES = [
     cost: '$0.024',
   },
   {
-    id: 'pot',
-    name: 'PoT',
+    id: 'pas',
+    name: 'PaS',
     color: '#3B82F6',
     glowColor: 'rgba(59, 130, 246, 0.5)',
     tokens: '3k-6k',

@@ -8,7 +8,7 @@
 import { executeChainOfDraft } from './cod.js';
 import { executeBufferOfThoughts } from './sc.js';
 import { executeReAct } from './react.js';
-import { executeProgramOfThought } from './pot.js';
+import { executeProgramOfThought } from './pas.js';
 import { GTPExecutor } from './gtp/index.js';
 import type { CoreMethodology, METHODOLOGY_INFO, MethodologyInfo } from './types.js';
 
@@ -103,13 +103,13 @@ export const METHODOLOGY_REGISTRY: Record<CoreMethodology, MethodologyEntry> = {
     notes: 'Standalone implementation with search, calculate, lookup, and finish tools',
   },
 
-  pot: {
+  pas: {
     execute: executeProgramOfThought,
     info: {
-      name: 'Program of Thought',
+      name: 'Plan-and-Solve',
       tier: 4,
       icon: '💻',
-      description: 'Code-based computation (+24% on numerical tasks)',
+      description: 'Wang et al., ACL 2023, decomposes problem into plan then executes step by step',
       tokenMultiplier: 1.5,
       avgLatencyMs: 12000,
       costPer1K: 0.01,

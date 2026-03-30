@@ -7,7 +7,7 @@ const METHODOLOGIES = [
   { id: 'cod', symbol: '⋯', name: 'cod' },
   { id: 'sc', symbol: '◇', name: 'sc' },
   { id: 'react', symbol: '⟳', name: 'react' },
-  { id: 'pot', symbol: '△', name: 'pot' },
+  { id: 'pas', symbol: '△', name: 'pas' },
   { id: 'gtp', symbol: '◯', name: 'gtp' },
 ];
 

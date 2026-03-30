@@ -62,7 +62,7 @@ const queryAnalysisCache = new LRUCache<string, QueryAnalysis>(100);
 // TYPES
 // ============================================================
 
-export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pot' | 'gtp' | 'auto';
+export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'gtp' | 'auto';
 
 export interface QueryAnalysis {
   complexity: number; // 0-1 scale
@@ -606,22 +606,22 @@ export function selectMethodology(
   }
   scores.push({ methodology: 'react', score: Math.min(1, reactScore), reasons: reactReasons });
 
-  // Score POT (Program of Thought)
-  let potScore = 0;
-  const potReasons: string[] = [];
+  // Score PAS (Plan-and-Solve)
+  let pasScore = 0;
+  const pasReasons: string[] = [];
   if (analysis.isMathematical) {
-    potScore += 0.85;
-    potReasons.push('Mathematical query');
+    pasScore += 0.85;
+    pasReasons.push('Mathematical query');
   }
   if (/calculate|compute|formula|equation|percentage|ratio/i.test(analysis.keywords.join(' '))) {
-    potScore += 0.5;
-    potReasons.push('Computation needed');
+    pasScore += 0.5;
+    pasReasons.push('Computation needed');
   }
   if (dominantLayers.includes(Layer.EXECUTOR)) {
-    potScore += 0.3;
-    potReasons.push('Executor dominant');
+    pasScore += 0.3;
+    pasReasons.push('Executor dominant');
   }
-  scores.push({ methodology: 'pot', score: Math.min(1, potScore), reasons: potReasons });
+  scores.push({ methodology: 'pas', score: Math.min(1, pasScore), reasons: pasReasons });
 
   // Score GTP (Generative Thoughts Process)
   let gtpScore = 0;

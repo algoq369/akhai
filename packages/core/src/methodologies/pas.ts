@@ -85,7 +85,7 @@ export interface PoTResult {
   answer: string;
 
   /** Methodology used */
-  methodology: 'pot';
+  methodology: 'pas';
 
   /** All reasoning and execution steps */
   steps: PoTStep[];
@@ -341,7 +341,7 @@ export async function executeProgramOfThought(
 
   return {
     answer: finalAnswer || 'Unable to determine answer (execution failed or max iterations reached)',
-    methodology: 'pot',
+    methodology: 'pas',
     steps,
     iterations: iteration,
     finalCode,

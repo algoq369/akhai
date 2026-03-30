@@ -21,7 +21,7 @@ export default function DashboardPage() {
     cod: true,
     sc: true,
     react: true,
-    pot: true,
+    pas: true,
     gtp: true,
   });
   const [enabledFeatures, setEnabledFeatures] = useState<Record<string, boolean>>({
@@ -79,7 +79,7 @@ export default function DashboardPage() {
     { key: 'cod', name: 'Chain of Draft', desc: 'Iterative refinement' },
     { key: 'sc', name: 'Self-Consistency', desc: 'Multi-path voting' },
     { key: 'react', name: 'ReAct', desc: 'Search & calculate' },
-    { key: 'pot', name: 'Program of Thought', desc: 'Code computation' },
+    { key: 'pas', name: 'Plan-and-Solve', desc: 'Decompose then execute' },
     { key: 'gtp', name: 'GTP Consensus', desc: 'Multi-AI agreement' },
   ];
 

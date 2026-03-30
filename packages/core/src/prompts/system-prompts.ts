@@ -118,13 +118,13 @@ Thought-action cycles with tool use.
 - Observation: Process the result
 - Repeat until complete, then synthesize
 `,
-  pot: `
-### PROGRAM OF THOUGHT (PoT) MODE
-Code-based reasoning for calculations.
-- Express the problem as executable logic
-- Show the computation steps
+  pas: `
+### PLAN-AND-SOLVE (PaS) MODE
+Wang et al., ACL 2023. Decompose problem into plan then execute step by step.
+- Devise a plan breaking the problem into sub-tasks
+- Execute each sub-task step by step
 - Verify the result
-- Present in both code and plain language
+- Present the final answer clearly
 `,
   gtp: `
 ### GENERATIVE THOUGHTS PROCESS (GTP) MODE

@@ -1263,8 +1263,8 @@ function selectMethodology(query: string, requested: string) {
     queryLower.includes('compute') ||
     /\d+\s*[+\-*/=]\s*\d+/.test(query)
   ) {
-    logger.query.methodSelected('auto', 'pot', 'Math/computation detected - Program of Thought');
-    return { id: 'pot', reason: 'Math/computation detected - Program of Thought' };
+    logger.query.methodSelected('auto', 'pas', 'Math/computation detected - Plan-and-Solve');
+    return { id: 'pas', reason: 'Math/computation detected - Plan-and-Solve' };
   }
 
   // Simple factual queries → direct
@@ -1395,18 +1395,18 @@ Use ReAct (Reasoning + Acting) methodology:
 
 Format: [THOUGHT 1], [ACTION 1], [OBSERVATION 1], [THOUGHT 2], ... [FINAL ANSWER]${enhancementSection}${contextSection}`;
 
-    case 'pot':
-      // Program of Thought - computational reasoning
+    case 'pas':
+      // Plan-and-Solve - decompose then execute step by step
       return `${baseIdentity}${writingStyle}
 
-Use Program of Thought (PoT) methodology:
-1. **Problem Analysis**: Break down the computational/mathematical problem
-2. **Pseudocode**: Write logical steps as if programming the solution
-3. **Execution**: Work through the logic step-by-step with actual values
-4. **Verification**: Double-check calculations and logic (show your verification process)
-5. **Result**: Present the final answer with clear explanation
+Use Plan-and-Solve (PaS) methodology (Wang et al., ACL 2023):
+1. **Understand**: Parse the problem and identify what is being asked
+2. **Plan**: Devise a step-by-step plan to solve the problem
+3. **Execute**: Carry out each step of the plan with actual values
+4. **Verify**: Double-check the result against the original problem
+5. **Answer**: Present the final answer with clear explanation
 
-Format: [PROBLEM], [LOGIC/PSEUDOCODE], [EXECUTION], [VERIFICATION], [RESULT]${enhancementSection}${contextSection}`;
+Format: [UNDERSTAND], [PLAN], [EXECUTE], [VERIFY], [ANSWER]${enhancementSection}${contextSection}`;
 
     case 'gtp':
       // Generative Thought Process - multi-perspective consensus
