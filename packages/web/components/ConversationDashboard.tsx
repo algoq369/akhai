@@ -70,8 +70,8 @@ const METHODOLOGIES = [
     cost: '$0.018',
   },
   {
-    id: 'gtp',
-    name: 'GTP',
+    id: 'tot',
+    name: 'TOT',
     color: '#6366F1',
     glowColor: 'rgba(99, 102, 241, 0.5)',
     tokens: '8k-15k',

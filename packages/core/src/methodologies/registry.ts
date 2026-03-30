@@ -9,7 +9,7 @@ import { executeChainOfDraft } from './cod.js';
 import { executeBufferOfThoughts } from './sc.js';
 import { executeReAct } from './react.js';
 import { executeProgramOfThought } from './pas.js';
-import { GTPExecutor } from './gtp/index.js';
+import { GTPExecutor } from './tot/index.js';
 import type { CoreMethodology, METHODOLOGY_INFO, MethodologyInfo } from './types.js';
 
 /**
@@ -119,13 +119,13 @@ export const METHODOLOGY_REGISTRY: Record<CoreMethodology, MethodologyEntry> = {
     notes: 'JavaScript execution with sandboxed Function constructor and timeout protection',
   },
 
-  gtp: {
+  tot: {
     execute: GTPExecutor, // Wrapped in class, need to adapt
     info: {
-      name: 'GTP + Self-Consistency',
+      name: 'Tree of Thoughts',
       tier: 5,
       icon: '🤝',
-      description: 'Multi-perspective consensus with Self-MoA',
+      description: 'Yao et al., NeurIPS 2023, explores multiple reasoning branches, evaluates and prunes',
       tokenMultiplier: 5.0,
       avgLatencyMs: 30000,
       costPer1K: 0.03,

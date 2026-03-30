@@ -103,7 +103,7 @@ describe('Query Classifier', () => {
       const result = classifyQueryIntent(query);
 
       expect(result.suggestedMethodology).toBeDefined();
-      expect(['direct', 'cod', 'sc', 'react', 'pas', 'gtp', 'auto']).toContain(
+      expect(['direct', 'cod', 'sc', 'react', 'pas', 'tot', 'auto']).toContain(
         result.suggestedMethodology
       );
     });

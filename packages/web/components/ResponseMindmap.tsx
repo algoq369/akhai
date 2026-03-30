@@ -47,10 +47,10 @@ const NODE_GRADIENTS = [
 const METHODOLOGY_COLORS: Record<string, { from: string; to: string }> = {
   direct: { from: '#ef4444', to: '#f97316' },
   cod: { from: '#f97316', to: '#eab308' },
-  bot: { from: '#eab308', to: '#84cc16' },
+  sc: { from: '#eab308', to: '#84cc16' },
   react: { from: '#22c55e', to: '#14b8a6' },
-  pot: { from: '#3b82f6', to: '#6366f1' },
-  gtp: { from: '#8b5cf6', to: '#a855f7' },
+  pas: { from: '#3b82f6', to: '#6366f1' },
+  tot: { from: '#8b5cf6', to: '#a855f7' },
   auto: { from: '#64748b', to: '#475569' },
 };
 

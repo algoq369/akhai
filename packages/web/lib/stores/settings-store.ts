@@ -27,7 +27,7 @@ export interface AppearanceSettings {
 }
 
 export interface MethodologySettings {
-  defaultMethod: 'auto' | 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'gtp';
+  defaultMethod: 'auto' | 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'tot';
   autoRoute: boolean;
   showIndicator: boolean;
 }

@@ -14,7 +14,7 @@
  *   akhai config            Configure API keys
  * 
  * Methodologies:
- *   auto, direct, cod, bot, react, pot, gtp
+ *   auto, direct, cod, sc, react, pas, tot
  * 
  * Powered by Claude Opus 4.5 + AkhAI Sovereign Technology
  */
@@ -50,7 +50,7 @@ const METHODOLOGIES = {
   sc: { symbol: '◇', name: 'sc', color: chalk.yellow, desc: 'Self-Consistency' },
   react: { symbol: '⟳', name: 'react', color: chalk.green, desc: 'Multi-step reasoning' },
   pas: { symbol: '△', name: 'pas', color: chalk.blue, desc: 'Plan-and-Solve' },
-  gtp: { symbol: '◯', name: 'gtp', color: chalk.magenta, desc: 'Multi-AI consensus' },
+  tot: { symbol: '◯', name: 'tot', color: chalk.magenta, desc: 'Tree of Thoughts' },
 };
 
 type Methodology = keyof typeof METHODOLOGIES;
@@ -213,7 +213,7 @@ ${chalk.bold('AKHAI Terminal Commands')}
 ${chalk.cyan('/help')}              Show this help
 ${chalk.cyan('/clear')}             Clear conversation history
 ${chalk.cyan('/instinct')}          Toggle Instinct Mode
-${chalk.cyan('/method')} ${chalk.gray('<name>')}    Switch methodology (auto, direct, cod, bot, react, pot, gtp)
+${chalk.cyan('/method')} ${chalk.gray('<name>')}    Switch methodology (auto, direct, cod, sc, react, pas, tot)
 ${chalk.cyan('/status')}            Show current settings
 ${chalk.cyan('/history')}           Show command history
 ${chalk.cyan('/export')}            Export conversation
@@ -248,7 +248,7 @@ ${Object.entries(METHODOLOGIES).map(([id, m]) =>
             const m = METHODOLOGIES[newMethod];
             console.log(`  ${m.color(m.symbol)} Switched to ${chalk.white(newMethod)}\n`);
           } else {
-            console.log(chalk.red('  Invalid methodology. Use: auto, direct, cod, bot, react, pot, gtp\n'));
+            console.log(chalk.red('  Invalid methodology. Use: auto, direct, cod, sc, react, pas, tot\n'));
           }
           break;
 
@@ -364,7 +364,7 @@ program
   .name('akhai')
   .description('AKHAI Terminal - Sovereign AI Intelligence')
   .version(VERSION)
-  .option('-m, --method <methodology>', 'Methodology (auto, direct, cod, bot, react, pot, gtp)', 'auto')
+  .option('-m, --method <methodology>', 'Methodology (auto, direct, cod, sc, react, pas, tot)', 'auto')
   .option('-i, --instinct', 'Enable Instinct Mode')
   .option('--model <model>', 'AI model to use')
   .argument('[query]', 'Query to send (omit for interactive mode)')
@@ -428,7 +428,7 @@ ${chalk.cyan('export AKHAI_MODEL="claude-3-5-sonnet-20241022"')}
 ${chalk.gray('# Options: claude-3-5-sonnet-20241022, claude-3-opus-20240229')}
 
 ${chalk.cyan('export AKHAI_METHODOLOGY="auto"')}
-${chalk.gray('# Options: auto, direct, cod, bot, react, pot, gtp')}
+${chalk.gray('# Options: auto, direct, cod, sc, react, pas, tot')}
 
 ${chalk.cyan('export AKHAI_INSTINCT="true"')}
 ${chalk.gray('# Enable Instinct Mode by default')}

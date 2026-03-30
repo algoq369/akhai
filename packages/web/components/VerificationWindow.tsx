@@ -5,7 +5,12 @@ import { FlashProgress } from './FlashProgress';
 import { ReasoningLog } from './ReasoningLog';
 import { GroundingAlert } from './grounding';
 import { ThoughtBufferView, MetaBufferView, DistillationProgress } from './bot';
-import type { GroundingAlert as GroundingAlertType, ThoughtNode, MetaBuffer, DistillationStrategy } from '@akhai/core';
+import type {
+  GroundingAlert as GroundingAlertType,
+  ThoughtNode,
+  MetaBuffer,
+  DistillationStrategy,
+} from '@akhai/core';
 
 interface AdvisorResponse {
   slot: number;
@@ -82,13 +87,14 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
   const [thoughtBuffer, setThoughtBuffer] = useState<ThoughtNode[]>([]);
   const [metaBuffers, setMetaBuffers] = useState<MetaBuffer[]>([]);
   const [isDistilling, setIsDistilling] = useState(false);
-  const [distillationStrategy, setDistillationStrategy] = useState<DistillationStrategy>('hierarchical');
+  const [distillationStrategy, setDistillationStrategy] =
+    useState<DistillationStrategy>('hierarchical');
   const [distillationProgress, setDistillationProgress] = useState(0);
   const [bufferSize, setBufferSize] = useState(0);
   const [maxBufferSize, setMaxBufferSize] = useState(10);
 
   const addReasoningStep = (phase: string, message: string, data?: any) => {
-    setReasoningSteps(prev => [...prev, { timestamp: Date.now(), phase, message, data }]);
+    setReasoningSteps((prev) => [...prev, { timestamp: Date.now(), phase, message, data }]);
     setCurrentPhase(phase);
   };
 
@@ -103,7 +109,10 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
     setRoundPaused(false);
     setPausedRound(null);
     setIsComplete(true);
-    addReasoningStep('Round Accept', `Accepted consensus from round ${pausedRound}, skipping further rounds`);
+    addReasoningStep(
+      'Round Accept',
+      `Accepted consensus from round ${pausedRound}, skipping further rounds`
+    );
   };
 
   const handleCancel = () => {
@@ -134,7 +143,7 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
   const handlePivot = (alert: GroundingAlertType) => {
     const prompts: Record<string, string> = {
       hype: 'focus only on verified facts - what do we know with certainty?',
-      echo: 'play devil\'s advocate - what are the strongest counterarguments?',
+      echo: "play devil's advocate - what are the strongest counterarguments?",
       drift: 'return to original question - what is the direct answer?',
       factuality: 'what claims can we support with citations?',
     };
@@ -144,7 +153,7 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
   };
 
   const handleDismissAlert = (index: number) => {
-    setGroundingAlerts(prev => prev.filter((_, i) => i !== index));
+    setGroundingAlerts((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Timer for elapsed time
@@ -164,7 +173,9 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
     const timeoutId = setTimeout(() => {
       if (!isComplete && !error) {
         setError('Query timed out after 3 minutes');
-        setErrorHint('Check provider status at /api/test-providers. One or more AI providers may be slow or down.');
+        setErrorHint(
+          'Check provider status at /api/test-providers. One or more AI providers may be slow or down.'
+        );
         eventSource.close();
       }
     }, 180000);
@@ -180,11 +191,14 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             addReasoningStep('Initialize', 'Connected to query stream, starting execution...');
             break;
 
-          // GTP-specific events
-          case 'gtp-analysis':
+          // TOT-specific events
+          case 'tot-analysis':
             setIsGTP(true);
             setProgress(10);
-            addReasoningStep('GTP Analysis', 'Query analyzed for GTP methodology - using parallel Flash architecture');
+            addReasoningStep(
+              'TOT Analysis',
+              'Query analyzed for TOT methodology - using parallel Flash architecture'
+            );
             break;
 
           case 'flash-prepare':
@@ -198,21 +212,29 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
                 status: 'waiting' as const,
               }));
               setGtpAdvisors(initialAdvisors);
-              addReasoningStep('Flash Prepare', `Initialized ${initialAdvisors.length} advisor roles: ${data.data.roles.join(', ')}`);
+              addReasoningStep(
+                'Flash Prepare',
+                `Initialized ${initialAdvisors.length} advisor roles: ${data.data.roles.join(', ')}`
+              );
             }
             break;
 
           case 'flash-broadcast':
             setProgress(20);
-            addReasoningStep('Flash Broadcast', 'Broadcasting context frame to all advisors simultaneously (TRUE parallelism)');
+            addReasoningStep(
+              'Flash Broadcast',
+              'Broadcasting context frame to all advisors simultaneously (TRUE parallelism)'
+            );
             break;
 
           case 'advisor-failed':
-            setGtpAdvisors(prev => prev.map(advisor =>
-              advisor.slot === data.data.slot
-                ? { ...advisor, status: 'failed' as const }
-                : advisor
-            ));
+            setGtpAdvisors((prev) =>
+              prev.map((advisor) =>
+                advisor.slot === data.data.slot
+                  ? { ...advisor, status: 'failed' as const }
+                  : advisor
+              )
+            );
             break;
 
           case 'merge-update':
@@ -232,7 +254,9 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
 
           case 'quorum-reached':
             setProgress(75);
-            setQuorumStatus(prev => prev ? { ...prev, reached: true, reason: data.data.reason } : undefined);
+            setQuorumStatus((prev) =>
+              prev ? { ...prev, reached: true, reason: data.data.reason } : undefined
+            );
             break;
 
           case 'synthesis-start':
@@ -247,25 +271,33 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             break;
 
           case 'advisor-start':
-            setProgress(prev => Math.min(prev + 10, 60));
+            setProgress((prev) => Math.min(prev + 10, 60));
 
             // Update GTP advisors if in GTP mode
             if (data.data.role) {
-              setGtpAdvisors(prev => prev.map(advisor =>
-                advisor.slot === data.data.slot
-                  ? { ...advisor, family: data.data.family, status: 'thinking' as const }
-                  : advisor
-              ));
-              addReasoningStep('Advisor Start', `Slot ${data.data.slot} (${data.data.family}/${data.data.role}) analyzing query...`);
+              setGtpAdvisors((prev) =>
+                prev.map((advisor) =>
+                  advisor.slot === data.data.slot
+                    ? { ...advisor, family: data.data.family, status: 'thinking' as const }
+                    : advisor
+                )
+              );
+              addReasoningStep(
+                'Advisor Start',
+                `Slot ${data.data.slot} (${data.data.family}/${data.data.role}) analyzing query...`
+              );
             } else {
-              addReasoningStep('Advisor Start', `Slot ${data.data.slot} (${data.data.family}) processing...`);
+              addReasoningStep(
+                'Advisor Start',
+                `Slot ${data.data.slot} (${data.data.family}) processing...`
+              );
             }
 
             // Also update rounds for non-GTP flows
             if (data.data.round !== undefined) {
-              setRounds(prev => {
+              setRounds((prev) => {
                 const newRounds = [...prev];
-                const roundIndex = newRounds.findIndex(r => r.round === data.data.round);
+                const roundIndex = newRounds.findIndex((r) => r.round === data.data.round);
 
                 const response = {
                   slot: data.data.slot,
@@ -276,7 +308,9 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
                 };
 
                 if (roundIndex >= 0) {
-                  const respIndex = newRounds[roundIndex].responses.findIndex(r => r.slot === data.data.slot);
+                  const respIndex = newRounds[roundIndex].responses.findIndex(
+                    (r) => r.slot === data.data.slot
+                  );
                   if (respIndex >= 0) {
                     newRounds[roundIndex].responses[respIndex] = response;
                   } else {
@@ -296,34 +330,43 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             break;
 
           case 'advisor-complete':
-            setProgress(prev => Math.min(prev + 10, 70));
+            setProgress((prev) => Math.min(prev + 10, 70));
 
             // Update GTP advisors if in GTP mode
             if (data.data.role) {
-              setGtpAdvisors(prev => prev.map(advisor =>
-                advisor.slot === data.data.slot
-                  ? {
-                      ...advisor,
-                      status: 'complete' as const,
-                      confidence: data.data.confidence,
-                      keyPoints: data.data.keyPoints,
-                    }
-                  : advisor
-              ));
-              addReasoningStep('Advisor Complete', `Slot ${data.data.slot} completed with ${Math.round((data.data.confidence || 0) * 100)}% confidence`, {
-                slot: data.data.slot,
-                family: data.data.family,
-                response: data.data.keyPoints?.[0] || 'Analysis complete'
-              });
+              setGtpAdvisors((prev) =>
+                prev.map((advisor) =>
+                  advisor.slot === data.data.slot
+                    ? {
+                        ...advisor,
+                        status: 'complete' as const,
+                        confidence: data.data.confidence,
+                        keyPoints: data.data.keyPoints,
+                      }
+                    : advisor
+                )
+              );
+              addReasoningStep(
+                'Advisor Complete',
+                `Slot ${data.data.slot} completed with ${Math.round((data.data.confidence || 0) * 100)}% confidence`,
+                {
+                  slot: data.data.slot,
+                  family: data.data.family,
+                  response: data.data.keyPoints?.[0] || 'Analysis complete',
+                }
+              );
             } else {
-              addReasoningStep('Advisor Complete', `Slot ${data.data.slot} (${data.data.family}) finished analysis`);
+              addReasoningStep(
+                'Advisor Complete',
+                `Slot ${data.data.slot} (${data.data.family}) finished analysis`
+              );
             }
 
             // Also update rounds for non-GTP flows
             if (data.data.round !== undefined) {
-              setRounds(prev => {
+              setRounds((prev) => {
                 const newRounds = [...prev];
-                const roundIndex = newRounds.findIndex(r => r.round === data.data.round);
+                const roundIndex = newRounds.findIndex((r) => r.round === data.data.round);
 
                 const response = {
                   slot: data.data.slot,
@@ -334,7 +377,9 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
                 };
 
                 if (roundIndex >= 0) {
-                  const respIndex = newRounds[roundIndex].responses.findIndex(r => r.slot === data.data.slot);
+                  const respIndex = newRounds[roundIndex].responses.findIndex(
+                    (r) => r.slot === data.data.slot
+                  );
                   if (respIndex >= 0) {
                     newRounds[roundIndex].responses[respIndex] = response;
                   } else {
@@ -358,9 +403,9 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             break;
 
           case 'consensus-reached':
-            setRounds(prev => {
+            setRounds((prev) => {
               const newRounds = [...prev];
-              const roundIndex = newRounds.findIndex(r => r.round === data.data.round);
+              const roundIndex = newRounds.findIndex((r) => r.round === data.data.round);
               if (roundIndex >= 0) {
                 newRounds[roundIndex].consensusReached = true;
               }
@@ -372,7 +417,10 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             // Round complete event - trigger pause for user review
             setRoundPaused(true);
             setPausedRound(data.data.round);
-            addReasoningStep('Round Complete', `Round ${data.data.round} complete. Review consensus before continuing.`);
+            addReasoningStep(
+              'Round Complete',
+              `Round ${data.data.round} complete. Review consensus before continuing.`
+            );
             break;
 
           case 'redactor-start':
@@ -400,15 +448,21 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             // Check for grounding alerts in result
             if (data.data?.groundingAlerts && data.data.groundingAlerts.length > 0) {
               setGroundingAlerts(data.data.groundingAlerts);
-              addReasoningStep('Grounding Check', `${data.data.groundingAlerts.length} grounding alert(s) detected`);
+              addReasoningStep(
+                'Grounding Check',
+                `${data.data.groundingAlerts.length} grounding alert(s) detected`
+              );
             }
             break;
 
           case 'grounding-alert':
             // Handle grounding alert event
             if (data.data?.alert) {
-              setGroundingAlerts(prev => [...prev, data.data.alert]);
-              addReasoningStep('Grounding Alert', `${data.data.alert.type} alert: ${data.data.alert.message}`);
+              setGroundingAlerts((prev) => [...prev, data.data.alert]);
+              addReasoningStep(
+                'Grounding Alert',
+                `${data.data.alert.type} alert: ${data.data.alert.message}`
+              );
             }
             break;
 
@@ -424,16 +478,22 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
 
           case 'bot-thought-added':
             if (data.data?.thought) {
-              setThoughtBuffer(prev => [...prev, data.data.thought]);
-              setBufferSize(prev => prev + 1);
-              addReasoningStep('BoT Thought', `New thought added (depth ${data.data.thought.depth}): ${data.data.thought.content.substring(0, 50)}...`);
+              setThoughtBuffer((prev) => [...prev, data.data.thought]);
+              setBufferSize((prev) => prev + 1);
+              addReasoningStep(
+                'BoT Thought',
+                `New thought added (depth ${data.data.thought.depth}): ${data.data.thought.content.substring(0, 50)}...`
+              );
             }
             break;
 
           case 'bot-distillation-start':
             setIsDistilling(true);
             setDistillationProgress(0);
-            addReasoningStep('BoT Distillation', `Starting distillation (${data.data?.bufferSize || bufferSize} thoughts, strategy: ${data.data?.strategy || distillationStrategy})`);
+            addReasoningStep(
+              'BoT Distillation',
+              `Starting distillation (${data.data?.bufferSize || bufferSize} thoughts, strategy: ${data.data?.strategy || distillationStrategy})`
+            );
             break;
 
           case 'bot-distillation-progress':
@@ -446,8 +506,11 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             setIsDistilling(false);
             setDistillationProgress(1);
             if (data.data?.metaBuffer) {
-              setMetaBuffers(prev => [...prev, data.data.metaBuffer]);
-              addReasoningStep('BoT Meta-Buffer', `Distillation complete: ${data.data.metaBuffer.keyInsights.length} key insights, ${data.data.metaBuffer.tokensSaved} tokens saved`);
+              setMetaBuffers((prev) => [...prev, data.data.metaBuffer]);
+              addReasoningStep(
+                'BoT Meta-Buffer',
+                `Distillation complete: ${data.data.metaBuffer.keyInsights.length} key insights, ${data.data.metaBuffer.tokensSaved} tokens saved`
+              );
             }
             // Clear thought buffer after distillation
             setThoughtBuffer([]);
@@ -465,11 +528,16 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
           case 'bot-solution-path':
             if (data.data?.path) {
               const pathIds = data.data.path.map((t: ThoughtNode) => t.id);
-              setThoughtBuffer(prev => prev.map(t => ({
-                ...t,
-                isOnSolutionPath: pathIds.includes(t.id)
-              })));
-              addReasoningStep('BoT Solution Path', `Identified solution path with ${data.data.path.length} thoughts`);
+              setThoughtBuffer((prev) =>
+                prev.map((t) => ({
+                  ...t,
+                  isOnSolutionPath: pathIds.includes(t.id),
+                }))
+              );
+              addReasoningStep(
+                'BoT Solution Path',
+                `Identified solution path with ${data.data.path.length} thoughts`
+              );
             }
             break;
 
@@ -492,7 +560,7 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             break;
 
           default:
-            // Unknown event type - ignore
+          // Unknown event type - ignore
         }
       } catch (err) {
         console.error('Failed to parse event:', err);
@@ -564,10 +632,7 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
 
       {/* Reasoning Log */}
       {reasoningSteps.length > 0 && !isComplete && (
-        <ReasoningLog
-          steps={reasoningSteps}
-          currentPhase={currentPhase}
-        />
+        <ReasoningLog steps={reasoningSteps} currentPhase={currentPhase} />
       )}
 
       {/* Round Pause UI */}
@@ -577,7 +642,9 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
             Round {pausedRound} Complete - Review Consensus
           </h3>
           <p className="text-gray-400 text-sm mb-4">
-            Consensus round {pausedRound} has completed. You can review the advisor responses above and decide whether to continue to the next round, accept the current consensus, or cancel the query.
+            Consensus round {pausedRound} has completed. You can review the advisor responses above
+            and decide whether to continue to the next round, accept the current consensus, or
+            cancel the query.
           </p>
           <div className="flex gap-2">
             <button
@@ -621,9 +688,7 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-gray-300">
               Round {round.round}
-              {round.consensusReached && (
-                <span className="ml-2 text-white text-xs">Consensus</span>
-              )}
+              {round.consensusReached && <span className="ml-2 text-white text-xs">Consensus</span>}
             </h3>
             {!round.consensusReached && (
               <span className="text-gray-500 text-xs">In Progress...</span>
@@ -635,9 +700,7 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
               <div
                 key={idx}
                 className={`bg-gray-800/50 backdrop-blur-sm rounded-lg p-3 border ${
-                  resp.status === 'thinking'
-                    ? 'border-gray-600'
-                    : 'border-gray-700'
+                  resp.status === 'thinking' ? 'border-gray-600' : 'border-gray-700'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -664,9 +727,7 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
       {/* Redactor Output */}
       {redactorOutput && (
         <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-lg p-4">
-          <h3 className="text-white font-medium text-sm mb-2">
-            Redactor Synthesis
-          </h3>
+          <h3 className="text-white font-medium text-sm mb-2">Redactor Synthesis</h3>
           <p className="text-gray-400 text-sm">{redactorOutput}</p>
         </div>
       )}
@@ -716,7 +777,10 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
           <ThoughtBufferView
             thoughts={thoughtBuffer}
             onThoughtSelect={(thought) => {
-              addReasoningStep('BoT Thought Selected', `User selected thought: ${thought.content.substring(0, 50)}...`);
+              addReasoningStep(
+                'BoT Thought Selected',
+                `User selected thought: ${thought.content.substring(0, 50)}...`
+              );
             }}
           />
 
@@ -724,7 +788,10 @@ export default function VerificationWindow({ queryId }: VerificationWindowProps)
           <MetaBufferView
             metaBuffers={metaBuffers}
             onMetaBufferSelect={(mb) => {
-              addReasoningStep('BoT Meta-Buffer Selected', `User selected meta-buffer: ${mb.summary.substring(0, 50)}...`);
+              addReasoningStep(
+                'BoT Meta-Buffer Selected',
+                `User selected meta-buffer: ${mb.summary.substring(0, 50)}...`
+              );
             }}
           />
         </div>

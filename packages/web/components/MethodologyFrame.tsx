@@ -85,9 +85,9 @@ const METHODOLOGIES: Methodology[] = [
     cost: '$0.018',
   },
   {
-    id: 'gtp',
-    name: 'GTP',
-    fullName: 'Multi-AI Consensus',
+    id: 'tot',
+    name: 'TOT',
+    fullName: 'Tree of Thoughts',
     symbol: '◯',
     color: '#8b5cf6',
     tokens: '8k-15k',

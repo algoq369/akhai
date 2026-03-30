@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const comparisonId = nanoid(10);
 
     // Create queries for all 5 methodologies
-    const methodologies = ['direct', 'cot', 'aot', 'gtp', 'auto'] as const;
+    const methodologies = ['direct', 'cot', 'aot', 'tot', 'auto'] as const;
     const queries = await Promise.all(
       methodologies.map(async (methodology) => {
         const res = await fetch(`${request.nextUrl.origin}/api/query`, {

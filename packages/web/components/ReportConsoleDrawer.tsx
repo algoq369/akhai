@@ -292,7 +292,7 @@ function MethodologyTab({ currentMethodology, onMethodologyChange }: Methodology
       name: 'Plan-and-Solve',
       description: 'Decompose then execute step by step',
     },
-    { id: 'gtp', symbol: '◯', name: 'GTP Consensus', description: 'Multi-AI agreement synthesis' },
+    { id: 'tot', symbol: '◯', name: 'TOT Consensus', description: 'Tree of Thoughts reasoning' },
   ];
 
   return (

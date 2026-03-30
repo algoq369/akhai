@@ -14,7 +14,7 @@ import {
   MethodologySelector,
   analyzeQuery,
   selectMethodology,
-} from '../src/methodologies/gtp/index.js';
+} from '../src/methodologies/tot/index.js';
 import { createProviderFromFamily } from '../src/models/ModelProviderFactory.js';
 import type { ModelFamily } from '../src/models/types.js';
 
@@ -35,16 +35,16 @@ describe('GTP Methodology Selector', () => {
     expect(analysis.requiresMultiplePerspectives).toBe(true);
 
     const selection = selector.selectMethodology(analysis);
-    expect(selection.methodology).toBe('gtp');
+    expect(selection.methodology).toBe('tot');
   });
 
-  it('should detect creative queries for GTP', () => {
+  it('should detect creative queries for TOT', () => {
     const analysis = selector.analyzeQuery('Brainstorm startup ideas for AI in healthcare');
     expect(analysis.queryType).toBe('creative');
     expect(analysis.requiresMultiplePerspectives).toBe(true);
 
     const selection = selector.selectMethodology(analysis);
-    expect(selection.methodology).toBe('gtp');
+    expect(selection.methodology).toBe('tot');
   });
 
   it('should detect simple factual queries for Direct', () => {
@@ -385,9 +385,9 @@ describe('Integration: Query Analysis to Methodology Selection', () => {
   const testCases = [
     { query: 'What is the capital of France?', expected: 'direct' },
     { query: 'How to deploy Node.js step by step', expected: 'cot' },
-    { query: 'Compare React vs Vue vs Angular', expected: 'gtp' },
+    { query: 'Compare React vs Vue vs Angular', expected: 'tot' },
     { query: 'Research quantum computing trends comprehensively', expected: 'aot' },
-    { query: 'Brainstorm innovative AI startup ideas', expected: 'gtp' },
+    { query: 'Brainstorm innovative AI startup ideas', expected: 'tot' },
   ];
 
   testCases.forEach(({ query, expected }) => {

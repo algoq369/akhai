@@ -12,12 +12,12 @@
  * Phase 2: AI-Powered Classification with Opus 4.5
  */
 
-export type Methodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'gtp' | 'auto';
+export type Methodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'tot' | 'auto';
 
 export interface QueryClassification {
   isSimple: boolean;
   reason: string;
-  suggestedMethodology: 'direct' | 'gtp' | 'cot' | 'aot';
+  suggestedMethodology: 'direct' | 'tot' | 'cot' | 'aot';
 }
 
 export interface AIQueryClassification {
@@ -91,7 +91,7 @@ export function classifyQuery(query: string): QueryClassification {
     return {
       isSimple: false,
       reason: 'Comparison detected - requires multiple perspectives',
-      suggestedMethodology: 'gtp',
+      suggestedMethodology: 'tot',
     };
   }
 
@@ -116,7 +116,7 @@ export function classifyQuery(query: string): QueryClassification {
     return {
       isSimple: false,
       reason: 'Complex analysis required',
-      suggestedMethodology: wordCount > 10 ? 'cot' : 'gtp',
+      suggestedMethodology: wordCount > 10 ? 'cot' : 'tot',
     };
   }
 
@@ -133,7 +133,7 @@ export function classifyQuery(query: string): QueryClassification {
   return {
     isSimple: false,
     reason: `Medium complexity (${wordCount} words)`,
-    suggestedMethodology: 'gtp',
+    suggestedMethodology: 'tot',
   };
 }
 
@@ -250,10 +250,10 @@ Query: "${query}"
 Methodologies:
 - direct: Simple facts, quick answers, factual lookups (e.g., "what is X", "btc price")
 - cod: Step-by-step explanations, iterative reasoning with reflection (e.g., "explain how X works", "analyze Y")
-- bot: Deep analysis, template-based reasoning for structured problems (e.g., "compare X and Y", "evaluate Z")
+- sc: Self-Consistency, multiple reasoning paths with majority vote (e.g., "compare X and Y", "evaluate Z")
 - react: Research, fact-finding with tools, multi-step investigation (e.g., "find latest research on X")
-- pot: Math, calculations, code-based solutions (e.g., "calculate X", "solve Y equation")
-- gtp: Multi-perspective consensus needed for complex judgments (e.g., "which is better X or Y", "should I do Z")
+- pas: Plan-and-Solve, decompose then execute step by step (e.g., "calculate X", "solve Y equation")
+- tot: Tree of Thoughts, multi-perspective consensus for complex judgments (e.g., "which is better X or Y", "should I do Z")
 - auto: Let system decide based on query characteristics
 
 Return ONLY valid JSON (no markdown):
@@ -298,11 +298,11 @@ Return ONLY valid JSON (no markdown):
     // Fallback to regex-based classification
     const fallback = classifyQuery(query);
     return {
-      methodology: fallback.suggestedMethodology === 'gtp' ? 'gtp' : 'direct',
+      methodology: fallback.suggestedMethodology === 'tot' ? 'tot' : 'direct',
       confidence: 0.6,
       reasoning: `Fallback: ${fallback.reason}`,
       complexity: query.split(' ').length > 10 ? 7 : 3,
-      multiDimensional: fallback.suggestedMethodology === 'gtp',
+      multiDimensional: fallback.suggestedMethodology === 'tot',
     };
   }
 }

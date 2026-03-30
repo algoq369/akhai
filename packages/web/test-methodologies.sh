@@ -99,13 +99,13 @@ test_methodology \
     "pot"
 
 echo ""
-echo "6️⃣  Testing GTP (Generative Thought Process) methodology"
+echo "6️⃣  Testing TOT (Tree of Thoughts) methodology"
 echo "──────────────────────────────────────────────────────"
 test_methodology \
-    "GTP - Multi-perspective analysis" \
-    "gtp" \
+    "TOT - Tree of Thoughts analysis" \
+    "tot" \
     "Analyze blockchain technology from multiple perspectives and reach a consensus on its future" \
-    "gtp"
+    "tot"
 
 echo ""
 echo "7️⃣  Testing AUTO methodology selection"

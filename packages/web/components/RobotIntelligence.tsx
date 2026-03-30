@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import React, { useState, useRef, useEffect } from 'react'
-import { 
-  CpuChipIcon, 
-  BoltIcon, 
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  CpuChipIcon,
+  BoltIcon,
   EyeIcon,
   HandRaisedIcon,
   CogIcon,
@@ -13,37 +13,37 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowPathIcon,
   SparklesIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline'
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 
 // ============================================
 // TYPES
 // ============================================
 
 interface RobotPart {
-  id: string
-  name: string
-  category: 'core' | 'sensory' | 'motor' | 'cognitive' | 'energy'
-  icon: React.ComponentType<{ className?: string }>
-  description: string
-  status: 'active' | 'developing' | 'planned' | 'offline'
+  id: string;
+  name: string;
+  category: 'core' | 'sensory' | 'motor' | 'cognitive' | 'energy';
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+  status: 'active' | 'developing' | 'planned' | 'offline';
   metrics: {
-    efficiency: number
-    development: number
-    energyConsumption: number
-    reliability: number
-  }
-  subComponents: SubComponent[]
-  position: { x: number; y: number; size: 'lg' | 'md' | 'sm' }
-  connections: string[]
+    efficiency: number;
+    development: number;
+    energyConsumption: number;
+    reliability: number;
+  };
+  subComponents: SubComponent[];
+  position: { x: number; y: number; size: 'lg' | 'md' | 'sm' };
+  connections: string[];
 }
 
 interface SubComponent {
-  id: string
-  name: string
-  status: 'active' | 'developing' | 'planned'
-  value: number
-  unit: string
+  id: string;
+  name: string;
+  status: 'active' | 'developing' | 'planned';
+  value: number;
+  unit: string;
 }
 
 // ============================================
@@ -64,12 +64,12 @@ const robotParts: RobotPart[] = [
     subComponents: [
       { id: 'direct-path', name: 'Direct Pathway', status: 'active', value: 98, unit: '%' },
       { id: 'cod-path', name: 'Chain of Draft', status: 'active', value: 95, unit: '%' },
-      { id: 'gtp-path', name: 'GTP Consensus', status: 'active', value: 92, unit: '%' },
+      { id: 'tot-path', name: 'Tree of Thoughts', status: 'active', value: 92, unit: '%' },
       { id: 'react-path', name: 'ReAct Loop', status: 'active', value: 89, unit: '%' },
-      { id: 'pot-path', name: 'Program of Thought', status: 'developing', value: 78, unit: '%' },
-      { id: 'bot-path', name: 'Buffer of Thoughts', status: 'developing', value: 82, unit: '%' },
-      { id: 'auto-router', name: 'Auto Router', status: 'active', value: 96, unit: '%' }
-    ]
+      { id: 'pas-path', name: 'Plan-and-Solve', status: 'developing', value: 78, unit: '%' },
+      { id: 'sc-path', name: 'Self-Consistency', status: 'developing', value: 82, unit: '%' },
+      { id: 'auto-router', name: 'Auto Router', status: 'active', value: 96, unit: '%' },
+    ],
   },
   {
     id: 'grounding-guard',
@@ -87,8 +87,8 @@ const robotParts: RobotPart[] = [
       { id: 'drift-detect', name: 'Drift Monitor', status: 'active', value: 91, unit: '%' },
       { id: 'fact-check', name: 'Fact Verification', status: 'active', value: 93, unit: '%' },
       { id: 'bias-scan', name: 'Bias Scanner', status: 'active', value: 87, unit: '%' },
-      { id: 'suggest-engine', name: 'Suggestions', status: 'active', value: 95, unit: '%' }
-    ]
+      { id: 'suggest-engine', name: 'Suggestions', status: 'active', value: 95, unit: '%' },
+    ],
   },
   {
     id: 'side-canal',
@@ -104,8 +104,8 @@ const robotParts: RobotPart[] = [
       { id: 'topic-extract', name: 'Topic Extraction', status: 'active', value: 92, unit: '%' },
       { id: 'synopsis-gen', name: 'Synopsis Generator', status: 'active', value: 89, unit: '%' },
       { id: 'suggest-flow', name: 'Suggestion Flow', status: 'active', value: 91, unit: '%' },
-      { id: 'context-inject', name: 'Context Injection', status: 'active', value: 88, unit: '%' }
-    ]
+      { id: 'context-inject', name: 'Context Injection', status: 'active', value: 88, unit: '%' },
+    ],
   },
   {
     id: 'mind-map',
@@ -120,8 +120,8 @@ const robotParts: RobotPart[] = [
     subComponents: [
       { id: 'graph-render', name: 'Graph Renderer', status: 'active', value: 94, unit: '%' },
       { id: 'ai-insights', name: 'AI Insights', status: 'active', value: 86, unit: '%' },
-      { id: 'table-view', name: 'Table View', status: 'active', value: 95, unit: '%' }
-    ]
+      { id: 'table-view', name: 'Table View', status: 'active', value: 95, unit: '%' },
+    ],
   },
   {
     id: 'memory-bank',
@@ -136,8 +136,8 @@ const robotParts: RobotPart[] = [
     subComponents: [
       { id: 'session-mem', name: 'Session Memory', status: 'active', value: 98, unit: '%' },
       { id: 'user-profile', name: 'User Profiles', status: 'developing', value: 45, unit: '%' },
-      { id: 'knowledge-base', name: 'Knowledge Base', status: 'planned', value: 15, unit: '%' }
-    ]
+      { id: 'knowledge-base', name: 'Knowledge Base', status: 'planned', value: 15, unit: '%' },
+    ],
   },
   {
     id: 'query-engine',
@@ -152,8 +152,8 @@ const robotParts: RobotPart[] = [
     subComponents: [
       { id: 'stream-handler', name: 'Stream Handler', status: 'active', value: 99, unit: '%' },
       { id: 'method-select', name: 'Method Selector', status: 'active', value: 97, unit: '%' },
-      { id: 'response-format', name: 'Response Formatter', status: 'active', value: 98, unit: '%' }
-    ]
+      { id: 'response-format', name: 'Response Formatter', status: 'active', value: 98, unit: '%' },
+    ],
   },
   {
     id: 'api-gateway',
@@ -168,8 +168,8 @@ const robotParts: RobotPart[] = [
     subComponents: [
       { id: 'claude-api', name: 'Claude API', status: 'active', value: 100, unit: '%' },
       { id: 'litellm-route', name: 'LiteLLM Router', status: 'developing', value: 60, unit: '%' },
-      { id: 'sovereign-api', name: 'Sovereign Models', status: 'planned', value: 10, unit: '%' }
-    ]
+      { id: 'sovereign-api', name: 'Sovereign Models', status: 'planned', value: 10, unit: '%' },
+    ],
   },
   {
     id: 'fact-engine',
@@ -182,10 +182,22 @@ const robotParts: RobotPart[] = [
     position: { x: 15, y: 38, size: 'sm' },
     connections: ['grounding-guard', 'api-gateway'],
     subComponents: [
-      { id: 'source-verify', name: 'Source Verification', status: 'developing', value: 65, unit: '%' },
+      {
+        id: 'source-verify',
+        name: 'Source Verification',
+        status: 'developing',
+        value: 65,
+        unit: '%',
+      },
       { id: 'citation-gen', name: 'Citation Generator', status: 'planned', value: 30, unit: '%' },
-      { id: 'confidence-score', name: 'Confidence Scoring', status: 'active', value: 88, unit: '%' }
-    ]
+      {
+        id: 'confidence-score',
+        name: 'Confidence Scoring',
+        status: 'active',
+        value: 88,
+        unit: '%',
+      },
+    ],
   },
   {
     id: 'power-core',
@@ -200,8 +212,8 @@ const robotParts: RobotPart[] = [
     subComponents: [
       { id: 'cost-track', name: 'Cost Tracking', status: 'active', value: 95, unit: '%' },
       { id: 'model-route', name: 'Model Routing', status: 'active', value: 90, unit: '%' },
-      { id: 'cache-layer', name: 'Response Cache', status: 'developing', value: 55, unit: '%' }
-    ]
+      { id: 'cache-layer', name: 'Response Cache', status: 'developing', value: 55, unit: '%' },
+    ],
   },
   {
     id: 'legend-mode',
@@ -216,67 +228,94 @@ const robotParts: RobotPart[] = [
     subComponents: [
       { id: 'opus-engine', name: 'Opus 4.5 Engine', status: 'active', value: 100, unit: '%' },
       { id: 'style-enhance', name: 'Style Enhancement', status: 'active', value: 92, unit: '%' },
-      { id: 'depth-analysis', name: 'Deep Analysis', status: 'active', value: 96, unit: '%' }
-    ]
-  }
-]
+      { id: 'depth-analysis', name: 'Deep Analysis', status: 'active', value: 96, unit: '%' },
+    ],
+  },
+];
 
 // ============================================
 // STATUS COLORS
 // ============================================
 
 const statusColors = {
-  active: { bg: 'bg-emerald-500', text: 'text-emerald-600', border: 'border-emerald-400', glow: 'shadow-emerald-500/30' },
-  developing: { bg: 'bg-amber-500', text: 'text-amber-600', border: 'border-amber-400', glow: 'shadow-amber-500/30' },
-  planned: { bg: 'bg-slate-400', text: 'text-slate-500', border: 'border-slate-300', glow: 'shadow-slate-500/20' },
-  offline: { bg: 'bg-red-500', text: 'text-red-600', border: 'border-red-400', glow: 'shadow-red-500/30' }
-}
+  active: {
+    bg: 'bg-emerald-500',
+    text: 'text-emerald-600',
+    border: 'border-emerald-400',
+    glow: 'shadow-emerald-500/30',
+  },
+  developing: {
+    bg: 'bg-amber-500',
+    text: 'text-amber-600',
+    border: 'border-amber-400',
+    glow: 'shadow-amber-500/30',
+  },
+  planned: {
+    bg: 'bg-slate-400',
+    text: 'text-slate-500',
+    border: 'border-slate-300',
+    glow: 'shadow-slate-500/20',
+  },
+  offline: {
+    bg: 'bg-red-500',
+    text: 'text-red-600',
+    border: 'border-red-400',
+    glow: 'shadow-red-500/30',
+  },
+};
 
 const categoryColors = {
   core: 'from-violet-500 to-purple-600',
   sensory: 'from-cyan-500 to-blue-600',
   motor: 'from-emerald-500 to-teal-600',
   cognitive: 'from-amber-500 to-orange-600',
-  energy: 'from-rose-500 to-pink-600'
-}
+  energy: 'from-rose-500 to-pink-600',
+};
 
 // ============================================
 // COMPONENT: Robot Part Node
 // ============================================
 
 interface RobotPartNodeProps {
-  part: RobotPart
-  isSelected: boolean
-  isHovered: boolean
-  onSelect: (part: RobotPart) => void
-  onHover: (partId: string | null) => void
-  scale: 'human' | 'handball'
+  part: RobotPart;
+  isSelected: boolean;
+  isHovered: boolean;
+  onSelect: (part: RobotPart) => void;
+  onHover: (partId: string | null) => void;
+  scale: 'human' | 'handball';
 }
 
-function RobotPartNode({ part, isSelected, isHovered, onSelect, onHover, scale }: RobotPartNodeProps) {
-  const Icon = part.icon
-  const status = statusColors[part.status]
-  const category = categoryColors[part.category]
-  
+function RobotPartNode({
+  part,
+  isSelected,
+  isHovered,
+  onSelect,
+  onHover,
+  scale,
+}: RobotPartNodeProps) {
+  const Icon = part.icon;
+  const status = statusColors[part.status];
+  const category = categoryColors[part.category];
+
   const sizeClasses = {
     lg: scale === 'human' ? 'w-28 h-28' : 'w-20 h-20',
     md: scale === 'human' ? 'w-22 h-22' : 'w-16 h-16',
-    sm: scale === 'human' ? 'w-18 h-18' : 'w-12 h-12'
-  }
-  
+    sm: scale === 'human' ? 'w-18 h-18' : 'w-12 h-12',
+  };
+
   const iconSizes = {
     lg: scale === 'human' ? 'w-10 h-10' : 'w-7 h-7',
     md: scale === 'human' ? 'w-8 h-8' : 'w-5 h-5',
-    sm: scale === 'human' ? 'w-6 h-6' : 'w-4 h-4'
-  }
-  
+    sm: scale === 'human' ? 'w-6 h-6' : 'w-4 h-4',
+  };
+
   return (
     <div
       className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300"
-      style={{ 
-        left: `${part.position.x}%`, 
+      style={{
+        left: `${part.position.x}%`,
         top: `${part.position.y}%`,
-        zIndex: isSelected ? 50 : isHovered ? 40 : 10
+        zIndex: isSelected ? 50 : isHovered ? 40 : 10,
       }}
       onClick={() => onSelect(part)}
       onMouseEnter={() => onHover(part.id)}
@@ -284,13 +323,15 @@ function RobotPartNode({ part, isSelected, isHovered, onSelect, onHover, scale }
     >
       {/* Pulse ring for active parts */}
       {part.status === 'active' && (
-        <div className={`absolute inset-0 ${sizeClasses[part.position.size]} rounded-full ${status.bg} opacity-20 animate-ping`} 
-          style={{ animationDuration: '2s' }} 
+        <div
+          className={`absolute inset-0 ${sizeClasses[part.position.size]} rounded-full ${status.bg} opacity-20 animate-ping`}
+          style={{ animationDuration: '2s' }}
         />
       )}
-      
+
       {/* Main node */}
-      <div className={`
+      <div
+        className={`
         relative ${sizeClasses[part.position.size]} rounded-full
         bg-gradient-to-br ${category}
         flex items-center justify-center
@@ -298,22 +339,29 @@ function RobotPartNode({ part, isSelected, isHovered, onSelect, onHover, scale }
         border-2 ${isSelected ? 'border-white' : status.border}
         transition-all duration-300
         ${isHovered && !isSelected ? 'scale-105' : ''}
-      `}>
+      `}
+      >
         <Icon className={`${iconSizes[part.position.size]} text-white`} />
-        
+
         {/* Status indicator */}
-        <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${status.bg} rounded-full border-2 border-white`} />
-        
+        <div
+          className={`absolute -bottom-1 -right-1 w-4 h-4 ${status.bg} rounded-full border-2 border-white`}
+        />
+
         {/* Energy consumption indicator (small arc) */}
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
           <circle
-            cx="50" cy="50" r="46"
+            cx="50"
+            cy="50"
+            r="46"
             fill="none"
             stroke="rgba(255,255,255,0.2)"
             strokeWidth="4"
           />
           <circle
-            cx="50" cy="50" r="46"
+            cx="50"
+            cy="50"
+            r="46"
             fill="none"
             stroke="rgba(255,255,255,0.8)"
             strokeWidth="4"
@@ -323,17 +371,19 @@ function RobotPartNode({ part, isSelected, isHovered, onSelect, onHover, scale }
           />
         </svg>
       </div>
-      
+
       {/* Hover tooltip */}
       {(isHovered || isSelected) && (
-        <div className={`
+        <div
+          className={`
           absolute top-full mt-2 left-1/2 transform -translate-x-1/2
           bg-slate-900/95 backdrop-blur-sm text-white
           px-3 py-2 rounded-lg shadow-xl
           text-xs whitespace-nowrap z-50
           border border-slate-700
           ${scale === 'handball' ? 'text-[10px] px-2 py-1' : ''}
-        `}>
+        `}
+        >
           <div className="font-semibold">{part.name}</div>
           <div className={`${status.text} text-[10px] capitalize`}>{part.status}</div>
           <div className="flex items-center gap-2 mt-1 text-slate-400">
@@ -343,40 +393,48 @@ function RobotPartNode({ part, isSelected, isHovered, onSelect, onHover, scale }
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ============================================
 // COMPONENT: Connection Lines
 // ============================================
 
-function ConnectionLines({ parts, selectedPartId, hoveredPartId, scale }: { 
-  parts: RobotPart[]
-  selectedPartId: string | null
-  hoveredPartId: string | null
-  scale: 'human' | 'handball'
+function ConnectionLines({
+  parts,
+  selectedPartId,
+  hoveredPartId,
+  scale,
+}: {
+  parts: RobotPart[];
+  selectedPartId: string | null;
+  hoveredPartId: string | null;
+  scale: 'human' | 'handball';
 }) {
-  const paths: React.ReactElement[] = []
-  
-  parts.forEach(part => {
-    part.connections.forEach(targetId => {
-      const target = parts.find(p => p.id === targetId)
-      if (!target) return
-      
-      const isHighlighted = selectedPartId === part.id || selectedPartId === targetId ||
-                           hoveredPartId === part.id || hoveredPartId === targetId
-      
-      const x1 = part.position.x
-      const y1 = part.position.y
-      const x2 = target.position.x
-      const y2 = target.position.y
-      
-      const midX = (x1 + x2) / 2
-      const midY = (y1 + y2) / 2
-      
+  const paths: React.ReactElement[] = [];
+
+  parts.forEach((part) => {
+    part.connections.forEach((targetId) => {
+      const target = parts.find((p) => p.id === targetId);
+      if (!target) return;
+
+      const isHighlighted =
+        selectedPartId === part.id ||
+        selectedPartId === targetId ||
+        hoveredPartId === part.id ||
+        hoveredPartId === targetId;
+
+      const x1 = part.position.x;
+      const y1 = part.position.y;
+      const x2 = target.position.x;
+      const y2 = target.position.y;
+
+      const midX = (x1 + x2) / 2;
+      const midY = (y1 + y2) / 2;
+
       // Add slight curve
-      const curveOffset = Math.abs(x2 - x1) > Math.abs(y2 - y1) ? 5 : 0
-      
+      const curveOffset = Math.abs(x2 - x1) > Math.abs(y2 - y1) ? 5 : 0;
+
       paths.push(
         <g key={`${part.id}-${targetId}`}>
           {isHighlighted && (
@@ -408,19 +466,19 @@ function ConnectionLines({ parts, selectedPartId, hoveredPartId, scale }: {
             </circle>
           )}
         </g>
-      )
-    })
-  })
-  
+      );
+    });
+  });
+
   return (
-    <svg 
-      className="absolute inset-0 w-full h-full pointer-events-none" 
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none"
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
     >
       {paths}
     </svg>
-  )
+  );
 }
 
 // ============================================
@@ -428,9 +486,9 @@ function ConnectionLines({ parts, selectedPartId, hoveredPartId, scale }: {
 // ============================================
 
 function DetailsPanel({ part, onClose }: { part: RobotPart; onClose: () => void }) {
-  const status = statusColors[part.status]
-  const Icon = part.icon
-  
+  const status = statusColors[part.status];
+  const Icon = part.icon;
+
   return (
     <div className="bg-slate-900/95 backdrop-blur-xl rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
       {/* Header */}
@@ -442,40 +500,39 @@ function DetailsPanel({ part, onClose }: { part: RobotPart; onClose: () => void 
             </div>
             <div>
               <h3 className="font-bold text-white text-lg">{part.name}</h3>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${status.bg} text-white capitalize`}>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${status.bg} text-white capitalize`}
+              >
                 {part.status}
               </span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-white/20 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
             <XMarkIcon className="w-5 h-5 text-white" />
           </button>
         </div>
       </div>
-      
+
       {/* Description */}
       <div className="px-5 py-3 border-b border-slate-700">
         <p className="text-sm text-slate-300">{part.description}</p>
       </div>
-      
+
       {/* Metrics Grid */}
       <div className="px-5 py-4 grid grid-cols-2 gap-3 border-b border-slate-700">
         {[
           { label: 'Efficiency', value: part.metrics.efficiency, color: 'emerald' },
           { label: 'Development', value: part.metrics.development, color: 'blue' },
           { label: 'Energy Use', value: part.metrics.energyConsumption, color: 'amber' },
-          { label: 'Reliability', value: part.metrics.reliability, color: 'violet' }
-        ].map(metric => (
+          { label: 'Reliability', value: part.metrics.reliability, color: 'violet' },
+        ].map((metric) => (
           <div key={metric.label} className="bg-slate-800 rounded-xl p-3">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs text-slate-400">{metric.label}</span>
               <span className="text-sm font-bold text-white">{metric.value}%</span>
             </div>
             <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-              <div 
+              <div
                 className={`h-full bg-${metric.color}-500 rounded-full transition-all duration-500`}
                 style={{ width: `${metric.value}%` }}
               />
@@ -483,13 +540,13 @@ function DetailsPanel({ part, onClose }: { part: RobotPart; onClose: () => void 
           </div>
         ))}
       </div>
-      
+
       {/* Sub-components */}
       <div className="px-5 py-4">
         <h4 className="text-sm font-semibold text-slate-300 mb-3">Sub-Components</h4>
         <div className="space-y-2 max-h-48 overflow-y-auto">
-          {part.subComponents.map(sub => (
-            <div 
+          {part.subComponents.map((sub) => (
+            <div
               key={sub.id}
               className="flex items-center justify-between px-3 py-2 bg-slate-800/50 rounded-lg"
             >
@@ -498,23 +555,26 @@ function DetailsPanel({ part, onClose }: { part: RobotPart; onClose: () => void 
                 <span className="text-sm text-slate-300">{sub.name}</span>
               </div>
               <span className="text-sm font-mono text-slate-400">
-                {sub.value}{sub.unit}
+                {sub.value}
+                {sub.unit}
               </span>
             </div>
           ))}
         </div>
       </div>
-      
+
       {/* Connections */}
       <div className="px-5 py-3 bg-slate-800/30 border-t border-slate-700">
         <span className="text-xs text-slate-500">
-          Connected to: {part.connections.map(c => 
-            robotParts.find(p => p.id === c)?.name
-          ).filter(Boolean).join(', ')}
+          Connected to:{' '}
+          {part.connections
+            .map((c) => robotParts.find((p) => p.id === c)?.name)
+            .filter(Boolean)
+            .join(', ')}
         </span>
       </div>
     </div>
-  )
+  );
 }
 
 // ============================================
@@ -522,11 +582,11 @@ function DetailsPanel({ part, onClose }: { part: RobotPart; onClose: () => void 
 // ============================================
 
 interface RobotIntelligenceProps {
-  initialScale?: 'human' | 'handball'
-  embedded?: boolean
-  showToggle?: boolean
-  onPartSelect?: (part: RobotPart | null) => void
-  theme?: 'light' | 'dark'
+  initialScale?: 'human' | 'handball';
+  embedded?: boolean;
+  showToggle?: boolean;
+  onPartSelect?: (part: RobotPart | null) => void;
+  theme?: 'light' | 'dark';
 }
 
 export default function RobotIntelligence({
@@ -534,34 +594,39 @@ export default function RobotIntelligence({
   embedded = false,
   showToggle = true,
   onPartSelect,
-  theme = 'dark'
+  theme = 'dark',
 }: RobotIntelligenceProps = {}) {
-  const [selectedPart, setSelectedPart] = useState<RobotPart | null>(null)
-  const [hoveredPartId, setHoveredPartId] = useState<string | null>(null)
-  const [scale, setScale] = useState<'human' | 'handball'>(initialScale)
-  const [showStats, setShowStats] = useState(true)
+  const [selectedPart, setSelectedPart] = useState<RobotPart | null>(null);
+  const [hoveredPartId, setHoveredPartId] = useState<string | null>(null);
+  const [scale, setScale] = useState<'human' | 'handball'>(initialScale);
+  const [showStats, setShowStats] = useState(true);
 
   const handlePartSelect = (part: RobotPart | null) => {
-    setSelectedPart(part)
-    onPartSelect?.(part)
-  }
-  
+    setSelectedPart(part);
+    onPartSelect?.(part);
+  };
+
   // Calculate overall stats
   const overallStats = {
     totalParts: robotParts.length,
-    activeParts: robotParts.filter(p => p.status === 'active').length,
-    avgEfficiency: Math.round(robotParts.reduce((acc, p) => acc + p.metrics.efficiency, 0) / robotParts.length),
+    activeParts: robotParts.filter((p) => p.status === 'active').length,
+    avgEfficiency: Math.round(
+      robotParts.reduce((acc, p) => acc + p.metrics.efficiency, 0) / robotParts.length
+    ),
     totalEnergy: robotParts.reduce((acc, p) => acc + p.metrics.energyConsumption, 0),
-    avgDevelopment: Math.round(robotParts.reduce((acc, p) => acc + p.metrics.development, 0) / robotParts.length)
-  }
-  
-  const containerClass = theme === 'light'
-    ? embedded
-      ? "h-full bg-white text-relic-slate rounded-lg"
-      : "min-h-screen bg-white text-relic-slate"
-    : embedded
-      ? "h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white rounded-lg"
-      : "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white"
+    avgDevelopment: Math.round(
+      robotParts.reduce((acc, p) => acc + p.metrics.development, 0) / robotParts.length
+    ),
+  };
+
+  const containerClass =
+    theme === 'light'
+      ? embedded
+        ? 'h-full bg-white text-relic-slate rounded-lg'
+        : 'min-h-screen bg-white text-relic-slate'
+      : embedded
+        ? 'h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white rounded-lg'
+        : 'min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white';
 
   return (
     <div className={containerClass}>
@@ -617,42 +682,44 @@ export default function RobotIntelligence({
           </div>
         </div>
       )}
-      
+
       {/* Main Content */}
       <div className="flex h-[calc(100vh-100px)]">
         {/* Robot Visualization */}
         <div className="flex-1 relative p-8">
           {/* Grid background */}
-          <div 
+          <div
             className="absolute inset-0 opacity-10"
             style={{
               backgroundImage: `
                 linear-gradient(rgba(148,163,184,0.3) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(148,163,184,0.3) 1px, transparent 1px)
               `,
-              backgroundSize: '40px 40px'
+              backgroundSize: '40px 40px',
             }}
           />
-          
+
           {/* Robot body outline */}
-          <div className={`
+          <div
+            className={`
             relative mx-auto
             ${scale === 'human' ? 'w-[600px] h-[700px]' : 'w-[400px] h-[450px]'}
             transition-all duration-500
-          `}>
+          `}
+          >
             {/* Body silhouette */}
             <div className="absolute inset-0 bg-gradient-to-b from-slate-800/30 to-slate-800/10 rounded-[40%_40%_35%_35%] border border-slate-700/30" />
-            
+
             {/* Connection lines */}
-            <ConnectionLines 
+            <ConnectionLines
               parts={robotParts}
               selectedPartId={selectedPart?.id || null}
               hoveredPartId={hoveredPartId}
               scale={scale}
             />
-            
+
             {/* Robot parts */}
-            {robotParts.map(part => (
+            {robotParts.map((part) => (
               <RobotPartNode
                 key={part.id}
                 part={part}
@@ -664,7 +731,7 @@ export default function RobotIntelligence({
               />
             ))}
           </div>
-          
+
           {/* Legend */}
           <div className="absolute bottom-8 left-8 flex items-center gap-6 text-xs text-slate-400">
             <div className="flex items-center gap-2">
@@ -681,14 +748,11 @@ export default function RobotIntelligence({
             </div>
           </div>
         </div>
-        
+
         {/* Side Panel */}
         <div className="w-96 border-l border-slate-800 p-6 overflow-y-auto">
           {selectedPart ? (
-            <DetailsPanel 
-              part={selectedPart} 
-              onClose={() => setSelectedPart(null)} 
-            />
+            <DetailsPanel part={selectedPart} onClose={() => setSelectedPart(null)} />
           ) : (
             <div className="space-y-6">
               {/* Overview stats */}
@@ -697,31 +761,39 @@ export default function RobotIntelligence({
                   <h3 className="text-lg font-semibold mb-4">System Overview</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-emerald-400">{overallStats.activeParts}/{overallStats.totalParts}</div>
+                      <div className="text-3xl font-bold text-emerald-400">
+                        {overallStats.activeParts}/{overallStats.totalParts}
+                      </div>
                       <div className="text-xs text-slate-400">Active Systems</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-400">{overallStats.avgEfficiency}%</div>
+                      <div className="text-3xl font-bold text-blue-400">
+                        {overallStats.avgEfficiency}%
+                      </div>
                       <div className="text-xs text-slate-400">Avg Efficiency</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-amber-400">{overallStats.totalEnergy}%</div>
+                      <div className="text-3xl font-bold text-amber-400">
+                        {overallStats.totalEnergy}%
+                      </div>
                       <div className="text-xs text-slate-400">Total Energy</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-violet-400">{overallStats.avgDevelopment}%</div>
+                      <div className="text-3xl font-bold text-violet-400">
+                        {overallStats.avgDevelopment}%
+                      </div>
                       <div className="text-xs text-slate-400">Development</div>
                     </div>
                   </div>
                 </div>
               )}
-              
+
               {/* Component list */}
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-slate-400 px-2">All Components</h3>
-                {robotParts.map(part => {
-                  const Icon = part.icon
-                  const status = statusColors[part.status]
+                {robotParts.map((part) => {
+                  const Icon = part.icon;
+                  const status = statusColors[part.status];
                   return (
                     <button
                       key={part.id}
@@ -735,16 +807,20 @@ export default function RobotIntelligence({
                       onMouseEnter={() => setHoveredPartId(part.id)}
                       onMouseLeave={() => setHoveredPartId(null)}
                     >
-                      <div className={`p-2 rounded-lg bg-gradient-to-br ${categoryColors[part.category]}`}>
+                      <div
+                        className={`p-2 rounded-lg bg-gradient-to-br ${categoryColors[part.category]}`}
+                      >
                         <Icon className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1 text-left">
                         <div className="text-sm font-medium">{part.name}</div>
-                        <div className="text-xs text-slate-500">{part.metrics.efficiency}% efficiency</div>
+                        <div className="text-xs text-slate-500">
+                          {part.metrics.efficiency}% efficiency
+                        </div>
                       </div>
                       <div className={`w-2 h-2 rounded-full ${status.bg}`} />
                     </button>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -752,5 +828,5 @@ export default function RobotIntelligence({
         </div>
       </div>
     </div>
-  )
+  );
 }

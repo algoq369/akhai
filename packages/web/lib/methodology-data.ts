@@ -88,10 +88,10 @@ export const METHODOLOGIES: MethodologyItem[] = [
     savings: '+24%',
   },
   {
-    id: 'gtp',
+    id: 'tot',
     symbol: '◯',
-    name: 'gtp',
-    tooltip: 'DeepSeek+Mistral+Grok',
+    name: 'tot',
+    tooltip: 'Tree of Thoughts',
     tokens: '8k-15k',
     latency: '~30s',
     cost: '$0.042',
@@ -284,12 +284,12 @@ export const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     },
   },
   {
-    id: 'gtp',
+    id: 'tot',
     symbol: '◯',
-    name: 'gtp',
-    fullName: 'Generative Thought Process',
+    name: 'tot',
+    fullName: 'Tree of Thoughts',
     description:
-      'Multi-AI consensus using DeepSeek, Mistral, and Grok in parallel. Each AI provides independent analysis, then they cross-pollinate insights before synthesis.',
+      'Yao et al., NeurIPS 2023, explores multiple reasoning branches, evaluates and prunes for optimal solutions.',
     howItWorks: [
       'Round 1: DeepSeek, Mistral, Grok analyze independently',
       "Round 2: Each AI sees others' perspectives and refines",

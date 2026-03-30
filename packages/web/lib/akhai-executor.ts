@@ -21,8 +21,12 @@ async function withExecutionTimeout<T>(
 ): Promise<T> {
   const timeout = new Promise<never>((_, reject) => {
     setTimeout(() => {
-      console.error(`[AkhAI] ⏱️  Query ${queryId} timed out after ${timeoutMs/1000}s`);
-      reject(new Error(`Query execution timed out after ${timeoutMs/1000} seconds. The AI providers may be experiencing delays.`));
+      console.error(`[AkhAI] ⏱️  Query ${queryId} timed out after ${timeoutMs / 1000}s`);
+      reject(
+        new Error(
+          `Query execution timed out after ${timeoutMs / 1000} seconds. The AI providers may be experiencing delays.`
+        )
+      );
     }, timeoutMs);
   });
   return Promise.race([promise, timeout]);
@@ -94,9 +98,13 @@ export async function executeFlowAWithEvents(
   slot2Family: ModelFamily = 'xai'
 ): Promise<FlowAResultWithCost> {
   console.log(`[AkhAI] 🚀 Starting Flow A for query: ${queryId}`);
-  console.log(`[AkhAI] 📝 Query text: ${query.substring(0, 100)}${query.length > 100 ? '...' : ''}`);
+  console.log(
+    `[AkhAI] 📝 Query text: ${query.substring(0, 100)}${query.length > 100 ? '...' : ''}`
+  );
   console.log(`[AkhAI] 🏢 Mother Base: ${motherBaseFamily}`);
-  console.log(`[AkhAI] 👥 Advisors: Slot1=${slot1Family}, Slot2=${slot2Family}, Slot3=mistral (fixed)`);
+  console.log(
+    `[AkhAI] 👥 Advisors: Slot1=${slot1Family}, Slot2=${slot2Family}, Slot3=mistral (fixed)`
+  );
 
   const akhai = createAkhAI(motherBaseFamily);
 
@@ -223,7 +231,9 @@ export async function executeFlowBWithEvents(
   slot2Family: ModelFamily = 'xai'
 ): Promise<FlowBResultWithCost> {
   console.log(`[AkhAI] 🚀 Starting Flow B for query: ${queryId}`);
-  console.log(`[AkhAI] 📝 Query text: ${query.substring(0, 100)}${query.length > 100 ? '...' : ''}`);
+  console.log(
+    `[AkhAI] 📝 Query text: ${query.substring(0, 100)}${query.length > 100 ? '...' : ''}`
+  );
   console.log(`[AkhAI] 🤖 Sub-Agent: ${agentName}`);
   console.log(`[AkhAI] 🏢 Mother Base: ${motherBaseFamily}`);
 
@@ -306,7 +316,12 @@ export async function executeFlowBWithEvents(
         status: 'working',
       });
     },
-    onSubAgentComplete: (agentName: string, exchange: number, output: string, complete: boolean) => {
+    onSubAgentComplete: (
+      agentName: string,
+      exchange: number,
+      output: string,
+      complete: boolean
+    ) => {
       emitEvent(queryId, 'sub-agent-complete', {
         agent: agentName,
         exchange,
@@ -371,15 +386,17 @@ export async function executeGTPWithEvents(
   console.log('[GTP] Starting GTP execution for query: ' + queryId);
   console.log('[GTP] Query text: ' + query.substring(0, 100) + (query.length > 100 ? '...' : ''));
   console.log('[GTP] Mother Base: ' + motherBaseFamily);
-  console.log('[GTP] Advisors: Slot1=' + slot1Family + ', Slot2=' + slot2Family + ', Slot3=mistral (fixed)');
+  console.log(
+    '[GTP] Advisors: Slot1=' + slot1Family + ', Slot2=' + slot2Family + ', Slot3=mistral (fixed)'
+  );
 
   // Analyze query to get complexity and characteristics
   console.log('[GTP] Analyzing query...');
   const queryAnalysis = analyzeQuery(query);
-  console.log('[GTP]    Complexity: ' + (queryAnalysis.complexity * 100).toFixed(0) + '%');
-  console.log('[GTP]    Type: ' + queryAnalysis.queryType);
+  console.log('[TOT]    Complexity: ' + (queryAnalysis.complexity * 100).toFixed(0) + '%');
+  console.log('[TOT]    Type: ' + queryAnalysis.queryType);
 
-  emitEvent(queryId, 'gtp-analysis', {
+  emitEvent(queryId, 'tot-analysis', {
     complexity: queryAnalysis.complexity,
     queryType: queryAnalysis.queryType,
     requiresMultiplePerspectives: queryAnalysis.requiresMultiplePerspectives,
@@ -512,14 +529,22 @@ export async function executeGTPWithEvents(
     console.log('[GTP] Total cost: $' + result.metrics.totalCost.toFixed(4));
     console.log('[GTP] Total tokens: ' + result.metrics.totalTokens.total);
     console.log('[GTP] Success rate: ' + (result.metrics.successRate * 100).toFixed(0) + '%');
-    console.log('[GTP] Agreement: ' + (result.livingDatabase.consensusState.agreementLevel * 100).toFixed(0) + '%');
+    console.log(
+      '[GTP] Agreement: ' +
+        (result.livingDatabase.consensusState.agreementLevel * 100).toFixed(0) +
+        '%'
+    );
 
     // Format cost report to match existing interface
     const costReport: CostReport = {
       totalCost: result.metrics.totalCost,
       totalTokens: result.metrics.totalTokens,
       providerUsage: [], // TODO: Extract from GTP metrics if needed
-      formattedReport: 'GTP Execution Complete\nTotal: $' + result.metrics.totalCost.toFixed(4) + '\nTokens: ' + result.metrics.totalTokens.total,
+      formattedReport:
+        'GTP Execution Complete\nTotal: $' +
+        result.metrics.totalCost.toFixed(4) +
+        '\nTokens: ' +
+        result.metrics.totalTokens.total,
     };
 
     return { result, costReport };

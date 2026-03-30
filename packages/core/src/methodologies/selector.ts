@@ -10,7 +10,7 @@
  * - sc: Self-Consistency, Wang et al. ICLR 2023 (~18s, Tier 2)
  * - react: Tool-augmented reasoning (~20s, Tier 3)
  * - pas: Plan-and-Solve, Wang et al. ACL 2023 (~12s, Tier 4)
- * - gtp: Multi-AI consensus with Self-Consistency (~30s, Tier 5)
+ * - tot: Tree of Thoughts, Yao et al. NeurIPS 2023 (~30s, Tier 5)
  * - auto: Smart selector (meta, default)
  *
  * Legacy/Optional:
@@ -23,7 +23,7 @@
  * - sc: complex analysis, comparisons, planning (multi-path voting)
  * - react: requires external tools (search, calculate)
  * - pas: mathematical, financial, numerical tasks
- * - gtp: multi-perspective, critical decisions, verification
+ * - tot: multi-perspective, critical decisions, verification
  * - Default fallback: cod (most cost-efficient)
  */
 
@@ -191,7 +191,7 @@ export class MethodologySelector {
       react: 0,
       pas: 0,
       aot: 0,
-      gtp: 0,
+      tot: 0,
     };
 
     const reasons: Record<Exclude<MethodologyType, 'auto'>, string[]> = {
@@ -202,7 +202,7 @@ export class MethodologySelector {
       react: [],
       pas: [],
       aot: [],
-      gtp: [],
+      tot: [],
     };
 
     // =======================
@@ -387,32 +387,32 @@ export class MethodologySelector {
     }
 
     // =======================
-    // GTP (Flash) Scoring
+    // TOT (Tree of Thoughts) Scoring
     // =======================
     // Best for: comparative, creative, multiple perspectives
     if (analysis.requiresMultiplePerspectives) {
-      scores.gtp += 0.6;
-      reasons.gtp.push('Multiple perspectives needed');
+      scores.tot += 0.6;
+      reasons.tot.push('Multiple perspectives needed');
     }
 
     if (analysis.queryType === 'comparative') {
-      scores.gtp += 0.5;
-      reasons.gtp.push('Comparison analysis');
+      scores.tot += 0.5;
+      reasons.tot.push('Comparison analysis');
     }
 
     if (analysis.queryType === 'creative') {
-      scores.gtp += 0.5;
-      reasons.gtp.push('Creative brainstorming');
+      scores.tot += 0.5;
+      reasons.tot.push('Creative brainstorming');
     }
 
     if (analysis.complexity >= 0.5 && analysis.complexity < 0.8) {
-      scores.gtp += 0.3;
-      reasons.gtp.push('Moderate-high complexity');
+      scores.tot += 0.3;
+      reasons.tot.push('Moderate-high complexity');
     }
 
     if (analysis.queryType === 'analytical' && analysis.requiresMultiplePerspectives) {
-      scores.gtp += 0.3;
-      reasons.gtp.push('Multi-perspective analysis');
+      scores.tot += 0.3;
+      reasons.tot.push('Multi-perspective analysis');
     }
 
     // =======================

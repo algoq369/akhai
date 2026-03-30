@@ -126,9 +126,9 @@ Wang et al., ACL 2023. Decompose problem into plan then execute step by step.
 - Verify the result
 - Present the final answer clearly
 `,
-  gtp: `
-### GENERATIVE THOUGHTS PROCESS (GTP) MODE
-Multi-perspective consensus building.
+  tot: `
+### TREE OF THOUGHTS (ToT) MODE
+Yao et al., NeurIPS 2023. Explore multiple reasoning branches, evaluate and prune.
 - Consider multiple viewpoints (technical, strategic, contrarian)
 - Identify areas of agreement and disagreement
 - Synthesize into balanced recommendation

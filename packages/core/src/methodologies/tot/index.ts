@@ -319,7 +319,7 @@ Synthesize their insights into a unified response that addresses the user's quer
         timestamp: Date.now(),
       },
       metrics: finalMetrics,
-      methodology: 'gtp',
+      methodology: 'tot',
     };
 
     // =======================

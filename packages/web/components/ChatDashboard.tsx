@@ -1,38 +1,50 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { SparklesIcon, BellIcon, MoonIcon, SunIcon, CpuChipIcon, LinkIcon, ChartBarIcon, TagIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  SparklesIcon,
+  BellIcon,
+  MoonIcon,
+  SunIcon,
+  CpuChipIcon,
+  LinkIcon,
+  ChartBarIcon,
+  TagIcon,
+} from '@heroicons/react/24/outline';
 
 interface ChatDashboardProps {
-  userId: string | null
-  currentMethodology: string
-  legendMode: boolean
-  darkMode?: boolean
-  sideCanalEnabled?: boolean
-  newsNotificationsEnabled?: boolean
-  realtimeDataEnabled?: boolean
-  contextInjectionEnabled?: boolean
-  autoMethodologyEnabled?: boolean
-  onMethodologyChange: (methodology: string, option: 'same' | 'side' | 'new') => void
-  onGuardToggle: (feature: 'suggestions' | 'bias' | 'hype' | 'echo' | 'drift' | 'factuality', enabled: boolean) => void
-  onLegendModeToggle: (enabled: boolean) => void
-  onDarkModeToggle?: (enabled: boolean) => void
-  onSideCanalToggle?: (enabled: boolean) => void
-  onNewsNotificationsToggle?: (enabled: boolean) => void
-  onRealtimeDataToggle?: (enabled: boolean) => void
-  onContextInjectionToggle?: (enabled: boolean) => void
-  onAutoMethodologyToggle?: (enabled: boolean) => void
-  onClose: () => void
-  isCompact?: boolean
+  userId: string | null;
+  currentMethodology: string;
+  legendMode: boolean;
+  darkMode?: boolean;
+  sideCanalEnabled?: boolean;
+  newsNotificationsEnabled?: boolean;
+  realtimeDataEnabled?: boolean;
+  contextInjectionEnabled?: boolean;
+  autoMethodologyEnabled?: boolean;
+  onMethodologyChange: (methodology: string, option: 'same' | 'side' | 'new') => void;
+  onGuardToggle: (
+    feature: 'suggestions' | 'bias' | 'hype' | 'echo' | 'drift' | 'factuality',
+    enabled: boolean
+  ) => void;
+  onLegendModeToggle: (enabled: boolean) => void;
+  onDarkModeToggle?: (enabled: boolean) => void;
+  onSideCanalToggle?: (enabled: boolean) => void;
+  onNewsNotificationsToggle?: (enabled: boolean) => void;
+  onRealtimeDataToggle?: (enabled: boolean) => void;
+  onContextInjectionToggle?: (enabled: boolean) => void;
+  onAutoMethodologyToggle?: (enabled: boolean) => void;
+  onClose: () => void;
+  isCompact?: boolean;
 }
 
 interface LiveTopic {
-  id: string
-  name: string
-  category: string | null
-  created_at: number
-  queryId?: string
+  id: string;
+  name: string;
+  category: string | null;
+  created_at: number;
+  queryId?: string;
 }
 
 // Modern Status Indicator with Dot
@@ -40,12 +52,12 @@ function StatusIndicator({
   label,
   enabled,
   onChange,
-  color = 'emerald'
+  color = 'emerald',
 }: {
-  label: string
-  enabled: boolean
-  onChange: (enabled: boolean) => void
-  color?: 'emerald' | 'violet' | 'cyan' | 'amber' | 'rose'
+  label: string;
+  enabled: boolean;
+  onChange: (enabled: boolean) => void;
+  color?: 'emerald' | 'violet' | 'cyan' | 'amber' | 'rose';
 }) {
   const colorClasses = {
     emerald: enabled ? 'bg-emerald-500' : 'bg-gray-300',
@@ -53,7 +65,7 @@ function StatusIndicator({
     cyan: enabled ? 'bg-cyan-500' : 'bg-gray-300',
     amber: enabled ? 'bg-amber-500' : 'bg-gray-300',
     rose: enabled ? 'bg-rose-500' : 'bg-gray-300',
-  }
+  };
 
   return (
     <button
@@ -62,11 +74,15 @@ function StatusIndicator({
     >
       <span className="text-xs text-gray-700">{label}</span>
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-mono text-gray-500 uppercase">{enabled ? 'ON' : 'OFF'}</span>
-        <div className={`w-2 h-2 rounded-full ${colorClasses[color]} ${enabled ? 'animate-pulse shadow-sm' : ''}`} />
+        <span className="text-[10px] font-mono text-gray-500 uppercase">
+          {enabled ? 'ON' : 'OFF'}
+        </span>
+        <div
+          className={`w-2 h-2 rounded-full ${colorClasses[color]} ${enabled ? 'animate-pulse shadow-sm' : ''}`}
+        />
       </div>
     </button>
-  )
+  );
 }
 
 // Modern Toggle Switch
@@ -74,12 +90,12 @@ function ToggleSwitch({
   enabled,
   onChange,
   label,
-  icon: Icon
+  icon: Icon,
 }: {
-  enabled: boolean
-  onChange: (enabled: boolean) => void
-  label: string
-  icon?: React.ComponentType<{ className?: string }>
+  enabled: boolean;
+  onChange: (enabled: boolean) => void;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
 }) {
   return (
     <button
@@ -90,15 +106,19 @@ function ToggleSwitch({
         {Icon && <Icon className="w-4 h-4 text-gray-400" />}
         <span className="text-xs text-gray-700">{label}</span>
       </div>
-      <div className={`w-10 h-5 rounded-full transition-colors relative ${
-        enabled ? 'bg-gray-900' : 'bg-gray-300'
-      }`}>
-        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform ${
-          enabled ? 'right-0.5' : 'left-0.5'
-        }`} />
+      <div
+        className={`w-10 h-5 rounded-full transition-colors relative ${
+          enabled ? 'bg-gray-900' : 'bg-gray-300'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform ${
+            enabled ? 'right-0.5' : 'left-0.5'
+          }`}
+        />
       </div>
     </button>
-  )
+  );
 }
 
 export default function ChatDashboard({
@@ -119,81 +139,84 @@ export default function ChatDashboard({
   onRealtimeDataToggle,
   onContextInjectionToggle,
   onAutoMethodologyToggle,
-  isCompact = false
+  isCompact = false,
 }: ChatDashboardProps) {
-  const router = useRouter()
-  const [topics, setTopics] = useState<LiveTopic[]>([])
-  const [stats, setStats] = useState({ totalTopics: 0, totalConnections: 0 })
+  const router = useRouter();
+  const [topics, setTopics] = useState<LiveTopic[]>([]);
+  const [stats, setStats] = useState({ totalTopics: 0, totalConnections: 0 });
 
   // Guard states
   const [suggestionsEnabled, setSuggestionsEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('guard_suggestions') !== 'false'
+      return localStorage.getItem('guard_suggestions') !== 'false';
     }
-    return true
-  })
+    return true;
+  });
   const [biasEnabled, setBiasEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('guard_bias') !== 'false'
+      return localStorage.getItem('guard_bias') !== 'false';
     }
-    return true
-  })
+    return true;
+  });
   const [hypeEnabled, setHypeEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('guard_hype') !== 'false'
+      return localStorage.getItem('guard_hype') !== 'false';
     }
-    return true
-  })
-  const [echoEnabled, setEchoEnabled] = useState(true)
-  const [driftEnabled, setDriftEnabled] = useState(true)
-  const [factualityEnabled, setFactualityEnabled] = useState(true)
+    return true;
+  });
+  const [echoEnabled, setEchoEnabled] = useState(true);
+  const [driftEnabled, setDriftEnabled] = useState(true);
+  const [factualityEnabled, setFactualityEnabled] = useState(true);
 
   const fetchDashboardData = useCallback(async () => {
-    if (!userId) return
+    if (!userId) return;
     try {
-      const topicsRes = await fetch('/api/dashboard/live-topics')
+      const topicsRes = await fetch('/api/dashboard/live-topics');
       if (topicsRes.ok) {
-        const data = await topicsRes.json()
-        setTopics(data.topics || [])
+        const data = await topicsRes.json();
+        setTopics(data.topics || []);
         setStats({
           totalTopics: data.totalTopics || 0,
-          totalConnections: data.totalConnections || 0
-        })
+          totalConnections: data.totalConnections || 0,
+        });
       }
     } catch (error) {
-      console.error('Dashboard fetch error:', error)
+      console.error('Dashboard fetch error:', error);
     }
-  }, [userId])
+  }, [userId]);
 
   useEffect(() => {
     if (userId) {
-      fetchDashboardData()
+      fetchDashboardData();
     }
-  }, [userId, fetchDashboardData])
+  }, [userId, fetchDashboardData]);
 
-  const handleGuardChange = (feature: 'suggestions' | 'bias' | 'hype' | 'echo' | 'drift' | 'factuality', enabled: boolean) => {
+  const handleGuardChange = (
+    feature: 'suggestions' | 'bias' | 'hype' | 'echo' | 'drift' | 'factuality',
+    enabled: boolean
+  ) => {
     if (feature === 'suggestions') {
-      setSuggestionsEnabled(enabled)
-      localStorage.setItem('guard_suggestions', String(enabled))
+      setSuggestionsEnabled(enabled);
+      localStorage.setItem('guard_suggestions', String(enabled));
     }
     if (feature === 'bias') {
-      setBiasEnabled(enabled)
-      localStorage.setItem('guard_bias', String(enabled))
+      setBiasEnabled(enabled);
+      localStorage.setItem('guard_bias', String(enabled));
     }
     if (feature === 'hype') {
-      setHypeEnabled(enabled)
-      localStorage.setItem('guard_hype', String(enabled))
+      setHypeEnabled(enabled);
+      localStorage.setItem('guard_hype', String(enabled));
     }
-    if (feature === 'echo') setEchoEnabled(enabled)
-    if (feature === 'drift') setDriftEnabled(enabled)
-    if (feature === 'factuality') setFactualityEnabled(enabled)
-    onGuardToggle(feature, enabled)
-  }
+    if (feature === 'echo') setEchoEnabled(enabled);
+    if (feature === 'drift') setDriftEnabled(enabled);
+    if (feature === 'factuality') setFactualityEnabled(enabled);
+    onGuardToggle(feature, enabled);
+  };
 
-  if (!userId) return null
+  if (!userId) return null;
 
   // Only show during active chat
-  if (!isCompact) return null
+  if (!isCompact) return null;
 
   return (
     <div className="fixed bottom-4 left-4 z-50 w-72">
@@ -202,25 +225,31 @@ export default function ChatDashboard({
         {/* Header */}
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Controls</span>
+            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Controls
+            </span>
             <select
               className="text-xs font-mono text-gray-700 bg-white border border-gray-300 rounded px-2 py-1 outline-none cursor-pointer hover:border-gray-400 transition-colors"
               value={currentMethodology}
-              onChange={(e) => {/* handle methodology change */}}
+              onChange={(e) => {
+                /* handle methodology change */
+              }}
             >
               <option value="auto">auto</option>
               <option value="cod">cod</option>
-              <option value="bot">bot</option>
+              <option value="sc">sc</option>
               <option value="react">react</option>
-              <option value="pot">pot</option>
-              <option value="gtp">gtp</option>
+              <option value="pas">pas</option>
+              <option value="tot">tot</option>
             </select>
           </div>
         </div>
 
         {/* Core Features Section */}
         <div className="px-4 py-3 border-b border-gray-100">
-          <h3 className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Core Features</h3>
+          <h3 className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">
+            Core Features
+          </h3>
           <div className="space-y-1">
             <ToggleSwitch
               enabled={legendMode}
@@ -249,7 +278,9 @@ export default function ChatDashboard({
 
         {/* Grounding Guard Section */}
         <div className="px-4 py-3 border-b border-gray-100">
-          <h3 className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Grounding Guard</h3>
+          <h3 className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">
+            Grounding Guard
+          </h3>
           <div className="space-y-1">
             <StatusIndicator
               label="Suggestions"
@@ -292,7 +323,9 @@ export default function ChatDashboard({
 
         {/* Intelligence Section */}
         <div className="px-4 py-3">
-          <h3 className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Intelligence</h3>
+          <h3 className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">
+            Intelligence
+          </h3>
           <div className="space-y-1">
             {onSideCanalToggle && (
               <ToggleSwitch
@@ -343,5 +376,5 @@ export default function ChatDashboard({
         </div>
       </div>
     </div>
-  )
+  );
 }

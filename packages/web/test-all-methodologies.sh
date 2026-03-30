@@ -5,11 +5,11 @@ echo ""
 
 METHODOLOGIES=(
   "direct:What is 2+2?"
-  "pot:Calculate 15*23"
+  "pas:Calculate 15*23"
   "cod:Explain AI step by step"
-  "bot:Compare React vs Vue"
+  "sc:Compare React vs Vue"
   "react:Search for news"
-  "gtp:Should I learn Python?"
+  "tot:Should I learn Python?"
   "auto:100 divided by 5"
 )
 

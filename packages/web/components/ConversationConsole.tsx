@@ -1,73 +1,83 @@
-'use client'
+'use client';
 
-import { useState, useRef } from 'react'
-import { useSettingsStore } from '@/lib/stores/settings-store'
+import { useState, useRef } from 'react';
+import { useSettingsStore } from '@/lib/stores/settings-store';
 
 interface ConversationConsoleProps {
-  instinctMode: boolean
-  onInstinctModeChange: (enabled: boolean) => void
-  suggestions: boolean
-  onSuggestionsChange: (enabled: boolean) => void
-  audit: boolean
-  onAuditChange: (enabled: boolean) => void
-  mindmapConnector: boolean
-  onMindmapConnectorChange: (enabled: boolean) => void
-  sideCanalEnabled: boolean
-  onSideCanalChange: (enabled: boolean) => void
-  pipelineEnabled: boolean
-  onPipelineChange: (enabled: boolean) => void
-  selectedModel: string
-  onModelChange: (model: string) => void
-  visualizationMode: 'off' | 'synthesis' | 'insight'
-  onVisualizationChange: (mode: 'off' | 'synthesis' | 'insight') => void
-  attachedFilesCount?: number
-  onFilesClick?: () => void
+  instinctMode: boolean;
+  onInstinctModeChange: (enabled: boolean) => void;
+  suggestions: boolean;
+  onSuggestionsChange: (enabled: boolean) => void;
+  audit: boolean;
+  onAuditChange: (enabled: boolean) => void;
+  mindmapConnector: boolean;
+  onMindmapConnectorChange: (enabled: boolean) => void;
+  sideCanalEnabled: boolean;
+  onSideCanalChange: (enabled: boolean) => void;
+  pipelineEnabled: boolean;
+  onPipelineChange: (enabled: boolean) => void;
+  selectedModel: string;
+  onModelChange: (model: string) => void;
+  visualizationMode: 'off' | 'synthesis' | 'insight';
+  onVisualizationChange: (mode: 'off' | 'synthesis' | 'insight') => void;
+  attachedFilesCount?: number;
+  onFilesClick?: () => void;
 }
 
-const MODELS = ['claude', 'deepseek', 'mistral', 'grok', 'gtp']
+const MODELS = ['claude', 'deepseek', 'mistral', 'grok', 'tot'];
 
 export default function ConversationConsole({
-  instinctMode, onInstinctModeChange,
-  suggestions, onSuggestionsChange,
-  audit, onAuditChange,
-  mindmapConnector, onMindmapConnectorChange,
-  sideCanalEnabled, onSideCanalChange,
-  pipelineEnabled, onPipelineChange,
-  selectedModel, onModelChange,
-  visualizationMode, onVisualizationChange,
+  instinctMode,
+  onInstinctModeChange,
+  suggestions,
+  onSuggestionsChange,
+  audit,
+  onAuditChange,
+  mindmapConnector,
+  onMindmapConnectorChange,
+  sideCanalEnabled,
+  onSideCanalChange,
+  pipelineEnabled,
+  onPipelineChange,
+  selectedModel,
+  onModelChange,
+  visualizationMode,
+  onVisualizationChange,
   attachedFilesCount = 0,
   onFilesClick,
 }: ConversationConsoleProps) {
-  const [expanded, setExpanded] = useState(false)
-  const { settings, setInstinctMode } = useSettingsStore()
+  const [expanded, setExpanded] = useState(false);
+  const { settings, setInstinctMode } = useSettingsStore();
 
   const features = [
     {
       key: 'instinct',
       on: settings.instinctMode,
-      set: () => setInstinctMode(!settings.instinctMode)
+      set: () => setInstinctMode(!settings.instinctMode),
     },
     { key: 'suggest', on: suggestions, set: onSuggestionsChange },
     { key: 'audit', on: audit, set: onAuditChange },
     { key: 'canal', on: sideCanalEnabled, set: onSideCanalChange },
     { key: 'pipeline', on: pipelineEnabled, set: onPipelineChange },
-  ]
+  ];
 
-  const activeCount = features.filter(f => f.on).length
-  
+  const activeCount = features.filter((f) => f.on).length;
+
   if (!expanded) {
     return (
       <button
         onClick={() => setExpanded(true)}
         className="flex items-center gap-1.5 text-[9px] font-mono text-relic-slate hover:text-relic-void transition-colors"
       >
-        <span className={`w-1.5 h-1.5 rounded-full ${activeCount > 0 ? 'bg-emerald-500' : 'bg-relic-silver'}`} />
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${activeCount > 0 ? 'bg-emerald-500' : 'bg-relic-silver'}`}
+        />
         <span>console ({activeCount})</span>
         <span className="text-relic-silver">↑</span>
       </button>
-    )
+    );
   }
-  
+
   return (
     <div className="flex items-center gap-3 text-[9px] font-mono text-relic-slate">
       {/* Features */}
@@ -93,7 +103,7 @@ export default function ConversationConsole({
       <span className="text-relic-mist">│</span>
 
       {/* Models */}
-      {MODELS.map(m => (
+      {MODELS.map((m) => (
         <button
           key={m}
           onClick={() => onModelChange(m)}
@@ -110,7 +120,7 @@ export default function ConversationConsole({
         ↓
       </button>
     </div>
-  )
+  );
 }
 
 export function InlineConsole({ onVisualize, count }: { onVisualize: () => void; count?: number }) {
@@ -122,5 +132,5 @@ export function InlineConsole({ onVisualize, count }: { onVisualize: () => void;
       <span className="w-1 h-1 rounded-full bg-purple-500" />
       visualize {count && `(${count})`}
     </button>
-  )
+  );
 }

@@ -750,7 +750,7 @@ function evaluateMethods(
   signature: QuerySignature,
   userGnosis: UserGnosisState
 ): MethodEvaluation[] {
-  const methods = ['direct', 'cod', 'sc', 'react', 'pas', 'gtp', 'auto'];
+  const methods = ['direct', 'cod', 'sc', 'react', 'pas', 'tot', 'auto'];
 
   return methods.map((method) => {
     let score = 0.5;
@@ -797,7 +797,7 @@ function evaluateMethods(
         }
         break;
 
-      case 'gtp':
+      case 'tot':
         if (signature.complexity > 0.7 && signature.requiredDepth > 0.7) {
           score = 0.9;
           strengths.push('Multi-AI consensus for critical queries');
@@ -808,7 +808,7 @@ function evaluateMethods(
 
     // Adjust for user preferences
     if (userGnosis.learningPreferences?.breadthVsDepth) {
-      if (userGnosis.learningPreferences.breadthVsDepth > 0.7 && method === 'gtp') {
+      if (userGnosis.learningPreferences.breadthVsDepth > 0.7 && method === 'tot') {
         score += 0.1;
       }
     }
@@ -819,8 +819,8 @@ function evaluateMethods(
       strengths,
       weaknesses,
       sephiroticAlignment: Layer.ENCODER,
-      estimatedTokens: method === 'gtp' ? 3000 : 1000,
-      estimatedLatency: method === 'gtp' ? 5000 : 2000,
+      estimatedTokens: method === 'tot' ? 3000 : 1000,
+      estimatedLatency: method === 'tot' ? 5000 : 2000,
     };
   });
 }

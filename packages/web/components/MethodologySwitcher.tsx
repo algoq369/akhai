@@ -8,7 +8,7 @@ const METHODOLOGIES = [
   { id: 'sc', symbol: '◇', name: 'sc' },
   { id: 'react', symbol: '⟳', name: 'react' },
   { id: 'pas', symbol: '△', name: 'pas' },
-  { id: 'gtp', symbol: '◯', name: 'gtp' },
+  { id: 'tot', symbol: '◯', name: 'tot' },
 ];
 
 interface MethodologySwitcherProps {

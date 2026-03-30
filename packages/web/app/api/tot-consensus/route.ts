@@ -446,12 +446,12 @@ Guidelines:
     return NextResponse.json({
       id: queryId,
       query,
-      methodology: 'gtp',
-      methodologyUsed: 'gtp-consensus',
+      methodology: 'tot',
+      methodologyUsed: 'tot-consensus',
       selectionReason: 'Multi-AI consensus for comprehensive analysis',
       response: finalSynthesis,
 
-      gtpData: {
+      totData: {
         providers: availableProviders.map((p) => ({
           id: p,
           ...PROVIDERS[p],

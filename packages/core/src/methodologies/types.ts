@@ -26,7 +26,7 @@ export type CoreMethodology =
   | 'sc'        // Tier 2: Self-Consistency (Wang et al., ICLR 2023)
   | 'react'     // Tier 3: Tool-augmented reasoning
   | 'pas'       // Tier 4: Plan-and-Solve (Wang et al., ACL 2023)
-  | 'gtp'       // Tier 5: Consensus (includes Self-Consistency)
+  | 'tot'       // Tier 5: Tree of Thoughts (Yao et al., NeurIPS 2023)
   | 'auto';     // Meta: Auto-selector
 
 /**
@@ -194,11 +194,11 @@ export const METHODOLOGY_INFO: Record<CoreMethodology, MethodologyInfo> = {
     costPer1K: 0.01,
     bestFor: ['math', 'finance', 'computation'],
   },
-  gtp: {
-    name: 'GTP + Self-Consistency',
+  tot: {
+    name: 'Tree of Thoughts',
     tier: 5,
     icon: '🤝',
-    description: 'Multi-perspective consensus with Self-MoA',
+    description: 'Yao et al., NeurIPS 2023, explores multiple reasoning branches, evaluates and prunes',
     tokenMultiplier: 5.0,
     avgLatencyMs: 30000,
     costPer1K: 0.03,
@@ -553,7 +553,7 @@ export interface GTPResult {
   metrics: GTPMetrics;
 
   /** Methodology used */
-  methodology: 'gtp';
+  methodology: 'tot';
 }
 
 /**

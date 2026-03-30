@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Squares2X2Icon,
   ListBulletIcon,
@@ -11,219 +11,263 @@ import {
   CurrencyDollarIcon,
   DocumentTextIcon,
   FolderIcon,
-  ChevronDownIcon
-} from '@heroicons/react/24/outline'
+  ChevronDownIcon,
+} from '@heroicons/react/24/outline';
 
 interface QueryHistoryItem {
-  id: string
-  query: string
-  flow: string
-  status: string
-  created_at: number
-  tokens_used: number
-  cost: number
+  id: string;
+  query: string;
+  flow: string;
+  status: string;
+  created_at: number;
+  tokens_used: number;
+  cost: number;
 }
 
 interface TopicCluster {
-  topic: string
-  queries: QueryHistoryItem[]
-  totalCost: number
-  totalTokens: number
-  lastActivity: number
+  topic: string;
+  queries: QueryHistoryItem[];
+  totalCost: number;
+  totalTokens: number;
+  lastActivity: number;
 }
 
-type ViewMode = 'grid' | 'list'
-type TimeFilter = 'all' | 'today' | 'week' | 'month'
+type ViewMode = 'grid' | 'list';
+type TimeFilter = 'all' | 'today' | 'week' | 'month';
 
 // Methodology colors
 const METHODOLOGY_COLORS: Record<string, string> = {
   direct: '#EF4444',
   cod: '#F97316',
-  bot: '#EAB308',
+  sc: '#EAB308',
   react: '#22C55E',
-  pot: '#3B82F6',
-  gtp: '#6366F1',
+  pas: '#3B82F6',
+  tot: '#6366F1',
   auto: '#8B5CF6',
-}
+};
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 50;
 
 export default function HistoryPage() {
-  const router = useRouter()
-  const [queries, setQueries] = useState<QueryHistoryItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>('grid')
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
-  const [darkMode, setDarkMode] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [offset, setOffset] = useState(0)
+  const router = useRouter();
+  const [queries, setQueries] = useState<QueryHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
 
   // Load dark mode preference
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('akhai-dark-mode')
-      if (saved) setDarkMode(saved === 'true')
+      const saved = localStorage.getItem('akhai-dark-mode');
+      if (saved) setDarkMode(saved === 'true');
     }
-  }, [])
+  }, []);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
-    const newValue = !darkMode
-    setDarkMode(newValue)
+    const newValue = !darkMode;
+    setDarkMode(newValue);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('akhai-dark-mode', String(newValue))
+      localStorage.setItem('akhai-dark-mode', String(newValue));
     }
-  }
+  };
 
   // Fetch with pagination
   const fetchQueries = async (reset: boolean = false) => {
-    const currentOffset = reset ? 0 : offset
+    const currentOffset = reset ? 0 : offset;
     if (reset) {
-      setLoading(true)
+      setLoading(true);
     } else {
-      setLoadingMore(true)
+      setLoadingMore(true);
     }
 
     try {
-      const res = await fetch(`/api/history?limit=${PAGE_SIZE}&offset=${currentOffset}`)
-      const data = await res.json()
-      const newQueries = data.queries || []
+      const res = await fetch(`/api/history?limit=${PAGE_SIZE}&offset=${currentOffset}`);
+      const data = await res.json();
+      const newQueries = data.queries || [];
 
-      console.log('[History] API returned:', newQueries.length, 'conversations (offset:', currentOffset, ')')
+      console.log(
+        '[History] API returned:',
+        newQueries.length,
+        'conversations (offset:',
+        currentOffset,
+        ')'
+      );
 
       if (reset) {
-        setQueries(newQueries)
-        setOffset(PAGE_SIZE)
+        setQueries(newQueries);
+        setOffset(PAGE_SIZE);
       } else {
-        setQueries(prev => [...prev, ...newQueries])
-        setOffset(prev => prev + PAGE_SIZE)
+        setQueries((prev) => [...prev, ...newQueries]);
+        setOffset((prev) => prev + PAGE_SIZE);
       }
 
-      setHasMore(newQueries.length === PAGE_SIZE)
+      setHasMore(newQueries.length === PAGE_SIZE);
     } catch (error) {
-      console.error('[History] Fetch failed:', error)
+      console.error('[History] Fetch failed:', error);
     } finally {
-      setLoading(false)
-      setLoadingMore(false)
+      setLoading(false);
+      setLoadingMore(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchQueries(true)
-  }, [])
+    fetchQueries(true);
+  }, []);
 
   // Filter by time
   const filteredByTime = useMemo(() => {
-    if (timeFilter === 'all') return queries
-    
-    const now = Date.now() / 1000
+    if (timeFilter === 'all') return queries;
+
+    const now = Date.now() / 1000;
     const cutoffs: Record<TimeFilter, number> = {
       all: 0,
       today: now - 86400,
       week: now - 604800,
       month: now - 2592000,
-    }
-    
-    return queries.filter(q => q.created_at > cutoffs[timeFilter])
-  }, [queries, timeFilter])
+    };
+
+    return queries.filter((q) => q.created_at > cutoffs[timeFilter]);
+  }, [queries, timeFilter]);
 
   // Filter by search
   const filteredBySearch = useMemo(() => {
-    if (!searchQuery.trim()) return filteredByTime
-    const lower = searchQuery.toLowerCase()
-    return filteredByTime.filter(q => 
-      q.query.toLowerCase().includes(lower) ||
-      q.flow.toLowerCase().includes(lower)
-    )
-  }, [filteredByTime, searchQuery])
+    if (!searchQuery.trim()) return filteredByTime;
+    const lower = searchQuery.toLowerCase();
+    return filteredByTime.filter(
+      (q) => q.query.toLowerCase().includes(lower) || q.flow.toLowerCase().includes(lower)
+    );
+  }, [filteredByTime, searchQuery]);
 
   // Log filter counts
   useEffect(() => {
-    console.log('[History] After time filter:', filteredByTime.length)
-    console.log('[History] After search filter:', filteredBySearch.length)
-  }, [filteredByTime.length, filteredBySearch.length])
+    console.log('[History] After time filter:', filteredByTime.length);
+    console.log('[History] After search filter:', filteredBySearch.length);
+  }, [filteredByTime.length, filteredBySearch.length]);
 
   // Cluster queries by topic
   const clusters = useMemo((): TopicCluster[] => {
-    if (filteredBySearch.length === 0) return []
+    if (filteredBySearch.length === 0) return [];
 
-    const clusterMap = new Map<string, QueryHistoryItem[]>()
+    const clusterMap = new Map<string, QueryHistoryItem[]>();
 
     filteredBySearch.forEach((query) => {
       const words = query.query
         .toLowerCase()
         .replace(/[^\w\s]/g, '')
         .split(' ')
-        .filter(w => w.length > 3 && !['what', 'how', 'why', 'when', 'where', 'which', 'that', 'this', 'with', 'from', 'about', 'would', 'could', 'should', 'have', 'been', 'were', 'your', 'them', 'they', 'will', 'more', 'some'].includes(w))
+        .filter(
+          (w) =>
+            w.length > 3 &&
+            ![
+              'what',
+              'how',
+              'why',
+              'when',
+              'where',
+              'which',
+              'that',
+              'this',
+              'with',
+              'from',
+              'about',
+              'would',
+              'could',
+              'should',
+              'have',
+              'been',
+              'were',
+              'your',
+              'them',
+              'they',
+              'will',
+              'more',
+              'some',
+            ].includes(w)
+        )
         .slice(0, 2)
-        .join(' ')
+        .join(' ');
 
-      const topic = words || 'General'
+      const topic = words || 'General';
 
       if (!clusterMap.has(topic)) {
-        clusterMap.set(topic, [])
+        clusterMap.set(topic, []);
       }
-      clusterMap.get(topic)!.push(query)
-    })
+      clusterMap.get(topic)!.push(query);
+    });
 
     const result = Array.from(clusterMap.entries()).map(([topic, queries]) => ({
       topic: topic.charAt(0).toUpperCase() + topic.slice(1),
       queries: queries.sort((a, b) => b.created_at - a.created_at),
       totalCost: queries.reduce((sum, q) => sum + (q.cost || 0), 0),
       totalTokens: queries.reduce((sum, q) => sum + (q.tokens_used || 0), 0),
-      lastActivity: Math.max(...queries.map(q => q.created_at)),
-    }))
+      lastActivity: Math.max(...queries.map((q) => q.created_at)),
+    }));
 
     // Sort by most recent
-    result.sort((a, b) => b.lastActivity - a.lastActivity)
+    result.sort((a, b) => b.lastActivity - a.lastActivity);
 
-    return result
-  }, [filteredBySearch])
+    return result;
+  }, [filteredBySearch]);
 
   const formatDate = (timestamp: number) => {
-    const d = new Date(timestamp * 1000)
-    const now = new Date()
-    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
-    
-    if (diffDays === 0) return 'Today'
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return `${diffDays} days ago`
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }
+    const d = new Date(timestamp * 1000);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   const formatTime = (timestamp: number) => {
-    const d = new Date(timestamp * 1000)
-    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-  }
+    const d = new Date(timestamp * 1000);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
 
   const handleQueryClick = (queryId: string) => {
-    router.push(`/?continue=${queryId}`)
-  }
+    router.push(`/?continue=${queryId}`);
+  };
 
   // Stats
-  const totalQueries = filteredBySearch.length
-  const totalCost = filteredBySearch.reduce((sum, q) => sum + (q.cost || 0), 0)
-  const totalTokens = filteredBySearch.reduce((sum, q) => sum + (q.tokens_used || 0), 0)
+  const totalQueries = filteredBySearch.length;
+  const totalCost = filteredBySearch.reduce((sum, q) => sum + (q.cost || 0), 0);
+  const totalTokens = filteredBySearch.reduce((sum, q) => sum + (q.tokens_used || 0), 0);
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-relic-void' : 'bg-gradient-to-b from-slate-50 to-white'}`}>
+    <div
+      className={`min-h-screen ${darkMode ? 'bg-relic-void' : 'bg-gradient-to-b from-slate-50 to-white'}`}
+    >
       {/* Header */}
-      <header className={`sticky top-0 z-40 backdrop-blur-md border-b ${
-        darkMode ? 'bg-relic-void/80 border-relic-slate/30' : 'bg-white/80 border-slate-200/50'
-      }`}>
+      <header
+        className={`sticky top-0 z-40 backdrop-blur-md border-b ${
+          darkMode ? 'bg-relic-void/80 border-relic-slate/30' : 'bg-white/80 border-slate-200/50'
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <a href="/" className={`text-[9px] uppercase tracking-[0.3em] transition-colors ${
-                darkMode ? 'text-relic-ghost/60 hover:text-white' : 'text-slate-400 hover:text-slate-600'
-              }`}>
+              <a
+                href="/"
+                className={`text-[9px] uppercase tracking-[0.3em] transition-colors ${
+                  darkMode
+                    ? 'text-relic-ghost/60 hover:text-white'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
                 ← akhai
               </a>
               <div className={`h-3 w-px ${darkMode ? 'bg-relic-slate/30' : 'bg-slate-200'}`} />
-              <h1 className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-700'}`}>History</h1>
+              <h1 className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-700'}`}>
+                History
+              </h1>
             </div>
 
             {/* Controls */}
@@ -232,22 +276,30 @@ export default function HistoryPage() {
               <button
                 onClick={toggleDarkMode}
                 className={`p-1.5 rounded transition-all ${
-                  darkMode ? 'text-relic-ghost hover:text-white' : 'text-slate-400 hover:text-slate-600'
+                  darkMode
+                    ? 'text-relic-ghost hover:text-white'
+                    : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
                 {darkMode ? '☀️' : '🌙'}
               </button>
 
               {/* View mode toggle */}
-              <div className={`flex items-center gap-1 rounded-md p-0.5 ${
-                darkMode ? 'bg-relic-slate/30' : 'bg-slate-100'
-              }`}>
+              <div
+                className={`flex items-center gap-1 rounded-md p-0.5 ${
+                  darkMode ? 'bg-relic-slate/30' : 'bg-slate-100'
+                }`}
+              >
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-1.5 rounded transition-all ${
                     viewMode === 'grid'
-                      ? darkMode ? 'bg-relic-slate text-white shadow-sm' : 'bg-white shadow-sm text-slate-700'
-                      : darkMode ? 'text-relic-ghost hover:text-white' : 'text-slate-400 hover:text-slate-600'
+                      ? darkMode
+                        ? 'bg-relic-slate text-white shadow-sm'
+                        : 'bg-white shadow-sm text-slate-700'
+                      : darkMode
+                        ? 'text-relic-ghost hover:text-white'
+                        : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
                   <Squares2X2Icon className="w-3.5 h-3.5" />
@@ -256,8 +308,12 @@ export default function HistoryPage() {
                   onClick={() => setViewMode('list')}
                   className={`p-1.5 rounded transition-all ${
                     viewMode === 'list'
-                      ? darkMode ? 'bg-relic-slate text-white shadow-sm' : 'bg-white shadow-sm text-slate-700'
-                      : darkMode ? 'text-relic-ghost hover:text-white' : 'text-slate-400 hover:text-slate-600'
+                      ? darkMode
+                        ? 'bg-relic-slate text-white shadow-sm'
+                        : 'bg-white shadow-sm text-slate-700'
+                      : darkMode
+                        ? 'text-relic-ghost hover:text-white'
+                        : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
                   <ListBulletIcon className="w-3.5 h-3.5" />
@@ -269,16 +325,20 @@ export default function HistoryPage() {
       </header>
 
       {/* Toolbar */}
-      <div className={`sticky top-[49px] z-30 backdrop-blur-md border-b ${
-        darkMode ? 'bg-relic-void/60 border-relic-slate/20' : 'bg-white/60 border-slate-100'
-      }`}>
+      <div
+        className={`sticky top-[49px] z-30 backdrop-blur-md border-b ${
+          darkMode ? 'bg-relic-void/60 border-relic-slate/20' : 'bg-white/60 border-slate-100'
+        }`}
+      >
         <div className="max-w-6xl mx-auto px-6 py-2">
           <div className="flex items-center justify-between gap-3">
             {/* Search */}
             <div className="relative flex-1 max-w-sm">
-              <MagnifyingGlassIcon className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${
-                darkMode ? 'text-relic-ghost/50' : 'text-slate-400'
-              }`} />
+              <MagnifyingGlassIcon
+                className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${
+                  darkMode ? 'text-relic-ghost/50' : 'text-slate-400'
+                }`}
+              />
               <input
                 type="text"
                 placeholder="Search..."
@@ -295,31 +355,38 @@ export default function HistoryPage() {
             {/* Filters */}
             <div className="flex items-center gap-2">
               {/* Time filter */}
-              <div className={`flex items-center rounded-md p-0.5 ${
-                darkMode ? 'bg-relic-slate/30' : 'bg-slate-100'
-              }`}>
+              <div
+                className={`flex items-center rounded-md p-0.5 ${
+                  darkMode ? 'bg-relic-slate/30' : 'bg-slate-100'
+                }`}
+              >
                 {(['all', 'today', 'week', 'month'] as TimeFilter[]).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setTimeFilter(filter)}
                     className={`px-2 py-1 text-[9px] font-medium rounded transition-all capitalize ${
                       timeFilter === filter
-                        ? darkMode ? 'bg-relic-slate text-white shadow-sm' : 'bg-white shadow-sm text-slate-700'
-                        : darkMode ? 'text-relic-ghost hover:text-white' : 'text-slate-400 hover:text-slate-600'
+                        ? darkMode
+                          ? 'bg-relic-slate text-white shadow-sm'
+                          : 'bg-white shadow-sm text-slate-700'
+                        : darkMode
+                          ? 'text-relic-ghost hover:text-white'
+                          : 'text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     {filter}
                   </button>
                 ))}
               </div>
-
             </div>
           </div>
 
           {/* Stats bar */}
-          <div className={`flex items-center gap-4 mt-2 text-[9px] ${
-            darkMode ? 'text-relic-ghost/60' : 'text-slate-400'
-          }`}>
+          <div
+            className={`flex items-center gap-4 mt-2 text-[9px] ${
+              darkMode ? 'text-relic-ghost/60' : 'text-slate-400'
+            }`}
+          >
             <span className="flex items-center gap-1">
               <DocumentTextIcon className="w-3 h-3" />
               {totalQueries} conversations
@@ -329,8 +396,7 @@ export default function HistoryPage() {
               {clusters.length} topics
             </span>
             <span className="flex items-center gap-1">
-              <CurrencyDollarIcon className="w-3 h-3" />
-              ${totalCost.toFixed(4)}
+              <CurrencyDollarIcon className="w-3 h-3" />${totalCost.toFixed(4)}
             </span>
             {hasMore && (
               <button
@@ -353,12 +419,18 @@ export default function HistoryPage() {
       <main className="max-w-6xl mx-auto px-6 py-6">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className={`w-5 h-5 border-2 rounded-full animate-spin ${
-              darkMode ? 'border-relic-slate border-t-white' : 'border-slate-200 border-t-slate-500'
-            }`} />
+            <div
+              className={`w-5 h-5 border-2 rounded-full animate-spin ${
+                darkMode
+                  ? 'border-relic-slate border-t-white'
+                  : 'border-slate-200 border-t-slate-500'
+              }`}
+            />
           </div>
         ) : clusters.length === 0 ? (
-          <div className={`text-center py-16 ${darkMode ? 'text-relic-ghost/60' : 'text-slate-400'}`}>
+          <div
+            className={`text-center py-16 ${darkMode ? 'text-relic-ghost/60' : 'text-slate-400'}`}
+          >
             <DocumentTextIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
             <p className="text-xs">No conversations found</p>
           </div>
@@ -368,7 +440,9 @@ export default function HistoryPage() {
             {clusters.map((cluster) => (
               <button
                 key={cluster.topic}
-                onClick={() => setSelectedTopic(selectedTopic === cluster.topic ? null : cluster.topic)}
+                onClick={() =>
+                  setSelectedTopic(selectedTopic === cluster.topic ? null : cluster.topic)
+                }
                 className={`group relative rounded-xl border transition-all duration-200 text-left overflow-hidden ${
                   selectedTopic === cluster.topic
                     ? 'border-blue-400 shadow-md scale-[1.02]'
@@ -394,7 +468,7 @@ export default function HistoryPage() {
                           zIndex: 3 - i,
                         }}
                       >
-                        <div 
+                        <div
                           className="w-0.5 h-full absolute left-0 top-0 rounded-l"
                           style={{ backgroundColor: METHODOLOGY_COLORS[q.flow] || '#8B5CF6' }}
                         />
@@ -404,7 +478,7 @@ export default function HistoryPage() {
                       </div>
                     ))}
                   </div>
-                  
+
                   {/* Count badge */}
                   <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-slate-700/80 rounded text-[7px] text-white font-medium">
                     {cluster.queries.length}
@@ -433,16 +507,20 @@ export default function HistoryPage() {
                 className="bg-white rounded-lg border border-slate-200 overflow-hidden hover:border-slate-300 transition-all"
               >
                 <button
-                  onClick={() => setSelectedTopic(selectedTopic === cluster.topic ? null : cluster.topic)}
+                  onClick={() =>
+                    setSelectedTopic(selectedTopic === cluster.topic ? null : cluster.topic)
+                  }
                   className="w-full flex items-center gap-3 p-3 text-left hover:bg-slate-50 transition-colors"
                 >
-                  <div 
+                  <div
                     className="w-8 h-8 rounded-md flex items-center justify-center text-white"
-                    style={{ backgroundColor: METHODOLOGY_COLORS[cluster.queries[0]?.flow] || '#8B5CF6' }}
+                    style={{
+                      backgroundColor: METHODOLOGY_COLORS[cluster.queries[0]?.flow] || '#8B5CF6',
+                    }}
                   >
                     <FolderIcon className="w-4 h-4" />
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <h3 className="text-xs font-medium text-slate-700">{cluster.topic}</h3>
                     <p className="text-[9px] text-slate-400 truncate">
@@ -455,7 +533,9 @@ export default function HistoryPage() {
                     <div>${cluster.totalCost.toFixed(4)}</div>
                   </div>
 
-                  <ChevronDownIcon className={`w-4 h-4 text-slate-400 transition-transform ${selectedTopic === cluster.topic ? 'rotate-180' : ''}`} />
+                  <ChevronDownIcon
+                    className={`w-4 h-4 text-slate-400 transition-transform ${selectedTopic === cluster.topic ? 'rotate-180' : ''}`}
+                  />
                 </button>
 
                 {/* Expanded queries */}
@@ -467,7 +547,7 @@ export default function HistoryPage() {
                         onClick={() => handleQueryClick(query.id)}
                         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white transition-colors border-b border-slate-100 last:border-0"
                       >
-                        <div 
+                        <div
                           className="w-0.5 h-6 rounded-full"
                           style={{ backgroundColor: METHODOLOGY_COLORS[query.flow] || '#8B5CF6' }}
                         />
@@ -478,7 +558,9 @@ export default function HistoryPage() {
                             <span className="uppercase">{query.flow}</span>
                           </p>
                         </div>
-                        <span className="text-[8px] text-slate-400">${(query.cost || 0).toFixed(4)}</span>
+                        <span className="text-[8px] text-slate-400">
+                          ${(query.cost || 0).toFixed(4)}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -490,15 +572,18 @@ export default function HistoryPage() {
 
         {/* Expanded topic detail - Grid view */}
         {viewMode === 'grid' && selectedTopic && (
-          <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setSelectedTopic(null)}>
-            <div 
+          <div
+            className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-6"
+            onClick={() => setSelectedTopic(null)}
+          >
+            <div
               className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[70vh] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {(() => {
-                const cluster = clusters.find(c => c.topic === selectedTopic)
-                if (!cluster) return null
-                
+                const cluster = clusters.find((c) => c.topic === selectedTopic);
+                if (!cluster) return null;
+
                 return (
                   <>
                     <div className="p-4 border-b border-slate-100">
@@ -515,7 +600,7 @@ export default function HistoryPage() {
                         {cluster.queries.length} conversations · ${cluster.totalCost.toFixed(4)}
                       </p>
                     </div>
-                    
+
                     <div className="overflow-y-auto max-h-[55vh]">
                       {cluster.queries.map((query) => (
                         <button
@@ -523,7 +608,7 @@ export default function HistoryPage() {
                           onClick={() => handleQueryClick(query.id)}
                           className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
                         >
-                          <div 
+                          <div
                             className="w-1 h-8 rounded-full"
                             style={{ backgroundColor: METHODOLOGY_COLORS[query.flow] || '#8B5CF6' }}
                           />
@@ -531,24 +616,35 @@ export default function HistoryPage() {
                             <p className="text-xs text-slate-600">{query.query}</p>
                             <p className="text-[8px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                               <CalendarIcon className="w-2.5 h-2.5" />
-                              <span>{formatDate(query.created_at)} {formatTime(query.created_at)}</span>
-                              <span className="uppercase font-medium" style={{ color: METHODOLOGY_COLORS[query.flow] }}>{query.flow}</span>
+                              <span>
+                                {formatDate(query.created_at)} {formatTime(query.created_at)}
+                              </span>
+                              <span
+                                className="uppercase font-medium"
+                                style={{ color: METHODOLOGY_COLORS[query.flow] }}
+                              >
+                                {query.flow}
+                              </span>
                             </p>
                           </div>
                           <div className="text-right">
-                            <div className="text-[9px] text-slate-500">{(query.tokens_used || 0).toLocaleString()} tok</div>
-                            <div className="text-[8px] text-slate-400">${(query.cost || 0).toFixed(4)}</div>
+                            <div className="text-[9px] text-slate-500">
+                              {(query.tokens_used || 0).toLocaleString()} tok
+                            </div>
+                            <div className="text-[8px] text-slate-400">
+                              ${(query.cost || 0).toFixed(4)}
+                            </div>
                           </div>
                         </button>
                       ))}
                     </div>
                   </>
-                )
+                );
               })()}
             </div>
           </div>
         )}
       </main>
     </div>
-  )
+  );
 }

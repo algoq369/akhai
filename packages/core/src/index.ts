@@ -64,7 +64,7 @@ export {
 } from './models/ModelProviderFactory.js';
 
 // ============================================================================
-// GTP (GENERATIVE THOUGHTS PROCESS)
+// TOT (TREE OF THOUGHTS) - Yao et al., NeurIPS 2023
 // ============================================================================
 
 export {
@@ -73,7 +73,7 @@ export {
   FlashBroadcaster,
   LivingDatabase,
   QuorumManager,
-} from './methodologies/gtp/index.js';
+} from './methodologies/tot/index.js';
 
 export {
   MethodologySelector,

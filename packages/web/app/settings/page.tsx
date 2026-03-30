@@ -141,7 +141,7 @@ export default function SettingsPage() {
                   default
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {(['auto', 'direct', 'cod', 'sc', 'react', 'pas', 'gtp'] as const).map(
+                  {(['auto', 'direct', 'cod', 'sc', 'react', 'pas', 'tot'] as const).map(
                     (method) => (
                       <span
                         key={method}

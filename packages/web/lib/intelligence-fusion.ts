@@ -62,7 +62,7 @@ const queryAnalysisCache = new LRUCache<string, QueryAnalysis>(100);
 // TYPES
 // ============================================================
 
-export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'gtp' | 'auto';
+export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'tot' | 'auto';
 
 export interface QueryAnalysis {
   complexity: number; // 0-1 scale
@@ -623,30 +623,30 @@ export function selectMethodology(
   }
   scores.push({ methodology: 'pas', score: Math.min(1, pasScore), reasons: pasReasons });
 
-  // Score GTP (Generative Thoughts Process)
-  let gtpScore = 0;
-  const gtpReasons: string[] = [];
+  // Score TOT (Tree of Thoughts)
+  let totScore = 0;
+  const totReasons: string[] = [];
   if (analysis.requiresMultiPerspective) {
-    gtpScore += 0.7;
-    gtpReasons.push('Multi-perspective needed');
+    totScore += 0.7;
+    totReasons.push('Multi-perspective needed');
   }
   if (analysis.queryType === 'comparative') {
-    gtpScore += 0.5;
-    gtpReasons.push('Comparative query');
+    totScore += 0.5;
+    totReasons.push('Comparative query');
   }
   if (analysis.isCreative) {
-    gtpScore += 0.5;
-    gtpReasons.push('Creative query');
+    totScore += 0.5;
+    totReasons.push('Creative query');
   }
   if (analysis.complexity >= 0.7) {
-    gtpScore += 0.4;
-    gtpReasons.push('High complexity');
+    totScore += 0.4;
+    totReasons.push('High complexity');
   }
   if (dominantLayers.includes(Layer.SYNTHESIS)) {
-    gtpScore += 0.3;
-    gtpReasons.push("Da'at dominant");
+    totScore += 0.3;
+    totReasons.push("Da'at dominant");
   }
-  scores.push({ methodology: 'gtp', score: Math.min(1, gtpScore), reasons: gtpReasons });
+  scores.push({ methodology: 'tot', score: Math.min(1, totScore), reasons: totReasons });
 
   // Sort by score
   scores.sort((a, b) => b.score - a.score);

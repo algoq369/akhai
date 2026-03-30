@@ -434,14 +434,14 @@ export async function POST(request: NextRequest) {
     }
 
     // ========================
-    // GTP Multi-AI Consensus Route
+    // TOT Tree of Thoughts Route
     // ========================
-    if (selectedMethod.id === 'gtp') {
-      log('INFO', 'GTP', 'Routing to multi-AI consensus endpoint');
+    if (selectedMethod.id === 'tot') {
+      log('INFO', 'TOT', 'Routing to Tree of Thoughts consensus endpoint');
 
       try {
-        // Call the GTP consensus endpoint internally
-        const gtpResponse = await fetch(new URL('/api/gtp-consensus', request.url).toString(), {
+        // Call the TOT consensus endpoint internally
+        const gtpResponse = await fetch(new URL('/api/tot-consensus', request.url).toString(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query, conversationHistory }),
@@ -449,7 +449,7 @@ export async function POST(request: NextRequest) {
 
         if (!gtpResponse.ok) {
           const errorData = await gtpResponse.json();
-          throw new Error(errorData.error || 'GTP consensus failed');
+          throw new Error(errorData.error || 'TOT consensus failed');
         }
 
         const gtpResult = await gtpResponse.json();
@@ -479,8 +479,8 @@ export async function POST(request: NextRequest) {
       } catch (gtpError: any) {
         log(
           'ERROR',
-          'GTP',
-          `Multi-AI consensus failed: ${gtpError.message}, falling back to Claude`
+          'TOT',
+          `Tree of Thoughts consensus failed: ${gtpError.message}, falling back to Claude`
         );
         // Fall through to standard Claude processing
       }
@@ -1306,7 +1306,7 @@ function selectMethodology(query: string, requested: string) {
     return { id: 'react', reason: 'Search/tools needed - ReAct' };
   }
 
-  // Multi-perspective → gtp
+  // Multi-perspective → tot
   if (
     queryLower.includes('consensus') ||
     queryLower.includes('multiple perspectives') ||
@@ -1318,8 +1318,8 @@ function selectMethodology(query: string, requested: string) {
     queryLower.includes('all perspectives') ||
     queryLower.includes('various viewpoints')
   ) {
-    logger.query.methodSelected('auto', 'gtp', 'Multi-perspective request - GTP Consensus');
-    return { id: 'gtp', reason: 'Multi-perspective request - GTP Consensus' };
+    logger.query.methodSelected('auto', 'tot', 'Multi-perspective request - TOT Consensus');
+    return { id: 'tot', reason: 'Multi-perspective request - TOT Consensus' };
   }
 
   // Default to direct
@@ -1408,11 +1408,11 @@ Use Plan-and-Solve (PaS) methodology (Wang et al., ACL 2023):
 
 Format: [UNDERSTAND], [PLAN], [EXECUTE], [VERIFY], [ANSWER]${enhancementSection}${contextSection}`;
 
-    case 'gtp':
-      // Generative Thought Process - multi-perspective consensus
+    case 'tot':
+      // Tree of Thoughts - multi-perspective consensus
       return `${baseIdentity}${writingStyle}
 
-Use Generative Thought Process (GTP) methodology:
+Use Tree of Thoughts (TOT) methodology:
 1. **Technical Perspective**: Analyze from implementation/practical angle
 2. **Strategic Perspective**: Consider broader implications and approaches
 3. **Critical Perspective**: Identify potential issues and limitations (show logical step-backs)

@@ -204,12 +204,12 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     },
   },
   {
-    id: 'gtp',
+    id: 'tot',
     symbol: '◯',
-    name: 'gtp',
-    fullName: 'Generative Thought Process',
+    name: 'tot',
+    fullName: 'Tree of Thoughts',
     description:
-      'Multi-perspective analysis from technical, strategic, and critical angles, synthesized into a balanced consensus answer.',
+      'Yao et al., NeurIPS 2023, explores multiple reasoning branches, evaluates and prunes for optimal solutions.',
     howItWorks: [
       'Technical Perspective: Implementation and practical analysis',
       'Strategic Perspective: Broader implications and approaches',

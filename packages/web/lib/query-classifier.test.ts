@@ -15,15 +15,15 @@ const testCases = [
   { query: 'eth price', expected: 'direct' },
   { query: 'who is elon musk', expected: 'direct' },
 
-  // Comparison queries → GTP mode (25s)
-  { query: 'compare react vs vue', expected: 'gtp' },
-  { query: 'bitcoin vs ethereum', expected: 'gtp' },
-  { query: 'which is better python or javascript', expected: 'gtp' },
+  // Comparison queries → TOT mode (25s)
+  { query: 'compare react vs vue', expected: 'tot' },
+  { query: 'bitcoin vs ethereum', expected: 'tot' },
+  { query: 'which is better python or javascript', expected: 'tot' },
 
-  // Complex analysis → CoT or GTP
+  // Complex analysis → CoT or TOT
   { query: 'analyze my business strategy for the next quarter', expected: 'cot' },
-  { query: 'how to implement authentication in nextjs', expected: 'gtp' },
-  { query: 'should i invest in crypto', expected: 'gtp' },
+  { query: 'how to implement authentication in nextjs', expected: 'tot' },
+  { query: 'should i invest in crypto', expected: 'tot' },
 ];
 
 console.log('='.repeat(80));

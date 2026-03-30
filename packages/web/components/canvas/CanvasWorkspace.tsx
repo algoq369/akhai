@@ -66,10 +66,10 @@ const METHOD_COLORS: Record<string, string> = {
   auto: '#8b5cf6',
   direct: '#6366f1',
   cod: '#10b981',
-  bot: '#f59e0b',
+  sc: '#f59e0b',
   react: '#ef4444',
-  pot: '#0ea5e9',
-  gtp: '#ec4899',
+  pas: '#0ea5e9',
+  tot: '#ec4899',
 };
 const TOPIC_COLORS = [
   '#6366f1',

@@ -388,9 +388,9 @@ Respond directly and accurately. Use conversation context when relevant.`,
 
     console.log(`[Query Route] Executing methodology: ${flowType} for query: ${queryId}`);
 
-    if (flowType === 'gtp') {
-      // GTP (Generative Thoughts Process) - parallel Flash architecture
-      console.log(`[Query Route] Using GTP executor`);
+    if (flowType === 'tot') {
+      // TOT (Tree of Thoughts) - parallel Flash architecture
+      console.log(`[Query Route] Using TOT executor`);
       const gtpResult = await executeGTPWithEvents(
         queryId,
         queryData.query,
@@ -403,7 +403,7 @@ Respond directly and accurately. Use conversation context when relevant.`,
       result = {
         finalAnswer: gtpResult.result.synthesis.content,
         costReport: gtpResult.costReport,
-        methodology: 'gtp',
+        methodology: 'tot',
       };
     } else if (flowType === 'direct') {
       // Direct: Single AI response for simple factual questions

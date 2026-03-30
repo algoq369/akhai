@@ -22,7 +22,7 @@ export default function DashboardPage() {
     sc: true,
     react: true,
     pas: true,
-    gtp: true,
+    tot: true,
   });
   const [enabledFeatures, setEnabledFeatures] = useState<Record<string, boolean>>({
     guard: true,
@@ -80,7 +80,7 @@ export default function DashboardPage() {
     { key: 'sc', name: 'Self-Consistency', desc: 'Multi-path voting' },
     { key: 'react', name: 'ReAct', desc: 'Search & calculate' },
     { key: 'pas', name: 'Plan-and-Solve', desc: 'Decompose then execute' },
-    { key: 'gtp', name: 'GTP Consensus', desc: 'Multi-AI agreement' },
+    { key: 'tot', name: 'TOT Consensus', desc: 'Tree of Thoughts' },
   ];
 
   const features = [

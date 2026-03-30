@@ -12,7 +12,7 @@ import {
   FlashBroadcaster,
   LivingDatabase,
   QuorumManager,
-} from '../src/methodologies/gtp/index.js';
+} from '../src/methodologies/tot/index.js';
 
 import {
   MethodologySelector,
@@ -123,9 +123,9 @@ console.log('');
 // Test 3: Methodology Selection
 console.log('Testing Methodology Selection...');
 
-test('Select GTP for comparative', () => {
+test('Select TOT for comparative', () => {
   const selection = selectMethodology('Compare React vs Vue vs Angular');
-  if (selection.methodology !== 'gtp') throw new Error(`Expected gtp, got ${selection.methodology}`);
+  if (selection.methodology !== 'tot') throw new Error(`Expected tot, got ${selection.methodology}`);
 });
 
 test('Select Direct for factual', () => {

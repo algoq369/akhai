@@ -3,29 +3,29 @@
  * Provides real-time visibility into all backend operations
  */
 
-type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS'
+type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS';
 
 export interface LogEntry {
-  timestamp: string
-  level: LogLevel
-  component: string
-  message: string
-  data?: any
+  timestamp: string;
+  level: LogLevel;
+  component: string;
+  message: string;
+  data?: any;
 }
 
 // In-memory log storage (last 500 entries)
-const logs: LogEntry[] = []
-const MAX_LOGS = 500
+const logs: LogEntry[] = [];
+const MAX_LOGS = 500;
 
 // Color codes for terminal
 const colors = {
-  DEBUG: '\x1b[36m',   // Cyan
-  INFO: '\x1b[37m',    // White
-  WARN: '\x1b[33m',    // Yellow
-  ERROR: '\x1b[31m',   // Red
+  DEBUG: '\x1b[36m', // Cyan
+  INFO: '\x1b[37m', // White
+  WARN: '\x1b[33m', // Yellow
+  ERROR: '\x1b[31m', // Red
   SUCCESS: '\x1b[32m', // Green
-  RESET: '\x1b[0m'
-}
+  RESET: '\x1b[0m',
+};
 
 // Emoji icons
 const icons = {
@@ -33,28 +33,28 @@ const icons = {
   INFO: 'ℹ️',
   WARN: '⚠️',
   ERROR: '❌',
-  SUCCESS: '✅'
-}
+  SUCCESS: '✅',
+};
 
 export function log(level: LogLevel, component: string, message: string, data?: any): LogEntry {
-  const timestamp = new Date().toISOString()
-  const entry: LogEntry = { timestamp, level, component, message, data }
+  const timestamp = new Date().toISOString();
+  const entry: LogEntry = { timestamp, level, component, message, data };
 
   // Add to in-memory storage
-  logs.push(entry)
-  if (logs.length > MAX_LOGS) logs.shift()
+  logs.push(entry);
+  if (logs.length > MAX_LOGS) logs.shift();
 
   // Console output with formatting
-  const timeStr = timestamp.split('T')[1].split('.')[0]
-  const color = colors[level]
-  const icon = icons[level]
+  const timeStr = timestamp.split('T')[1].split('.')[0];
+  const color = colors[level];
+  const icon = icons[level];
 
   console.log(
     `${color}${icon} [${timeStr}] [${component}]${colors.RESET} ${message}`,
     data ? '\n' + JSON.stringify(data, null, 2) : ''
-  )
+  );
 
-  return entry
+  return entry;
 }
 
 // Component-specific loggers
@@ -77,58 +77,76 @@ export const logger = {
       log('ERROR', 'API', `${provider} failed: ${error}`),
 
     complete: (queryId: string, latency: number, cost: number) =>
-      log('SUCCESS', 'QUERY', `Complete: ${queryId}`, { latency: `${latency}ms`, cost: `$${cost.toFixed(4)}` }),
+      log('SUCCESS', 'QUERY', `Complete: ${queryId}`, {
+        latency: `${latency}ms`,
+        cost: `$${cost.toFixed(4)}`,
+      }),
   },
 
   // Grounding Guard
   guard: {
-    start: (trigger: string) =>
-      log('INFO', 'GUARD', `Grounding Guard triggered by: ${trigger}`),
+    start: (trigger: string) => log('INFO', 'GUARD', `Grounding Guard triggered by: ${trigger}`),
 
     hypeCheck: (score: number, triggered: boolean) =>
-      log(triggered ? 'WARN' : 'DEBUG', 'GUARD:HYPE',
-        triggered ? `⚠️ HYPE DETECTED (score: ${score})` : `Clean (score: ${score})`),
+      log(
+        triggered ? 'WARN' : 'DEBUG',
+        'GUARD:HYPE',
+        triggered ? `⚠️ HYPE DETECTED (score: ${score})` : `Clean (score: ${score})`
+      ),
 
     echoCheck: (score: number, triggered: boolean) =>
-      log(triggered ? 'WARN' : 'DEBUG', 'GUARD:ECHO',
-        triggered ? `⚠️ ECHO DETECTED (score: ${score})` : `Clean (score: ${score})`),
+      log(
+        triggered ? 'WARN' : 'DEBUG',
+        'GUARD:ECHO',
+        triggered ? `⚠️ ECHO DETECTED (score: ${score})` : `Clean (score: ${score})`
+      ),
 
     driftCheck: (score: number, triggered: boolean) =>
-      log(triggered ? 'WARN' : 'DEBUG', 'GUARD:DRIFT',
-        triggered ? `⚠️ DRIFT DETECTED (score: ${score})` : `Clean (score: ${score})`),
+      log(
+        triggered ? 'WARN' : 'DEBUG',
+        'GUARD:DRIFT',
+        triggered ? `⚠️ DRIFT DETECTED (score: ${score})` : `Clean (score: ${score})`
+      ),
 
     factCheck: (score: number, triggered: boolean) =>
-      log(triggered ? 'WARN' : 'DEBUG', 'GUARD:FACT',
-        triggered ? `⚠️ FACTUALITY ISSUE (score: ${score})` : `Clean (score: ${score})`),
+      log(
+        triggered ? 'WARN' : 'DEBUG',
+        'GUARD:FACT',
+        triggered ? `⚠️ FACTUALITY ISSUE (score: ${score})` : `Clean (score: ${score})`
+      ),
 
     sanityCheck: (violations: string[], triggered: boolean) =>
-      log(triggered ? 'ERROR' : 'DEBUG', 'GUARD:SANITY',
-        triggered ? `🚨 REALITY CHECK FAILED: ${violations.join(', ')}` : `Clean (reality-based)`),
+      log(
+        triggered ? 'ERROR' : 'DEBUG',
+        'GUARD:SANITY',
+        triggered ? `🚨 REALITY CHECK FAILED: ${violations.join(', ')}` : `Clean (reality-based)`
+      ),
 
     complete: (issues: string[], passed: boolean) =>
-      log(passed ? 'SUCCESS' : 'WARN', 'GUARD',
-        passed ? '✅ All checks passed' : `⚠️ Issues found: ${issues.join(', ')}`),
+      log(
+        passed ? 'SUCCESS' : 'WARN',
+        'GUARD',
+        passed ? '✅ All checks passed' : `⚠️ Issues found: ${issues.join(', ')}`
+      ),
   },
 
   // Methodology execution
   methodology: {
-    direct: (tokens: number) =>
-      log('DEBUG', 'METHOD:DIRECT', `Direct response`, { tokens }),
+    direct: (tokens: number) => log('DEBUG', 'METHOD:DIRECT', `Direct response`, { tokens }),
 
     cod: (drafts: number, finalTokens: number, savings: string) =>
       log('DEBUG', 'METHOD:COD', `Chain of Draft`, { drafts, finalTokens, savings }),
 
-    bot: (templates: number) =>
-      log('DEBUG', 'METHOD:BOT', `Buffer of Thoughts`, { templates }),
+    sc: (templates: number) => log('DEBUG', 'METHOD:SC', `Self-Consistency`, { templates }),
 
     react: (steps: number, tools: string[]) =>
       log('DEBUG', 'METHOD:REACT', `ReAct reasoning`, { steps, tools }),
 
-    pot: (codeGenerated: boolean, executed: boolean) =>
-      log('DEBUG', 'METHOD:POT', `Program of Thought`, { codeGenerated, executed }),
+    pas: (codeGenerated: boolean, executed: boolean) =>
+      log('DEBUG', 'METHOD:PAS', `Plan-and-Solve`, { codeGenerated, executed }),
 
-    gtp: (providers: string[], consensusReached: boolean) =>
-      log('DEBUG', 'METHOD:GTP', `GTP Consensus`, { providers, consensusReached }),
+    tot: (providers: string[], consensusReached: boolean) =>
+      log('DEBUG', 'METHOD:TOT', `TOT Consensus`, { providers, consensusReached }),
   },
 
   // Real-time data
@@ -145,29 +163,26 @@ export const logger = {
 
   // System
   system: {
-    startup: () =>
-      log('INFO', 'SYSTEM', '🚀 AkhAI Engine Starting...'),
+    startup: () => log('INFO', 'SYSTEM', '🚀 AkhAI Engine Starting...'),
 
-    ready: () =>
-      log('SUCCESS', 'SYSTEM', '✅ AkhAI Engine Ready'),
+    ready: () => log('SUCCESS', 'SYSTEM', '✅ AkhAI Engine Ready'),
 
-    error: (error: string) =>
-      log('ERROR', 'SYSTEM', `System error: ${error}`),
-  }
-}
+    error: (error: string) => log('ERROR', 'SYSTEM', `System error: ${error}`),
+  },
+};
 
 // Get recent logs
 export function getLogs(count: number = 100, level?: LogLevel, component?: string): LogEntry[] {
-  let filtered = [...logs]
-  if (level) filtered = filtered.filter(l => l.level === level)
-  if (component) filtered = filtered.filter(l => l.component.includes(component))
-  return filtered.slice(-count)
+  let filtered = [...logs];
+  if (level) filtered = filtered.filter((l) => l.level === level);
+  if (component) filtered = filtered.filter((l) => l.component.includes(component));
+  return filtered.slice(-count);
 }
 
 // Clear logs
 export function clearLogs() {
-  logs.length = 0
-  log('INFO', 'SYSTEM', 'Logs cleared')
+  logs.length = 0;
+  log('INFO', 'SYSTEM', 'Logs cleared');
 }
 
 // Export for API
@@ -176,9 +191,9 @@ export function getLogsForAPI() {
     total: logs.length,
     logs: logs.slice(-100).reverse(),
     summary: {
-      errors: logs.filter(l => l.level === 'ERROR').length,
-      warnings: logs.filter(l => l.level === 'WARN').length,
-      guardTriggers: logs.filter(l => l.component.includes('GUARD') && l.level === 'WARN').length,
-    }
-  }
+      errors: logs.filter((l) => l.level === 'ERROR').length,
+      warnings: logs.filter((l) => l.level === 'WARN').length,
+      guardTriggers: logs.filter((l) => l.component.includes('GUARD') && l.level === 'WARN').length,
+    },
+  };
 }

@@ -18,9 +18,9 @@ export default function ExplorePage() {
   useEffect(() => {
     // Fetch stats from API
     fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => setStats(data))
-      .catch(err => console.error('Failed to fetch stats:', err));
+      .then((res) => res.json())
+      .then((data) => setStats(data))
+      .catch((err) => console.error('Failed to fetch stats:', err));
   }, []);
 
   const handleMethodologyClick = (methodology: string) => {
@@ -31,9 +31,10 @@ export default function ExplorePage() {
   const cards: BentoCard[] = [
     // LARGE CARD: Flash (GTP)
     {
-      id: 'gtp',
+      id: 'tot',
       title: 'Flash',
-      description: 'Parallel Multi-AI Consensus - Broadcasts to 4 AI advisors simultaneously, merges insights in real-time',
+      description:
+        'Tree of Thoughts — Yao et al., NeurIPS 2023, explores multiple reasoning branches, evaluates and prunes',
       size: 'large',
       gradient: 'from-gray-800 via-gray-700 to-gray-600',
       badge: '~25s',
@@ -44,14 +45,15 @@ export default function ExplorePage() {
         { label: 'Use Case', value: 'Comparisons' },
         { label: 'Advisors', value: '4 Parallel' },
       ],
-      onClick: () => handleMethodologyClick('gtp'),
+      onClick: () => handleMethodologyClick('tot'),
     },
 
     // MEDIUM CARD: Auto
     {
       id: 'auto',
       title: 'Auto',
-      description: 'Smart Selection - Analyzes query complexity and automatically picks the optimal methodology',
+      description:
+        'Smart Selection - Analyzes query complexity and automatically picks the optimal methodology',
       size: 'medium',
       gradient: 'from-gray-700 via-gray-600 to-gray-500',
       badge: 'Adaptive',
@@ -66,7 +68,8 @@ export default function ExplorePage() {
     {
       id: 'direct',
       title: 'Direct',
-      description: 'Instant Answers - Single AI response for simple factual questions and quick lookups',
+      description:
+        'Instant Answers - Single AI response for simple factual questions and quick lookups',
       size: 'medium',
       gradient: 'from-gray-600 via-gray-700 to-gray-800',
       badge: '~5s',
@@ -82,7 +85,8 @@ export default function ExplorePage() {
     {
       id: 'cot',
       title: 'Chain of Thought',
-      description: 'Step-by-Step Reasoning - Analyzes problem → reasons through steps → synthesizes final answer',
+      description:
+        'Step-by-Step Reasoning - Analyzes problem → reasons through steps → synthesizes final answer',
       size: 'small',
       gradient: 'from-gray-800 via-gray-700 to-gray-600',
       badge: '~30s',
@@ -94,7 +98,8 @@ export default function ExplorePage() {
     {
       id: 'aot',
       title: 'Atom of Thoughts',
-      description: 'Decompose & Solve - Breaks complex queries into atomic sub-questions, solves each, then contracts back',
+      description:
+        'Decompose & Solve - Breaks complex queries into atomic sub-questions, solves each, then contracts back',
       size: 'small',
       gradient: 'from-gray-700 via-gray-600 to-gray-500',
       badge: '~60s',
@@ -137,7 +142,10 @@ export default function ExplorePage() {
       gradient: 'from-gray-700 via-gray-800 to-gray-900',
       stats: [
         { label: 'Total Cost', value: `$${stats?.totalCost?.toFixed(2) || '0.00'}` },
-        { label: 'Tokens', value: stats?.totalTokens ? (stats.totalTokens / 1000).toFixed(0) + 'K' : '0' },
+        {
+          label: 'Tokens',
+          value: stats?.totalTokens ? (stats.totalTokens / 1000).toFixed(0) + 'K' : '0',
+        },
       ],
       onClick: () => router.push('/dashboard'),
     },
@@ -181,13 +189,19 @@ export default function ExplorePage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 dark:text-relic-silver">Powered by</span>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Anthropic</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    Anthropic
+                  </span>
                   <span className="text-gray-400 dark:text-gray-600">•</span>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">DeepSeek</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    DeepSeek
+                  </span>
                   <span className="text-gray-400 dark:text-gray-600">•</span>
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Grok</span>
                   <span className="text-gray-400 dark:text-gray-600">•</span>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Mistral</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    Mistral
+                  </span>
                 </div>
               </div>
             </div>

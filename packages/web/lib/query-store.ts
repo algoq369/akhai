@@ -27,8 +27,8 @@ export interface QueryEvent {
     | 'sub-agent-response'
     | 'complete'
     | 'error'
-    // GTP-specific events
-    | 'gtp-analysis'
+    // TOT-specific events
+    | 'tot-analysis'
     | 'flash-prepare'
     | 'flash-broadcast'
     | 'advisor-failed'
@@ -45,7 +45,7 @@ export interface QueryEvent {
 
 export interface QueryData {
   query: string;
-  flow: 'A' | 'B' | 'direct' | 'gtp' | 'cot' | 'aot' | 'auto';
+  flow: 'A' | 'B' | 'direct' | 'tot' | 'cot' | 'aot' | 'auto';
   status: 'pending' | 'processing' | 'complete' | 'error';
   result?: any;
   events: QueryEvent[];

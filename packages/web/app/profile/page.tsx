@@ -831,7 +831,7 @@ export default function ProfilePage() {
                 <div className="flex items-start gap-4">
                   <span className="text-relic-silver text-[9px] w-20 pt-0.5">default</span>
                   <div className="flex flex-wrap gap-2">
-                    {(['auto', 'direct', 'cod', 'sc', 'react', 'pas', 'gtp'] as const).map(
+                    {(['auto', 'direct', 'cod', 'sc', 'react', 'pas', 'tot'] as const).map(
                       (method) => (
                         <span
                           key={method}

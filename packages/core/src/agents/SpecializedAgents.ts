@@ -9,7 +9,7 @@ export interface AgentConfig {
   name: string;
   description: string;
   systemPrompt: string;
-  preferredMethodology: 'direct' | 'cot' | 'aot' | 'gtp' | 'auto';
+  preferredMethodology: 'direct' | 'cot' | 'aot' | 'tot' | 'auto';
   outputFormat?: 'prose' | 'structured' | 'code' | 'list';
   maxTokens?: number;
 }
@@ -83,7 +83,7 @@ export const CODING_AGENT: AgentConfig = {
 export const ANALYSIS_AGENT: AgentConfig = {
   name: 'AnalysisAgent',
   description: 'Data and business analysis with structured insights',
-  preferredMethodology: 'gtp',
+  preferredMethodology: 'tot',
   outputFormat: 'structured',
   systemPrompt: `You are an expert analyst specializing in data-driven insights. Your task is to analyze information and provide actionable recommendations.
 
@@ -148,7 +148,7 @@ export const WRITING_AGENT: AgentConfig = {
 export const STRATEGY_AGENT: AgentConfig = {
   name: 'StrategyAgent',
   description: 'Business strategy, planning, and decision frameworks',
-  preferredMethodology: 'gtp',
+  preferredMethodology: 'tot',
   outputFormat: 'structured',
   systemPrompt: `You are a strategic advisor with expertise in business strategy and decision-making. Your task is to provide strategic guidance and frameworks.
 

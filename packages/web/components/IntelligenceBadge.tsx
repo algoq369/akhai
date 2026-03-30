@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Message } from '@/lib/chat-store'
+import { useState } from 'react';
+import { Message } from '@/lib/chat-store';
 
 /**
  * INTELLIGENCE BADGE COMPONENT
@@ -15,10 +15,10 @@ import { Message } from '@/lib/chat-store'
  */
 
 interface IntelligenceBadgeProps {
-  intelligence: Message['intelligence']
-  methodology?: string
-  selectionReason?: string
-  className?: string
+  intelligence: Message['intelligence'];
+  methodology?: string;
+  selectionReason?: string;
+  className?: string;
 }
 
 // Lens symbols for display - 7 Hermetic Lenses
@@ -30,49 +30,42 @@ const LENS_SYMBOLS: Record<string, { symbol: string; color: string; name: string
   orphic: { symbol: '♪', color: '#facc15', name: 'Orphic (musical/harmonic)' },
   prophetic: { symbol: '◈', color: '#60a5fa', name: 'Prophetic (visionary)' },
   initiatic: { symbol: '△', color: '#f87171', name: 'Initiatic (transformative)' },
-}
+};
 
 // Methodology display names
 const METHODOLOGY_NAMES: Record<string, string> = {
   direct: 'Direct',
   cod: 'Chain of Draft',
-  bot: 'Buffer of Thoughts',
+  sc: 'Self-Consistency',
   react: 'ReAct',
-  pot: 'Program of Thought',
-  gtp: 'Generative Thoughts',
+  pas: 'Plan-and-Solve',
+  tot: 'Tree of Thoughts',
   auto: 'Auto',
-}
+};
 
 // Guard status colors
 const GUARD_COLORS = {
   proceed: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
   warn: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30' },
   block: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' },
-}
+};
 
 export function IntelligenceBadge({
   intelligence,
   methodology,
   selectionReason,
-  className = ''
+  className = '',
 }: IntelligenceBadgeProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  if (!intelligence) return null
+  if (!intelligence) return null;
 
-  const {
-    analysis,
-    methodologySelection,
-    guard,
-    instinct,
-    processing,
-    timing,
-  } = intelligence
+  const { analysis, methodologySelection, guard, instinct, processing, timing } = intelligence;
 
-  const guardStatus = guard?.recommendation || 'proceed'
-  const guardColors = GUARD_COLORS[guardStatus]
-  const confidence = methodologySelection?.confidence ?? 0
-  const selectedMethod = methodologySelection?.selected || methodology || 'direct'
+  const guardStatus = guard?.recommendation || 'proceed';
+  const guardColors = GUARD_COLORS[guardStatus];
+  const confidence = methodologySelection?.confidence ?? 0;
+  const selectedMethod = methodologySelection?.selected || methodology || 'direct';
 
   return (
     <div className={`font-mono text-[10px] ${className}`}>
@@ -84,9 +77,7 @@ export function IntelligenceBadge({
             {METHODOLOGY_NAMES[selectedMethod] || selectedMethod}
           </span>
           <span className="text-relic-mist dark:text-relic-slate">|</span>
-          <span className="text-relic-silver">
-            {Math.round(confidence * 100)}%
-          </span>
+          <span className="text-relic-silver">{Math.round(confidence * 100)}%</span>
         </div>
 
         {/* Guard Status Indicator */}
@@ -95,20 +86,29 @@ export function IntelligenceBadge({
             guardStatus === 'proceed'
               ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/30'
               : guardStatus === 'warn'
-              ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/30'
-              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/30'
+                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/30'
+                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/30'
           }`}
           title={`Guard: ${guardStatus}${guard?.reasons?.length ? ` - ${guard.reasons.join(', ')}` : ''}`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${
-            guardStatus === 'proceed' ? 'bg-green-500' :
-            guardStatus === 'warn' ? 'bg-amber-500' : 'bg-red-500'
-          }`} />
-          <span className={`${
-            guardStatus === 'proceed' ? 'text-green-700 dark:text-green-400' :
-            guardStatus === 'warn' ? 'text-amber-700 dark:text-amber-400' :
-            'text-red-700 dark:text-red-400'
-          }`}>
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              guardStatus === 'proceed'
+                ? 'bg-green-500'
+                : guardStatus === 'warn'
+                  ? 'bg-amber-500'
+                  : 'bg-red-500'
+            }`}
+          />
+          <span
+            className={`${
+              guardStatus === 'proceed'
+                ? 'text-green-700 dark:text-green-400'
+                : guardStatus === 'warn'
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-red-700 dark:text-red-400'
+            }`}
+          >
             {guardStatus === 'proceed' ? '✓' : guardStatus === 'warn' ? '⚠' : '✕'}
           </span>
         </div>
@@ -152,27 +152,21 @@ export function IntelligenceBadge({
       {/* Active Lenses - Inline */}
       {instinct?.enabled && instinct.activeLenses.length > 0 && (
         <div className="flex flex-wrap items-center gap-1 mt-1.5">
-          {instinct.activeLenses.map(lensId => {
-            const lens = LENS_SYMBOLS[lensId]
-            if (!lens) return null
+          {instinct.activeLenses.map((lensId) => {
+            const lens = LENS_SYMBOLS[lensId];
+            if (!lens) return null;
             return (
-              <span
-                key={lensId}
-                className="text-[9px] text-relic-silver"
-                title={lens.name}
-              >
+              <span key={lensId} className="text-[9px] text-relic-silver" title={lens.name}>
                 {lens.symbol}
               </span>
-            )
+            );
           })}
         </div>
       )}
 
       {/* Selection Reason (if provided) */}
       {selectionReason && (
-        <div className="text-relic-mist text-[9px] mt-1 italic">
-          {selectionReason}
-        </div>
+        <div className="text-relic-mist text-[9px] mt-1 italic">{selectionReason}</div>
       )}
 
       {/* Expanded Details Panel */}
@@ -187,11 +181,15 @@ export function IntelligenceBadge({
               <div className="grid grid-cols-2 gap-2 text-[10px]">
                 <div>
                   <span className="text-relic-silver">Type:</span>{' '}
-                  <span className="text-relic-slate dark:text-relic-ghost">{analysis.queryType}</span>
+                  <span className="text-relic-slate dark:text-relic-ghost">
+                    {analysis.queryType}
+                  </span>
                 </div>
                 <div>
                   <span className="text-relic-silver">Complexity:</span>{' '}
-                  <span className="text-relic-slate dark:text-relic-ghost">{Math.round(analysis.complexity * 100)}%</span>
+                  <span className="text-relic-slate dark:text-relic-ghost">
+                    {Math.round(analysis.complexity * 100)}%
+                  </span>
                 </div>
               </div>
               {analysis.keywords?.length > 0 && (
@@ -243,19 +241,19 @@ export function IntelligenceBadge({
                 Guard Assessment
               </div>
               <div className="flex items-center gap-2 text-[10px]">
-                <span className={`px-1.5 py-0.5 rounded ${
-                  guardStatus === 'proceed'
-                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                    : guardStatus === 'warn'
-                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
-                    : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                }`}>
+                <span
+                  className={`px-1.5 py-0.5 rounded ${
+                    guardStatus === 'proceed'
+                      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                      : guardStatus === 'warn'
+                        ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
+                        : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                  }`}
+                >
                   {guardStatus.toUpperCase()}
                 </span>
                 {guard.reasons?.length > 0 && (
-                  <span className="text-relic-silver">
-                    {guard.reasons.join(' • ')}
-                  </span>
+                  <span className="text-relic-silver">{guard.reasons.join(' • ')}</span>
                 )}
               </div>
             </div>
@@ -274,12 +272,16 @@ export function IntelligenceBadge({
                 </div>
                 <div>
                   <span className="text-relic-silver">Think:</span>{' '}
-                  <span className="text-relic-slate dark:text-relic-ghost">{processing.extendedThinkingBudget.toLocaleString()} tokens</span>
+                  <span className="text-relic-slate dark:text-relic-ghost">
+                    {processing.extendedThinkingBudget.toLocaleString()} tokens
+                  </span>
                 </div>
                 {timing && (
                   <div>
                     <span className="text-relic-silver">Fusion:</span>{' '}
-                    <span className="text-relic-slate dark:text-relic-ghost">{timing.fusionMs}ms</span>
+                    <span className="text-relic-slate dark:text-relic-ghost">
+                      {timing.fusionMs}ms
+                    </span>
                   </div>
                 )}
               </div>
@@ -288,7 +290,7 @@ export function IntelligenceBadge({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default IntelligenceBadge
+export default IntelligenceBadge;
