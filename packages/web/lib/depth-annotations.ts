@@ -264,10 +264,43 @@ const DETECTION_PATTERNS: DetectionPattern[] = [
       }
 
       // Generic fallback for recognized multi-word terms (proper nouns, technical phrases)
-      // Only for terms ≥2 words that matched the capitalized/technical regexes
+      // Extract surrounding sentence for contextual annotation
       else if (term.split(/\s+/).length >= 2 && term.length >= 8) {
-        insight = `${term} — Click to explore this concept in depth and discover connections to related topics`;
-        expandQuery = `Tell me more about ${term}`;
+        // Find the sentence containing this term for context
+        const termPos = context.indexOf(term);
+        if (termPos >= 0) {
+          const beforeTerm = context.substring(Math.max(0, termPos - 200), termPos);
+          const afterTerm = context.substring(
+            termPos + term.length,
+            Math.min(context.length, termPos + term.length + 200)
+          );
+          const sentStart = Math.max(
+            beforeTerm.lastIndexOf('.'),
+            beforeTerm.lastIndexOf('!'),
+            beforeTerm.lastIndexOf('?'),
+            beforeTerm.lastIndexOf('\n')
+          );
+          const sentEnd = Math.min(
+            afterTerm.indexOf('.') >= 0 ? afterTerm.indexOf('.') : 999,
+            afterTerm.indexOf('!') >= 0 ? afterTerm.indexOf('!') : 999,
+            afterTerm.indexOf('?') >= 0 ? afterTerm.indexOf('?') : 999
+          );
+          const sentBefore =
+            sentStart >= 0 ? beforeTerm.substring(sentStart + 1).trim() : beforeTerm.trim();
+          const sentAfter =
+            sentEnd < 999
+              ? afterTerm.substring(0, sentEnd + 1).trim()
+              : afterTerm.substring(0, 120).trim();
+          const fullSentence = `${sentBefore}${term}${sentAfter}`.replace(/[#*`\-]/g, '').trim();
+          if (fullSentence.length > 30) {
+            insight = `${term} · ${fullSentence.length > 200 ? fullSentence.substring(0, 197) + '...' : fullSentence}`;
+          } else {
+            insight = `${term} — key concept in this analysis · Related to the broader discussion of ${context.split(/[.!?]/)[0]?.trim().substring(0, 80) || 'this topic'}`;
+          }
+        } else {
+          insight = `${term} — key concept referenced in this response`;
+        }
+        expandQuery = `Explain ${term} in detail with examples and connections`;
       } else {
         return null; // Single short word — skip
       }
