@@ -12,7 +12,7 @@
  * Phase 2: AI-Powered Classification with Opus 4.5
  */
 
-export type Methodology = 'direct' | 'cod' | 'bot' | 'react' | 'pot' | 'gtp' | 'auto'
+export type Methodology = 'direct' | 'cod' | 'sc' | 'react' | 'pot' | 'gtp' | 'auto';
 
 export interface QueryClassification {
   isSimple: boolean;
@@ -21,11 +21,11 @@ export interface QueryClassification {
 }
 
 export interface AIQueryClassification {
-  methodology: Methodology
-  confidence: number
-  reasoning: string
-  complexity: number // 1-10 scale
-  multiDimensional: boolean
+  methodology: Methodology;
+  confidence: number;
+  reasoning: string;
+  complexity: number; // 1-10 scale
+  multiDimensional: boolean;
 }
 
 /**
@@ -43,7 +43,7 @@ export function classifyQuery(query: string): QueryClassification {
     /\s+(price|cost|value)$/,
   ];
 
-  if (pricePatterns.some(pattern => pattern.test(lowerQuery))) {
+  if (pricePatterns.some((pattern) => pattern.test(lowerQuery))) {
     return {
       isSimple: true,
       reason: 'Price/cost query detected',
@@ -59,7 +59,7 @@ export function classifyQuery(query: string): QueryClassification {
     /^tell\s+me\s+(about|what)\s+/,
   ];
 
-  if (definitionPatterns.some(pattern => pattern.test(lowerQuery))) {
+  if (definitionPatterns.some((pattern) => pattern.test(lowerQuery))) {
     // If it's short (< 5 words), it's simple
     if (wordCount < 5) {
       return {
@@ -72,12 +72,22 @@ export function classifyQuery(query: string): QueryClassification {
 
   // Pattern 3: Comparison queries → NOT simple, use GTP
   const comparisonKeywords = [
-    'vs', 'versus', 'compare', 'comparison', 'difference', 'differences',
-    'better', 'worse', 'pros and cons', 'advantages', 'disadvantages',
-    'which is', 'which should',
+    'vs',
+    'versus',
+    'compare',
+    'comparison',
+    'difference',
+    'differences',
+    'better',
+    'worse',
+    'pros and cons',
+    'advantages',
+    'disadvantages',
+    'which is',
+    'which should',
   ];
 
-  if (comparisonKeywords.some(keyword => lowerQuery.includes(keyword))) {
+  if (comparisonKeywords.some((keyword) => lowerQuery.includes(keyword))) {
     return {
       isSimple: false,
       reason: 'Comparison detected - requires multiple perspectives',
@@ -87,12 +97,22 @@ export function classifyQuery(query: string): QueryClassification {
 
   // Pattern 4: Complex analysis queries → NOT simple
   const complexKeywords = [
-    'analyze', 'analysis', 'evaluate', 'assessment', 'review',
-    'strategy', 'recommend', 'should i', 'how to', 'best way',
-    'implementation', 'approach', 'solution',
+    'analyze',
+    'analysis',
+    'evaluate',
+    'assessment',
+    'review',
+    'strategy',
+    'recommend',
+    'should i',
+    'how to',
+    'best way',
+    'implementation',
+    'approach',
+    'solution',
   ];
 
-  if (complexKeywords.some(keyword => lowerQuery.includes(keyword))) {
+  if (complexKeywords.some((keyword) => lowerQuery.includes(keyword))) {
     return {
       isSimple: false,
       reason: 'Complex analysis required',
@@ -144,59 +164,60 @@ export function shouldUseDirect(query: string): boolean {
  * QueryIntent - Intent classification result (for tests compatibility)
  */
 export interface QueryIntent {
-  type: 'factual' | 'analytical' | 'creative' | 'procedural' | 'conversational'
-  confidence: number
-  reasoning: string
-  complexity: number
-  requiresTools: boolean
-  suggestedMethodology: Methodology
+  type: 'factual' | 'analytical' | 'creative' | 'procedural' | 'conversational';
+  confidence: number;
+  reasoning: string;
+  complexity: number;
+  requiresTools: boolean;
+  suggestedMethodology: Methodology;
 }
 
 /**
  * classifyQueryIntent - Classify query intent (test-compatible API)
- * 
+ *
  * @param query - User's input question
  * @returns QueryIntent with type, confidence, reasoning, complexity
  */
 export function classifyQueryIntent(query: string): QueryIntent {
-  const basic = classifyQuery(query)
-  const queryLower = query.toLowerCase()
-  const wordCount = query.split(/\s+/).length
-  
+  const basic = classifyQuery(query);
+  const queryLower = query.toLowerCase();
+  const wordCount = query.split(/\s+/).length;
+
   // Determine query type
-  let type: QueryIntent['type'] = 'factual'
+  let type: QueryIntent['type'] = 'factual';
   if (/write|create|generate|compose|imagine|story|poem/i.test(query)) {
-    type = 'creative'
+    type = 'creative';
   } else if (/why|how does|implication|differ|analyze|evaluate/i.test(query)) {
-    type = 'analytical'
+    type = 'analytical';
   } else if (/how (do|to|can)|step|guide|tutorial|install/i.test(query)) {
-    type = 'procedural'
+    type = 'procedural';
   } else if (/hello|hi|hey|help|think|you|your/i.test(query) && wordCount < 10) {
-    type = 'conversational'
+    type = 'conversational';
   }
-  
+
   // Calculate complexity (0-1 scale based on word count and keywords)
-  let complexity = Math.min(1, wordCount / 50)
+  let complexity = Math.min(1, wordCount / 50);
   if (/comprehensive|detailed|in-depth|complex|multi/i.test(query)) {
-    complexity = Math.min(1, complexity + 0.3)
+    complexity = Math.min(1, complexity + 0.3);
   }
-  
+
   // Determine if tools required
-  const requiresTools = /calculate|compute|current|latest|price|search|find|lookup/i.test(query)
-  
+  const requiresTools = /calculate|compute|current|latest|price|search|find|lookup/i.test(query);
+
   // Calculate confidence
-  let confidence = 0.7
-  if (basic.isSimple) confidence = 0.9
-  if (wordCount < 5) confidence = 0.95
-  if (wordCount > 30) confidence = 0.6
-  
+  let confidence = 0.7;
+  if (basic.isSimple) confidence = 0.9;
+  if (wordCount < 5) confidence = 0.95;
+  if (wordCount > 30) confidence = 0.6;
+
   // Map methodology
-  let suggestedMethodology: Methodology = basic.suggestedMethodology === 'cot' 
-    ? 'cod' 
-    : basic.suggestedMethodology === 'aot' 
-      ? 'bot' 
-      : (basic.suggestedMethodology as Methodology)
-  
+  let suggestedMethodology: Methodology =
+    basic.suggestedMethodology === 'cot'
+      ? 'cod'
+      : basic.suggestedMethodology === 'aot'
+        ? 'sc'
+        : (basic.suggestedMethodology as Methodology);
+
   return {
     type,
     confidence,
@@ -204,7 +225,7 @@ export function classifyQueryIntent(query: string): QueryIntent {
     complexity,
     requiresTools,
     suggestedMethodology,
-  }
+  };
 }
 
 export async function classifyQueryWithAI(query: string): Promise<AIQueryClassification> {
@@ -246,22 +267,22 @@ Return ONLY valid JSON (no markdown):
           },
         ],
       }),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status}`)
+      throw new Error(`Anthropic API error: ${response.status}`);
     }
 
-    const data = await response.json()
-    const content = data.content?.[0]?.text || '{}'
+    const data = await response.json();
+    const content = data.content?.[0]?.text || '{}';
 
     // Parse JSON from response (handle potential markdown wrapping)
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('No valid JSON found in response')
+      throw new Error('No valid JSON found in response');
     }
 
-    const result = JSON.parse(jsonMatch[0])
+    const result = JSON.parse(jsonMatch[0]);
 
     // Validate and normalize
     return {
@@ -270,18 +291,18 @@ Return ONLY valid JSON (no markdown):
       reasoning: result.reasoning || 'AI classification',
       complexity: Math.max(1, Math.min(10, result.complexity || 5)),
       multiDimensional: Boolean(result.multiDimensional),
-    }
+    };
   } catch (error) {
-    console.error('[AI Classifier] Error:', error)
+    console.error('[AI Classifier] Error:', error);
 
     // Fallback to regex-based classification
-    const fallback = classifyQuery(query)
+    const fallback = classifyQuery(query);
     return {
       methodology: fallback.suggestedMethodology === 'gtp' ? 'gtp' : 'direct',
       confidence: 0.6,
       reasoning: `Fallback: ${fallback.reason}`,
       complexity: query.split(' ').length > 10 ? 7 : 3,
       multiDimensional: fallback.suggestedMethodology === 'gtp',
-    }
+    };
   }
 }

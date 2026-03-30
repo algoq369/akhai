@@ -36,13 +36,14 @@ Show your decomposition and synthesis explicitly.
 ---
 USER QUERY: `,
 
-  bot: `[BUFFER OF THOUGHTS MODE]
-Apply structured template analysis:
-1. SELECT TEMPLATE: Choose from Analytical, Procedural, Comparative, Investigative, or Creative
-2. APPLY: Fill in template sections systematically
-3. SYNTHESIZE: Build conclusion from structured analysis
+  sc: `[SELF-CONSISTENCY MODE]
+Sample multiple reasoning paths and take majority vote:
+1. PATH 1: Reason through the problem one way
+2. PATH 2: Reason through the problem a different way
+3. PATH 3: Reason through the problem a third way
+4. CONSENSUS: Take the majority answer across paths
 
-Show your template selection and application.
+Show all reasoning paths explicitly.
 ---
 USER QUERY: `,
 };
@@ -444,20 +445,20 @@ Respond directly and accurately. Use conversation context when relevant.`,
         slot2Family
       );
       result.methodology = 'aot';
-    } else if (flowType === 'bot') {
-      // Buffer of Thoughts (BoT): Template-based structured analysis
-      // Uses distinct instruction prefix to enforce template selection
-      console.log(`[Query Route] Using Buffer of Thoughts methodology (Flow B + BoT instructions)`);
-      const botQuery = METHODOLOGY_INSTRUCTIONS.bot + queryData.query;
+    } else if (flowType === 'sc') {
+      // Self-Consistency (SC): Multi-path majority voting
+      // Uses distinct instruction prefix to enforce multi-path reasoning
+      console.log(`[Query Route] Using Self-Consistency methodology (Flow B + SC instructions)`);
+      const scQuery = METHODOLOGY_INSTRUCTIONS.sc + queryData.query;
       result = await executeFlowBWithEvents(
         queryId,
-        botQuery,
+        scQuery,
         'ResearchAgent',
         motherBaseFamily,
         slot1Family,
         slot2Family
       );
-      result.methodology = 'bot';
+      result.methodology = 'sc';
     } else if (flowType === 'auto') {
       // Auto: Smart methodology selection based on query analysis
       // Default to Flow A for now

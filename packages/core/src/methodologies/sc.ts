@@ -365,7 +365,7 @@ export async function executeBufferOfThoughts(
 
   return {
     answer: finalAnswer,
-    methodology: 'bot',
+    methodology: 'sc',
     thoughtBuffer: buffer.getThoughts(),
     metaBuffers: buffer.getMetaBuffers(),
     provider: providerFamily,

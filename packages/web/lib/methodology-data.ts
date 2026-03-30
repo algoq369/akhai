@@ -58,10 +58,10 @@ export const METHODOLOGIES: MethodologyItem[] = [
     savings: '92%',
   },
   {
-    id: 'bot',
+    id: 'sc',
     symbol: '◇',
-    name: 'bot',
-    tooltip: 'Template reasoning',
+    name: 'sc',
+    tooltip: 'Self-Consistency voting',
     tokens: '~600',
     latency: '~12s',
     cost: '$0.018',
@@ -189,12 +189,12 @@ export const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     },
   },
   {
-    id: 'bot',
+    id: 'sc',
     symbol: '◇',
-    name: 'bot',
-    fullName: 'Buffer of Thoughts',
+    name: 'sc',
+    fullName: 'Self-Consistency',
     description:
-      'Maintains a context buffer of key facts, constraints, and requirements while reasoning step-by-step and validating against the buffer.',
+      'Wang et al., ICLR 2023, samples multiple reasoning paths and takes majority vote for robust answers.',
     howItWorks: [
       'Extract and buffer key facts, constraints, requirements',
       'Build reasoning chain referencing buffered context',

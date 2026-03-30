@@ -6,7 +6,7 @@
  */
 
 import { executeChainOfDraft } from './cod.js';
-import { executeBufferOfThoughts } from './bot.js';
+import { executeBufferOfThoughts } from './sc.js';
 import { executeReAct } from './react.js';
 import { executeProgramOfThought } from './pot.js';
 import { GTPExecutor } from './gtp/index.js';
@@ -71,20 +71,20 @@ export const METHODOLOGY_REGISTRY: Record<CoreMethodology, MethodologyEntry> = {
     notes: 'Standalone implementation in cod.ts',
   },
 
-  bot: {
+  sc: {
     execute: executeBufferOfThoughts,
     info: {
-      name: 'Buffer of Thoughts',
+      name: 'Self-Consistency',
       tier: 2,
       icon: '🧠',
-      description: 'Template-based analysis (88% cheaper than ToT)',
+      description: 'Wang et al., ICLR 2023, samples multiple reasoning paths and takes majority vote',
       tokenMultiplier: 0.12,
       avgLatencyMs: 18000,
       costPer1K: 0.006,
       bestFor: ['complex', 'analysis', 'comparison', 'planning'],
     },
     status: 'implemented',
-    notes: 'Standalone implementation in bot.ts with thought buffering and distillation',
+    notes: 'Standalone implementation in sc.ts with thought buffering and distillation',
   },
 
   react: {

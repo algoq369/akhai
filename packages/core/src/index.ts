@@ -92,13 +92,13 @@ export {
 } from './methodologies/cod.js';
 
 // ============================================================================
-// BUFFER OF THOUGHTS (BOT) - Template-Based Reasoning
+// SELF-CONSISTENCY (SC) - Wang et al., ICLR 2023
 // ============================================================================
 
 export {
   executeBufferOfThoughts,
   ThoughtBuffer,
-} from './methodologies/bot.js';
+} from './methodologies/sc.js';
 
 // ============================================================================
 // REACT - Reasoning + Acting (Tool-Augmented)

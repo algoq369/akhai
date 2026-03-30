@@ -47,7 +47,7 @@ const METHODOLOGIES = {
   auto: { symbol: '◎', name: 'auto', color: chalk.gray, desc: 'Smart routing' },
   direct: { symbol: '→', name: 'direct', color: chalk.red, desc: 'Single AI instant' },
   cod: { symbol: '⋯', name: 'cod', color: chalk.hex('#f97316'), desc: 'Code optimized' },
-  bot: { symbol: '◇', name: 'bot', color: chalk.yellow, desc: 'Conversational' },
+  sc: { symbol: '◇', name: 'sc', color: chalk.yellow, desc: 'Self-Consistency' },
   react: { symbol: '⟳', name: 'react', color: chalk.green, desc: 'Multi-step reasoning' },
   pot: { symbol: '△', name: 'pot', color: chalk.blue, desc: 'Potential exploration' },
   gtp: { symbol: '◯', name: 'gtp', color: chalk.magenta, desc: 'Multi-AI consensus' },

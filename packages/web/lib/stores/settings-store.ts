@@ -27,7 +27,7 @@ export interface AppearanceSettings {
 }
 
 export interface MethodologySettings {
-  defaultMethod: 'auto' | 'direct' | 'cod' | 'bot' | 'react' | 'pot' | 'gtp';
+  defaultMethod: 'auto' | 'direct' | 'cod' | 'sc' | 'react' | 'pot' | 'gtp';
   autoRoute: boolean;
   showIndicator: boolean;
 }
@@ -125,7 +125,15 @@ const defaultSettings: Settings = {
   instinctMode: false,
   instinctConfig: {
     depth: 'deep',
-    activeLenses: ['exoteric', 'esoteric', 'gnostic', 'hermetic', 'kabbalistic', 'alchemical', 'prophetic'],
+    activeLenses: [
+      'exoteric',
+      'esoteric',
+      'gnostic',
+      'hermetic',
+      'kabbalistic',
+      'alchemical',
+      'prophetic',
+    ],
     includeLayers: true,
     includeYechidah: true,
   },
@@ -341,12 +349,12 @@ export const useSettingsStore = create<SettingsStore>()(
             ...defaultSettings.consensus,
             ...persistedState?.settings?.consensus,
           },
-        }
+        };
 
         return {
           ...currentState,
           settings: mergedSettings,
-        }
+        };
       },
     }
   )

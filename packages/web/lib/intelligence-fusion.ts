@@ -62,7 +62,7 @@ const queryAnalysisCache = new LRUCache<string, QueryAnalysis>(100);
 // TYPES
 // ============================================================
 
-export type CoreMethodology = 'direct' | 'cod' | 'bot' | 'react' | 'pot' | 'gtp' | 'auto';
+export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pot' | 'gtp' | 'auto';
 
 export interface QueryAnalysis {
   complexity: number; // 0-1 scale
@@ -564,30 +564,30 @@ export function selectMethodology(
   }
   scores.push({ methodology: 'cod', score: Math.min(1, codScore), reasons: codReasons });
 
-  // Score BOT (Buffer of Thoughts)
-  let botScore = 0;
-  const botReasons: string[] = [];
+  // Score SC (Self-Consistency)
+  let scScore = 0;
+  const scReasons: string[] = [];
   if (analysis.queryType === 'analytical' || analysis.queryType === 'planning') {
-    botScore += 0.8;
-    botReasons.push('Analytical/Planning query');
+    scScore += 0.8;
+    scReasons.push('Analytical/Planning query');
   }
   if (analysis.queryType === 'comparative') {
-    botScore += 0.7;
-    botReasons.push('Comparative query');
+    scScore += 0.7;
+    scReasons.push('Comparative query');
   }
   if (analysis.queryType === 'research') {
-    botScore += 0.6;
-    botReasons.push('Research query');
+    scScore += 0.6;
+    scReasons.push('Research query');
   }
   if (dominantLayers.includes(Layer.ENCODER)) {
-    botScore += 0.3;
-    botReasons.push('Encoder dominant');
+    scScore += 0.3;
+    scReasons.push('Encoder dominant');
   }
   if (dominantLayers.includes(Layer.ATTENTION)) {
-    botScore += 0.2;
-    botReasons.push('Attention dominant');
+    scScore += 0.2;
+    scReasons.push('Attention dominant');
   }
-  scores.push({ methodology: 'bot', score: Math.min(1, botScore), reasons: botReasons });
+  scores.push({ methodology: 'sc', score: Math.min(1, scScore), reasons: scReasons });
 
   // Score REACT
   let reactScore = 0;

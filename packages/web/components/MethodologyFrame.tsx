@@ -1,37 +1,100 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MethodologyFrameProps {
-  currentMethodology: string
-  onMethodologyChange: (methodId: string) => void
-  isSubmitting: boolean
-  inputRef?: React.RefObject<HTMLInputElement>
-  consoleOpen?: boolean
-  onConsoleToggle?: () => void
+  currentMethodology: string;
+  onMethodologyChange: (methodId: string) => void;
+  isSubmitting: boolean;
+  inputRef?: React.RefObject<HTMLInputElement>;
+  consoleOpen?: boolean;
+  onConsoleToggle?: () => void;
 }
 
 interface Methodology {
-  id: string
-  name: string
-  fullName: string
-  symbol: string
-  color: string
-  tokens: string
-  latency: string
-  cost: string
+  id: string;
+  name: string;
+  fullName: string;
+  symbol: string;
+  color: string;
+  tokens: string;
+  latency: string;
+  cost: string;
 }
 
 const METHODOLOGIES: Methodology[] = [
-  { id: 'auto', name: 'AUTO', fullName: 'Automatic', symbol: '◎', color: '#94a3b8', tokens: 'varies', latency: 'varies', cost: 'varies' },
-  { id: 'direct', name: 'DIR', fullName: 'Direct', symbol: '→', color: '#ef4444', tokens: '200-500', latency: '~2s', cost: '$0.006' },
-  { id: 'cod', name: 'COD', fullName: 'Chain of Draft', symbol: '⋯', color: '#f97316', tokens: '~600', latency: '~8s', cost: '$0.012' },
-  { id: 'bot', name: 'BOT', fullName: 'Bag of Thoughts', symbol: '◇', color: '#eab308', tokens: '~600', latency: '~12s', cost: '$0.018' },
-  { id: 'react', name: 'REACT', fullName: 'ReAct Agent', symbol: '⟳', color: '#22c55e', tokens: '2k-8k', latency: '~20s', cost: '$0.024' },
-  { id: 'pot', name: 'POT', fullName: 'Plan of Thought', symbol: '△', color: '#3b82f6', tokens: '3k-6k', latency: '~15s', cost: '$0.018' },
-  { id: 'gtp', name: 'GTP', fullName: 'Multi-AI Consensus', symbol: '◯', color: '#8b5cf6', tokens: '8k-15k', latency: '~30s', cost: '$0.042' },
-]
+  {
+    id: 'auto',
+    name: 'AUTO',
+    fullName: 'Automatic',
+    symbol: '◎',
+    color: '#94a3b8',
+    tokens: 'varies',
+    latency: 'varies',
+    cost: 'varies',
+  },
+  {
+    id: 'direct',
+    name: 'DIR',
+    fullName: 'Direct',
+    symbol: '→',
+    color: '#ef4444',
+    tokens: '200-500',
+    latency: '~2s',
+    cost: '$0.006',
+  },
+  {
+    id: 'cod',
+    name: 'COD',
+    fullName: 'Chain of Draft',
+    symbol: '⋯',
+    color: '#f97316',
+    tokens: '~600',
+    latency: '~8s',
+    cost: '$0.012',
+  },
+  {
+    id: 'sc',
+    name: 'SC',
+    fullName: 'Self-Consistency',
+    symbol: '◇',
+    color: '#eab308',
+    tokens: '~600',
+    latency: '~12s',
+    cost: '$0.018',
+  },
+  {
+    id: 'react',
+    name: 'REACT',
+    fullName: 'ReAct Agent',
+    symbol: '⟳',
+    color: '#22c55e',
+    tokens: '2k-8k',
+    latency: '~20s',
+    cost: '$0.024',
+  },
+  {
+    id: 'pot',
+    name: 'POT',
+    fullName: 'Plan of Thought',
+    symbol: '△',
+    color: '#3b82f6',
+    tokens: '3k-6k',
+    latency: '~15s',
+    cost: '$0.018',
+  },
+  {
+    id: 'gtp',
+    name: 'GTP',
+    fullName: 'Multi-AI Consensus',
+    symbol: '◯',
+    color: '#8b5cf6',
+    tokens: '8k-15k',
+    latency: '~30s',
+    cost: '$0.042',
+  },
+];
 
 export default function MethodologyFrame({
   currentMethodology,
@@ -40,19 +103,19 @@ export default function MethodologyFrame({
   consoleOpen = false,
   onConsoleToggle,
 }: MethodologyFrameProps) {
-  const [hoveredMethod, setHoveredMethod] = useState<string | null>(null)
-  const [hoveredConsole, setHoveredConsole] = useState(false)
-  
-  const currentMethod = METHODOLOGIES.find(m => m.id === currentMethodology) || METHODOLOGIES[0]
+  const [hoveredMethod, setHoveredMethod] = useState<string | null>(null);
+  const [hoveredConsole, setHoveredConsole] = useState(false);
+
+  const currentMethod = METHODOLOGIES.find((m) => m.id === currentMethodology) || METHODOLOGIES[0];
 
   return (
     <div className="flex flex-col items-center">
       {/* Methodology dots row */}
       <div className="flex items-center gap-2">
         {METHODOLOGIES.map((method) => {
-          const isSelected = currentMethodology === method.id
-          const isHovered = hoveredMethod === method.id
-          
+          const isSelected = currentMethodology === method.id;
+          const isHovered = hoveredMethod === method.id;
+
           return (
             <div
               key={method.id}
@@ -82,13 +145,10 @@ export default function MethodologyFrame({
                     className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none"
                   >
                     <div className="flex flex-col items-center">
-                      <span 
-                        className="text-[10px] font-medium"
-                        style={{ color: method.color }}
-                      >
+                      <span className="text-[10px] font-medium" style={{ color: method.color }}>
                         {method.fullName}
                       </span>
-                      <span 
+                      <span
                         className="text-[8px] font-mono opacity-60"
                         style={{ color: method.color }}
                       >
@@ -99,9 +159,9 @@ export default function MethodologyFrame({
                 )}
               </AnimatePresence>
             </div>
-          )
+          );
         })}
-        
+
         {/* Guard indicator */}
         <div className="flex items-center gap-1 ml-4">
           <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
@@ -122,7 +182,7 @@ export default function MethodologyFrame({
             className="text-[14px] transition-all duration-200"
             style={{
               color: consoleOpen ? '#a855f7' : '#cbd5e1',
-              filter: consoleOpen ? 'drop-shadow(0 0 4px #a855f7)' : 'none'
+              filter: consoleOpen ? 'drop-shadow(0 0 4px #a855f7)' : 'none',
             }}
             whileHover={{ scale: 1.3 }}
             whileTap={{ scale: 0.9 }}
@@ -140,14 +200,8 @@ export default function MethodologyFrame({
                 className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none"
               >
                 <div className="flex flex-col items-center">
-                  <span
-                    className="text-[10px] font-medium text-purple-400"
-                  >
-                    AI Config
-                  </span>
-                  <span
-                    className="text-[8px] font-mono opacity-60 text-purple-400"
-                  >
+                  <span className="text-[10px] font-medium text-purple-400">AI Config</span>
+                  <span className="text-[8px] font-mono opacity-60 text-purple-400">
                     tune your engine
                   </span>
                 </div>
@@ -172,13 +226,10 @@ export default function MethodologyFrame({
               <span className="text-sm" style={{ color: currentMethod.color }}>
                 {currentMethod.symbol}
               </span>
-              <span 
-                className="text-[11px] font-medium"
-                style={{ color: currentMethod.color }}
-              >
+              <span className="text-[11px] font-medium" style={{ color: currentMethod.color }}>
                 {currentMethod.fullName}
               </span>
-              <span 
+              <span
                 className="text-[9px] font-mono opacity-60 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800"
                 style={{ color: currentMethod.color }}
               >
@@ -225,7 +276,7 @@ export default function MethodologyFrame({
               >
                 {currentMethod.symbol}
               </motion.div>
-              
+
               <div className="w-32 h-0.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
@@ -235,7 +286,7 @@ export default function MethodologyFrame({
                   transition={{ duration: 1, ease: 'easeInOut' }}
                 />
               </div>
-              
+
               <span className="mt-3 text-[10px] font-mono uppercase tracking-wider text-slate-400">
                 {currentMethod.fullName} processing
               </span>
@@ -244,5 +295,5 @@ export default function MethodologyFrame({
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }

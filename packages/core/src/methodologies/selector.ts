@@ -7,7 +7,7 @@
  * Core 7 Methodologies (Research-Validated December 2025):
  * - direct: Simple factual queries (~2s, Tier 1)
  * - cod: Chain of Draft, 92% cheaper than CoT (~8s, Tier 2)
- * - bot: Buffer of Thoughts, 88% cheaper than ToT (~18s, Tier 2)
+ * - sc: Self-Consistency, Wang et al. ICLR 2023 (~18s, Tier 2)
  * - react: Tool-augmented reasoning (~20s, Tier 3)
  * - pot: Program of Thought, code-based computation (~12s, Tier 4)
  * - gtp: Multi-AI consensus with Self-Consistency (~30s, Tier 5)
@@ -20,7 +20,7 @@
  * Selection logic (priority order):
  * - direct: complexity < 0.3, factual queries
  * - cod: procedural, how-to, cost-efficient sequential reasoning
- * - bot: complex analysis, comparisons, planning (template-based)
+ * - sc: complex analysis, comparisons, planning (multi-path voting)
  * - react: requires external tools (search, calculate)
  * - pot: mathematical, financial, numerical tasks
  * - gtp: multi-perspective, critical decisions, verification
@@ -187,7 +187,7 @@ export class MethodologySelector {
       direct: 0,
       cot: 0,
       cod: 0,
-      bot: 0,
+      sc: 0,
       react: 0,
       pot: 0,
       aot: 0,
@@ -198,7 +198,7 @@ export class MethodologySelector {
       direct: [],
       cot: [],
       cod: [],
-      bot: [],
+      sc: [],
       react: [],
       pot: [],
       aot: [],
@@ -285,33 +285,33 @@ export class MethodologySelector {
     }
 
     // =======================
-    // BOT (Buffer of Thoughts) Scoring
+    // SC (Self-Consistency) Scoring
     // =======================
     // Best for: complex analysis, comparisons, planning
-    // BoT provides 88% cost savings vs ToT with template-based reasoning
+    // SC samples multiple reasoning paths and takes majority vote
     if (analysis.queryType === 'analytical' || analysis.queryType === 'planning') {
-      scores.bot += 0.8;
-      reasons.bot.push('Complex analysis/planning (template-optimized)');
+      scores.sc += 0.8;
+      reasons.sc.push('Complex analysis/planning (multi-path voting)');
     }
 
     if (analysis.queryType === 'comparative') {
-      scores.bot += 0.7;
-      reasons.bot.push('Systematic comparison analysis');
+      scores.sc += 0.7;
+      reasons.sc.push('Systematic comparison analysis');
     }
 
     if (analysis.complexity > 0.6 && analysis.requiresDecomposition) {
-      scores.bot += 0.7;
-      reasons.bot.push('Complex decomposition with templates');
+      scores.sc += 0.7;
+      reasons.sc.push('Complex decomposition with multiple paths');
     }
 
     if (analysis.queryType === 'research') {
-      scores.bot += 0.6;
-      reasons.bot.push('In-depth research with structured approach');
+      scores.sc += 0.6;
+      reasons.sc.push('In-depth research with structured approach');
     }
 
     if (analysis.requiresMultiplePerspectives && analysis.complexity > 0.5) {
-      scores.bot += 0.4;
-      reasons.bot.push('Multi-faceted analysis');
+      scores.sc += 0.4;
+      reasons.sc.push('Multi-faceted analysis');
     }
 
     // =======================

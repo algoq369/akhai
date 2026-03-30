@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
+import { useState } from 'react';
 
 interface ConversationDashboardProps {
-  currentMethodology: string
-  onMethodologyChange: (id: string) => void
-  legendMode: boolean
-  onLegendModeToggle: () => void
+  currentMethodology: string;
+  onMethodologyChange: (id: string) => void;
+  legendMode: boolean;
+  onLegendModeToggle: () => void;
   // Intelligence toggles
-  sideCanalEnabled: boolean
-  contextInjectionEnabled: boolean
-  realtimeDataEnabled: boolean
-  newsNotificationsEnabled: boolean
-  onSideCanalToggle: () => void
-  onContextInjectionToggle: () => void
-  onRealtimeDataToggle: () => void
-  onNewsNotificationsToggle: () => void
+  sideCanalEnabled: boolean;
+  contextInjectionEnabled: boolean;
+  realtimeDataEnabled: boolean;
+  newsNotificationsEnabled: boolean;
+  onSideCanalToggle: () => void;
+  onContextInjectionToggle: () => void;
+  onRealtimeDataToggle: () => void;
+  onNewsNotificationsToggle: () => void;
 }
 
 const METHODOLOGIES = [
@@ -27,7 +27,7 @@ const METHODOLOGIES = [
     tokens: '200-500',
     latency: '~2s',
     speed: 'Fast',
-    cost: '$0.006'
+    cost: '$0.006',
   },
   {
     id: 'cod',
@@ -37,17 +37,17 @@ const METHODOLOGIES = [
     tokens: '~400',
     latency: '~8s',
     speed: 'Medium',
-    cost: '$0.012'
+    cost: '$0.012',
   },
   {
-    id: 'bot',
-    name: 'BoT',
+    id: 'sc',
+    name: 'SC',
     color: '#EAB308',
     glowColor: 'rgba(234, 179, 8, 0.5)',
     tokens: '~600',
     latency: '~12s',
     speed: 'Medium',
-    cost: '$0.018'
+    cost: '$0.018',
   },
   {
     id: 'react',
@@ -57,7 +57,7 @@ const METHODOLOGIES = [
     tokens: '2k-8k',
     latency: '~20s',
     speed: 'Slow',
-    cost: '$0.024'
+    cost: '$0.024',
   },
   {
     id: 'pot',
@@ -67,7 +67,7 @@ const METHODOLOGIES = [
     tokens: '3k-6k',
     latency: '~15s',
     speed: 'Medium',
-    cost: '$0.018'
+    cost: '$0.018',
   },
   {
     id: 'gtp',
@@ -77,7 +77,7 @@ const METHODOLOGIES = [
     tokens: '8k-15k',
     latency: '~30s',
     speed: 'Slow',
-    cost: '$0.042'
+    cost: '$0.042',
   },
   {
     id: 'auto',
@@ -87,21 +87,21 @@ const METHODOLOGIES = [
     tokens: 'varies',
     latency: 'varies',
     speed: 'Auto',
-    cost: 'varies'
+    cost: 'varies',
   },
-]
+];
 
 // Colored Dot Toggle - Gold for Legend Mode, Green for Intelligence
 function DotToggle({
   enabled,
   onToggle,
   label,
-  color = '#22C55E' // Default green
+  color = '#22C55E', // Default green
 }: {
-  enabled: boolean
-  onToggle: () => void
-  label: string
-  color?: string
+  enabled: boolean;
+  onToggle: () => void;
+  label: string;
+  color?: string;
 }) {
   return (
     <button
@@ -116,29 +116,31 @@ function DotToggle({
           className={`w-2 h-2 rounded-full transition-all duration-300`}
           style={{
             backgroundColor: enabled ? color : '#cbd5e1',
-            boxShadow: enabled ? `0 0 6px ${color}80` : 'none'
+            boxShadow: enabled ? `0 0 6px ${color}80` : 'none',
           }}
         />
       </div>
     </button>
-  )
+  );
 }
 
 export default function ConversationDashboard(props: ConversationDashboardProps) {
-  const [hoveredMethod, setHoveredMethod] = useState<string | null>(null)
+  const [hoveredMethod, setHoveredMethod] = useState<string | null>(null);
 
   // Get current methodology details for metrics
-  const currentMethodology = METHODOLOGIES.find(m => m.id === props.currentMethodology)
+  const currentMethodology = METHODOLOGIES.find((m) => m.id === props.currentMethodology);
 
   return (
     <div className="fixed left-0 top-0 bottom-0 w-80 bg-white border-r border-slate-200 px-6 py-6 flex flex-col z-40 shadow-sm">
       {/* Methodology Dots */}
       <div className="mb-6">
-        <h4 className="text-[9px] uppercase tracking-widest text-slate-400 mb-3 font-medium">METHODOLOGY</h4>
+        <h4 className="text-[9px] uppercase tracking-widest text-slate-400 mb-3 font-medium">
+          METHODOLOGY
+        </h4>
         <div className="flex items-center gap-3 flex-wrap">
           {METHODOLOGIES.map((method) => {
-            const isActive = props.currentMethodology === method.id
-            const isHovered = hoveredMethod === method.id
+            const isActive = props.currentMethodology === method.id;
+            const isHovered = hoveredMethod === method.id;
 
             return (
               <div
@@ -154,25 +156,27 @@ export default function ConversationDashboard(props: ConversationDashboardProps)
                   }`}
                   style={{
                     backgroundColor: isActive ? method.color : '#cbd5e1',
-                    boxShadow: isActive
-                      ? `0 0 6px ${method.glowColor}`
-                      : 'none'
+                    boxShadow: isActive ? `0 0 6px ${method.glowColor}` : 'none',
                   }}
                 />
                 {isHovered && (
                   <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 whitespace-nowrap">
-                    <span className="text-[9px] text-slate-500 font-medium uppercase tracking-wide">{method.name}</span>
+                    <span className="text-[9px] text-slate-500 font-medium uppercase tracking-wide">
+                      {method.name}
+                    </span>
                   </div>
                 )}
               </div>
-            )
+            );
           })}
         </div>
       </div>
 
       {/* Mode */}
       <div className="mb-6">
-        <h4 className="text-[9px] uppercase tracking-widest text-slate-400 mb-2 font-medium">MODE</h4>
+        <h4 className="text-[9px] uppercase tracking-widest text-slate-400 mb-2 font-medium">
+          MODE
+        </h4>
         <DotToggle
           enabled={props.legendMode}
           onToggle={props.onLegendModeToggle}
@@ -183,7 +187,9 @@ export default function ConversationDashboard(props: ConversationDashboardProps)
 
       {/* Intelligence */}
       <div className="mb-6">
-        <h4 className="text-[9px] uppercase tracking-widest text-slate-400 mb-2 font-medium">INTELLIGENCE</h4>
+        <h4 className="text-[9px] uppercase tracking-widest text-slate-400 mb-2 font-medium">
+          INTELLIGENCE
+        </h4>
         <div className="space-y-0">
           <DotToggle
             enabled={props.sideCanalEnabled}
@@ -214,7 +220,9 @@ export default function ConversationDashboard(props: ConversationDashboardProps)
 
       {/* Metrics - Bottom */}
       <div className="mt-auto">
-        <h4 className="text-[9px] uppercase tracking-widest text-slate-400 mb-2 font-medium">METRICS</h4>
+        <h4 className="text-[9px] uppercase tracking-widest text-slate-400 mb-2 font-medium">
+          METRICS
+        </h4>
         <div className="space-y-1.5 text-[11px]">
           <div className="flex justify-between items-center">
             <span className="text-slate-400 uppercase tracking-wider">Tokens</span>
@@ -235,5 +243,5 @@ export default function ConversationDashboard(props: ConversationDashboardProps)
         </div>
       </div>
     </div>
-  )
+  );
 }

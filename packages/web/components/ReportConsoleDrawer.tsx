@@ -1,22 +1,22 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronUpIcon } from '@heroicons/react/24/outline'
-import { useLayerStore } from '@/lib/stores/layer-store'
-import { useSettingsStore } from '@/lib/stores/settings-store'
-import { LAYER_METADATA, Layer } from '@/lib/layer-registry'
-import { SEVEN_LENSES } from '@/lib/instinct-mode'
-import { SimpleLayerTree } from './SimpleLayerTree'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronUpIcon } from '@heroicons/react/24/outline';
+import { useLayerStore } from '@/lib/stores/layer-store';
+import { useSettingsStore } from '@/lib/stores/settings-store';
+import { LAYER_METADATA, Layer } from '@/lib/layer-registry';
+import { SEVEN_LENSES } from '@/lib/instinct-mode';
+import { SimpleLayerTree } from './SimpleLayerTree';
 
 interface GrimoireConsoleDrawerProps {
-  grimoireId: string
-  methodology: string
-  onMethodologyChange: (methodology: string) => void
-  analysisMetadata?: any
+  grimoireId: string;
+  methodology: string;
+  onMethodologyChange: (methodology: string) => void;
+  analysisMetadata?: any;
 }
 
-type DrawerTab = 'methodology' | 'layers' | 'lenses' | 'insights' | 'closed'
+type DrawerTab = 'methodology' | 'layers' | 'lenses' | 'insights' | 'closed';
 
 /**
  * Report Console Drawer
@@ -33,9 +33,14 @@ type DrawerTab = 'methodology' | 'layers' | 'lenses' | 'insights' | 'closed'
  * - Max height 60vh for scrollability
  * - State persisted via Zustand stores
  */
-export function GrimoireConsoleDrawer({ grimoireId, methodology, onMethodologyChange, analysisMetadata }: GrimoireConsoleDrawerProps) {
-  const [activeTab, setActiveTab] = useState<DrawerTab>('methodology')
-  const isOpen = activeTab !== 'closed'
+export function GrimoireConsoleDrawer({
+  grimoireId,
+  methodology,
+  onMethodologyChange,
+  analysisMetadata,
+}: GrimoireConsoleDrawerProps) {
+  const [activeTab, setActiveTab] = useState<DrawerTab>('methodology');
+  const isOpen = activeTab !== 'closed';
 
   return (
     <div className="relative flex-shrink-0">
@@ -108,7 +113,12 @@ export function GrimoireConsoleDrawer({ grimoireId, methodology, onMethodologyCh
             className="overflow-hidden border-t border-slate-300 dark:border-slate-600"
           >
             <div className="bg-white dark:bg-slate-900 max-h-[60vh] overflow-y-auto">
-              {activeTab === 'methodology' && <MethodologyTab currentMethodology={methodology} onMethodologyChange={onMethodologyChange} />}
+              {activeTab === 'methodology' && (
+                <MethodologyTab
+                  currentMethodology={methodology}
+                  onMethodologyChange={onMethodologyChange}
+                />
+              )}
               {activeTab === 'layers' && <SimpleLayerTree />}
               {activeTab === 'lenses' && <HermeticLensesFull />}
               {activeTab === 'insights' && <InsightsTab analysisMetadata={analysisMetadata} />}
@@ -117,7 +127,7 @@ export function GrimoireConsoleDrawer({ grimoireId, methodology, onMethodologyCh
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
 /**
@@ -126,29 +136,57 @@ export function GrimoireConsoleDrawer({ grimoireId, methodology, onMethodologyCh
  * 7 esoteric perspectives for AI reasoning
  */
 function HermeticLensesFull() {
-  const { settings, setInstinctConfig } = useSettingsStore()
-  const activeLenses = settings.instinctConfig.activeLenses || []
+  const { settings, setInstinctConfig } = useSettingsStore();
+  const activeLenses = settings.instinctConfig.activeLenses || [];
 
   const toggleLens = (lensId: string) => {
     const newLenses = activeLenses.includes(lensId)
-      ? activeLenses.filter(id => id !== lensId)
-      : [...activeLenses, lensId]
+      ? activeLenses.filter((id) => id !== lensId)
+      : [...activeLenses, lensId];
 
     setInstinctConfig({
-      activeLenses: newLenses
-    })
-  }
+      activeLenses: newLenses,
+    });
+  };
 
   // Lens colors based on their esoteric meanings
   const LENS_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-    exoteric: { bg: 'bg-slate-50 dark:bg-slate-800', border: 'border-slate-300 dark:border-slate-600', text: 'text-slate-600 dark:text-slate-300' },
-    esoteric: { bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-300 dark:border-purple-700', text: 'text-purple-600 dark:text-purple-400' },
-    gnostic: { bg: 'bg-cyan-50 dark:bg-cyan-900/20', border: 'border-cyan-300 dark:border-cyan-700', text: 'text-cyan-600 dark:text-cyan-400' },
-    hermetic: { bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-300 dark:border-amber-700', text: 'text-amber-600 dark:text-amber-400' },
-    kabbalistic: { bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-400 dark:border-purple-600', text: 'text-purple-700 dark:text-purple-300' },
-    alchemical: { bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-300 dark:border-red-700', text: 'text-red-600 dark:text-red-400' },
-    prophetic: { bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-300 dark:border-green-700', text: 'text-green-600 dark:text-green-400' },
-  }
+    exoteric: {
+      bg: 'bg-slate-50 dark:bg-slate-800',
+      border: 'border-slate-300 dark:border-slate-600',
+      text: 'text-slate-600 dark:text-slate-300',
+    },
+    esoteric: {
+      bg: 'bg-purple-50 dark:bg-purple-900/20',
+      border: 'border-purple-300 dark:border-purple-700',
+      text: 'text-purple-600 dark:text-purple-400',
+    },
+    gnostic: {
+      bg: 'bg-cyan-50 dark:bg-cyan-900/20',
+      border: 'border-cyan-300 dark:border-cyan-700',
+      text: 'text-cyan-600 dark:text-cyan-400',
+    },
+    hermetic: {
+      bg: 'bg-amber-50 dark:bg-amber-900/20',
+      border: 'border-amber-300 dark:border-amber-700',
+      text: 'text-amber-600 dark:text-amber-400',
+    },
+    kabbalistic: {
+      bg: 'bg-purple-50 dark:bg-purple-900/20',
+      border: 'border-purple-400 dark:border-purple-600',
+      text: 'text-purple-700 dark:text-purple-300',
+    },
+    alchemical: {
+      bg: 'bg-red-50 dark:bg-red-900/20',
+      border: 'border-red-300 dark:border-red-700',
+      text: 'text-red-600 dark:text-red-400',
+    },
+    prophetic: {
+      bg: 'bg-green-50 dark:bg-green-900/20',
+      border: 'border-green-300 dark:border-green-700',
+      text: 'text-green-600 dark:text-green-400',
+    },
+  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -162,9 +200,9 @@ function HermeticLensesFull() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {SEVEN_LENSES.map(lens => {
-          const isActive = activeLenses.includes(lens.id)
-          const colors = LENS_COLORS[lens.id] || LENS_COLORS.exoteric
+        {SEVEN_LENSES.map((lens) => {
+          const isActive = activeLenses.includes(lens.id);
+          const colors = LENS_COLORS[lens.id] || LENS_COLORS.exoteric;
 
           return (
             <button
@@ -178,22 +216,24 @@ function HermeticLensesFull() {
             >
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-2xl">{lens.symbol}</span>
-                <span className={`text-sm font-mono font-semibold ${
-                  isActive ? colors.text : 'text-slate-700 dark:text-slate-300'
-                }`}>
+                <span
+                  className={`text-sm font-mono font-semibold ${
+                    isActive ? colors.text : 'text-slate-700 dark:text-slate-300'
+                  }`}
+                >
                   {lens.name}
                 </span>
-                <span className="ml-auto text-lg">
-                  {isActive ? '●' : '○'}
-                </span>
+                <span className="ml-auto text-lg">{isActive ? '●' : '○'}</span>
               </div>
-              <p className={`text-xs ${
-                isActive ? colors.text : 'text-slate-600 dark:text-slate-400'
-              }`}>
+              <p
+                className={`text-xs ${
+                  isActive ? colors.text : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
                 {lens.description}
               </p>
             </button>
-          )
+          );
         })}
       </div>
 
@@ -204,10 +244,10 @@ function HermeticLensesFull() {
             Active Lenses ({activeLenses.length}/7)
           </p>
           <div className="flex flex-wrap gap-2">
-            {activeLenses.map(lensId => {
-              const lens = SEVEN_LENSES.find(l => l.id === lensId)
-              if (!lens) return null
-              const colors = LENS_COLORS[lensId]
+            {activeLenses.map((lensId) => {
+              const lens = SEVEN_LENSES.find((l) => l.id === lensId);
+              if (!lens) return null;
+              const colors = LENS_COLORS[lensId];
               return (
                 <span
                   key={lensId}
@@ -215,13 +255,13 @@ function HermeticLensesFull() {
                 >
                   {lens.symbol} {lens.name}
                 </span>
-              )
+              );
             })}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
 
 /**
@@ -230,20 +270,25 @@ function HermeticLensesFull() {
  * Allows selection of AI reasoning methodology for grimoire conversations
  */
 interface MethodologyTabProps {
-  currentMethodology: string
-  onMethodologyChange: (methodology: string) => void
+  currentMethodology: string;
+  onMethodologyChange: (methodology: string) => void;
 }
 
 function MethodologyTab({ currentMethodology, onMethodologyChange }: MethodologyTabProps) {
   const methodologies = [
-    { id: 'auto', symbol: '◎', name: 'Auto', description: 'Smart routing based on query complexity' },
+    {
+      id: 'auto',
+      symbol: '◎',
+      name: 'Auto',
+      description: 'Smart routing based on query complexity',
+    },
     { id: 'direct', symbol: '→', name: 'Direct', description: 'Single AI call, instant response' },
     { id: 'cod', symbol: '⋯', name: 'Chain of Draft', description: 'Iterative refinement process' },
-    { id: 'bot', symbol: '◇', name: 'Buffer of Thoughts', description: 'Template-based reasoning' },
+    { id: 'sc', symbol: '◇', name: 'Self-Consistency', description: 'Multi-path majority voting' },
     { id: 'react', symbol: '⟳', name: 'ReAct', description: 'Tools: search, calculator, etc.' },
     { id: 'pot', symbol: '△', name: 'Program of Thought', description: 'Code-based computation' },
     { id: 'gtp', symbol: '◯', name: 'GTP Consensus', description: 'Multi-AI agreement synthesis' },
-  ]
+  ];
 
   return (
     <div className="p-6">
@@ -257,7 +302,7 @@ function MethodologyTab({ currentMethodology, onMethodologyChange }: Methodology
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {methodologies.map(method => (
+        {methodologies.map((method) => (
           <button
             key={method.id}
             onClick={() => onMethodologyChange(method.id)}
@@ -269,11 +314,13 @@ function MethodologyTab({ currentMethodology, onMethodologyChange }: Methodology
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xl">{method.symbol}</span>
-              <span className={`font-mono font-semibold text-sm ${
-                currentMethodology === method.id
-                  ? 'text-purple-700 dark:text-purple-300'
-                  : 'text-slate-700 dark:text-slate-300'
-              }`}>
+              <span
+                className={`font-mono font-semibold text-sm ${
+                  currentMethodology === method.id
+                    ? 'text-purple-700 dark:text-purple-300'
+                    : 'text-slate-700 dark:text-slate-300'
+                }`}
+              >
                 {method.name}
               </span>
             </div>
@@ -282,7 +329,7 @@ function MethodologyTab({ currentMethodology, onMethodologyChange }: Methodology
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 /**
@@ -291,7 +338,7 @@ function MethodologyTab({ currentMethodology, onMethodologyChange }: Methodology
  * Displays gnostic intelligence feedback (Antipattern Guard, Ascent, Synthesis)
  */
 interface InsightsTabProps {
-  analysisMetadata?: any
+  analysisMetadata?: any;
 }
 
 function InsightsTab({ analysisMetadata }: InsightsTabProps) {
@@ -302,7 +349,7 @@ function InsightsTab({ analysisMetadata }: InsightsTabProps) {
           No insights available yet. Send a message to generate AI reasoning feedback.
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -349,7 +396,10 @@ function InsightsTab({ analysisMetadata }: InsightsTabProps) {
           </h4>
           <ul className="space-y-1">
             {analysisMetadata.synthesisInsights.map((insight: string, i: number) => (
-              <li key={i} className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2">
+              <li
+                key={i}
+                className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2"
+              >
                 <span>•</span>
                 <span>{insight}</span>
               </li>
@@ -358,5 +408,5 @@ function InsightsTab({ analysisMetadata }: InsightsTabProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

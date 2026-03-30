@@ -1,24 +1,24 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
+import { useState } from 'react';
 
 interface FunctionIndicatorsProps {
-  currentMethodology: string
-  onMethodologyChange?: (methodId: string) => void
-  showGuard?: boolean
+  currentMethodology: string;
+  onMethodologyChange?: (methodId: string) => void;
+  showGuard?: boolean;
 }
 
 interface Methodology {
-  id: string
-  name: string
-  shortName: string
-  color: string
-  glowColor: string
-  description: string
-  speed: number
-  depth: number
-  cost: number
-  bestFor: string
+  id: string;
+  name: string;
+  shortName: string;
+  color: string;
+  glowColor: string;
+  description: string;
+  speed: number;
+  depth: number;
+  cost: number;
+  bestFor: string;
 }
 
 const METHODOLOGIES: Methodology[] = [
@@ -32,7 +32,7 @@ const METHODOLOGIES: Methodology[] = [
     speed: 5,
     depth: 2,
     cost: 1,
-    bestFor: 'Quick facts'
+    bestFor: 'Quick facts',
   },
   {
     id: 'cod',
@@ -44,19 +44,19 @@ const METHODOLOGIES: Methodology[] = [
     speed: 3,
     depth: 4,
     cost: 2,
-    bestFor: 'Writing, creative'
+    bestFor: 'Writing, creative',
   },
   {
-    id: 'bot',
-    name: 'BoT',
-    shortName: 'BOT',
+    id: 'sc',
+    name: 'SC',
+    shortName: 'SC',
     color: '#EAB308',
     glowColor: 'rgba(234, 179, 8, 0.5)',
-    description: 'Structured reasoning buffer',
+    description: 'Self-Consistency voting',
     speed: 3,
     depth: 4,
     cost: 2,
-    bestFor: 'Analysis'
+    bestFor: 'Analysis',
   },
   {
     id: 'react',
@@ -68,7 +68,7 @@ const METHODOLOGIES: Methodology[] = [
     speed: 2,
     depth: 5,
     cost: 3,
-    bestFor: 'Research'
+    bestFor: 'Research',
   },
   {
     id: 'pot',
@@ -80,7 +80,7 @@ const METHODOLOGIES: Methodology[] = [
     speed: 2,
     depth: 5,
     cost: 3,
-    bestFor: 'Math, logic'
+    bestFor: 'Math, logic',
   },
   {
     id: 'gtp',
@@ -92,7 +92,7 @@ const METHODOLOGIES: Methodology[] = [
     speed: 1,
     depth: 5,
     cost: 4,
-    bestFor: 'Decisions'
+    bestFor: 'Decisions',
   },
   {
     id: 'auto',
@@ -104,57 +104,58 @@ const METHODOLOGIES: Methodology[] = [
     speed: 4,
     depth: 4,
     cost: 2,
-    bestFor: 'General use'
-  }
-]
+    bestFor: 'General use',
+  },
+];
 
 // Metric dots renderer - inline display
 function MetricDots({ value, max = 5 }: { value: number; max?: number }) {
   return (
     <span className="inline-flex gap-[2px]">
       {Array.from({ length: max }).map((_, i) => (
-        <span
-          key={i}
-          className={i < value ? 'text-slate-700' : 'text-slate-300'}
-        >
+        <span key={i} className={i < value ? 'text-slate-700' : 'text-slate-300'}>
           ●
         </span>
       ))}
     </span>
-  )
+  );
 }
 
-export default function FunctionIndicators({ currentMethodology, onMethodologyChange, showGuard = true }: FunctionIndicatorsProps) {
-  const [hoveredMethod, setHoveredMethod] = useState<string | null>(null)
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
+export default function FunctionIndicators({
+  currentMethodology,
+  onMethodologyChange,
+  showGuard = true,
+}: FunctionIndicatorsProps) {
+  const [hoveredMethod, setHoveredMethod] = useState<string | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const handleMouseEnter = (methodId: string) => {
     const timeout = setTimeout(() => {
-      setHoveredMethod(methodId)
-    }, 200) // 200ms delay to prevent flicker
-    setHoverTimeout(timeout)
-  }
+      setHoveredMethod(methodId);
+    }, 200); // 200ms delay to prevent flicker
+    setHoverTimeout(timeout);
+  };
 
   const handleMouseLeave = () => {
     if (hoverTimeout) {
-      clearTimeout(hoverTimeout)
+      clearTimeout(hoverTimeout);
     }
-    setHoveredMethod(null)
-  }
+    setHoveredMethod(null);
+  };
 
   const handleDotClick = (methodId: string) => {
     if (onMethodologyChange && methodId !== currentMethodology) {
-      onMethodologyChange(methodId)
+      onMethodologyChange(methodId);
     }
-  }
+  };
 
   return (
     <div className="relative px-6 py-3">
       {/* Center: Methodology Dots */}
       <div className="flex items-center justify-center gap-4">
         {METHODOLOGIES.map((method) => {
-          const isActive = currentMethodology === method.id
-          const isHovered = hoveredMethod === method.id
+          const isActive = currentMethodology === method.id;
+          const isHovered = hoveredMethod === method.id;
 
           return (
             <div
@@ -174,43 +175,43 @@ export default function FunctionIndicators({ currentMethodology, onMethodologyCh
                     backgroundColor: isActive ? method.color : '#cbd5e1',
                     boxShadow: isActive
                       ? `0 0 6px ${method.glowColor}, 0 0 10px ${method.glowColor}`
-                      : 'none'
+                      : 'none',
                   }}
                 />
 
-              {/* Ring animation on active */}
-              {isActive && (
-                <div
-                  className="absolute inset-0 rounded-full animate-ping opacity-75"
-                  style={{ backgroundColor: method.color }}
-                />
+                {/* Ring animation on active */}
+                {isActive && (
+                  <div
+                    className="absolute inset-0 rounded-full animate-ping opacity-75"
+                    style={{ backgroundColor: method.color }}
+                  />
+                )}
+              </div>
+
+              {/* Raw Text Hover - No Background (News Notification Style) */}
+              {isHovered && (
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap animate-fade-in">
+                  <div className="text-[10px]">
+                    <span className="text-slate-500 font-medium uppercase">{method.name}</span>
+                    <span className="mx-1 text-slate-400">·</span>
+                    <span className="text-slate-600">{method.description}</span>
+                  </div>
+                </div>
               )}
             </div>
-
-            {/* Raw Text Hover - No Background (News Notification Style) */}
-            {isHovered && (
-              <div
-                className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap animate-fade-in"
-              >
-                <div className="text-[10px]">
-                  <span className="text-slate-500 font-medium uppercase">{method.name}</span>
-                  <span className="mx-1 text-slate-400">·</span>
-                  <span className="text-slate-600">{method.description}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })}
+          );
+        })}
       </div>
 
       {/* Right: Guard Active Indicator - Absolute positioned */}
       {showGuard && (
         <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-blink-green" />
-          <span className="text-[9px] uppercase tracking-widest text-relic-silver font-medium">guard active</span>
+          <span className="text-[9px] uppercase tracking-widest text-relic-silver font-medium">
+            guard active
+          </span>
         </div>
       )}
     </div>
-  )
+  );
 }

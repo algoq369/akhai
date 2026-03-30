@@ -1281,8 +1281,8 @@ function selectMethodology(query: string, requested: string) {
     queryLower.includes('requirements') ||
     query.split(/[.!?]/).length > 2 // Multi-sentence queries with context
   ) {
-    logger.query.methodSelected('auto', 'bot', 'Complex context detected - Buffer of Thoughts');
-    return { id: 'bot', reason: 'Complex context detected - Buffer of Thoughts' };
+    logger.query.methodSelected('auto', 'sc', 'Complex context detected - Self-Consistency');
+    return { id: 'sc', reason: 'Complex context detected - Self-Consistency' };
   }
 
   // Step-by-step → cod
@@ -1370,17 +1370,17 @@ Use Chain of Draft (CoD) methodology with visible refinement:
 
 Format: [DRAFT 1], [REFLECTION], [DRAFT 2], [FINAL ANSWER]${enhancementSection}${contextSection}`;
 
-    case 'bot':
-      // Buffer of Thoughts - maintain context buffer
+    case 'sc':
+      // Self-Consistency - sample multiple reasoning paths, majority vote
       return `${baseIdentity}${writingStyle}
 
-Use Buffer of Thoughts (BoT) methodology:
-1. **Context Buffer**: Extract and store key facts, constraints, and requirements
-2. **Reasoning Chain**: Build your answer step-by-step, referencing the buffer
-3. **Validation**: Cross-check against buffered context (show logical verification)
-4. **Response**: Provide validated answer with clear reasoning
+Use Self-Consistency (SC) methodology (Wang et al., ICLR 2023):
+1. **Path 1**: Reason through the problem one way
+2. **Path 2**: Reason through the problem a different way
+3. **Path 3**: Reason through the problem a third way
+4. **Consensus**: Take the majority answer across paths
 
-Format: [BUFFER: key facts], [REASONING: step-by-step], [VALIDATION: checks], [ANSWER: final response]${enhancementSection}${contextSection}`;
+Format: [PATH 1], [PATH 2], [PATH 3], [CONSENSUS: majority vote answer]${enhancementSection}${contextSection}`;
 
     case 'react':
       // ReAct - reasoning and acting

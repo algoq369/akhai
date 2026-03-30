@@ -5,20 +5,20 @@
  * cost-efficiency, and accuracy.
  */
 
-export type CoreMethodology = 'direct' | 'cod' | 'bot' | 'react' | 'pot' | 'gtp' | 'auto'
-export type ProviderFamily = 'anthropic' | 'deepseek' | 'mistral' | 'xai' | 'openrouter'
+export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pot' | 'gtp' | 'auto';
+export type ProviderFamily = 'anthropic' | 'deepseek' | 'mistral' | 'xai' | 'openrouter';
 
 export interface ProviderConfig {
-  family: ProviderFamily
-  model: string
-  apiKey: string
-  baseUrl?: string
+  family: ProviderFamily;
+  model: string;
+  apiKey: string;
+  baseUrl?: string;
 }
 
 export interface ModelSpec {
-  provider: ProviderFamily
-  model: string
-  reasoning: string
+  provider: ProviderFamily;
+  model: string;
+  reasoning: string;
 }
 
 /**
@@ -34,26 +34,26 @@ export interface ModelSpec {
  * - Simpler configuration and predictable behavior
  */
 // Toggle: set to true for free tier (OpenRouter), false for premium (Anthropic Claude)
-const USE_FREE_TIER = !process.env.ANTHROPIC_API_KEY || process.env.AKHAI_FREE_MODE === 'true'
+const USE_FREE_TIER = !process.env.ANTHROPIC_API_KEY || process.env.AKHAI_FREE_MODE === 'true';
 
 const FREE_PROVIDER: ModelSpec = {
   provider: 'openrouter',
   model: 'meta-llama/llama-3.3-70b-instruct:free',
   reasoning: 'Free tier: Llama 3.3 70B via OpenRouter (GPT-4 class, $0 cost)',
-}
+};
 
 const PREMIUM_PROVIDER: ModelSpec = {
   provider: 'anthropic',
   model: 'claude-opus-4-6',
   reasoning: 'Premium Claude Opus 4.6 for all queries',
-}
+};
 
-const DEFAULT_PROVIDER = USE_FREE_TIER ? FREE_PROVIDER : PREMIUM_PROVIDER
+const DEFAULT_PROVIDER = USE_FREE_TIER ? FREE_PROVIDER : PREMIUM_PROVIDER;
 
 export const METHODOLOGY_PROVIDER_MAP: Record<CoreMethodology, ModelSpec> = {
   direct: DEFAULT_PROVIDER,
   cod: DEFAULT_PROVIDER,
-  bot: DEFAULT_PROVIDER,
+  sc: DEFAULT_PROVIDER,
   react: DEFAULT_PROVIDER,
   pot: DEFAULT_PROVIDER,
   gtp: {
@@ -64,7 +64,7 @@ export const METHODOLOGY_PROVIDER_MAP: Record<CoreMethodology, ModelSpec> = {
       : 'Multi-AI consensus: Anthropic + DeepSeek + Mistral + xAI advisors',
   },
   auto: DEFAULT_PROVIDER,
-}
+};
 
 /**
  * Get provider configuration for a methodology
@@ -83,10 +83,10 @@ export function getProviderForMethodology(
       provider: 'anthropic',
       model: 'claude-opus-4-6',
       reasoning: 'Legend Mode: Premium R&D with Claude Opus 4.6',
-    }
+    };
   }
 
-  return METHODOLOGY_PROVIDER_MAP[methodology]
+  return METHODOLOGY_PROVIDER_MAP[methodology];
 }
 
 /**
@@ -96,9 +96,9 @@ export function getProviderForMethodology(
  * @returns API configuration with key and base URL
  */
 export function getProviderApiConfig(provider: ProviderFamily): {
-  apiKey: string | undefined
-  baseUrl: string
-  versionHeader?: string
+  apiKey: string | undefined;
+  baseUrl: string;
+  versionHeader?: string;
 } {
   switch (provider) {
     case 'anthropic':
@@ -106,27 +106,27 @@ export function getProviderApiConfig(provider: ProviderFamily): {
         apiKey: process.env.ANTHROPIC_API_KEY,
         baseUrl: 'https://api.anthropic.com/v1/messages',
         versionHeader: '2023-06-01',
-      }
+      };
     case 'deepseek':
       return {
         apiKey: process.env.DEEPSEEK_API_KEY,
         baseUrl: 'https://api.deepseek.com/chat/completions',
-      }
+      };
     case 'mistral':
       return {
         apiKey: process.env.MISTRAL_API_KEY,
         baseUrl: 'https://api.mistral.ai/v1/chat/completions',
-      }
+      };
     case 'xai':
       return {
         apiKey: process.env.XAI_API_KEY,
         baseUrl: 'https://api.x.ai/v1/chat/completions',
-      }
+      };
     case 'openrouter':
       return {
         apiKey: process.env.OPENROUTER_API_KEY,
         baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
-      }
+      };
   }
 }
 
@@ -137,8 +137,8 @@ export function getProviderApiConfig(provider: ProviderFamily): {
  * @returns True if API key exists
  */
 export function validateProviderApiKey(provider: ProviderFamily): boolean {
-  const config = getProviderApiConfig(provider)
-  return !!config.apiKey
+  const config = getProviderApiConfig(provider);
+  return !!config.apiKey;
 }
 
 /**
@@ -149,25 +149,25 @@ export function validateProviderApiKey(provider: ProviderFamily): boolean {
  */
 export function getFallbackProvider(primary: ProviderFamily): ProviderFamily {
   // Fallback hierarchy: Anthropic > OpenRouter > DeepSeek > Mistral > xAI
-  const fallbackOrder: ProviderFamily[] = ['anthropic', 'openrouter', 'deepseek', 'mistral', 'xai']
-  const primaryIndex = fallbackOrder.indexOf(primary)
+  const fallbackOrder: ProviderFamily[] = ['anthropic', 'openrouter', 'deepseek', 'mistral', 'xai'];
+  const primaryIndex = fallbackOrder.indexOf(primary);
 
   // Try next provider in hierarchy
   for (let i = primaryIndex + 1; i < fallbackOrder.length; i++) {
     if (validateProviderApiKey(fallbackOrder[i])) {
-      return fallbackOrder[i]
+      return fallbackOrder[i];
     }
   }
 
   // If no fallback found, try from beginning
   for (let i = 0; i < primaryIndex; i++) {
     if (validateProviderApiKey(fallbackOrder[i])) {
-      return fallbackOrder[i]
+      return fallbackOrder[i];
     }
   }
 
   // Default to anthropic (will error if not available)
-  return 'anthropic'
+  return 'anthropic';
 }
 
 /**
@@ -176,8 +176,8 @@ export function getFallbackProvider(primary: ProviderFamily): ProviderFamily {
  * @returns Array of available provider families
  */
 export function getAvailableProviders(): ProviderFamily[] {
-  const providers: ProviderFamily[] = ['anthropic', 'openrouter', 'deepseek', 'mistral', 'xai']
-  return providers.filter(validateProviderApiKey)
+  const providers: ProviderFamily[] = ['anthropic', 'openrouter', 'deepseek', 'mistral', 'xai'];
+  return providers.filter(validateProviderApiKey);
 }
 
 /**
@@ -187,8 +187,8 @@ export function getAvailableProviders(): ProviderFamily[] {
  * @returns Input and output pricing
  */
 export function getProviderPricing(provider: ProviderFamily): {
-  input: number
-  output: number
+  input: number;
+  output: number;
 } {
   const rates: Record<ProviderFamily, { input: number; output: number }> = {
     deepseek: { input: 0.00055, output: 0.00219 },
@@ -196,7 +196,7 @@ export function getProviderPricing(provider: ProviderFamily): {
     mistral: { input: 0.0002, output: 0.0006 },
     xai: { input: 0.002, output: 0.01 },
     openrouter: { input: 0, output: 0 },
-  }
+  };
 
-  return rates[provider]
+  return rates[provider];
 }

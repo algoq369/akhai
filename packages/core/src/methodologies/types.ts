@@ -23,7 +23,7 @@ import type { ModelFamily } from '../models/types.js';
 export type CoreMethodology =
   | 'direct'    // Tier 1: Instant response
   | 'cod'       // Tier 2: Chain of Draft (cost-optimized)
-  | 'bot'       // Tier 2: Buffer of Thoughts (template-based)
+  | 'sc'        // Tier 2: Self-Consistency (Wang et al., ICLR 2023)
   | 'react'     // Tier 3: Tool-augmented reasoning
   | 'pot'       // Tier 4: Program of Thought (computational)
   | 'gtp'       // Tier 5: Consensus (includes Self-Consistency)
@@ -164,11 +164,11 @@ export const METHODOLOGY_INFO: Record<CoreMethodology, MethodologyInfo> = {
     costPer1K: 0.0008,
     bestFor: ['procedural', 'how-to', 'sequential'],
   },
-  bot: {
-    name: 'Buffer of Thoughts',
+  sc: {
+    name: 'Self-Consistency',
     tier: 2,
     icon: '🧠',
-    description: 'Template-based analysis (88% cheaper than ToT)',
+    description: 'Wang et al., ICLR 2023, samples multiple reasoning paths and takes majority vote',
     tokenMultiplier: 0.12,
     avgLatencyMs: 18000,
     costPer1K: 0.006,
@@ -723,7 +723,7 @@ export interface BoTResult {
   answer: string;
 
   /** Methodology used */
-  methodology: 'bot';
+  methodology: 'sc';
 
   /** Final thought buffer state */
   thoughtBuffer: ThoughtNode[];
