@@ -69,25 +69,55 @@ export default function ViewTabs({
 
       {/* LAYERS VIEW - Always show when tab visible (content > 200 chars) */}
       {globalVizMode !== 'off' && effectiveVizMode === 'layers' && message.content.length > 200 && (
-        <LayerResponse
-          content={message.content}
-          query={previousUserQuery}
-          methodology={message.methodology || methodology}
-          onSwitchToInsight={() => onSetVizMode('insight')}
-          onOpenMindMap={onOpenMindMap}
-          onDeepDive={(query) => onDeepDive(query)}
-        />
+        <div>
+          <LayerResponse
+            content={message.content}
+            query={previousUserQuery}
+            methodology={message.methodology || methodology}
+            onSwitchToInsight={() => onSetVizMode('insight')}
+            onOpenMindMap={onOpenMindMap}
+            onDeepDive={(query) => onDeepDive(query)}
+          />
+          {/* Guaranteed fallback — always visible */}
+          <div className="mt-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+            ◎ {message.content.split(/\s+/).length} words ·{' '}
+            {message.content.split(/[.!?]+/).filter((s: string) => s.trim()).length} sentences ·{' '}
+            {message.methodology || methodology}
+          </div>
+        </div>
       )}
 
       {/* INSIGHT MINDMAP - Always show when tab selected + content > 200 */}
       {globalVizMode !== 'off' && currentVizMode === 'insight' && message.content.length > 200 && (
-        <InsightMindmap
-          content={message.content}
-          query={previousUserQuery}
-          methodology={message.methodology || methodology}
-          onSwitchToLayers={() => onSetVizMode('layers')}
-          onOpenMindMap={onOpenMindMap}
-        />
+        <div>
+          <InsightMindmap
+            content={message.content}
+            query={previousUserQuery}
+            methodology={message.methodology || methodology}
+            onSwitchToLayers={() => onSetVizMode('layers')}
+            onOpenMindMap={onOpenMindMap}
+          />
+          {/* Guaranteed fallback — key sentences always visible */}
+          <div className="mt-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded">
+            <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+              Key sentences
+            </div>
+            <ul className="space-y-0.5">
+              {message.content
+                .split(/[.!?]+/)
+                .filter((s: string) => s.trim().length > 20)
+                .slice(0, 4)
+                .map((s: string, i: number) => (
+                  <li
+                    key={i}
+                    className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed"
+                  >
+                    · {s.replace(/[#*`\-]/g, '').trim()}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        </div>
       )}
 
       {/* MINDMAP VIEW - Always show when tab selected + content > 200 */}
@@ -101,6 +131,31 @@ export default function ViewTabs({
             methodology={message.methodology || methodology}
             query={previousUserQuery}
           />
+          {/* Guaranteed fallback — keywords always visible */}
+          <div className="mt-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded">
+            <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+              Topics
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {[
+                ...new Set(
+                  message.content
+                    .split(/\s+/)
+                    .filter((w: string) => w.length > 5 && /^[a-zA-Z]+$/.test(w))
+                    .map((w: string) => w.toLowerCase())
+                ),
+              ]
+                .slice(0, 8)
+                .map((w: string, i: number) => (
+                  <span
+                    key={i}
+                    className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[9px] text-slate-500 dark:text-slate-400 font-mono"
+                  >
+                    {w}
+                  </span>
+                ))}
+            </div>
+          </div>
         </div>
       )}
     </>

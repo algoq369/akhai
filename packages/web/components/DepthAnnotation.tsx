@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * DEPTH ANNOTATION COMPONENT - LAYERS SIGIL VERSION
@@ -9,100 +9,87 @@
  * @module DepthAnnotation
  */
 
-import React, { useMemo } from 'react'
+import React, { useMemo } from 'react';
 import {
   DepthAnnotation as AnnotationType,
   AnnotatedSegment,
   DepthConfig,
-  buildAnnotatedSegments,
-} from '@/lib/depth-annotations'
-import { DepthSigil } from './DepthSigil'
+} from '@/lib/depth-annotations';
+import { DepthSigil } from './DepthSigil';
 
 // ============ TEXT SEGMENT WITH INLINE SIGILS ============
 
 interface AnnotatedTextSegmentProps {
-  segment: AnnotatedSegment
-  onExpand?: (query: string) => void
+  segment: AnnotatedSegment;
+  onExpand?: (query: string) => void;
 }
 
 function AnnotatedTextSegment({ segment, onExpand }: AnnotatedTextSegmentProps) {
   // Render text with inline sigils
   const renderTextWithSigils = useMemo(() => {
     if (segment.annotations.length === 0) {
-      return <span>{segment.text}</span>
+      return <span>{segment.text}</span>;
     }
 
-    const parts: React.ReactNode[] = []
-    let lastIndex = 0
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
 
     // Sort annotations by position
-    const sortedAnns = [...segment.annotations].sort((a, b) => a.position - b.position)
+    const sortedAnns = [...segment.annotations].sort((a, b) => a.position - b.position);
 
     // Build a map of term positions to avoid duplicates
-    const processedPositions = new Set<number>()
+    const processedPositions = new Set<number>();
 
     for (const ann of sortedAnns) {
       // Find term in text
-      const termIndex = segment.text.toLowerCase().indexOf(ann.term.toLowerCase(), lastIndex)
-      if (termIndex === -1 || processedPositions.has(termIndex)) continue
+      const termIndex = segment.text.toLowerCase().indexOf(ann.term.toLowerCase(), lastIndex);
+      if (termIndex === -1 || processedPositions.has(termIndex)) continue;
 
-      processedPositions.add(termIndex)
+      processedPositions.add(termIndex);
 
       // Add text before term
       if (termIndex > lastIndex) {
         parts.push(
-          <span key={`text-${lastIndex}`}>
-            {segment.text.substring(lastIndex, termIndex)}
-          </span>
-        )
+          <span key={`text-${lastIndex}`}>{segment.text.substring(lastIndex, termIndex)}</span>
+        );
       }
 
       // Add term + inline sigil
-      const termEnd = termIndex + ann.term.length
+      const termEnd = termIndex + ann.term.length;
       parts.push(
         <span key={`annotated-${termIndex}`} className="inline-flex items-baseline gap-0.5">
-          <span className="text-slate-900">
-            {segment.text.substring(termIndex, termEnd)}
-          </span>
+          <span className="text-slate-900">{segment.text.substring(termIndex, termEnd)}</span>
           <DepthSigil content={ann.content} term={ann.term} />
         </span>
-      )
+      );
 
-      lastIndex = termEnd
+      lastIndex = termEnd;
     }
 
     // Add remaining text
     if (lastIndex < segment.text.length) {
-      parts.push(
-        <span key={`text-end`}>
-          {segment.text.substring(lastIndex)}
-        </span>
-      )
+      parts.push(<span key={`text-end`}>{segment.text.substring(lastIndex)}</span>);
     }
 
-    return <>{parts}</>
-  }, [segment, onExpand])
+    return <>{parts}</>;
+  }, [segment, onExpand]);
 
-  return (
-    <span className="inline">
-      {renderTextWithSigils}
-    </span>
-  )
+  return <span className="inline">{renderTextWithSigils}</span>;
 }
 
 // ============ MAIN DEPTH TEXT COMPONENT ============
 
 interface DepthTextProps {
   /** The text content to annotate */
-  text: string
+  text: string;
   /** Pre-computed annotations (for streaming) */
-  annotations?: AnnotationType[]
+  annotations?: AnnotationType[];
   /** Configuration */
-  config?: DepthConfig
+  config?: DepthConfig;
   /** Callback when user expands annotation */
-  onExpand?: (query: string) => void
+  onExpand?: (query: string) => void;
   /** Additional CSS classes */
-  className?: string
+  className?: string;
 }
 
 export function DepthText({
@@ -110,48 +97,66 @@ export function DepthText({
   annotations = [],
   config,
   onExpand,
-  className = ''
+  className = '',
 }: DepthTextProps) {
-  // Build segments with annotations
-  const segments = useMemo(() => {
+  // Position-based sigil insertion — no segment splitting, no indexOf
+  const rendered = useMemo(() => {
     if (!config?.enabled || annotations.length === 0) {
-      return [{ text, annotations: [] }]
+      return null;
     }
 
-    return buildAnnotatedSegments(text, annotations)
-  }, [text, annotations, config])
+    const sortedAnns = [...annotations]
+      .filter((a) => a.position >= 0 && a.position < text.length)
+      .sort((a, b) => a.position - b.position);
 
-  // If disabled, show plain text
-  if (!config?.enabled || annotations.length === 0) {
-    return <span className={className}>{text}</span>
+    const parts: React.ReactNode[] = [];
+    let lastPos = 0;
+
+    for (const ann of sortedAnns) {
+      // Skip overlapping annotations
+      if (ann.position < lastPos) continue;
+
+      if (ann.position > lastPos) {
+        parts.push(<span key={`t-${lastPos}`}>{text.substring(lastPos, ann.position)}</span>);
+      }
+
+      const termEnd = Math.min(ann.position + ann.term.length, text.length);
+      parts.push(
+        <span key={`a-${ann.position}`} className="inline-flex items-baseline gap-0.5">
+          <span className="text-slate-900">{text.substring(ann.position, termEnd)}</span>
+          <DepthSigil content={ann.content} term={ann.term} />
+        </span>
+      );
+      lastPos = termEnd;
+    }
+
+    if (lastPos < text.length) {
+      parts.push(<span key="end">{text.substring(lastPos)}</span>);
+    }
+
+    return parts;
+  }, [text, annotations, config]);
+
+  if (!rendered) {
+    return <span className={className}>{text}</span>;
   }
 
-  return (
-    <span className={`depth-text ${className}`}>
-      {segments.map((segment, idx) => (
-        <AnnotatedTextSegment
-          key={idx}
-          segment={segment}
-          onExpand={onExpand}
-        />
-      ))}
-    </span>
-  )
+  return <span className={`depth-text ${className}`}>{rendered}</span>;
 }
 
 // ============ STREAMING DEPTH TEXT COMPONENT ============
 
 interface StreamingDepthTextProps {
   /** Current streaming text */
-  text: string
+  text: string;
   /** Annotations detected so far */
-  annotations: AnnotationType[]
+  annotations: AnnotationType[];
   /** Configuration */
-  config: DepthConfig
+  config: DepthConfig;
   /** Callback when user expands annotation */
-  onExpand?: (query: string) => void
+  onExpand?: (query: string) => void;
   /** Additional CSS classes */
-  className?: string
+  className?: string;
 }
 
 export function StreamingDepthText({
@@ -159,7 +164,7 @@ export function StreamingDepthText({
   annotations,
   config,
   onExpand,
-  className = ''
+  className = '',
 }: StreamingDepthTextProps) {
   return (
     <DepthText
@@ -169,22 +174,22 @@ export function StreamingDepthText({
       onExpand={onExpand}
       className={className}
     />
-  )
+  );
 }
 
 // ============ DEPTH CONTROLS (MINIMAL) ============
 
 interface DepthControlsProps {
-  config: DepthConfig
-  onConfigChange: (config: DepthConfig) => void
-  annotationCount: number
+  config: DepthConfig;
+  onConfigChange: (config: DepthConfig) => void;
+  annotationCount: number;
 }
 
 export function DepthControls({ config, onConfigChange, annotationCount }: DepthControlsProps) {
   // Controls removed - sigils are always shown, individually expandable
   // This component kept for backwards compatibility but renders nothing
-  return null
+  return null;
 }
 
 // Default export
-export default DepthText
+export default DepthText;
