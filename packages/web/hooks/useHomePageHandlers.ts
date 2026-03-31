@@ -146,17 +146,13 @@ export function useHomePageHandlers(state: HomePageStateForHandlers) {
   };
 
   const handleMethodologyClick = (id: string) => {
-    if (messages.length > 0) {
-      setPendingMethodology(id);
-      setShowMethodologyPrompt(true);
-    } else {
-      setMethodology(id);
-      setIsBlinking(id);
-      import('@/lib/analytics').then(({ trackMethodologyChanged }) =>
-        trackMethodologyChanged(methodology, id)
-      );
-      setTimeout(() => setIsBlinking(null), 300);
-    }
+    // Always switch silently — no modal prompt
+    setMethodology(id);
+    setIsBlinking(id);
+    import('@/lib/analytics').then(({ trackMethodologyChanged }) =>
+      trackMethodologyChanged(methodology, id)
+    );
+    setTimeout(() => setIsBlinking(null), 300);
   };
 
   const handleContinueInCurrentChat = () => {

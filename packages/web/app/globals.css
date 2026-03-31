@@ -93,10 +93,8 @@
 
   /* ========================================
      CUSTOM CURSOR - White Translucent Ring
+     Enhancement only — native cursor stays as fallback
      ======================================== */
-  @media (pointer: fine) {
-    * { cursor: none !important; }
-  }
 
   .custom-cursor {
     position: fixed;
