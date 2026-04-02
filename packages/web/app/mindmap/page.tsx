@@ -1,102 +1,101 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
-import MindMapHistoryView from '@/components/MindMapHistoryView'
-import MindMapReportView from '@/components/MindMapReportView'
-import LayerConsole from '@/components/LayerConsole'
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import MindMapHistoryView from '@/components/MindMapHistoryView';
+import MindMapReportView from '@/components/MindMapReportView';
+import LayerConsole from '@/components/LayerConsole';
 
 // Radial knowledge graph
-const MindMapDiagramView = dynamic(
-  () => import('@/components/MindMapDiagramView'),
-  { ssr: false }
-)
+const MindMapDiagramView = dynamic(() => import('@/components/MindMapDiagramView'), { ssr: false });
 import {
   MapIcon,
   ClockIcon,
   BookOpenIcon,
   ArrowLeftIcon,
-  Cog6ToothIcon
-} from '@heroicons/react/24/outline'
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
 
-type ViewMode = 'graph' | 'history' | 'report'
+type ViewMode = 'graph' | 'history' | 'report';
 
 interface Topic {
-  id: string
-  name: string
-  description?: string | null
-  category?: string | null
-  queryCount?: number
-  color?: string
+  id: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  queryCount?: number;
+  color?: string;
 }
 
-
 export default function MindMapPage() {
-  const router = useRouter()
-  const [viewMode, setViewMode] = useState<ViewMode>('graph')
-  const [showLayerConsole, setShowLayerConsole] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [user, setUser] = useState<any>(null)
-  const [topics, setTopics] = useState<Topic[]>([])
-  const [topicLinks, setTopicLinks] = useState<{ source: string; target: string; type: string; strength: number }[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter();
+  const [viewMode, setViewMode] = useState<ViewMode>('graph');
+  const [showLayerConsole, setShowLayerConsole] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [user, setUser] = useState<any>(null);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [topicLinks, setTopicLinks] = useState<
+    { source: string; target: string; type: string; strength: number }[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Check session
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch('/api/auth/session')
+        const res = await fetch('/api/auth/session');
         if (res.ok) {
-          const data = await res.json()
-          setUser(data.user)
+          const data = await res.json();
+          setUser(data.user);
         }
       } catch (error) {
-        console.error('Session check error:', error)
+        console.error('Session check error:', error);
       }
-    }
-    checkSession()
-  }, [])
+    };
+    checkSession();
+  }, []);
 
   // Fetch mind map data
   useEffect(() => {
     const fetchMindMapData = async () => {
       try {
-        setIsLoading(true)
-        const res = await fetch('/api/mindmap/data')
+        setIsLoading(true);
+        const res = await fetch('/api/mindmap/data');
         if (res.ok) {
-          const data = await res.json()
-          setTopics(data.nodes || [])
-          setTopicLinks(data.links || [])
+          const data = await res.json();
+          setTopics(data.nodes || []);
+          setTopicLinks(data.links || []);
         }
       } catch (error) {
-        console.error('Mind map data fetch error:', error)
+        console.error('Mind map data fetch error:', error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
-    fetchMindMapData()
-  }, [])
+    };
+    fetchMindMapData();
+  }, []);
 
   // Filter topics by search term
   const filteredTopics = searchTerm
-    ? topics.filter(t =>
-        t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    ? topics.filter(
+        (t) =>
+          t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          t.category?.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : topics
+    : topics;
 
   // Handle topic expand
   const handleTopicExpand = useCallback((topicId: string) => {
-    console.log('Expand topic:', topicId)
+    console.log('Expand topic:', topicId);
     // TODO: Open topic expansion panel
-  }, [])
+  }, []);
 
   const viewModes = [
     { id: 'graph' as ViewMode, icon: MapIcon, label: 'Graph' },
     { id: 'history' as ViewMode, icon: ClockIcon, label: 'History' },
-    { id: 'report' as ViewMode, icon: BookOpenIcon, label: 'Grimoire' }
-  ]
+    { id: 'report' as ViewMode, icon: BookOpenIcon, label: 'Grimoire' },
+  ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-relic-void">
@@ -106,7 +105,7 @@ export default function MindMapPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.back()}
                 className="text-relic-silver hover:text-relic-void dark:hover:text-white transition-colors"
               >
                 <ArrowLeftIcon className="w-4 h-4" />
@@ -128,7 +127,7 @@ export default function MindMapPage() {
 
               {/* View Mode Tabs */}
               <div className="flex items-center gap-1 bg-relic-ghost/50 dark:bg-relic-slate/20 p-0.5 rounded">
-                {viewModes.map(mode => (
+                {viewModes.map((mode) => (
                   <button
                     key={mode.id}
                     onClick={() => setViewMode(mode.id)}
@@ -160,8 +159,8 @@ export default function MindMapPage() {
       {/* Main Content */}
       <main className="h-[calc(100vh-60px)]">
         {/* Radial Knowledge Graph View */}
-        {viewMode === 'graph' && (
-          isLoading ? (
+        {viewMode === 'graph' &&
+          (isLoading ? (
             <div className="h-full flex items-center justify-center bg-[#fafbfc]">
               <div className="text-center">
                 <div className="animate-spin w-5 h-5 border border-slate-300 border-t-slate-500 rounded-full mx-auto mb-2" />
@@ -175,16 +174,10 @@ export default function MindMapPage() {
               searchQuery={searchTerm}
               propTopicLinks={topicLinks}
             />
-          )
-        )}
-        {viewMode === 'history' && (
-          <MindMapHistoryView />
-        )}
+          ))}
+        {viewMode === 'history' && <MindMapHistoryView />}
         {viewMode === 'report' && (
-          <MindMapReportView
-            userId={user?.id || null}
-            selectedTopics={[]}
-          />
+          <MindMapReportView userId={user?.id || null} selectedTopics={[]} />
         )}
       </main>
 
@@ -194,5 +187,5 @@ export default function MindMapPage() {
         onToggle={() => setShowLayerConsole(!showLayerConsole)}
       />
     </div>
-  )
+  );
 }

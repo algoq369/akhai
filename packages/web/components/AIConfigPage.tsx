@@ -1,22 +1,22 @@
-'use client'
+'use client';
 
 /**
  * AI CONFIG PAGE - COMPACT MERGED VIEW
- * 
+ *
  * Combines:
  * - Quick Settings (top 3 critical layers)
  * - AI Processing Layers tree (left)
  * - Anti-Pattern Monitors tree (right)
- * 
+ *
  * All in one compact, scrollable view
  */
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
-import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
-import { useLayerStore } from '@/lib/stores/layer-store'
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { Layer, LAYER_METADATA } from '@/lib/layer-registry';
+import { useLayerStore } from '@/lib/stores/layer-store';
 
 // ═══════════════════════════════════════════════════════════
 // AI LAYER LABELS
@@ -34,23 +34,51 @@ const AI_LABELS: Record<number, { primary: string; concept: string }> = {
   [Layer.CLASSIFIER]: { primary: 'communication', concept: 'clear articulation' },
   [Layer.EXECUTOR]: { primary: 'foundation', concept: 'grounded knowledge' },
   [Layer.EMBEDDING]: { primary: 'manifestation', concept: 'concrete output' },
-}
+};
 
 // Anti-pattern labels
 const ANTIPATTERN_DATA = [
-  { id: 1, name: 'dual contradictions', concept: 'self-contradiction', severity: 'critical', x: 200, y: 40 },
+  {
+    id: 1,
+    name: 'dual contradictions',
+    concept: 'self-contradiction',
+    severity: 'critical',
+    x: 200,
+    y: 40,
+  },
   { id: 2, name: 'hiding sources', concept: 'opaque reasoning', severity: 'high', x: 100, y: 80 },
-  { id: 3, name: 'blocking truth', concept: 'evasive response', severity: 'critical', x: 150, y: 120 },
+  {
+    id: 3,
+    name: 'blocking truth',
+    concept: 'evasive response',
+    severity: 'critical',
+    x: 150,
+    y: 120,
+  },
   { id: 4, name: 'drift away', concept: 'topic wandering', severity: 'high', x: 200, y: 160 },
   { id: 5, name: 'repetitive echo', concept: 'circular logic', severity: 'medium', x: 100, y: 180 },
   { id: 6, name: 'arrogant tone', concept: 'dismissive tone', severity: 'medium', x: 150, y: 220 },
   { id: 7, name: 'info overload', concept: 'drowning in data', severity: 'medium', x: 200, y: 260 },
   { id: 8, name: 'over-confidence', concept: 'blind certainty', severity: 'high', x: 100, y: 280 },
-  { id: 9, name: 'hallucinated facts', concept: 'fabrication', severity: 'critical', x: 150, y: 320 },
+  {
+    id: 9,
+    name: 'hallucinated facts',
+    concept: 'fabrication',
+    severity: 'critical',
+    x: 150,
+    y: 320,
+  },
   { id: 10, name: 'false certainty', concept: 'opinion as fact', severity: 'high', x: 200, y: 360 },
   { id: 11, name: 'verbose padding', concept: 'empty words', severity: 'medium', x: 100, y: 380 },
-  { id: 12, name: 'superficial output', concept: 'surface level', severity: 'high', x: 150, y: 420 },
-]
+  {
+    id: 12,
+    name: 'superficial output',
+    concept: 'surface level',
+    severity: 'high',
+    x: 150,
+    y: 420,
+  },
+];
 
 // ═══════════════════════════════════════════════════════════
 // TREE POSITIONS (Compact)
@@ -68,22 +96,22 @@ const TREE_POSITIONS: Record<number, { x: number; y: number }> = {
   [Layer.CLASSIFIER]: { x: 70, y: 215 },
   [Layer.EXECUTOR]: { x: 140, y: 255 },
   [Layer.EMBEDDING]: { x: 140, y: 310 },
-}
+};
 
 const ANTIPATTERN_POSITIONS: Record<number, { x: number; y: number }> = {
-  1: { x: 200, y: 25 },   // dual contradictions
-  2: { x: 100, y: 25 },   // hiding sources
-  3: { x: 150, y: 65 },   // blocking truth
-  4: { x: 220, y: 100 },  // drift away
-  5: { x: 80, y: 100 },   // repetitive echo
-  6: { x: 150, y: 140 },  // arrogant tone
-  7: { x: 220, y: 175 },  // info overload
-  8: { x: 80, y: 175 },   // over-confidence
-  9: { x: 150, y: 215 },  // hallucinated facts
+  1: { x: 200, y: 25 }, // dual contradictions
+  2: { x: 100, y: 25 }, // hiding sources
+  3: { x: 150, y: 65 }, // blocking truth
+  4: { x: 220, y: 100 }, // drift away
+  5: { x: 80, y: 100 }, // repetitive echo
+  6: { x: 150, y: 140 }, // arrogant tone
+  7: { x: 220, y: 175 }, // info overload
+  8: { x: 80, y: 175 }, // over-confidence
+  9: { x: 150, y: 215 }, // hallucinated facts
   10: { x: 220, y: 255 }, // false certainty
-  11: { x: 80, y: 255 },  // verbose padding
+  11: { x: 80, y: 255 }, // verbose padding
   12: { x: 150, y: 310 }, // superficial output
-}
+};
 
 const TREE_PATHS: [Layer, Layer][] = [
   [Layer.META_CORE, Layer.REASONING],
@@ -102,7 +130,7 @@ const TREE_PATHS: [Layer, Layer][] = [
   [Layer.GENERATIVE, Layer.EXECUTOR],
   [Layer.CLASSIFIER, Layer.EXECUTOR],
   [Layer.EXECUTOR, Layer.EMBEDDING],
-]
+];
 
 const NODE_COLORS: Record<number, string> = {
   [Layer.META_CORE]: '#a78bfa',
@@ -116,16 +144,16 @@ const NODE_COLORS: Record<number, string> = {
   [Layer.CLASSIFIER]: '#facc15',
   [Layer.EXECUTOR]: '#a3a3a3',
   [Layer.EMBEDDING]: '#78716c',
-}
+};
 
 // ═══════════════════════════════════════════════════════════
 // PRESETS
 // ═══════════════════════════════════════════════════════════
 
 interface Preset {
-  id: string
-  name: string
-  weights: Record<number, number>
+  id: string;
+  name: string;
+  weights: Record<number, number>;
 }
 
 const PRESETS: Preset[] = [
@@ -133,84 +161,130 @@ const PRESETS: Preset[] = [
     id: 'fast',
     name: 'fast',
     weights: {
-      [Layer.META_CORE]: 0.4, [Layer.REASONING]: 0.5, [Layer.ENCODER]: 0.6,
-      [Layer.SYNTHESIS]: 0.4, [Layer.EXPANSION]: 0.3, [Layer.DISCRIMINATOR]: 0.5,
-      [Layer.ATTENTION]: 0.5, [Layer.GENERATIVE]: 0.4, [Layer.CLASSIFIER]: 0.7,
-      [Layer.EXECUTOR]: 0.6, [Layer.EMBEDDING]: 0.8,
-    }
+      [Layer.META_CORE]: 0.4,
+      [Layer.REASONING]: 0.5,
+      [Layer.ENCODER]: 0.6,
+      [Layer.SYNTHESIS]: 0.4,
+      [Layer.EXPANSION]: 0.3,
+      [Layer.DISCRIMINATOR]: 0.5,
+      [Layer.ATTENTION]: 0.5,
+      [Layer.GENERATIVE]: 0.4,
+      [Layer.CLASSIFIER]: 0.7,
+      [Layer.EXECUTOR]: 0.6,
+      [Layer.EMBEDDING]: 0.8,
+    },
   },
   {
     id: 'balanced',
     name: 'balanced',
     weights: {
-      [Layer.META_CORE]: 0.5, [Layer.REASONING]: 0.6, [Layer.ENCODER]: 0.6,
-      [Layer.SYNTHESIS]: 0.5, [Layer.EXPANSION]: 0.6, [Layer.DISCRIMINATOR]: 0.6,
-      [Layer.ATTENTION]: 0.7, [Layer.GENERATIVE]: 0.6, [Layer.CLASSIFIER]: 0.6,
-      [Layer.EXECUTOR]: 0.6, [Layer.EMBEDDING]: 0.6,
-    }
+      [Layer.META_CORE]: 0.5,
+      [Layer.REASONING]: 0.6,
+      [Layer.ENCODER]: 0.6,
+      [Layer.SYNTHESIS]: 0.5,
+      [Layer.EXPANSION]: 0.6,
+      [Layer.DISCRIMINATOR]: 0.6,
+      [Layer.ATTENTION]: 0.7,
+      [Layer.GENERATIVE]: 0.6,
+      [Layer.CLASSIFIER]: 0.6,
+      [Layer.EXECUTOR]: 0.6,
+      [Layer.EMBEDDING]: 0.6,
+    },
   },
   {
     id: 'thorough',
     name: 'thorough',
     weights: {
-      [Layer.META_CORE]: 0.6, [Layer.REASONING]: 0.85, [Layer.ENCODER]: 0.8,
-      [Layer.SYNTHESIS]: 0.7, [Layer.EXPANSION]: 0.5, [Layer.DISCRIMINATOR]: 0.85,
-      [Layer.ATTENTION]: 0.7, [Layer.GENERATIVE]: 0.7, [Layer.CLASSIFIER]: 0.75,
-      [Layer.EXECUTOR]: 0.8, [Layer.EMBEDDING]: 0.75,
-    }
+      [Layer.META_CORE]: 0.6,
+      [Layer.REASONING]: 0.85,
+      [Layer.ENCODER]: 0.8,
+      [Layer.SYNTHESIS]: 0.7,
+      [Layer.EXPANSION]: 0.5,
+      [Layer.DISCRIMINATOR]: 0.85,
+      [Layer.ATTENTION]: 0.7,
+      [Layer.GENERATIVE]: 0.7,
+      [Layer.CLASSIFIER]: 0.75,
+      [Layer.EXECUTOR]: 0.8,
+      [Layer.EMBEDDING]: 0.75,
+    },
   },
   {
     id: 'creative',
     name: 'creative',
     weights: {
-      [Layer.META_CORE]: 0.7, [Layer.REASONING]: 0.6, [Layer.ENCODER]: 0.5,
-      [Layer.SYNTHESIS]: 0.85, [Layer.EXPANSION]: 0.9, [Layer.DISCRIMINATOR]: 0.3,
-      [Layer.ATTENTION]: 0.8, [Layer.GENERATIVE]: 0.85, [Layer.CLASSIFIER]: 0.5,
-      [Layer.EXECUTOR]: 0.55, [Layer.EMBEDDING]: 0.65,
-    }
+      [Layer.META_CORE]: 0.7,
+      [Layer.REASONING]: 0.6,
+      [Layer.ENCODER]: 0.5,
+      [Layer.SYNTHESIS]: 0.85,
+      [Layer.EXPANSION]: 0.9,
+      [Layer.DISCRIMINATOR]: 0.3,
+      [Layer.ATTENTION]: 0.8,
+      [Layer.GENERATIVE]: 0.85,
+      [Layer.CLASSIFIER]: 0.5,
+      [Layer.EXECUTOR]: 0.55,
+      [Layer.EMBEDDING]: 0.65,
+    },
   },
-]
+];
 
 // Critical layers (Top 3 for Quick Config)
 // Maps to: knowledge (ENCODER), reasoning (REASONING), verification (SYNTHESIS)
 const CRITICAL_LAYERS = [
-  { id: Layer.ENCODER, name: 'knowledge', concept: 'retrieves facts and expertise', min: 'focused', max: 'broad' },
-  { id: Layer.REASONING, name: 'reasoning', concept: 'breaks problems into steps', min: 'shallow', max: 'deep' },
-  { id: Layer.SYNTHESIS, name: 'verification', concept: 'checks for errors', min: 'minimal', max: 'thorough' },
-]
+  {
+    id: Layer.ENCODER,
+    name: 'knowledge',
+    concept: 'retrieves facts and expertise',
+    min: 'focused',
+    max: 'broad',
+  },
+  {
+    id: Layer.REASONING,
+    name: 'reasoning',
+    concept: 'breaks problems into steps',
+    min: 'shallow',
+    max: 'deep',
+  },
+  {
+    id: Layer.SYNTHESIS,
+    name: 'verification',
+    concept: 'checks for errors',
+    min: 'minimal',
+    max: 'thorough',
+  },
+];
 
 // ═══════════════════════════════════════════════════════════
 // COMPONENT
 // ═══════════════════════════════════════════════════════════
 
 export function AIConfigPage() {
-  const router = useRouter()
-  const { weights, setWeight } = useLayerStore()
-  
+  const router = useRouter();
+  const { weights, setWeight } = useLayerStore();
+
   // State
-  const [activePreset, setActivePreset] = useState<string>('balanced')
-  const [showAllLayers, setShowAllLayers] = useState(false)
-  const [selectedNode, setSelectedNode] = useState<Layer | null>(null)
-  const [hoveredNode, setHoveredNode] = useState<Layer | null>(null)
+  const [activePreset, setActivePreset] = useState<string>('balanced');
+  const [showAllLayers, setShowAllLayers] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<Layer | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<Layer | null>(null);
 
   // Apply preset
   const handlePresetSelect = (preset: Preset) => {
-    setActivePreset(preset.id)
+    setActivePreset(preset.id);
     Object.entries(preset.weights).forEach(([layerNode, weight]) => {
-      setWeight(parseInt(layerNode) as Layer, weight)
-    })
-  }
+      setWeight(parseInt(layerNode) as Layer, weight);
+    });
+  };
 
   // Handle weight change
   const handleWeightChange = (layerNode: Layer, value: number) => {
-    setWeight(layerNode, value)
-    setActivePreset('custom')
-  }
+    setWeight(layerNode, value);
+    setActivePreset('custom');
+  };
 
   // Get weight for a layer
   const getWeight = (layerNode: Layer): number => {
-    return weights[layerNode] ?? 0.5
-  }
+    return weights[layerNode] ?? 0.5;
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 font-mono">
@@ -220,14 +294,18 @@ export function AIConfigPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.back()}
                 className="p-1.5 hover:bg-neutral-100 rounded transition-colors"
               >
                 <ArrowLeftIcon className="w-4 h-4 text-neutral-400" />
               </button>
               <div>
-                <h1 className="text-[10px] uppercase tracking-widest text-neutral-400">AI Computational Config</h1>
-                <p className="text-xs text-neutral-600">Configure processing layers for optimal responses</p>
+                <h1 className="text-[10px] uppercase tracking-widest text-neutral-400">
+                  AI Computational Config
+                </h1>
+                <p className="text-xs text-neutral-600">
+                  Configure processing layers for optimal responses
+                </p>
               </div>
             </div>
             <button className="px-3 py-1.5 text-[10px] border border-neutral-200 rounded hover:bg-neutral-50 transition-colors">
@@ -243,7 +321,9 @@ export function AIConfigPage() {
         <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-4">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-[10px] uppercase tracking-widest text-neutral-400 mb-1">Quick Settings</h2>
+              <h2 className="text-[10px] uppercase tracking-widest text-neutral-400 mb-1">
+                Quick Settings
+              </h2>
               <p className="text-[9px] text-neutral-300">Top 3 impact layers</p>
             </div>
             <div className="flex items-center gap-2">
@@ -271,9 +351,9 @@ export function AIConfigPage() {
           {/* Critical Layers Sliders */}
           <div className="grid grid-cols-3 gap-6">
             {CRITICAL_LAYERS.map((layer) => {
-              const weight = getWeight(layer.id)
-              const color = NODE_COLORS[layer.id]
-              
+              const weight = getWeight(layer.id);
+              const color = NODE_COLORS[layer.id];
+
               return (
                 <div key={layer.id} className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -285,7 +365,7 @@ export function AIConfigPage() {
                       {Math.round(weight * 100)}%
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <span className="text-[8px] text-neutral-400 w-12">{layer.min}</span>
                     <input
@@ -305,10 +385,10 @@ export function AIConfigPage() {
                     />
                     <span className="text-[8px] text-neutral-400 w-12 text-right">{layer.max}</span>
                   </div>
-                  
+
                   <p className="text-[9px] text-neutral-400">{layer.concept}</p>
                 </div>
-              )
+              );
             })}
           </div>
 
@@ -337,19 +417,21 @@ export function AIConfigPage() {
                 <div className="pt-4 mt-4 border-t border-neutral-100">
                   <div className="grid grid-cols-4 gap-3">
                     {Object.entries(TREE_POSITIONS).map(([layerNodeStr]) => {
-                      const layerNode = parseInt(layerNodeStr) as Layer
-                      const weight = getWeight(layerNode)
-                      const color = NODE_COLORS[layerNode]
-                      const label = AI_LABELS[layerNode]
-                      const isCritical = CRITICAL_LAYERS.some(l => l.id === layerNode)
-                      
+                      const layerNode = parseInt(layerNodeStr) as Layer;
+                      const weight = getWeight(layerNode);
+                      const color = NODE_COLORS[layerNode];
+                      const label = AI_LABELS[layerNode];
+                      const isCritical = CRITICAL_LAYERS.some((l) => l.id === layerNode);
+
                       return (
                         <div key={layerNode} className="flex items-center gap-2 py-1">
-                          <div 
+                          <div
                             className="w-2 h-2 rounded-full flex-shrink-0"
                             style={{ backgroundColor: color }}
                           />
-                          <span className={`text-[9px] w-24 truncate ${isCritical ? 'font-medium' : ''}`}>
+                          <span
+                            className={`text-[9px] w-24 truncate ${isCritical ? 'font-medium' : ''}`}
+                          >
                             {label?.primary}
                             {isCritical && <span className="text-amber-500 ml-0.5">★</span>}
                           </span>
@@ -358,7 +440,9 @@ export function AIConfigPage() {
                             min="0"
                             max="100"
                             value={Math.round(weight * 100)}
-                            onChange={(e) => handleWeightChange(layerNode, parseInt(e.target.value) / 100)}
+                            onChange={(e) =>
+                              handleWeightChange(layerNode, parseInt(e.target.value) / 100)
+                            }
                             className="flex-1 h-1 bg-neutral-100 rounded-full appearance-none cursor-pointer"
                             style={{
                               background: `linear-gradient(to right, ${color}80 0%, ${color}80 ${weight * 100}%, #f5f5f5 ${weight * 100}%, #f5f5f5 100%)`,
@@ -368,7 +452,7 @@ export function AIConfigPage() {
                             {Math.round(weight * 100)}%
                           </span>
                         </div>
-                      )
+                      );
                     })}
                   </div>
                 </div>
@@ -384,16 +468,16 @@ export function AIConfigPage() {
             <div className="text-center text-[10px] font-mono mb-2 text-neutral-500 uppercase tracking-wider">
               AI Processing Layers
             </div>
-            
+
             <svg viewBox="0 0 280 340" className="w-full max-w-[280px] mx-auto">
               {/* Paths */}
               {TREE_PATHS.map(([from, to], idx) => {
-                const fromPos = TREE_POSITIONS[from]
-                const toPos = TREE_POSITIONS[to]
-                const fromWeight = weights[from] ?? 0.5
-                const toWeight = weights[to] ?? 0.5
-                const avgWeight = (fromWeight + toWeight) / 2
-                
+                const fromPos = TREE_POSITIONS[from];
+                const toPos = TREE_POSITIONS[to];
+                const fromWeight = weights[from] ?? 0.5;
+                const toWeight = weights[to] ?? 0.5;
+                const avgWeight = (fromWeight + toWeight) / 2;
+
                 return (
                   <line
                     key={idx}
@@ -405,18 +489,18 @@ export function AIConfigPage() {
                     strokeWidth={1 + avgWeight}
                     strokeOpacity={0.3 + avgWeight * 0.4}
                   />
-                )
+                );
               })}
 
               {/* Nodes */}
               {Object.entries(TREE_POSITIONS).map(([layerNodeStr, pos]) => {
-                const layerNode = parseInt(layerNodeStr) as Layer
-                const weight = weights[layerNode] ?? 0.5
-                const color = NODE_COLORS[layerNode]
-                const isSelected = selectedNode === layerNode
-                const isHovered = hoveredNode === layerNode
-                const radius = 14 + weight * 6
-                const label = AI_LABELS[layerNode]
+                const layerNode = parseInt(layerNodeStr) as Layer;
+                const weight = weights[layerNode] ?? 0.5;
+                const color = NODE_COLORS[layerNode];
+                const isSelected = selectedNode === layerNode;
+                const isHovered = hoveredNode === layerNode;
+                const radius = 14 + weight * 6;
+                const label = AI_LABELS[layerNode];
 
                 return (
                   <g
@@ -438,7 +522,7 @@ export function AIConfigPage() {
                         strokeDasharray="3 2"
                       />
                     )}
-                    
+
                     {/* Main circle */}
                     <circle
                       cx={pos.x}
@@ -483,7 +567,7 @@ export function AIConfigPage() {
                       </text>
                     )}
                   </g>
-                )
+                );
               })}
             </svg>
 
@@ -506,16 +590,16 @@ export function AIConfigPage() {
             <div className="text-center text-[10px] font-mono mb-2 text-red-400 uppercase tracking-wider">
               Anti-Pattern Monitors
             </div>
-            
+
             <svg viewBox="0 0 280 340" className="w-full max-w-[280px] mx-auto">
               {/* Antipatterns nodes */}
               {ANTIPATTERN_DATA.map((node) => {
-                const pos = ANTIPATTERN_POSITIONS[node.id]
-                const isCritical = node.severity === 'critical'
-                const isHigh = node.severity === 'high'
-                const radius = isCritical ? 18 : isHigh ? 15 : 12
-                const baseColor = isCritical ? '#ef4444' : isHigh ? '#f97316' : '#fbbf24'
-                
+                const pos = ANTIPATTERN_POSITIONS[node.id];
+                const isCritical = node.severity === 'critical';
+                const isHigh = node.severity === 'high';
+                const radius = isCritical ? 18 : isHigh ? 15 : 12;
+                const baseColor = isCritical ? '#ef4444' : isHigh ? '#f97316' : '#fbbf24';
+
                 return (
                   <g key={node.id}>
                     {/* Outer glow for critical */}
@@ -528,7 +612,7 @@ export function AIConfigPage() {
                         fillOpacity={0.1}
                       />
                     )}
-                    
+
                     {/* Main circle */}
                     <circle
                       cx={pos.x}
@@ -571,7 +655,7 @@ export function AIConfigPage() {
                       {node.severity}
                     </text>
                   </g>
-                )
+                );
               })}
             </svg>
 
@@ -602,7 +686,7 @@ export function AIConfigPage() {
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div 
+                  <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: NODE_COLORS[selectedNode] }}
                   />
@@ -610,14 +694,16 @@ export function AIConfigPage() {
                     {AI_LABELS[selectedNode]?.primary}
                   </span>
                 </div>
-                <button 
+                <button
                   onClick={() => setSelectedNode(null)}
                   className="text-neutral-400 hover:text-neutral-600 text-xs"
                 >
                   ✕
                 </button>
               </div>
-              <p className="text-[10px] text-neutral-400 mb-3">{AI_LABELS[selectedNode]?.concept}</p>
+              <p className="text-[10px] text-neutral-400 mb-3">
+                {AI_LABELS[selectedNode]?.concept}
+              </p>
               <div className="flex items-center gap-3">
                 <input
                   type="range"
@@ -645,7 +731,7 @@ export function AIConfigPage() {
         </AnimatePresence>
       </div>
     </div>
-  )
+  );
 }
 
-export default AIConfigPage
+export default AIConfigPage;

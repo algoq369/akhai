@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -11,171 +11,171 @@ import {
   ChartBarIcon,
   ClockIcon,
   ArrowPathIcon,
-  LightBulbIcon
-} from '@heroicons/react/24/outline'
-import { MapPinIcon as MapPinIconSolid } from '@heroicons/react/24/solid'
+  LightBulbIcon,
+} from '@heroicons/react/24/outline';
+import { MapPinIcon as MapPinIconSolid } from '@heroicons/react/24/solid';
 
 interface Topic {
-  id: string
-  name: string
-  description: string | null
-  category: string | null
-  created_at: number
-  updated_at: number
-  query_count?: number
-  color?: string
-  pinned?: boolean
-  ai_instructions?: string | null
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  created_at: number;
+  updated_at: number;
+  query_count?: number;
+  color?: string;
+  pinned?: boolean;
+  ai_instructions?: string | null;
 }
 
 interface TopicRelationship {
-  from_id: string
-  from_name: string
-  to_id: string
-  to_name: string
-  type: string
-  strength: number
+  from_id: string;
+  from_name: string;
+  to_id: string;
+  to_name: string;
+  type: string;
+  strength: number;
 }
 
 interface TopicStats {
-  total_topics: number
-  total_connections: number
-  categories: Record<string, number>
-  recent_activity: number
+  total_topics: number;
+  total_connections: number;
+  categories: Record<string, number>;
+  recent_activity: number;
 }
 
 export default function SideCanalPage() {
-  const router = useRouter()
-  const [topics, setTopics] = useState<Topic[]>([])
-  const [allTopics, setAllTopics] = useState<Topic[]>([])
-  const [relationships, setRelationships] = useState<TopicRelationship[]>([])
-  const [stats, setStats] = useState<TopicStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const router = useRouter();
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [allTopics, setAllTopics] = useState<Topic[]>([]);
+  const [relationships, setRelationships] = useState<TopicRelationship[]>([]);
+  const [stats, setStats] = useState<TopicStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Filters and search
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterPinned, setFilterPinned] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPinned, setFilterPinned] = useState(false);
 
   // Selected topic
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   useEffect(() => {
-    applyFilters()
-  }, [searchQuery, filterPinned, allTopics])
+    applyFilters();
+  }, [searchQuery, filterPinned, allTopics]);
 
   const fetchData = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      let fetchedTopics: Topic[] = []
-      let fetchedRels: TopicRelationship[] = []
+      let fetchedTopics: Topic[] = [];
+      let fetchedRels: TopicRelationship[] = [];
 
       // Fetch topics
-      const topicsRes = await fetch('/api/side-canal/topics')
+      const topicsRes = await fetch('/api/side-canal/topics');
       if (topicsRes.ok) {
-        const topicsData = await topicsRes.json()
-        fetchedTopics = topicsData.topics || []
-        setAllTopics(fetchedTopics)
+        const topicsData = await topicsRes.json();
+        fetchedTopics = topicsData.topics || [];
+        setAllTopics(fetchedTopics);
       }
 
       // Fetch relationships
-      const relsRes = await fetch('/api/side-canal/relationships')
+      const relsRes = await fetch('/api/side-canal/relationships');
       if (relsRes.ok) {
-        const relsData = await relsRes.json()
-        fetchedRels = relsData.relationships || []
-        setRelationships(fetchedRels)
+        const relsData = await relsRes.json();
+        fetchedRels = relsData.relationships || [];
+        setRelationships(fetchedRels);
       }
 
       // Calculate stats
-      calculateStats(fetchedTopics, fetchedRels)
+      calculateStats(fetchedTopics, fetchedRels);
     } catch (error) {
-      console.error('Failed to fetch Side Canal data:', error)
+      console.error('Failed to fetch Side Canal data:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const calculateStats = (topics: Topic[], rels: TopicRelationship[]) => {
-    const categories: Record<string, number> = {}
-    topics.forEach(t => {
-      const cat = t.category || 'other'
-      categories[cat] = (categories[cat] || 0) + 1
-    })
+    const categories: Record<string, number> = {};
+    topics.forEach((t) => {
+      const cat = t.category || 'other';
+      categories[cat] = (categories[cat] || 0) + 1;
+    });
 
-    const recentActivity = topics.filter(t => {
-      const dayAgo = Date.now() / 1000 - 86400
-      return t.updated_at > dayAgo
-    }).length
+    const recentActivity = topics.filter((t) => {
+      const dayAgo = Date.now() / 1000 - 86400;
+      return t.updated_at > dayAgo;
+    }).length;
 
     setStats({
       total_topics: topics.length,
       total_connections: rels.length,
       categories,
-      recent_activity: recentActivity
-    })
-  }
+      recent_activity: recentActivity,
+    });
+  };
 
   const applyFilters = () => {
-    let filtered = [...allTopics]
+    let filtered = [...allTopics];
 
     // Search
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(t =>
-        t.name.toLowerCase().includes(query) ||
-        (t.description?.toLowerCase().includes(query))
-      )
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (t) => t.name.toLowerCase().includes(query) || t.description?.toLowerCase().includes(query)
+      );
     }
 
     // Pinned filter
     if (filterPinned) {
-      filtered = filtered.filter(t => t.pinned)
+      filtered = filtered.filter((t) => t.pinned);
     }
 
     // Sort by most recent
-    filtered.sort((a, b) => b.updated_at - a.updated_at)
+    filtered.sort((a, b) => b.updated_at - a.updated_at);
 
-    setTopics(filtered)
-  }
+    setTopics(filtered);
+  };
 
   const togglePin = async (topicId: string) => {
-    const topic = allTopics.find(t => t.id === topicId)
-    if (!topic) return
+    const topic = allTopics.find((t) => t.id === topicId);
+    if (!topic) return;
 
     try {
       const res = await fetch(`/api/mindmap/topics/${topicId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pinned: !topic.pinned })
-      })
+        body: JSON.stringify({ pinned: !topic.pinned }),
+      });
 
       if (res.ok) {
-        const updated = allTopics.map(t =>
-          t.id === topicId ? { ...t, pinned: !t.pinned } : t
-        )
-        setAllTopics(updated)
+        const updated = allTopics.map((t) => (t.id === topicId ? { ...t, pinned: !t.pinned } : t));
+        setAllTopics(updated);
       }
     } catch (error) {
-      console.error('Failed to toggle pin:', error)
+      console.error('Failed to toggle pin:', error);
     }
-  }
+  };
 
   const getCategoryColor = (category: string | null): string => {
     const colors: Record<string, string> = {
-      'technology': 'bg-blue-100 text-blue-700 border-blue-200',
-      'business': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-      'research': 'bg-violet-100 text-violet-700 border-violet-200',
-      'personal': 'bg-amber-100 text-amber-700 border-amber-200',
-      'science': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-      'finance': 'bg-green-100 text-green-700 border-green-200',
-      'health': 'bg-pink-100 text-pink-700 border-pink-200',
-      'education': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    }
-    return colors[category?.toLowerCase() || 'other'] || 'bg-relic-ghost text-relic-slate border-relic-mist'
-  }
+      technology: 'bg-blue-100 text-blue-700 border-blue-200',
+      business: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+      research: 'bg-violet-100 text-violet-700 border-violet-200',
+      personal: 'bg-amber-100 text-amber-700 border-amber-200',
+      science: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+      finance: 'bg-green-100 text-green-700 border-green-200',
+      health: 'bg-pink-100 text-pink-700 border-pink-200',
+      education: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    };
+    return (
+      colors[category?.toLowerCase() || 'other'] ||
+      'bg-relic-ghost text-relic-slate border-relic-mist'
+    );
+  };
 
   if (loading) {
     return (
@@ -185,7 +185,7 @@ export default function SideCanalPage() {
           <p className="text-sm text-relic-silver">Loading Side Canal...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -197,11 +197,12 @@ export default function SideCanalPage() {
             <div>
               <h1 className="text-3xl font-mono text-relic-void mb-2">Side Canal</h1>
               <p className="text-sm text-relic-silver max-w-2xl">
-                Autonomous context intelligence system tracking topics, relationships, and insights across your conversations
+                Autonomous context intelligence system tracking topics, relationships, and insights
+                across your conversations
               </p>
             </div>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.back()}
               className="px-4 py-2 bg-relic-slate text-white text-sm rounded hover:bg-relic-void transition-colors"
             >
               Back to Chat
@@ -230,7 +231,9 @@ export default function SideCanalPage() {
                   <FunnelIcon className="w-4 h-4" />
                   <span>Categories</span>
                 </div>
-                <div className="text-2xl font-mono text-relic-void">{Object.keys(stats.categories).length}</div>
+                <div className="text-2xl font-mono text-relic-void">
+                  {Object.keys(stats.categories).length}
+                </div>
               </div>
               <div className="bg-relic-ghost/50 border border-relic-mist rounded p-4">
                 <div className="flex items-center gap-2 text-relic-silver text-xs uppercase tracking-wider mb-2">
@@ -269,7 +272,11 @@ export default function SideCanalPage() {
                   : 'bg-relic-ghost border border-relic-mist text-relic-slate hover:bg-white'
               }`}
             >
-              {filterPinned ? <MapPinIconSolid className="w-3.5 h-3.5" /> : <MapPinIcon className="w-3.5 h-3.5" />}
+              {filterPinned ? (
+                <MapPinIconSolid className="w-3.5 h-3.5" />
+              ) : (
+                <MapPinIcon className="w-3.5 h-3.5" />
+              )}
               <span>Pinned</span>
             </button>
 
@@ -310,15 +317,17 @@ export default function SideCanalPage() {
                       {topic.name}
                     </h3>
                     {topic.category && (
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium border ${getCategoryColor(topic.category)}`}>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium border ${getCategoryColor(topic.category)}`}
+                      >
                         {topic.category}
                       </span>
                     )}
                   </div>
                   <button
                     onClick={(e) => {
-                      e.stopPropagation()
-                      togglePin(topic.id)
+                      e.stopPropagation();
+                      togglePin(topic.id);
                     }}
                     className="p-1 hover:bg-relic-ghost rounded transition-colors"
                   >
@@ -351,7 +360,9 @@ export default function SideCanalPage() {
                       <LightBulbIcon className="w-3 h-3" />
                       <span>AI Instructions</span>
                     </div>
-                    <p className="text-[10px] text-relic-slate line-clamp-2">{topic.ai_instructions}</p>
+                    <p className="text-[10px] text-relic-slate line-clamp-2">
+                      {topic.ai_instructions}
+                    </p>
                   </div>
                 )}
               </div>
@@ -360,5 +371,5 @@ export default function SideCanalPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
