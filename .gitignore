@@ -160,3 +160,9 @@ SESSION_RESUME_*.md
 *_TRACKER.md
 docs/archive/
 packages/web/.env.local.crypto
+
+# Experimental CLI-generated files
+packages/stdlib/
+packages/web/STDLIB_MIGRATION.md
+packages/web/lib/methodology-runner.ts
+packages/web/lib/resilient-provider.ts
