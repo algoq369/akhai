@@ -372,7 +372,7 @@ export default function MindMapHistoryView({
     // Close mindmap modal first, then navigate
     onClose?.();
     setTimeout(() => {
-      window.location.href = `/?q=${encodeURIComponent(query.query)}&ref=${query.id}`;
+      window.location.href = `/?continue=${query.id}`;
     }, 150);
   };
   const handleQueryContextMenu = (e: React.MouseEvent, query: QueryHistoryItem) => {
@@ -1097,7 +1097,7 @@ export default function MindMapHistoryView({
                 setClickedQuery(null);
                 onClose?.();
                 setTimeout(() => {
-                  window.location.href = `/?q=${encodeURIComponent(clickedQuery.query.query)}&ref=${clickedQuery.query.id}`;
+                  window.location.href = `/?continue=${clickedQuery.query.id}`;
                 }, 150);
               }}
               style={{
