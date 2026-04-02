@@ -297,6 +297,20 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
     }
   }, []);
 
+  // Handle browser back/forward with ?continue= param
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const continueId = params.get('continue');
+      if (continueId) {
+        setCurrentConversationId(continueId);
+        loadConversation(continueId);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [loadConversation]);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
