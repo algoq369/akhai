@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           `
         SELECT id, query, flow, created_at, session_id, user_id
         FROM queries
-        WHERE id = ? AND (user_id = ?)
+        WHERE id = ? AND (user_id = ? OR user_id IS NULL)
       `
         )
         .get(queryId, userId) as typeof query;
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           `
         SELECT id, query, flow, result, created_at, gnostic_metadata
         FROM queries
-        WHERE (user_id = ?)
+        WHERE (user_id = ? OR user_id IS NULL)
           AND (
             (session_id IS NOT NULL AND session_id = ?)
             OR (session_id IS NULL AND created_at >= ? AND created_at <= ? + 3600)

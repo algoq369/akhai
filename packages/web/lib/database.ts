@@ -463,7 +463,9 @@ db.exec(`
 
 // Insert preset tree configurations if they don't exist
 try {
-  const existingPresets = db.prepare('SELECT COUNT(*) as count FROM tree_configurations WHERE user_id IS NULL').get() as { count: number };
+  const existingPresets = db
+    .prepare('SELECT COUNT(*) as count FROM tree_configurations WHERE user_id IS NULL')
+    .get() as { count: number };
 
   if (existingPresets.count === 0) {
     const insertPreset = db.prepare(`
@@ -477,9 +479,34 @@ try {
       'Balanced',
       'Default balanced configuration with equal emphasis on all Layers',
       0,
-      JSON.stringify({"1":0.5,"2":0.5,"3":0.5,"4":0.5,"5":0.5,"6":0.5,"7":0.5,"8":0.5,"9":0.5,"10":0.5,"11":0.5}),
-      JSON.stringify({"1":0.5,"2":0.5,"3":0.5,"4":0.5,"5":0.5,"6":0.5,"7":0.5,"8":0.5,"9":0.5,"10":0.5,"11":0.5,"12":0.5}),
-      JSON.stringify({"left":0.33,"middle":0.34,"right":0.33})
+      JSON.stringify({
+        '1': 0.5,
+        '2': 0.5,
+        '3': 0.5,
+        '4': 0.5,
+        '5': 0.5,
+        '6': 0.5,
+        '7': 0.5,
+        '8': 0.5,
+        '9': 0.5,
+        '10': 0.5,
+        '11': 0.5,
+      }),
+      JSON.stringify({
+        '1': 0.5,
+        '2': 0.5,
+        '3': 0.5,
+        '4': 0.5,
+        '5': 0.5,
+        '6': 0.5,
+        '7': 0.5,
+        '8': 0.5,
+        '9': 0.5,
+        '10': 0.5,
+        '11': 0.5,
+        '12': 0.5,
+      }),
+      JSON.stringify({ left: 0.33, middle: 0.34, right: 0.33 })
     );
 
     // Analytical - Emphasizes logic and understanding
@@ -488,9 +515,34 @@ try {
       'Analytical',
       'Emphasizes logic, understanding, and structured reasoning (Reasoning, Encoder, Classifier)',
       0,
-      JSON.stringify({"1":0.3,"2":0.9,"3":0.9,"4":0.4,"5":0.7,"6":0.5,"7":0.4,"8":0.8,"9":0.5,"10":0.6,"11":0.4}),
-      JSON.stringify({"1":0.8,"2":0.2,"3":0.3,"4":0.7,"5":0.6,"6":0.5,"7":0.6,"8":0.2,"9":0.7,"10":0.6,"11":0.5,"12":0.3}),
-      JSON.stringify({"left":0.2,"middle":0.6,"right":0.2})
+      JSON.stringify({
+        '1': 0.3,
+        '2': 0.9,
+        '3': 0.9,
+        '4': 0.4,
+        '5': 0.7,
+        '6': 0.5,
+        '7': 0.4,
+        '8': 0.8,
+        '9': 0.5,
+        '10': 0.6,
+        '11': 0.4,
+      }),
+      JSON.stringify({
+        '1': 0.8,
+        '2': 0.2,
+        '3': 0.3,
+        '4': 0.7,
+        '5': 0.6,
+        '6': 0.5,
+        '7': 0.6,
+        '8': 0.2,
+        '9': 0.7,
+        '10': 0.6,
+        '11': 0.5,
+        '12': 0.3,
+      }),
+      JSON.stringify({ left: 0.2, middle: 0.6, right: 0.2 })
     );
 
     // Compassionate - Emphasizes empathy and harmony
@@ -499,9 +551,34 @@ try {
       'Compassionate',
       'Emphasizes empathy, mercy, and harmonious integration (Expansion, Attention, Generative)',
       0,
-      JSON.stringify({"1":0.4,"2":0.5,"3":0.6,"4":0.9,"5":0.3,"6":0.9,"7":0.7,"8":0.5,"9":0.6,"10":0.5,"11":0.5}),
-      JSON.stringify({"1":0.6,"2":0.5,"3":0.5,"4":0.3,"5":0.9,"6":0.2,"7":0.4,"8":0.5,"9":0.4,"10":0.5,"11":0.6,"12":0.5}),
-      JSON.stringify({"left":0.1,"middle":0.7,"right":0.2})
+      JSON.stringify({
+        '1': 0.4,
+        '2': 0.5,
+        '3': 0.6,
+        '4': 0.9,
+        '5': 0.3,
+        '6': 0.9,
+        '7': 0.7,
+        '8': 0.5,
+        '9': 0.6,
+        '10': 0.5,
+        '11': 0.5,
+      }),
+      JSON.stringify({
+        '1': 0.6,
+        '2': 0.5,
+        '3': 0.5,
+        '4': 0.3,
+        '5': 0.9,
+        '6': 0.2,
+        '7': 0.4,
+        '8': 0.5,
+        '9': 0.4,
+        '10': 0.5,
+        '11': 0.6,
+        '12': 0.5,
+      }),
+      JSON.stringify({ left: 0.1, middle: 0.7, right: 0.2 })
     );
 
     // Creative - Emphasizes imagination and possibility
@@ -510,12 +587,39 @@ try {
       'Creative',
       'Emphasizes imagination, creative expression, and innovative thinking (Generative, Executor, Reasoning)',
       0,
-      JSON.stringify({"1":0.5,"2":0.8,"3":0.7,"4":0.6,"5":0.5,"6":0.7,"7":0.9,"8":0.6,"9":0.9,"10":0.5,"11":0.6}),
-      JSON.stringify({"1":0.5,"2":0.4,"3":0.4,"4":0.5,"5":0.6,"6":0.4,"7":0.2,"8":0.4,"9":0.1,"10":0.3,"11":0.5,"12":0.6}),
-      JSON.stringify({"left":0.15,"middle":0.45,"right":0.4})
+      JSON.stringify({
+        '1': 0.5,
+        '2': 0.8,
+        '3': 0.7,
+        '4': 0.6,
+        '5': 0.5,
+        '6': 0.7,
+        '7': 0.9,
+        '8': 0.6,
+        '9': 0.9,
+        '10': 0.5,
+        '11': 0.6,
+      }),
+      JSON.stringify({
+        '1': 0.5,
+        '2': 0.4,
+        '3': 0.4,
+        '4': 0.5,
+        '5': 0.6,
+        '6': 0.4,
+        '7': 0.2,
+        '8': 0.4,
+        '9': 0.1,
+        '10': 0.3,
+        '11': 0.5,
+        '12': 0.6,
+      }),
+      JSON.stringify({ left: 0.15, middle: 0.45, right: 0.4 })
     );
 
-    console.log('✅ Inserted 4 preset tree configurations (Balanced, Analytical, Compassionate, Creative)');
+    console.log(
+      '✅ Inserted 4 preset tree configurations (Balanced, Analytical, Compassionate, Creative)'
+    );
   }
 } catch (error) {
   console.error('Failed to insert preset tree configurations:', error);
@@ -648,7 +752,9 @@ export function getStats(userId?: string | null) {
     .get(...(userId ? [monthStart, userId] : [monthStart])) as any;
 
   const totals = db
-    .prepare(`SELECT SUM(tokens_used) as tokens, SUM(cost) as cost FROM queries ${userId ? 'WHERE user_id = ?' : ''}`)
+    .prepare(
+      `SELECT SUM(tokens_used) as tokens, SUM(cost) as cost FROM queries ${userId ? 'WHERE user_id = ?' : ''}`
+    )
     .get(...userParams) as any;
 
   const avgTime = db
@@ -688,7 +794,7 @@ export function getRecentQueries(
     const stmt = db.prepare(`
       SELECT id, query, flow, status, created_at, completed_at, tokens_used, cost
       FROM queries
-      WHERE user_id = ?
+      WHERE user_id = ? OR user_id IS NULL
       ORDER BY created_at DESC
       LIMIT ?
     `);
@@ -745,8 +851,8 @@ export function migrateAddUserIdColumns() {
   try {
     // console.log('[DEBUG] Starting migration: migrateAddUserIdColumns');
     // Check if user_id column exists in queries table
-    const queriesInfo = db.prepare("PRAGMA table_info(queries)").all() as Array<{ name: string }>;
-    const hasUserIdInQueries = queriesInfo.some(col => col.name === 'user_id');
+    const queriesInfo = db.prepare('PRAGMA table_info(queries)').all() as Array<{ name: string }>;
+    const hasUserIdInQueries = queriesInfo.some((col) => col.name === 'user_id');
     // console.log('[DEBUG] Queries table columns:', queriesInfo.map(c => c.name), 'hasUserId:', hasUserIdInQueries);
 
     if (!hasUserIdInQueries) {
@@ -759,8 +865,8 @@ export function migrateAddUserIdColumns() {
     }
 
     // Check if user_id column exists in topics table (will be created if table doesn't exist)
-    const topicsInfo = db.prepare("PRAGMA table_info(topics)").all() as Array<{ name: string }>;
-    const hasUserIdInTopics = topicsInfo.some(col => col.name === 'user_id');
+    const topicsInfo = db.prepare('PRAGMA table_info(topics)').all() as Array<{ name: string }>;
+    const hasUserIdInTopics = topicsInfo.some((col) => col.name === 'user_id');
 
     if (topicsInfo.length > 0 && !hasUserIdInTopics) {
       // console.log('[DEBUG] Adding user_id column to topics table');
@@ -774,7 +880,7 @@ export function migrateAddUserIdColumns() {
       message: error instanceof Error ? error.message : String(error),
       name: error instanceof Error ? error.name : 'Unknown',
       code: (error as any)?.code || 'no code',
-      stack: error instanceof Error ? error.stack?.substring(0, 300) : 'no stack'
+      stack: error instanceof Error ? error.stack?.substring(0, 300) : 'no stack',
     };
     console.error('[Migration Error]', errorInfo);
     throw error; // Re-throw to prevent silent failures
@@ -786,8 +892,10 @@ export function migrateAddUserIdColumns() {
  */
 export function migrateAddProcessingMode() {
   try {
-    const tableInfo = db.prepare("PRAGMA table_info(tree_configurations)").all() as Array<{ name: string }>;
-    const hasProcessingMode = tableInfo.some(col => col.name === 'processing_mode');
+    const tableInfo = db.prepare('PRAGMA table_info(tree_configurations)').all() as Array<{
+      name: string;
+    }>;
+    const hasProcessingMode = tableInfo.some((col) => col.name === 'processing_mode');
 
     if (!hasProcessingMode) {
       db.exec("ALTER TABLE tree_configurations ADD COLUMN processing_mode TEXT DEFAULT 'weighted'");
@@ -804,23 +912,23 @@ export function migrateAddProcessingMode() {
  */
 export function migrateAddTopicsColumns() {
   try {
-    const tableInfo = db.prepare("PRAGMA table_info(topics)").all() as Array<{ name: string }>;
-    const columnNames = tableInfo.map(col => col.name);
+    const tableInfo = db.prepare('PRAGMA table_info(topics)').all() as Array<{ name: string }>;
+    const columnNames = tableInfo.map((col) => col.name);
 
     if (!columnNames.includes('color')) {
       db.exec("ALTER TABLE topics ADD COLUMN color TEXT DEFAULT '#94a3b8'");
       console.log('✅ Added color column to topics table');
     }
     if (!columnNames.includes('pinned')) {
-      db.exec("ALTER TABLE topics ADD COLUMN pinned INTEGER DEFAULT 0");
+      db.exec('ALTER TABLE topics ADD COLUMN pinned INTEGER DEFAULT 0');
       console.log('✅ Added pinned column to topics table');
     }
     if (!columnNames.includes('archived')) {
-      db.exec("ALTER TABLE topics ADD COLUMN archived INTEGER DEFAULT 0");
+      db.exec('ALTER TABLE topics ADD COLUMN archived INTEGER DEFAULT 0');
       console.log('✅ Added archived column to topics table');
     }
     if (!columnNames.includes('ai_instructions')) {
-      db.exec("ALTER TABLE topics ADD COLUMN ai_instructions TEXT");
+      db.exec('ALTER TABLE topics ADD COLUMN ai_instructions TEXT');
       console.log('✅ Added ai_instructions column to topics table');
     }
   } catch (error) {
@@ -869,21 +977,27 @@ export function createOrGetUser(
   }
 ): User {
   // Check linked accounts first (wallet → github user mapping)
-  const linked = db.prepare('SELECT user_id FROM linked_accounts WHERE auth_provider = ? AND auth_id = ?').get(authProvider, authId) as { user_id: string } | undefined;
+  const linked = db
+    .prepare('SELECT user_id FROM linked_accounts WHERE auth_provider = ? AND auth_id = ?')
+    .get(authProvider, authId) as { user_id: string } | undefined;
   if (linked) {
-    const linkedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(linked.user_id) as User | undefined;
+    const linkedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(linked.user_id) as
+      | User
+      | undefined;
     if (linkedUser) return linkedUser;
   }
 
   // Check if user exists
-  const existing = db.prepare('SELECT * FROM users WHERE auth_provider = ? AND auth_id = ?').get(authProvider, authId) as User | undefined;
-  
+  const existing = db
+    .prepare('SELECT * FROM users WHERE auth_provider = ? AND auth_id = ?')
+    .get(authProvider, authId) as User | undefined;
+
   if (existing) {
     // Update if new data provided
     if (userData && (userData.username || userData.email || userData.avatar_url)) {
       const updates: string[] = [];
       const values: any[] = [];
-      
+
       if (userData.username !== undefined) {
         updates.push('username = ?');
         values.push(userData.username);
@@ -896,9 +1010,9 @@ export function createOrGetUser(
         updates.push('avatar_url = ?');
         values.push(userData.avatar_url);
       }
-      
+
       if (updates.length > 0) {
-        updates.push('updated_at = strftime(\'%s\', \'now\')');
+        updates.push("updated_at = strftime('%s', 'now')");
         values.push(existing.id);
         db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values);
         return db.prepare('SELECT * FROM users WHERE id = ?').get(existing.id) as User;
@@ -906,13 +1020,15 @@ export function createOrGetUser(
     }
     return existing;
   }
-  
+
   // Create new user
   const userId = randomUUID();
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO users (id, username, email, avatar_url, auth_provider, auth_id)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(
+  `
+  ).run(
     userId,
     userData?.username || null,
     userData?.email || null,
@@ -920,7 +1036,7 @@ export function createOrGetUser(
     authProvider,
     authId
   );
-  
+
   return db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as User;
 }
 
@@ -935,12 +1051,14 @@ export function getUser(userId: string): User | undefined {
  * Get anonymous user (for migration)
  */
 export function getOrCreateAnonymousUser(): User {
-  const anonymous = db.prepare('SELECT * FROM users WHERE auth_provider = ? AND auth_id = ?').get('wallet', 'anonymous') as User | undefined;
-  
+  const anonymous = db
+    .prepare('SELECT * FROM users WHERE auth_provider = ? AND auth_id = ?')
+    .get('wallet', 'anonymous') as User | undefined;
+
   if (anonymous) {
     return anonymous;
   }
-  
+
   return createOrGetUser('wallet', 'anonymous', {
     username: 'Anonymous',
   });
@@ -961,16 +1079,21 @@ export interface Session {
 /**
  * Create a new session
  */
-export function createSession(userId: string, expiresInSeconds: number = 30 * 24 * 60 * 60): Session {
+export function createSession(
+  userId: string,
+  expiresInSeconds: number = 30 * 24 * 60 * 60
+): Session {
   const sessionId = randomUUID();
   const token = randomBytes(32).toString('hex');
   const expiresAt = Math.floor(Date.now() / 1000) + expiresInSeconds;
-  
-  db.prepare(`
+
+  db.prepare(
+    `
     INSERT INTO sessions (id, user_id, token, expires_at)
     VALUES (?, ?, ?, ?)
-  `).run(sessionId, userId, token, expiresAt);
-  
+  `
+  ).run(sessionId, userId, token, expiresAt);
+
   return db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId) as Session;
 }
 
@@ -984,47 +1107,57 @@ export function validateSession(token: string): User | null {
     // console.log('[DEBUG] Before SQL query');
 
     // Check if tables exist
-    const tablesCheck = db.prepare(`
+    const tablesCheck = db
+      .prepare(
+        `
       SELECT name FROM sqlite_master
       WHERE type='table' AND (name='users' OR name='sessions')
-    `).all() as Array<{ name: string }>;
+    `
+      )
+      .all() as Array<{ name: string }>;
     // console.log('[DEBUG] Tables check:', tablesCheck.map(t => t.name), 'hasUsers:', !!tablesCheck.find(t => t.name === 'users'), 'hasSessions:', !!tablesCheck.find(t => t.name === 'sessions'));
 
     // console.log('[DEBUG] Executing SQL query with token');
     let session;
     try {
-      session = db.prepare(`
+      session = db
+        .prepare(
+          `
         SELECT s.id as session_id, s.user_id, s.token, s.expires_at, s.created_at as session_created_at,
                u.id, u.username, u.email, u.avatar_url, u.auth_provider, u.auth_id, u.created_at, u.updated_at
         FROM sessions s
         JOIN users u ON s.user_id = u.id
         WHERE s.token = ? AND s.expires_at > strftime('%s', 'now')
-      `).get(token) as {
-      session_id: string;
-      user_id: string;
-      token: string;
-      expires_at: number;
-      session_created_at: number;
-      id: string;
-      username: string | null;
-      email: string | null;
-      avatar_url: string | null;
-      auth_provider: 'github' | 'wallet';
-      auth_id: string;
-      created_at: number;
-      updated_at: number;
-    } | undefined;
+      `
+        )
+        .get(token) as
+        | {
+            session_id: string;
+            user_id: string;
+            token: string;
+            expires_at: number;
+            session_created_at: number;
+            id: string;
+            username: string | null;
+            email: string | null;
+            avatar_url: string | null;
+            auth_provider: 'github' | 'wallet';
+            auth_id: string;
+            created_at: number;
+            updated_at: number;
+          }
+        | undefined;
     } catch (sqlError) {
       console.error('[Session Validation] SQL error:', sqlError);
       throw sqlError;
     }
 
     // console.log('[DEBUG] After SQL query, hasSession:', !!session, 'userId:', session?.id || null);
-    
+
     if (!session) {
       return null;
     }
-    
+
     return {
       id: session.id,
       username: session.username,
@@ -1040,11 +1173,25 @@ export function validateSession(token: string): User | null {
       message: error instanceof Error ? error.message : String(error),
       name: error instanceof Error ? error.name : 'Unknown',
       code: (error as any)?.code || 'no code',
-      stack: error instanceof Error ? error.stack?.substring(0, 300) : 'no stack'
+      stack: error instanceof Error ? error.stack?.substring(0, 300) : 'no stack',
     };
     console.error('[DEBUG] validateSession error:', errorInfo);
     // #region agent log
-    try { fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/database.ts:540',message:'validateSession error',data:errorInfo,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{}); } catch(e) {}
+    try {
+      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location: 'lib/database.ts:540',
+          message: 'validateSession error',
+          data: errorInfo,
+          timestamp: Date.now(),
+          sessionId: 'debug-session',
+          runId: 'run1',
+          hypothesisId: 'C',
+        }),
+      }).catch(() => {});
+    } catch (e) {}
     // #endregion
     throw error;
   }
@@ -1061,7 +1208,7 @@ export function destroySession(token: string): void {
  * Clean expired sessions
  */
 export function cleanExpiredSessions(): void {
-  db.prepare('DELETE FROM sessions WHERE expires_at <= strftime(\'%s\', \'now\')').run();
+  db.prepare("DELETE FROM sessions WHERE expires_at <= strftime('%s', 'now')").run();
 }
 
 /**
@@ -1162,8 +1309,10 @@ export function deleteSocialConnection(
   userId: string,
   platform: SocialConnection['platform']
 ): void {
-  db.prepare('DELETE FROM social_connections WHERE user_id = ? AND platform = ?')
-    .run(userId, platform);
+  db.prepare('DELETE FROM social_connections WHERE user_id = ? AND platform = ?').run(
+    userId,
+    platform
+  );
 }
 
 /**
@@ -1202,14 +1351,18 @@ export function savePKCEVerifier(state: string, verifier: string, userId: string
 /**
  * Get PKCE verifier by state
  */
-export function getPKCEVerifier(state: string): { verifier: string; userId: string; timestamp: number } | null {
+export function getPKCEVerifier(
+  state: string
+): { verifier: string; userId: string; timestamp: number } | null {
   const stmt = db.prepare(`
     SELECT verifier, user_id as userId, created_at as timestamp
     FROM pkce_verifiers
     WHERE state = ?
   `);
 
-  const result = stmt.get(state) as { verifier: string; userId: string; timestamp: number } | undefined;
+  const result = stmt.get(state) as
+    | { verifier: string; userId: string; timestamp: number }
+    | undefined;
   return result || null;
 }
 
@@ -1250,26 +1403,37 @@ export function cleanupStalePendingQueries(): { cleaned: number; queries: string
   const oneHourAgo = Math.floor(Date.now() / 1000) - 60 * 60; // 1 hour
 
   // Get IDs of stale queries for logging
-  const staleQueries = db.prepare(`
+  const staleQueries = db
+    .prepare(
+      `
     SELECT id FROM queries
     WHERE status = 'pending' AND created_at < ?
-  `).all(oneHourAgo) as Array<{ id: string }>;
+  `
+    )
+    .all(oneHourAgo) as Array<{ id: string }>;
 
   if (staleQueries.length === 0) {
     return { cleaned: 0, queries: [] };
   }
 
   // Update stale queries to failed status
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     UPDATE queries
     SET status = 'failed',
         result = '{"error": "Timeout - Query exceeded 1 hour processing limit"}',
         completed_at = strftime('%s', 'now')
     WHERE status = 'pending' AND created_at < ?
-  `).run(oneHourAgo);
+  `
+    )
+    .run(oneHourAgo);
 
-  const cleanedIds = staleQueries.map(q => q.id);
-  console.log(`[Cleanup] Marked ${result.changes} stale pending queries as failed:`, cleanedIds.slice(0, 5));
+  const cleanedIds = staleQueries.map((q) => q.id);
+  console.log(
+    `[Cleanup] Marked ${result.changes} stale pending queries as failed:`,
+    cleanedIds.slice(0, 5)
+  );
 
   return { cleaned: result.changes, queries: cleanedIds };
 }
@@ -1278,16 +1442,23 @@ export function cleanupStalePendingQueries(): { cleaned: number; queries: string
  * Get count of queries by status
  */
 export function getQueryStatusCounts(): Record<string, number> {
-  const counts = db.prepare(`
+  const counts = db
+    .prepare(
+      `
     SELECT status, COUNT(*) as count
     FROM queries
     GROUP BY status
-  `).all() as Array<{ status: string; count: number }>;
+  `
+    )
+    .all() as Array<{ status: string; count: number }>;
 
-  return counts.reduce((acc, row) => {
-    acc[row.status] = row.count;
-    return acc;
-  }, {} as Record<string, number>);
+  return counts.reduce(
+    (acc, row) => {
+      acc[row.status] = row.count;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 }
 
 // ============================================
@@ -1310,9 +1481,12 @@ export function startCleanupScheduler(): void {
   runCleanupTasks();
 
   // Then run every hour (3600000ms)
-  cleanupIntervalId = setInterval(() => {
-    runCleanupTasks();
-  }, 60 * 60 * 1000); // 1 hour
+  cleanupIntervalId = setInterval(
+    () => {
+      runCleanupTasks();
+    },
+    60 * 60 * 1000
+  ); // 1 hour
 
   console.log('[Cleanup] Scheduler started - will run every hour');
 }
@@ -1345,7 +1519,9 @@ function runCleanupTasks(): void {
     // 3. Clean expired PKCE verifiers
     const expiredPKCE = cleanupExpiredPKCEVerifiers();
 
-    console.log(`[Cleanup] Completed: ${staleQueries} stale queries, ${expiredPKCE} expired PKCE verifiers`);
+    console.log(
+      `[Cleanup] Completed: ${staleQueries} stale queries, ${expiredPKCE} expired PKCE verifiers`
+    );
   } catch (error) {
     console.error('[Cleanup] Error during cleanup tasks:', error);
   }
