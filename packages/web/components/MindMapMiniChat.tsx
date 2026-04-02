@@ -198,7 +198,7 @@ export function MindMapMiniChat({
                 </div>
                 {msg.role === 'assistant' && msg.query && (
                   <a
-                    href={`/?q=${encodeURIComponent(msg.query)}`}
+                    href="/"
                     className="text-[7px] text-indigo-500 hover:text-indigo-600 mt-0.5 inline-block"
                   >
                     expand to full chat &#x2192;

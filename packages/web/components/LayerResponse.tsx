@@ -943,10 +943,7 @@ export default function LayerResponse({
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          window.open(
-                                            `/?q=${encodeURIComponent(`Explore: ${insight.title}`)}`,
-                                            '_blank'
-                                          );
+                                          onDeepDive(`Explore: ${insight.title}`);
                                         }}
                                         className="text-[9px] px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
                                       >
@@ -1051,11 +1048,8 @@ export default function LayerResponse({
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            window.open(
-                                              `/?q=${encodeURIComponent(`Explore: ${insight.title}`)}`,
-                                              '_blank'
-                                            );
-                                          }}
+                                            onDeepDive(`Explore: ${insight.title}`);
+                                          }}}
                                           className="text-[8px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700"
                                         >
                                           ↗
