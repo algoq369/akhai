@@ -349,12 +349,12 @@ export default function ProfilePage() {
       <header className="border-b border-slate-200 dark:border-relic-slate/30 bg-white/80 dark:bg-relic-void/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <a
-              href="/"
+            <button
+              onClick={() => router.back()}
               className="text-sm font-mono text-slate-400 dark:text-relic-ghost hover:text-slate-600 dark:hover:text-white transition-colors"
             >
               ← back
-            </a>
+            </button>
             <h1 className="text-base font-light tracking-wide text-slate-700 dark:text-white">
               Profile
             </h1>
