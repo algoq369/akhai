@@ -4,16 +4,31 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
+const GuardSuggestionsSchema = z.object({
+  originalQuery: z.string().min(1).max(10000),
+  guardResult: z
+    .object({
+      sanityViolations: z.array(z.string()).optional(),
+      issues: z.array(z.string()).optional(),
+    })
+    .optional(),
+  action: z.enum(['refine', 'pivot']),
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const { originalQuery, guardResult, action } = await request.json();
-
-    if (!originalQuery || !action) {
-      return NextResponse.json({ error: 'originalQuery and action are required' }, { status: 400 });
+    const parsed = GuardSuggestionsSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.format() },
+        { status: 400 }
+      );
     }
+    const { originalQuery, guardResult, action } = parsed.data;
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {

@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { logger, log } from '@/lib/logger';
 import { createQuery, updateQuery, trackUsage, addEvent } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
@@ -54,6 +55,32 @@ import { trackAscent, suggestElevation, Layer, LAYER_METADATA } from '@/lib/laye
 import { analyzeLayerContent, getLayerActivationSummary } from '@/lib/layer-mapper';
 import { emitThought, formatDuration } from '@/lib/thought-stream';
 
+// ============================================================================
+// ZOD INPUT VALIDATION SCHEMA
+// ============================================================================
+const QuerySchema = z.object({
+  query: z.string().min(1).max(10000),
+  methodology: z.enum(['direct', 'cod', 'sc', 'react', 'pas', 'tot', 'auto']).default('auto'),
+  conversationHistory: z.array(z.object({ role: z.string(), content: z.string() })).default([]),
+  pageContext: z.any().optional(),
+  legendMode: z.boolean().default(false),
+  layersWeights: z
+    .record(z.string(), z.number())
+    .optional()
+    .transform((w) =>
+      w
+        ? (Object.fromEntries(Object.entries(w).map(([k, v]) => [Number(k), v])) as Record<
+            number,
+            number
+          >)
+        : undefined
+    ),
+  instinctConfig: z.any().optional(),
+  liveRefinements: z.array(z.object({ type: z.string(), text: z.string() })).optional(),
+  grimoireContext: z.any().optional(),
+  queryId: z.string().optional(),
+});
+
 /** Emit thought to SSE AND persist to DB for history replay */
 function emitAndPersist(queryId: string, event: import('@/lib/thought-stream').ThoughtEvent) {
   emitThought(queryId, event);
@@ -80,26 +107,29 @@ export async function POST(request: NextRequest) {
     const user = token ? getUserFromSession(token) : null;
     const userId = user?.id || null;
 
+    const parsed = QuerySchema.safeParse(await request.json());
+    if (!parsed.success) {
+      logger.query.apiError('VALIDATION', 'Invalid input');
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.format() },
+        { status: 400 }
+      );
+    }
     const {
       query,
-      methodology = 'auto',
-      conversationHistory = [],
+      methodology,
+      conversationHistory,
       pageContext,
-      legendMode = false,
+      legendMode,
       layersWeights,
       instinctConfig,
       liveRefinements,
       grimoireContext,
       queryId: clientQueryId,
-    } = await request.json();
+    } = parsed.data;
 
     // Use client-provided queryId if available (enables live SSE), otherwise generate
     queryId = clientQueryId || Math.random().toString(36).slice(2, 10);
-
-    if (!query || typeof query !== 'string') {
-      logger.query.apiError('VALIDATION', 'Query is required');
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
-    }
 
     // Emit: query received
     emitAndPersist(queryId, {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getUserFromSession } from '@/lib/auth';
 import {
   extractTopics,
@@ -10,6 +11,13 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+const ExtractSchema = z.object({
+  query: z.string().min(1).max(10000),
+  response: z.string().min(1),
+  queryId: z.string().min(1),
+  legendMode: z.boolean().default(false),
+});
+
 /**
  * POST /api/side-canal/extract
  * Trigger topic extraction for a query
@@ -20,14 +28,14 @@ export async function POST(request: NextRequest) {
     const user = token ? getUserFromSession(token) : null;
     const userId = user?.id || null;
 
-    const { query, response, queryId, legendMode = false } = await request.json();
-
-    if (!query || !response || !queryId) {
+    const parsed = ExtractSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'query, response, and queryId are required' },
+        { error: 'Invalid input', details: parsed.error.format() },
         { status: 400 }
       );
     }
+    const { query, response, queryId, legendMode } = parsed.data;
 
     // Extract topics
     const topics = await extractTopics(query, response, userId);

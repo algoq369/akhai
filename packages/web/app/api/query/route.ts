@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { queries, addQueryEvent, createQueryRecord, updateQueryStatus } from '@/lib/query-store';
 import { trackUsage, updateQuery } from '@/lib/database';
@@ -47,6 +48,14 @@ Show all reasoning paths explicitly.
 ---
 USER QUERY: `,
 };
+
+// Zod input validation schema
+const QuerySchema = z.object({
+  query: z.string().min(1).max(10000),
+  flow: z.string().optional(),
+  methodology: z.string().optional(),
+  conversationHistory: z.array(z.object({ role: z.string(), content: z.string() })).default([]),
+});
 
 // Security: Input validation constants
 const MAX_QUERY_LENGTH = 10000;
@@ -118,7 +127,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { query, flow, methodology, conversationHistory = [] } = await request.json();
+    const parsed = QuerySchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.format() },
+        { status: 400 }
+      );
+    }
+    const { query, flow, methodology, conversationHistory } = parsed.data;
 
     console.log('=== QUERY RECEIVED ===', {
       query: query?.substring(0, 50),
@@ -126,25 +142,6 @@ export async function POST(request: NextRequest) {
       flow,
       historyLength: conversationHistory.length,
     });
-
-    // Security: Input validation
-    if (!query || typeof query !== 'string') {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
-    }
-
-    if (query.length > MAX_QUERY_LENGTH) {
-      return NextResponse.json(
-        { error: `Query exceeds maximum length of ${MAX_QUERY_LENGTH} characters` },
-        { status: 400 }
-      );
-    }
-
-    if (conversationHistory.length > MAX_CONVERSATION_HISTORY) {
-      return NextResponse.json(
-        { error: `Conversation history exceeds maximum of ${MAX_CONVERSATION_HISTORY} messages` },
-        { status: 400 }
-      );
-    }
 
     // SMART DETECTION: Classify query before processing
     const classification = classifyQuery(query);
@@ -164,7 +161,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Create query in database and memory
-    createQueryRecord(queryId, query, finalMethodology);
+    createQueryRecord(
+      queryId,
+      query,
+      finalMethodology as 'A' | 'B' | 'direct' | 'tot' | 'cot' | 'aot' | 'auto'
+    );
 
     // Start processing in background with real AkhAI integration
     processQuery(queryId, finalMethodology, conversationHistory).catch((error) => {

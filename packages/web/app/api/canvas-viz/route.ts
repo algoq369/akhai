@@ -4,21 +4,27 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { callProvider } from '@/lib/multi-provider-api';
 
 export const dynamic = 'force-dynamic';
 
+const CanvasVizSchema = z.object({
+  query: z.string().min(1).max(10000),
+  response: z.string().default(''),
+  type: z.enum(['diagram', 'chart', 'table', 'timeline', 'radar']),
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const { query, response, type } = await request.json();
-
-    const validTypes = ['diagram', 'chart', 'table', 'timeline', 'radar'];
-    if (!query || !type || !validTypes.includes(type)) {
+    const parsed = CanvasVizSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: `query, response, and type (${validTypes.join('|')}) are required` },
+        { error: 'Invalid input', details: parsed.error.format() },
         { status: 400 }
       );
     }
+    const { query, response, type } = parsed.data;
 
     const prompts: Record<string, string> = {
       diagram:

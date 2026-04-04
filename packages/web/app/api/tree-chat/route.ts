@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import Anthropic from '@anthropic-ai/sdk';
 import { getActiveTreeConfiguration } from '@/lib/tree-configuration';
 import { validateSession } from '@/lib/database';
@@ -18,13 +19,22 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
+const TreeChatSchema = z.object({
+  message: z.string().min(1).max(10000),
+  currentConfig: z.any().optional(),
+  treeState: z.any().optional(),
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const { message, currentConfig, treeState } = await request.json();
-
-    if (!message) {
-      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+    const parsed = TreeChatSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.format() },
+        { status: 400 }
+      );
     }
+    const { message, currentConfig, treeState } = parsed.data;
 
     // Get user from session (optional)
     const token = request.cookies.get('session_token')?.value;

@@ -5,9 +5,21 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { callProvider } from '@/lib/multi-provider-api';
 import { getRecentQueries } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
+
+const QuickQuerySchema = z.object({
+  query: z.string().min(1).max(10000),
+  userContext: z
+    .object({
+      username: z.string().optional(),
+      email: z.string().optional(),
+      userId: z.string().optional(),
+    })
+    .optional(),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -58,11 +70,14 @@ async function callOpenRouterAlt(request: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, userContext } = await request.json();
-
-    if (!query || typeof query !== 'string') {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    const parsed = QuickQuerySchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.format() },
+        { status: 400 }
+      );
     }
+    const { query, userContext } = parsed.data;
 
     // Build context-aware system prompt
     let systemPrompt =
