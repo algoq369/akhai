@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useHomePageState } from '@/hooks/useHomePageState';
 import ChatHeader from '@/components/sections/ChatHeader';
@@ -10,11 +11,17 @@ import FooterBar from '@/components/home/FooterBar';
 import Overlays from '@/components/home/Overlays';
 import InputSection from '@/components/home/InputSection';
 import FileDropZone from '@/components/FileDropZone';
-import CanvasWorkspace from '@/components/canvas/CanvasWorkspace';
-import LiveRefinementCanal from '@/components/LiveRefinementCanal';
-import SideChat from '@/components/SideChat';
-import SideMiniChat from '@/components/SideMiniChat';
 import { METHODOLOGIES } from '@/lib/methodology-data';
+
+// Lazy-load heavy components that render conditionally
+const CanvasWorkspace = dynamic(() => import('@/components/canvas/CanvasWorkspace'), {
+  ssr: false,
+});
+const LiveRefinementCanal = dynamic(() => import('@/components/LiveRefinementCanal'), {
+  ssr: false,
+});
+const SideChat = dynamic(() => import('@/components/SideChat'), { ssr: false });
+const SideMiniChat = dynamic(() => import('@/components/SideMiniChat'), { ssr: false });
 
 /**
  * Helper component to watch URL parameters
