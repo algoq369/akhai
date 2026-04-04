@@ -12,8 +12,20 @@ import FinanceBanner from '@/components/FinanceBanner';
 // import { FibonacciBackground } from '@/components/FibonacciBackground'
 
 export const metadata: Metadata = {
-  title: 'akhai · sovereign intelligence',
-  description: 'Multi-AI consensus research engine',
+  title: 'AkhAI · Sovereign Intelligence',
+  description: 'School of Thoughts — 7 AI reasoning methodologies with sovereign infrastructure',
+  openGraph: {
+    title: 'AkhAI · Sovereign Intelligence',
+    description: 'School of Thoughts — 7 AI reasoning methodologies',
+    url: 'https://akhai.app',
+    siteName: 'AkhAI',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'AkhAI · Sovereign Intelligence',
+    description: 'School of Thoughts — 7 AI reasoning methodologies',
+  },
 };
 
 export const viewport: Viewport = {
