@@ -25,7 +25,17 @@ export async function GET(request: NextRequest) {
       SELECT * FROM user_points WHERE user_id = ?
     `
       )
-      .get(user.id) as any;
+      .get(user.id) as
+      | {
+          user_id: string;
+          total_points: number;
+          development_level: number;
+          queries_completed: number;
+          tokens_consumed: number;
+          cost_spent: number;
+          updated_at?: number;
+        }
+      | undefined;
 
     // Get methodology breakdown
     const methodologyStats = db
@@ -38,7 +48,7 @@ export async function GET(request: NextRequest) {
       ORDER BY count DESC
     `
       )
-      .all(user.id) as any[];
+      .all(user.id) as Array<{ methodology: string; count: number; tokens: number; cost: number }>;
 
     // Get recent activity (last 30 days)
     const thirtyDaysAgo = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60;
@@ -57,7 +67,12 @@ export async function GET(request: NextRequest) {
       LIMIT 30
     `
       )
-      .all(user.id, thirtyDaysAgo) as any[];
+      .all(user.id, thirtyDaysAgo) as Array<{
+      date: string;
+      queries: number;
+      tokens: number;
+      cost: number;
+    }>;
 
     // Calculate development level based on points
     let developmentLevel = 1;

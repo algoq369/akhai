@@ -16,13 +16,13 @@ export async function GET() {
     // Get GitHub user (algoq369)
     const user = db
       .prepare("SELECT id, username, email FROM users WHERE auth_provider = 'github' LIMIT 1")
-      .get() as any;
+      .get() as { id: string; username: string; email: string } | undefined;
     if (!user) return NextResponse.json({ error: 'No GitHub users found' }, { status: 404 });
 
     // Check for existing session
     let session = db
       .prepare('SELECT token FROM sessions WHERE user_id = ? AND expires_at > ?')
-      .get(user.id, Math.floor(Date.now() / 1000)) as any;
+      .get(user.id, Math.floor(Date.now() / 1000)) as { token: string } | undefined;
 
     if (!session) {
       // Create new session

@@ -89,7 +89,9 @@ export async function POST(request: NextRequest) {
         .prepare(
           'SELECT * FROM email_auth_codes WHERE email = ? AND code = ? AND used = 0 AND expires_at > ?'
         )
-        .get(email, code, Date.now()) as any;
+        .get(email, code, Date.now()) as
+        | { id: string; email: string; code: string; expires_at: number; used: number }
+        | undefined;
 
       if (!record) {
         return NextResponse.json({ error: 'Invalid or expired code' }, { status: 401 });
@@ -104,18 +106,31 @@ export async function POST(request: NextRequest) {
       } catch {}
 
       // Find or create user by email
-      let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+      let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as
+        | {
+            id: string;
+            email: string;
+            auth_provider: string;
+            auth_id: string;
+            created_at: number;
+            updated_at: number;
+          }
+        | undefined;
       if (!user) {
         const userId = `email_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
         const now = Math.floor(Date.now() / 1000);
         db.prepare(
           'INSERT OR IGNORE INTO users (id, email, auth_provider, auth_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
         ).run(userId, email, 'email', email, now, now);
-        user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+        user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as typeof user;
         if (!user) {
           // Fallback: maybe user exists with different id but same email
-          user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+          user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as typeof user;
         }
+      }
+
+      if (!user) {
+        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
       }
 
       // Create session

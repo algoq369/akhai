@@ -144,7 +144,14 @@ export function loadQuery(queryId: string): QueryData | null {
 
   // Try to load from database
   try {
-    const dbQuery = dbGetQuery(queryId) as any;
+    const dbQuery = dbGetQuery(queryId) as
+      | {
+          query: string;
+          flow: QueryData['flow'];
+          status: QueryData['status'];
+          result: string | null;
+        }
+      | undefined;
     if (!dbQuery) return null;
 
     const events = dbGetEvents(queryId).map((e) => ({

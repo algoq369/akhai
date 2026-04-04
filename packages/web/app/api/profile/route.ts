@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
   }
 
   // Get user from database
-  const dbUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id) as any;
+  const dbUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id) as
+    | Record<string, unknown>
+    | undefined;
 
   if (!dbUser) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });

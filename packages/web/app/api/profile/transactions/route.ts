@@ -28,8 +28,17 @@ export async function GET(request: NextRequest) {
     )
     .all() as Array<{ name: string }>;
 
-  let cryptoPayments: any[] = [];
-  let btcpayPayments: any[] = [];
+  interface PaymentRow {
+    id: string;
+    amount: number;
+    currency: string;
+    pay_currency: string | null;
+    status: string;
+    created_at: number;
+    payment_type: string;
+  }
+  let cryptoPayments: PaymentRow[] = [];
+  let btcpayPayments: PaymentRow[] = [];
 
   // Only query tables that exist
   if (tables.some((t) => t.name === 'crypto_payments')) {
@@ -50,7 +59,7 @@ export async function GET(request: NextRequest) {
         ORDER BY created_at DESC
       `
         )
-        .all(user.id) as any[];
+        .all(user.id) as PaymentRow[];
     } catch (e) {
       console.error('[Profile Transactions] Error fetching crypto payments:', e);
     }
@@ -74,7 +83,7 @@ export async function GET(request: NextRequest) {
         ORDER BY created_at DESC
       `
         )
-        .all(user.id) as any[];
+        .all(user.id) as PaymentRow[];
     } catch (e) {
       console.error('[Profile Transactions] Error fetching btcpay payments:', e);
     }
@@ -82,7 +91,7 @@ export async function GET(request: NextRequest) {
 
   // Combine and sort all transactions
   const allTransactions = [...cryptoPayments, ...btcpayPayments].sort(
-    (a: any, b: any) => b.created_at - a.created_at
+    (a, b) => b.created_at - a.created_at
   );
 
   return NextResponse.json({ transactions: allTransactions });

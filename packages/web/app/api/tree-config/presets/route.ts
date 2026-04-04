@@ -24,7 +24,19 @@ export async function GET(request: NextRequest) {
     }));
 
     // User-saved presets from database
-    let userPresets: any[] = [];
+    interface PresetRow {
+      id: number;
+      name: string;
+      layer_weights: string;
+      created_at: string;
+    }
+    let userPresets: Array<{
+      id: string;
+      name: string;
+      weights: unknown;
+      isBuiltIn: boolean;
+      createdAt: string;
+    }> = [];
     if (sessionId) {
       const stmt = db.prepare(`
         SELECT id, name, layer_weights, created_at
@@ -32,7 +44,7 @@ export async function GET(request: NextRequest) {
         WHERE user_id IS NULL AND session_id = ?
         ORDER BY created_at DESC
       `);
-      const rows = stmt.all(sessionId) as any[];
+      const rows = stmt.all(sessionId) as PresetRow[];
       userPresets = rows.map((row) => ({
         id: row.id.toString(),
         name: row.name,

@@ -9,12 +9,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { id: queryId } = await params;
 
   try {
-    const query = db.prepare('SELECT * FROM queries WHERE id = ?').get(queryId) as any;
+    const query = db.prepare('SELECT * FROM queries WHERE id = ?').get(queryId) as
+      | {
+          id: string;
+          query: string;
+          flow: string;
+          status: string;
+          tokens_used: number | null;
+          cost: number | null;
+          result: string | null;
+          created_at: number;
+        }
+      | undefined;
     if (!query) return NextResponse.json({ error: 'Query not found' }, { status: 404 });
 
     const events = db
       .prepare('SELECT type, data, timestamp FROM events WHERE query_id = ? ORDER BY id ASC')
-      .all(queryId) as any[];
+      .all(queryId) as Array<{ type: string; data: string; timestamp: number }>;
 
     if (format === 'md') {
       const markdown = generateMarkdown(query, events);
@@ -35,7 +46,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-function generateMarkdown(query: any, events: any[]): string {
+interface ExportQueryRow {
+  id: string;
+  query: string;
+  flow: string;
+  status: string;
+  tokens_used: number | null;
+  cost: number | null;
+  result: string | null;
+  created_at: number;
+}
+interface ExportEventRow {
+  type: string;
+  data: string;
+  timestamp: number;
+}
+
+function generateMarkdown(query: ExportQueryRow, events: ExportEventRow[]): string {
   const date = new Date(query.created_at * 1000).toISOString();
 
   let md = `# AkhAI Query Report\n\n`;
@@ -47,7 +74,7 @@ function generateMarkdown(query: any, events: any[]): string {
   md += `**Cost:** $${query.cost?.toFixed(4) || '0.00'}\n\n`;
   md += `## Query\n\n${query.query}\n\n`;
 
-  const advisorResponses: any[] = [];
+  const advisorResponses: Array<{ family: string; slot: number; response: string }> = [];
   let redactorOutput = '';
   let finalDecision = '';
 
