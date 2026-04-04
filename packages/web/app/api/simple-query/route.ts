@@ -957,7 +957,6 @@ export async function POST(request: NextRequest) {
         'SIDE_CANAL',
         `Topic extraction error: ${err instanceof Error ? err.message : String(err)}`
       );
-      console.error('Side Canal error:', err);
     }
 
     const responseData = {
@@ -1088,7 +1087,7 @@ export async function POST(request: NextRequest) {
     const errorName = error instanceof Error ? error.name : typeof error;
 
     logger.system.error(errorMessage);
-    console.error('[API] Error details:', { errorName, errorMessage, errorStack, queryId });
+    log('ERROR', 'API', `Error details`, { errorName, errorMessage, errorStack, queryId });
 
     // Emit: error
     try {
@@ -1118,7 +1117,11 @@ export async function POST(request: NextRequest) {
         userId
       );
     } catch (dbError) {
-      console.error('[API] Failed to update query status:', dbError);
+      log(
+        'ERROR',
+        'DB',
+        `Failed to update query status: ${dbError instanceof Error ? dbError.message : String(dbError)}`
+      );
     }
 
     return NextResponse.json(
