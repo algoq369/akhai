@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { logger, log } from '@/lib/logger';
 import { withRetry } from '@/lib/retry';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { createQuery, updateQuery, trackUsage, addEvent } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
 import { getContextForQuery } from '@/lib/side-canal';
@@ -103,6 +104,13 @@ export async function POST(request: NextRequest) {
   let queryId: string = Math.random().toString(36).slice(2, 10);
 
   try {
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const { allowed, remaining } = checkRateLimit(ip);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+    }
+
     // Get user from session (optional - allows anonymous usage)
     const token = request.cookies.get('session_token')?.value;
     const user = token ? getUserFromSession(token) : null;
