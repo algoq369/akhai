@@ -1,226 +1,20 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SparklesIcon,
   ArrowsPointingOutIcon,
   ArrowsPointingInIcon,
   XMarkIcon,
-  BookOpenIcon,
-  LinkIcon,
 } from '@heroicons/react/24/outline';
+import type { MindmapNode, ResponseMindmapProps } from './ResponseMindmap.types';
+import { NODE_GRADIENTS, METHODOLOGY_COLORS } from './ResponseMindmap.types';
+import { generateTailoredFooter, extractConcepts } from './ResponseMindmap.utils';
+import MindmapDetailPanel from './ResponseMindmapDetailPanel';
+import MindmapFooter from './ResponseMindmapFooter';
 
-interface MindmapNode {
-  id: string;
-  label: string;
-  fullText: string;
-  level: number;
-  parentId?: string;
-  category?: string;
-  x?: number;
-  y?: number;
-}
-
-interface ResponseMindmapProps {
-  content: string;
-  topics?: Array<{ id: string; name: string; category?: string }>;
-  isVisible: boolean;
-  onToggle: () => void;
-  methodology?: string;
-  query?: string;
-}
-
-// Beautiful gradient colors
-const NODE_GRADIENTS = [
-  { from: '#667eea', to: '#764ba2' },
-  { from: '#f093fb', to: '#f5576c' },
-  { from: '#4facfe', to: '#00f2fe' },
-  { from: '#43e97b', to: '#38f9d7' },
-  { from: '#fa709a', to: '#fee140' },
-  { from: '#a8edea', to: '#fed6e3' },
-  { from: '#ff9a9e', to: '#fecfef' },
-  { from: '#ffecd2', to: '#fcb69f' },
-];
-
-// Methodology colors
-const METHODOLOGY_COLORS: Record<string, { from: string; to: string }> = {
-  direct: { from: '#ef4444', to: '#f97316' },
-  cod: { from: '#f97316', to: '#eab308' },
-  sc: { from: '#eab308', to: '#84cc16' },
-  react: { from: '#22c55e', to: '#14b8a6' },
-  pas: { from: '#3b82f6', to: '#6366f1' },
-  tot: { from: '#8b5cf6', to: '#a855f7' },
-  auto: { from: '#64748b', to: '#475569' },
-};
-
-// Generate tailored footer content based on query analysis
-function generateTailoredFooter(
-  query: string | undefined,
-  nodes: MindmapNode[],
-  topics: Array<{ id: string; name: string; category?: string }> | undefined,
-  methodology: string,
-  isExpanded: boolean,
-  selectedNode: MindmapNode | null
-): { focus: string; quality: string; action: string } {
-  const conceptCount = nodes.length - 1;
-  const rootLabel = nodes[0]?.label || 'concepts';
-
-  // Analyze query intent
-  const queryLower = query?.toLowerCase() || '';
-  const hasHow = queryLower.includes('how');
-  const hasWhat = queryLower.includes('what');
-  const hasWhy = queryLower.includes('why');
-  const hasCompare =
-    queryLower.includes('compare') ||
-    queryLower.includes('vs') ||
-    queryLower.includes('versus') ||
-    queryLower.includes('difference');
-  const hasList = queryLower.includes('list') || /\d+\./.test(query || '');
-  const hasExplain = queryLower.includes('explain') || queryLower.includes('describe');
-  const hasCreate =
-    queryLower.includes('create') || queryLower.includes('build') || queryLower.includes('design');
-
-  // Extract subject from query
-  const queryWords = query?.split(/\s+/).filter((w) => w.length > 3) || [];
-  const primarySubject = nodes[1]?.label || queryWords[queryWords.length - 1] || 'topic';
-
-  // Detect topic patterns
-  const hasNumbers = nodes.some((n) => /\d+/.test(n.label));
-  const hasQuestions = nodes.some((n) => /\?/.test(n.fullText));
-  const categories = topics
-    ? new Set(topics.filter((t) => t.category).map((t) => t.category))
-    : new Set();
-
-  // Generate FOCUS line (tailored to query type)
-  let focus = '';
-  if (hasCompare) {
-    focus = `Comparative analysis mapping ${conceptCount} distinguishing factors for "${primarySubject}" — radial structure reveals contrast points across ${methodology} methodology with spatial organization highlighting differences.`;
-  } else if (hasHow) {
-    focus = `Procedural knowledge map extracting ${conceptCount} implementation steps for "${primarySubject}" — ${methodology} methodology captures sequential and parallel pathways with interconnected concept relationships.`;
-  } else if (hasWhat) {
-    focus = `Definitional framework identifying ${conceptCount} core aspects of "${primarySubject}" — hierarchical visualization anchored to "${rootLabel}" with categorical concept distribution.`;
-  } else if (hasWhy) {
-    focus = `Causal reasoning graph mapping ${conceptCount} explanatory factors for "${primarySubject}" — ${methodology} methodology surfaces cause-effect relationships through radial concept clustering.`;
-  } else if (hasList || hasNumbers) {
-    focus = `Structured enumeration visualizing ${conceptCount} sequential elements from "${rootLabel}" — numbered hierarchy with radial layout preserving logical ordering from ${methodology} response.`;
-  } else if (hasCreate || hasExplain) {
-    focus = `Constructive knowledge map decomposing "${primarySubject}" into ${conceptCount} foundational concepts — ${methodology} methodology reveals building blocks with spatial organization for synthesis.`;
-  } else {
-    focus = `Conceptual map extracting ${conceptCount} key topics from ${methodology} methodology response — hierarchical visualization centered on "${rootLabel}" with radial concept distribution for spatial knowledge organization.`;
-  }
-
-  // Generate QUALITY line (tailored to extraction type and content)
-  let quality = '';
-  if (topics && topics.length > 0) {
-    const categoryText =
-      categories.size > 0
-        ? ` across ${categories.size} ${categories.size === 1 ? 'category' : 'categories'}`
-        : '';
-    quality = `Topic-driven extraction with ${conceptCount} confirmed topics${categoryText} — AI-verified against response content with ${Math.round((topics.length / Math.max(conceptCount, 1)) * 100)}% coverage confidence.`;
-  } else if (hasNumbers) {
-    quality = `Numbered pattern extraction preserving sequential structure — ${conceptCount} ordered concepts with ${nodes.filter((n) => /^\d+/.test(n.label)).length} explicit enumerations maintaining logical flow integrity.`;
-  } else if (hasQuestions) {
-    quality = `Question-aware extraction identifying ${conceptCount} inquiry-driven concepts — preserves interrogative structure with ${nodes.filter((n) => /\?/.test(n.fullText)).length} question nodes for exploratory navigation.`;
-  } else {
-    const boldCount = nodes.filter((n) => n.fullText.includes('**')).length;
-    const headerCount = nodes.filter((n) => n.fullText.startsWith('#')).length;
-    quality = `Pattern-based extraction from ${headerCount} headers and ${boldCount} emphasized terms — ${conceptCount} distinct concepts with semantic deduplication at ${Math.round((conceptCount / Math.max(nodes.length, 1)) * 100)}% retention.`;
-  }
-
-  // Generate ACTION line (tailored to current state and content type)
-  let action = '';
-  if (isExpanded && selectedNode) {
-    const relatedCount = nodes.filter((n) => n.level === 1).length;
-    action = `Detail view active for "${selectedNode.label}" — revealing full context with ${selectedNode.level === 0 ? relatedCount + ' connected concepts' : 'parent relationships'}. Click other nodes to navigate concept network or drag to reorganize spatial layout.`;
-  } else if (isExpanded) {
-    const interactionHints = hasCompare
-      ? 'compare side-by-side by opening multiple detail panels'
-      : hasHow
-        ? 'explore step-by-step by clicking sequential nodes'
-        : 'drill into any concept for full context';
-    action = `Interactive exploration enabled: Click nodes to ${interactionHints}. Drag to reorganize — spatial positioning aids memory retention. ${conceptCount} concepts ready for deep-dive analysis.`;
-  } else {
-    const previewHint = hasCompare
-      ? 'comparison matrix'
-      : hasList
-        ? 'ordered workflow'
-        : hasHow
-          ? 'implementation roadmap'
-          : 'concept relationships';
-    action = `Compact preview of ${conceptCount}-topic ${previewHint}. Click expand (↗) for interactive mode with draggable nodes, detail panels, and full-text exploration of "${primarySubject}".`;
-  }
-
-  return { focus, quality, action };
-}
-
-function extractConcepts(content: string): MindmapNode[] {
-  const nodes: MindmapNode[] = [];
-
-  // Get first meaningful sentence for root
-  const sentences = content.split(/[.!?]/).filter((s) => s.trim().length > 10);
-  const firstSentence = sentences[0]?.trim() || 'Response';
-  const rootLabel =
-    firstSentence.length > 28 ? firstSentence.substring(0, 25) + '...' : firstSentence;
-
-  nodes.push({
-    id: 'root',
-    label: rootLabel,
-    fullText: firstSentence,
-    level: 0,
-  });
-
-  // Extract concepts with their full context
-  const patterns = [
-    { regex: /\*\*([^*]+)\*\*/g, type: 'bold' },
-    { regex: /^#+\s*(.+)$/gm, type: 'header' },
-    { regex: /^[-•*]\s*(.+)$/gm, type: 'bullet' },
-    { regex: /^\d+\.\s*(.+)$/gm, type: 'numbered' },
-  ];
-
-  const conceptMap = new Map<string, string>();
-
-  patterns.forEach(({ regex }) => {
-    let match;
-    while ((match = regex.exec(content)) !== null) {
-      const fullText = match[1]?.trim().replace(/[*#]/g, '').trim();
-      if (fullText && fullText.length > 2 && fullText.length < 200) {
-        const label = fullText.length > 20 ? fullText.substring(0, 17) + '...' : fullText;
-        if (!conceptMap.has(label)) {
-          conceptMap.set(label, fullText);
-        }
-      }
-    }
-  });
-
-  // Fallback for plain prose: extract key sentences as concepts
-  if (conceptMap.size < 3) {
-    sentences.slice(1, 9).forEach((s) => {
-      const trimmed = s.trim();
-      if (trimmed.length > 15 && trimmed.length < 200) {
-        const label = trimmed.length > 20 ? trimmed.substring(0, 17) + '...' : trimmed;
-        if (!conceptMap.has(label)) {
-          conceptMap.set(label, trimmed);
-        }
-      }
-    });
-  }
-
-  // Convert to nodes (max 8)
-  Array.from(conceptMap.entries())
-    .slice(0, 8)
-    .forEach(([label, fullText], index) => {
-      nodes.push({
-        id: `concept-${index}`,
-        label,
-        fullText,
-        level: 1,
-        parentId: 'root',
-      });
-    });
-
-  return nodes;
-}
+export { shouldShowMindmap } from './ResponseMindmap.utils';
 
 export default function ResponseMindmap({
   content,
@@ -290,7 +84,7 @@ export default function ResponseMindmap({
     const centerY = dimensions.height / 2;
     const radius = Math.min(graphWidth, dimensions.height) * 0.3;
 
-    return nodes.map((node, index) => {
+    return nodes.map((node) => {
       if (nodePositions[node.id]) {
         return { ...node, ...nodePositions[node.id] };
       }
@@ -630,239 +424,32 @@ export default function ResponseMindmap({
                 </svg>
 
                 {/* Detail Panel */}
-                <AnimatePresence>
-                  {selectedNode && (
-                    <motion.div
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: 300, opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="border-l border-slate-200/60 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm overflow-hidden"
-                    >
-                      <div className="p-4 h-full overflow-auto">
-                        {/* Header */}
-                        <div className="flex items-start gap-3 mb-4">
-                          <div
-                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                            style={{
-                              background: `linear-gradient(135deg, ${
-                                selectedNode.level === 0
-                                  ? accentGradient.from
-                                  : NODE_GRADIENTS[
-                                      nodes.indexOf(selectedNode) % NODE_GRADIENTS.length
-                                    ]?.from || '#667eea'
-                              }, ${
-                                selectedNode.level === 0
-                                  ? accentGradient.to
-                                  : NODE_GRADIENTS[
-                                      nodes.indexOf(selectedNode) % NODE_GRADIENTS.length
-                                    ]?.to || '#764ba2'
-                              })`,
-                            }}
-                          >
-                            <BookOpenIcon className="w-5 h-5 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-tight">
-                              {selectedNode.label}
-                            </h3>
-                            {selectedNode.category && (
-                              <span className="inline-block mt-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[9px] rounded-full font-medium">
-                                {selectedNode.category}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Full Text */}
-                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 mb-4">
-                          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                            {selectedNode.fullText}
-                          </p>
-                        </div>
-
-                        {/* Related Concepts */}
-                        {selectedNode.level === 0 ? (
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <SparklesIcon className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                {conceptCount} Concepts Extracted
-                              </span>
-                            </div>
-                            <div className="space-y-1">
-                              {nodes
-                                .filter((n) => n.level === 1)
-                                .map((n, i) => (
-                                  <button
-                                    key={n.id}
-                                    onClick={() => setSelectedNode(n)}
-                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
-                                  >
-                                    <div
-                                      className="w-2 h-2 rounded-full flex-shrink-0"
-                                      style={{
-                                        background: `linear-gradient(135deg, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].from}, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].to})`,
-                                      }}
-                                    />
-                                    <span className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                                      {n.label}
-                                    </span>
-                                  </button>
-                                ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <div className="flex items-center gap-2">
-                                <LinkIcon className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                  Related Topics
-                                </span>
-                              </div>
-                              <button
-                                onClick={() => setShowLinkMenu(!showLinkMenu)}
-                                className="text-[9px] text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                              >
-                                {showLinkMenu ? 'Hide' : 'Show All'}
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => setSelectedNode(nodes[0])}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
-                            >
-                              <div
-                                className="w-2 h-2 rounded-full flex-shrink-0"
-                                style={{
-                                  background: `linear-gradient(135deg, ${accentGradient.from}, ${accentGradient.to})`,
-                                }}
-                              />
-                              <span className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                                {nodes[0].label}
-                              </span>
-                            </button>
-                            {showLinkMenu && (
-                              <div className="mt-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700">
-                                <div className="text-[8px] text-slate-400 uppercase tracking-wider mb-2">
-                                  All Topics
-                                </div>
-                                <div className="space-y-1 max-h-[120px] overflow-y-auto">
-                                  {nodes.slice(1).map((n, i) => (
-                                    <button
-                                      key={n.id}
-                                      onClick={() => {
-                                        setSelectedNode(n);
-                                        setShowLinkMenu(false);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left"
-                                    >
-                                      <div
-                                        className="w-2 h-2 rounded-full flex-shrink-0"
-                                        style={{
-                                          background: `linear-gradient(135deg, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].from}, ${NODE_GRADIENTS[i % NODE_GRADIENTS.length].to})`,
-                                        }}
-                                      />
-                                      <span className="text-[10px] text-slate-600 dark:text-slate-400 truncate">
-                                        {n.label}
-                                      </span>
-                                    </button>
-                                  ))}
-                                </div>
-                                <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-                                  <a
-                                    href="/mindmap"
-                                    className="w-full flex items-center justify-center gap-1 px-2 py-1.5 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-[10px] text-slate-600 dark:text-slate-300 font-medium"
-                                  >
-                                    Open in Mind Map →
-                                  </a>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {selectedNode && (
+                  <MindmapDetailPanel
+                    selectedNode={selectedNode}
+                    nodes={nodes}
+                    conceptCount={conceptCount}
+                    accentGradient={accentGradient}
+                    showLinkMenu={showLinkMenu}
+                    onShowLinkMenuToggle={() => setShowLinkMenu(!showLinkMenu)}
+                    onSelectNode={setSelectedNode}
+                    onHideLinkMenu={() => setShowLinkMenu(false)}
+                  />
+                )}
               </div>
 
-              {/* Footer - 3-Line Synthetic Topic Explanation */}
-              <div className="px-4 py-3 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-850 dark:via-slate-900 dark:to-slate-850 border-t border-slate-200 dark:border-slate-700">
-                {/* High-Level Stats Row */}
-                <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{
-                          background: `linear-gradient(135deg, ${accentGradient.from}, ${accentGradient.to})`,
-                        }}
-                      />
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
-                        Topics:
-                      </span>
-                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                        {conceptCount}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
-                        Root:
-                      </span>
-                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium max-w-[150px] truncate">
-                        {nodes[0]?.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
-                        Method:
-                      </span>
-                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium uppercase">
-                        {methodology}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3-Line Synthetic Explanation - Tailored to Query */}
-                <div className="space-y-1.5">
-                  <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">
-                      Focus:
-                    </span>
-                    <p className="text-[10px] text-slate-700 dark:text-slate-300 leading-relaxed">
-                      {footerContent.focus}
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide flex-shrink-0">
-                      Quality:
-                    </span>
-                    <p className="text-[10px] text-slate-700 dark:text-slate-300 leading-relaxed">
-                      {footerContent.quality}
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-[9px] text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide flex-shrink-0">
-                      Action:
-                    </span>
-                    <p className="text-[10px] text-slate-700 dark:text-slate-300 leading-relaxed">
-                      {footerContent.action}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              {/* Footer */}
+              <MindmapFooter
+                conceptCount={conceptCount}
+                nodes={nodes}
+                methodology={methodology}
+                accentGradient={accentGradient}
+                footerContent={footerContent}
+              />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
-}
-
-export function shouldShowMindmap(content: string, topics?: any[]): boolean {
-  if (topics && topics.length >= 2) return true;
-  const concepts = extractConcepts(content);
-  return concepts.length >= 3;
 }

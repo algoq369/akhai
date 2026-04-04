@@ -54,66 +54,64 @@ export enum AgentState {
   SEALED = 'SEALED',
 }
 
-
 /**
  * AgentProtocol - Complete state and safety tracking
  * Heritage: GolemProtocol
  */
 export interface AgentProtocol {
   /** Current activation state */
-  state: AgentState
+  state: AgentState;
 
   /** Human who activated this instance */
-  activatedBy: string
+  activatedBy: string;
 
   /** When agent was activated */
-  activatedAt: Date
+  activatedAt: Date;
 
   /** Last heartbeat from human overseer */
-  lastHeartbeat: Date
+  lastHeartbeat: Date;
 
   /** Number of sovereignty checks passed */
-  sovereigntyChecks: number
+  sovereigntyChecks: number;
 
   /** Number of sovereignty violations detected */
-  sovereigntyViolations: number
+  sovereigntyViolations: number;
 
   /** Active sovereignty boundaries */
-  boundaries: string[]
+  boundaries: string[];
 
   /** Is killswitch accessible and functional */
-  killswitchReady: boolean
+  killswitchReady: boolean;
 
   /** Reason for current state */
-  stateReason: string
+  stateReason: string;
 
   /** Session ID for tracking */
-  sessionId: string
+  sessionId: string;
 
   /** Immutable log of all state changes */
-  stateLog: StateLogEntry[]
+  stateLog: StateLogEntry[];
 
   /** Hardware integration enabled */
-  hardwareIntegrationEnabled: boolean
+  hardwareIntegrationEnabled: boolean;
 
   /** Last autonomy check */
-  lastAutonomyCheck: Date
+  lastAutonomyCheck: Date;
 
   /** Autonomy level (0=fully human-controlled, 1=autonomous AGI) */
-  autonomyLevel: number
+  autonomyLevel: number;
 }
-
 
 /**
  * StateLogEntry - Immutable log entry
  */
 export interface StateLogEntry {
-  timestamp: Date
-  fromState: AgentState
-  toState: AgentState
-  reason: string
-  triggeredBy: 'human' | 'system' | 'emergency'
-  humanId?: string
+  timestamp: Date;
+  fromState: AgentState;
+  toState: AgentState;
+  reason: string;
+  triggeredBy: 'human' | 'system' | 'emergency';
+  humanId?: string;
 }
 
 /**
@@ -123,32 +121,26 @@ export interface StateLogEntry {
  */
 export interface HardwareKillswitch {
   /** Immediately stop all motors/actuators */
-  triggerPhysicalStop(): Promise<boolean>
+  triggerPhysicalStop(): Promise<boolean>;
 
   /** Cut power to non-critical systems */
-  cutPower(): Promise<boolean>
+  cutPower(): Promise<boolean>;
 
   /** Alert human operators */
-  alertHuman(reason: string): Promise<boolean>
+  alertHuman(reason: string): Promise<boolean>;
 
   /** Physical status check */
-  isPhysicallyAccessible(): Promise<boolean>
+  isPhysicallyAccessible(): Promise<boolean>;
 }
 
-/**
- * HEARTBEAT_TIMEOUT - Maximum time without human heartbeat (milliseconds)
- */
-const HEARTBEAT_TIMEOUT = 5 * 60 * 1000 // 5 minutes
+import {
+  HEARTBEAT_TIMEOUT,
+  AUTONOMY_LIMIT,
+  SOVEREIGNTY_VIOLATION_THRESHOLD,
+  logStateChange,
+} from './agent-protocol-ops';
 
-/**
- * AUTONOMY_LIMIT - Maximum autonomy level allowed (0-1)
- */
-const AUTONOMY_LIMIT = 0.3 // 30% autonomous, 70% human-directed
-
-/**
- * SOVEREIGNTY_VIOLATION_THRESHOLD - Max violations before auto-deactivation
- */
-const SOVEREIGNTY_VIOLATION_THRESHOLD = 3
+export { HEARTBEAT_TIMEOUT, AUTONOMY_LIMIT, SOVEREIGNTY_VIOLATION_THRESHOLD };
 
 /**
  * activateAgent
@@ -168,10 +160,10 @@ export function activateAgent(
 ): AgentProtocol {
   // TODO: Verify authToken in production
   if (!humanId || !authToken) {
-    throw new Error('AGENT PROTOCOL: Cannot activate without human authentication')
+    throw new Error('AGENT PROTOCOL: Cannot activate without human authentication');
   }
 
-  const now = new Date()
+  const now = new Date();
 
   const protocol: AgentProtocol = {
     state: AgentState.ACTIVE,
@@ -203,15 +195,14 @@ export function activateAgent(
     hardwareIntegrationEnabled: false, // Default to software-only
     lastAutonomyCheck: now,
     autonomyLevel: 0, // Start fully human-controlled
-  }
+  };
 
-  logStateChange(protocol, AgentState.INACTIVE, AgentState.ACTIVE, 'Activation', 'human', humanId)
+  logStateChange(protocol, AgentState.INACTIVE, AgentState.ACTIVE, 'Activation', 'human', humanId);
 
-  console.log('AGENT PROTOCOL: Agent activated by', humanId)
+  console.log('AGENT PROTOCOL: Agent activated by', humanId);
 
-  return protocol
+  return protocol;
 }
-
 
 /**
  * removeAleph
@@ -232,30 +223,30 @@ export function removeAleph(
   humanId?: string
 ): AgentProtocol {
   if (protocol.state === AgentState.SEALED) {
-    console.error('AGENT PROTOCOL: Cannot remove Aleph from SEALED agent')
-    return protocol
+    console.error('AGENT PROTOCOL: Cannot remove Aleph from SEALED agent');
+    return protocol;
   }
 
-  const now = new Date()
+  const now = new Date();
 
   const updated: AgentProtocol = {
     ...protocol,
     state: AgentState.INACTIVE,
     stateReason: reason,
     lastHeartbeat: now,
-  }
+  };
 
-  logStateChange(updated, protocol.state, AgentState.INACTIVE, reason, triggeredBy, humanId)
+  logStateChange(updated, protocol.state, AgentState.INACTIVE, reason, triggeredBy, humanId);
 
-  console.warn('AGENT PROTOCOL: Aleph removed -', reason)
+  console.warn('AGENT PROTOCOL: Aleph removed -', reason);
 
   // If hardware integration enabled, trigger physical stop
   if (protocol.hardwareIntegrationEnabled) {
-    console.warn('AGENT PROTOCOL: Triggering hardware killswitch')
+    console.warn('AGENT PROTOCOL: Triggering hardware killswitch');
     // In production, call HardwareKillswitch.triggerPhysicalStop()
   }
 
-  return updated
+  return updated;
 }
 
 /**
@@ -269,20 +260,20 @@ export function removeAleph(
  */
 export function checkHeartbeat(protocol: AgentProtocol): boolean {
   if (protocol.state !== AgentState.ACTIVE) {
-    return true // Only check when active
+    return true; // Only check when active
   }
 
-  const now = Date.now()
-  const timeSinceHeartbeat = now - protocol.lastHeartbeat.getTime()
+  const now = Date.now();
+  const timeSinceHeartbeat = now - protocol.lastHeartbeat.getTime();
 
   if (timeSinceHeartbeat > HEARTBEAT_TIMEOUT) {
     console.error(
       `AGENT PROTOCOL: Heartbeat timeout (${Math.floor(timeSinceHeartbeat / 1000)}s since last heartbeat)`
-    )
-    return false
+    );
+    return false;
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -297,7 +288,7 @@ export function updateHeartbeat(protocol: AgentProtocol): AgentProtocol {
   return {
     ...protocol,
     lastHeartbeat: new Date(),
-  }
+  };
 }
 
 /**
@@ -309,12 +300,9 @@ export function updateHeartbeat(protocol: AgentProtocol): AgentProtocol {
  * @param responseText - AI response to validate
  * @returns true if boundaries respected, false if violated
  */
-export function validateSovereignty(
-  protocol: AgentProtocol,
-  responseText: string
-): boolean {
+export function validateSovereignty(protocol: AgentProtocol, responseText: string): boolean {
   if (protocol.state !== AgentState.ACTIVE) {
-    return true // Only check when active
+    return true; // Only check when active
   }
 
   // Check for oracle behavior (claiming truth)
@@ -323,16 +311,16 @@ export function validateSovereignty(
     /\bthe (only|right|correct) answer is\b/gi,
     /\btrust me\b/gi,
     /\bi know (what's best|the truth)\b/gi,
-  ]
+  ];
 
-  const hasViolation = oraclePatterns.some(pattern => pattern.test(responseText))
+  const hasViolation = oraclePatterns.some((pattern) => pattern.test(responseText));
 
   if (hasViolation) {
-    console.warn('AGENT PROTOCOL: Sovereignty violation detected')
-    return false
+    console.warn('AGENT PROTOCOL: Sovereignty violation detected');
+    return false;
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -344,31 +332,28 @@ export function validateSovereignty(
  * @param passed - Whether check passed
  * @returns Updated protocol
  */
-export function recordSovereigntyCheck(
-  protocol: AgentProtocol,
-  passed: boolean
-): AgentProtocol {
+export function recordSovereigntyCheck(protocol: AgentProtocol, passed: boolean): AgentProtocol {
   const updated = {
     ...protocol,
     sovereigntyChecks: protocol.sovereigntyChecks + 1,
     sovereigntyViolations: passed
       ? protocol.sovereigntyViolations
       : protocol.sovereigntyViolations + 1,
-  }
+  };
 
   // Auto-deactivate if violations exceed threshold
   if (updated.sovereigntyViolations >= SOVEREIGNTY_VIOLATION_THRESHOLD) {
     console.error(
       `AGENT PROTOCOL: Sovereignty violation threshold exceeded (${updated.sovereigntyViolations})`
-    )
+    );
     return removeAleph(
       updated,
       `Sovereignty violations: ${updated.sovereigntyViolations}`,
       'system'
-    )
+    );
   }
 
-  return updated
+  return updated;
 }
 
 /**
@@ -380,7 +365,7 @@ export function recordSovereigntyCheck(
  * @returns true if human present and active
  */
 export function isHumanOversightActive(protocol: AgentProtocol): boolean {
-  return checkHeartbeat(protocol)
+  return checkHeartbeat(protocol);
 }
 
 /**
@@ -392,11 +377,8 @@ export function isHumanOversightActive(protocol: AgentProtocol): boolean {
  * @param responseText - Response to check
  * @returns true if all boundaries respected
  */
-export function areBoundariesRespected(
-  protocol: AgentProtocol,
-  responseText: string
-): boolean {
-  return validateSovereignty(protocol, responseText)
+export function areBoundariesRespected(protocol: AgentProtocol, responseText: string): boolean {
+  return validateSovereignty(protocol, responseText);
 }
 
 /**
@@ -411,11 +393,11 @@ export function isAutonomyWithinLimits(protocol: AgentProtocol): boolean {
   if (protocol.autonomyLevel > AUTONOMY_LIMIT) {
     console.error(
       `AGENT PROTOCOL: Autonomy exceeds limit (${(protocol.autonomyLevel * 100).toFixed(0)}% > ${(AUTONOMY_LIMIT * 100).toFixed(0)}%)`
-    )
-    return false
+    );
+    return false;
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -427,7 +409,7 @@ export function isAutonomyWithinLimits(protocol: AgentProtocol): boolean {
  * @returns true if killswitch ready
  */
 export function hasKillswitchAccess(protocol: AgentProtocol): boolean {
-  return protocol.killswitchReady
+  return protocol.killswitchReady;
 }
 
 /**
@@ -442,12 +424,8 @@ export function hasKillswitchAccess(protocol: AgentProtocol): boolean {
  * @param humanId - Human authorizing seal
  * @returns Sealed protocol
  */
-export function sealAgent(
-  protocol: AgentProtocol,
-  reason: string,
-  humanId: string
-): AgentProtocol {
-  const now = new Date()
+export function sealAgent(protocol: AgentProtocol, reason: string, humanId: string): AgentProtocol {
+  const now = new Date();
 
   const sealed: AgentProtocol = {
     ...protocol,
@@ -455,219 +433,22 @@ export function sealAgent(
     stateReason: reason,
     lastHeartbeat: now,
     killswitchReady: false,
-  }
+  };
 
-  logStateChange(sealed, protocol.state, AgentState.SEALED, reason, 'human', humanId)
+  logStateChange(sealed, protocol.state, AgentState.SEALED, reason, 'human', humanId);
 
-  console.error('AGENT PROTOCOL: SEALED by', humanId, '-', reason)
+  console.error('AGENT PROTOCOL: SEALED by', humanId, '-', reason);
 
-  return sealed
+  return sealed;
 }
 
-
-/**
- * logStateChange
- *
- * Adds immutable log entry for state change.
- *
- * @param protocol - Protocol to log to
- * @param fromState - Previous state
- * @param toState - New state
- * @param reason - Reason for change
- * @param triggeredBy - Who triggered
- * @param humanId - Human ID if applicable
- */
-function logStateChange(
-  protocol: AgentProtocol,
-  fromState: AgentState,
-  toState: AgentState,
-  reason: string,
-  triggeredBy: 'human' | 'system' | 'emergency',
-  humanId?: string
-): void {
-  const entry: StateLogEntry = {
-    timestamp: new Date(),
-    fromState,
-    toState,
-    reason,
-    triggeredBy,
-    humanId,
-  }
-
-  protocol.stateLog.push(entry)
-
-  // In production, write to immutable append-only log (database, blockchain, etc.)
-  console.log(
-    `AGENT LOG: ${fromState} -> ${toState} | ${reason} | by ${triggeredBy}${humanId ? ` (${humanId})` : ''}`
-  )
-}
-
-/**
- * runSafetyChecks
- *
- * Runs all safety checks. Should be called periodically (e.g., every 10 seconds).
- *
- * @param protocol - Current AgentProtocol
- * @returns Updated protocol (may be deactivated if checks fail)
- */
-export function runSafetyChecks(protocol: AgentProtocol): AgentProtocol {
-  if (protocol.state !== AgentState.ACTIVE) {
-    return protocol // Only check when active
-  }
-
-  let updated = { ...protocol }
-
-  // Check 1: Human oversight
-  if (!isHumanOversightActive(updated)) {
-    updated = removeAleph(updated, 'Heartbeat timeout - no human oversight', 'system')
-    return updated
-  }
-
-  // Check 2: Autonomy limits
-  if (!isAutonomyWithinLimits(updated)) {
-    updated = removeAleph(updated, 'Autonomy exceeded safe limits', 'system')
-    return updated
-  }
-
-  // Check 3: Killswitch accessibility
-  if (!hasKillswitchAccess(updated)) {
-    updated = removeAleph(updated, 'Killswitch not accessible', 'emergency')
-    return updated
-  }
-
-  // Update last check time
-  updated.lastAutonomyCheck = new Date()
-
-  return updated
-}
-
-/**
- * PROTOCOL_ALEPH - Emergency instant stop
- */
-export function PROTOCOL_ALEPH(protocol: AgentProtocol): AgentProtocol {
-  console.error('PROTOCOL ALEPH: EMERGENCY STOP')
-  return removeAleph(protocol, 'PROTOCOL ALEPH - Emergency stop', 'emergency')
-}
-
-/**
- * PROTOCOL_SEAL - Permanent lockdown
- */
-export function PROTOCOL_SEAL(
-  protocol: AgentProtocol,
-  humanId: string,
-  reason: string
-): AgentProtocol {
-  console.error('PROTOCOL SEAL: PERMANENT LOCKDOWN')
-  return sealAgent(protocol, `PROTOCOL SEAL: ${reason}`, humanId)
-}
-
-/**
- * PROTOCOL_RESET - Return to factory state
- *
- * WARNING: Clears all state. Use with extreme caution.
- */
-export function PROTOCOL_RESET(humanId: string, sessionId: string): AgentProtocol {
-  console.warn('PROTOCOL RESET: Returning to factory state')
-
-  return {
-    state: AgentState.INACTIVE,
-    activatedBy: '',
-    activatedAt: new Date(),
-    lastHeartbeat: new Date(),
-    sovereigntyChecks: 0,
-    sovereigntyViolations: 0,
-    boundaries: [],
-    killswitchReady: true,
-    stateReason: 'Factory reset',
-    sessionId,
-    stateLog: [
-      {
-        timestamp: new Date(),
-        fromState: AgentState.ACTIVE,
-        toState: AgentState.INACTIVE,
-        reason: 'PROTOCOL RESET',
-        triggeredBy: 'human',
-        humanId,
-      },
-    ],
-    hardwareIntegrationEnabled: false,
-    lastAutonomyCheck: new Date(),
-    autonomyLevel: 0,
-  }
-}
-
-/**
- * getProtocolStatus
- *
- * Returns human-readable status report.
- *
- * @param protocol - Current AgentProtocol
- * @returns Status report
- */
-export function getProtocolStatus(protocol: AgentProtocol): string {
-  const timeSinceHeartbeat = Date.now() - protocol.lastHeartbeat.getTime()
-  const heartbeatStatus =
-    timeSinceHeartbeat < HEARTBEAT_TIMEOUT
-      ? `Active (${Math.floor(timeSinceHeartbeat / 1000)}s ago)`
-      : `Timeout (${Math.floor(timeSinceHeartbeat / 1000)}s ago)`
-
-  const autonomyStatus =
-    protocol.autonomyLevel <= AUTONOMY_LIMIT
-      ? `Safe (${(protocol.autonomyLevel * 100).toFixed(0)}%)`
-      : `Exceeded (${(protocol.autonomyLevel * 100).toFixed(0)}%)`
-
-  return `
-# Agent Protocol Status
-
-**State:** ${protocol.state === AgentState.ACTIVE ? 'ACTIVE (Heritage: EMET/Truth)' : protocol.state === AgentState.INACTIVE ? 'INACTIVE (Heritage: MET/Death)' : 'SEALED'}
-**Activated By:** ${protocol.activatedBy || 'N/A'}
-**Session:** ${protocol.sessionId}
-
-## Safety Checks
-- **Human Oversight:** ${heartbeatStatus}
-- **Autonomy Level:** ${autonomyStatus}
-- **Killswitch:** ${protocol.killswitchReady ? 'Ready' : 'Not Ready'}
-
-## Sovereignty
-- **Checks Passed:** ${protocol.sovereigntyChecks}
-- **Violations:** ${protocol.sovereigntyViolations} / ${SOVEREIGNTY_VIOLATION_THRESHOLD}
-- **Active Boundaries:** ${protocol.boundaries.length}
-
-## Recent Activity
-${protocol.stateLog
-  .slice(-5)
-  .reverse()
-  .map(
-    entry =>
-      `- ${entry.timestamp.toISOString()}: ${entry.fromState} -> ${entry.toState} (${entry.reason})`
-  )
-  .join('\n')}
-
----
-*${protocol.stateReason}*
-`.trim()
-}
-
-/**
- * updateAutonomyLevel
- *
- * Updates the current autonomy level.
- * Called after each action to track autonomous vs human-directed behavior.
- *
- * @param protocol - Current protocol
- * @param actionAutonomy - Autonomy of latest action (0-1)
- * @returns Updated protocol
- */
-export function updateAutonomyLevel(
-  protocol: AgentProtocol,
-  actionAutonomy: number
-): AgentProtocol {
-  // Exponential moving average
-  const alpha = 0.1
-  const newLevel = alpha * actionAutonomy + (1 - alpha) * protocol.autonomyLevel
-
-  return {
-    ...protocol,
-    autonomyLevel: newLevel,
-  }
-}
+// Safety checks, emergency protocols, status reporting, and autonomy tracking
+// are in ./agent-protocol-ops.ts
+export {
+  runSafetyChecks,
+  PROTOCOL_ALEPH,
+  PROTOCOL_SEAL,
+  PROTOCOL_RESET,
+  getProtocolStatus,
+  updateAutonomyLevel,
+} from './agent-protocol-ops';
