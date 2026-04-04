@@ -9,63 +9,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-
-// TypeScript interfaces
-interface TreeNode {
-  id: number
-  name: string
-  description: string
-  importance: number
-  vibrationLevel: 'high' | 'medium' | 'low'
-  polarity: 'positive' | 'negative' | 'neutral'
-  rhythmPhase: 'rising' | 'peak' | 'falling' | 'trough'
-  emergedAt: string
-  isActive: boolean
-  parentId: number | null
-  // D3 simulation properties
-  x?: number
-  y?: number
-  vx?: number
-  vy?: number
-  fx?: number | null
-  fy?: number | null
-}
-
-interface TreeEdge {
-  source: number | TreeNode
-  target: number | TreeNode
-  relationshipType: string
-  strength: number
-  hermeticLaw: string | null
-}
-
-interface EvolutionEvent {
-  timestamp: string
-  type: string
-  description: string
-  hermeticInsight: string
-  topicIds: string[]
-}
-
-interface HermeticSummary {
-  dominantLaw: string
-  overallVibration: string
-  rhythmPhase: string
-  instinctInsight: string
-}
-
-interface TreeData {
-  nodes: TreeNode[]
-  edges: TreeEdge[]
-  evolutionEvents: EvolutionEvent[]
-  hermeticSummary: HermeticSummary
-  stats: {
-    totalTopics: number
-    activeTopics: number
-    totalConnections: number
-    avgImportance: number
-  }
-}
+import type { TreeNode, TreeEdge, TreeData } from './types'
 
 export default function LivingTreePage() {
   const [treeData, setTreeData] = useState<TreeData | null>(null)

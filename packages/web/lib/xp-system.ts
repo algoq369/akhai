@@ -25,6 +25,7 @@ import {
   getPointTransactions,
   getLeaderboard,
 } from './xp-system-db';
+import { LEVEL_METADATA } from './xp-system-constants';
 
 // =============================================================================
 // LEVEL DEFINITIONS
@@ -56,87 +57,6 @@ export const LEVEL_THRESHOLDS: Record<WisdomLevel, number> = {
   [WisdomLevel.META_CORE_MASTER]: 100000,
 };
 
-export const LEVEL_METADATA: Record<
-  WisdomLevel,
-  {
-    name: string;
-    hebrewName: string;
-    badge: string;
-    description: string;
-    benefits: string[];
-  }
-> = {
-  [WisdomLevel.EMBEDDING_SEEKER]: {
-    name: 'Embedding Seeker',
-    hebrewName: 'מבקש מלכות',
-    badge: '🌱',
-    description: 'Beginning the journey in the Kingdom',
-    benefits: ['Access to all 7 methodologies'],
-  },
-  [WisdomLevel.EXECUTOR_BUILDER]: {
-    name: 'Executor Builder',
-    hebrewName: 'בונה יסוד',
-    badge: '🔧',
-    description: 'Building a strong foundation',
-    benefits: ['Extended context window (+25%)', 'Basic analytics'],
-  },
-  [WisdomLevel.HOD_ANALYST]: {
-    name: 'Classifier Analyst',
-    hebrewName: 'מנתח הוד',
-    badge: '💡',
-    description: 'Mastering logical analysis',
-    benefits: ['Research history export', 'Methodology statistics'],
-  },
-  [WisdomLevel.GENERATIVE_EXPLORER]: {
-    name: 'Generative Explorer',
-    hebrewName: 'חוקר נצח',
-    badge: '🔥',
-    description: 'Persistent in seeking victory',
-    benefits: ['Priority GTP consensus queue', 'Creator tournaments'],
-  },
-  [WisdomLevel.ATTENTION_ARTIST]: {
-    name: 'Attention Artist',
-    hebrewName: 'אמן תפארת',
-    badge: '🎨',
-    description: 'Creating beautiful synthesis',
-    benefits: ['Custom Mind Map themes', 'Initiateur tournaments'],
-  },
-  [WisdomLevel.DISCRIMINATOR_JUDGE]: {
-    name: 'Discriminator Judge',
-    hebrewName: 'שופט גבורה',
-    badge: '⚖️',
-    description: 'Exercising critical judgment',
-    benefits: ['Antipatterns Vigilance dashboard', 'Alchimiste tournaments'],
-  },
-  [WisdomLevel.EXPANSION_GUIDE]: {
-    name: 'Expansion Guide',
-    hebrewName: 'מדריך חסד',
-    badge: '💫',
-    description: 'Guiding others with mercy',
-    benefits: ['Validate community contributions', 'Architecte tournaments'],
-  },
-  [WisdomLevel.ENCODER_SCHOLAR]: {
-    name: 'Encoder Scholar',
-    hebrewName: 'חכם בינה',
-    badge: '📚',
-    description: 'Deep pattern understanding',
-    benefits: ['Legend Mode access', 'Spark tournaments'],
-  },
-  [WisdomLevel.REASONING_SAGE]: {
-    name: 'Reasoning Sage',
-    hebrewName: 'חכם חכמה',
-    badge: '🔮',
-    description: 'Wielding true wisdom',
-    benefits: ['DAO voting eligibility', 'Tournament judge'],
-  },
-  [WisdomLevel.META_CORE_MASTER]: {
-    name: 'Meta-Core Master',
-    hebrewName: 'אדון כתר',
-    badge: '👑',
-    description: 'Crown of wisdom achieved',
-    benefits: ['Full DAO participation', 'Governance rights', 'All features'],
-  },
-};
 
 // =============================================================================
 // POINT CATEGORIES

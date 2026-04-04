@@ -484,7 +484,7 @@ export function closeDatabase() {
 import { runMigrations } from '@/lib/db/migrations';
 runMigrations();
 
-// Re-export auth functions (already extracted to lib/db/auth.ts)
+// Re-export all sub-module functions via barrel (extracted to lib/db/re-exports.ts)
 export {
   type User,
   createOrGetUser,
@@ -505,31 +505,12 @@ export {
   getPKCEVerifier,
   deletePKCEVerifier,
   cleanupExpiredPKCEVerifiers,
-} from '@/lib/db/auth';
-
-// Re-export query functions (extracted to lib/db/queries.ts)
-export { createQuery, updateQuery, getQuery, getRecentQueries } from '@/lib/db/queries';
-
-// Re-export event functions (extracted to lib/db/events.ts)
-export { addEvent, getEvents } from '@/lib/db/events';
-
-// Re-export stats functions (extracted to lib/db/stats.ts)
-export { trackUsage, getStats } from '@/lib/db/stats';
-
-// Re-export migration functions (extracted to lib/db/migrations.ts)
-export {
-  migrateAddUserIdColumns,
-  migrateAddProcessingMode,
-  migrateAddTopicsColumns,
-} from '@/lib/db/migrations';
-
-// Re-export cleanup functions (extracted to lib/db/cleanup.ts)
-export {
-  cleanupStalePendingQueries,
-  getQueryStatusCounts,
-  startCleanupScheduler,
-  stopCleanupScheduler,
-} from '@/lib/db/cleanup';
+  createQuery, updateQuery, getQuery, getRecentQueries,
+  addEvent, getEvents,
+  trackUsage, getStats,
+  migrateAddUserIdColumns, migrateAddProcessingMode, migrateAddTopicsColumns,
+  cleanupStalePendingQueries, getQueryStatusCounts, startCleanupScheduler, stopCleanupScheduler,
+} from '@/lib/db/re-exports';
 
 // Auto-start cleanup scheduler when module loads
 import { scheduleCleanup } from '@/lib/db/cleanup';
