@@ -40,14 +40,39 @@
 
 ---
 
-## KNOWN DEBT (Phase F — split before launch)
-6 files exceed WEBNA 500-line limit from CLI expansion:
-- CanvasWorkspace.tsx: ~2,126 lines
-- LayerResponse.tsx: ~1,451 lines
-- depth-annotations.ts: ~1,619 lines
-- intelligence-fusion.ts: ~1,109 lines
-- ResponseMindmap.tsx: ~829 lines
-- InsightMindmap.tsx: ~605 lines
+## COMPLETED — WEBNA V2.2 Hardening (Days 77-79, ~25 commits)
+
+### Batch 1: Validation + Resilience
+- ✅ Zod input validation on /api/query route
+- ✅ withRetry wrapper on AI provider calls
+- ✅ Rate limiting middleware (10 req/min per IP)
+- ✅ Dependency audit + fixes
+
+### Batch 2: Code Quality
+- ✅ Structured console logging (DEBUG_LOG)
+- ✅ 44→0 files over 500 lines (all under limit now)
+- ✅ 21 `as any` casts removed with proper types
+- ✅ File splits: patterns.ts (1345→4 files), layer-processor, MindMap*, query route, etc.
+
+### Batch 3: Testing + Performance + SEO
+- ✅ Playwright E2E tests: 3 specs (query flow, navigation, methodology switch)
+- ✅ Dynamic imports for heavy components (CanvasWorkspace, SideChat, etc.)
+- ✅ Production readiness doc + rollback strategy in deploy script
+- ✅ SEO: OpenGraph + Twitter Card metadata
+
+### Batch 4: stdlib + Final
+- ✅ stdlib patterns: createTracker, createContext wired into query pipeline
+- ✅ AI calls tracked (duration, tokens, cost) per query
+- ✅ 25s timeout context on direct-mode AI calls
+
+---
+
+## KNOWN DEBT
+- 0 files over WEBNA 500-line limit (all split)
+- ~65 `as any` casts remaining (down from 86)
+- 8 high-severity dep vulnerabilities (transitive, waiting upstream)
+- Visual checks A-F need manual Lighthouse audit
+- PWA, search engine, i18n — post-launch
 
 ---
 
@@ -55,7 +80,8 @@
 
 ```
 Phase A: Methodology Rename        Days 76-77    3h     P0  ✅ DONE
-Phase B: Metadata Persist+Replay   Days 77-79    4h     P1  ← NEXT
+WEBNA Hardening                    Days 77-79    ~25h   P0  ✅ DONE (Batches 1-4)
+Phase B: Metadata Persist+Replay   Days 79-81    4h     P1  ← NEXT
 Phase C: Methodology Pipelines     Days 79-90    16h    P1
 Phase D: God View Phase 2+3        Days 90-100   20h    P1
 Phase E: Feature Completion        Days 100-108  16h    P2
