@@ -6,6 +6,8 @@ import {
   executeGTPWithEvents,
 } from '@/lib/akhai-executor';
 import type { ModelFamily } from '@akhai/core';
+import { createTracker } from '@/lib/stdlib/tracker';
+import { createContext } from '@/lib/stdlib/context';
 
 // Methodology-specific instruction prefixes
 // These create distinct execution paths for each methodology
@@ -54,6 +56,7 @@ export async function processQuery(
     historyLength: conversationHistory.length,
   });
 
+  const tracker = createTracker(`query:${queryId}`);
   const queryData = queries.get(queryId);
   if (!queryData) return;
 
@@ -163,9 +166,12 @@ _Live data from ${priceData.source} • Updated just now_`;
         { role: 'user' as const, content: queryData.query },
       ];
 
-      const response = await provider.complete({
-        messages,
-        systemPrompt: `You are AkhAI, a sovereign AI research assistant.
+      const ctx = createContext(25000);
+      let response;
+      try {
+        response = await provider.complete({
+          messages,
+          systemPrompt: `You are AkhAI, a sovereign AI research assistant.
 
 Write in a direct, humble, data-grounded voice:
 - Be straightforward and concise — no fluff
@@ -176,7 +182,10 @@ Write in a direct, humble, data-grounded voice:
 FORBIDDEN: "Great question!", "Absolutely!", "I'd be happy to...", "Revolutionary", excessive hedging.
 
 Respond directly and accurately. Use conversation context when relevant.`,
-      });
+        });
+      } finally {
+        ctx.cleanup();
+      }
 
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
       console.log(`=== DIRECT SUCCESS in ${duration}s ===`, response.content.substring(0, 100));
@@ -188,6 +197,13 @@ Respond directly and accurately. Use conversation context when relevant.`,
 
       // Estimate cost for Claude Sonnet 4 (rough: $3/1M input, $15/1M output)
       const estimatedCost = inputTokens * 0.000003 + outputTokens * 0.000015;
+
+      // Track operation with stdlib tracker
+      tracker.track('ai-call', {
+        duration: Date.now() - startTime,
+        tokens: totalTokens,
+        cost: estimatedCost,
+      });
 
       // Track usage for Mother Base
       trackUsage('anthropic', 'claude-sonnet-4-20250514', inputTokens, outputTokens, estimatedCost);
@@ -214,6 +230,7 @@ Respond directly and accurately. Use conversation context when relevant.`,
         totalTokens: { input: inputTokens, output: outputTokens, total: totalTokens },
         duration: parseFloat(duration),
         mode: 'direct',
+        tracking: tracker.getSummary(),
       });
 
       return;
