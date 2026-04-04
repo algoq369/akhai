@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { logger, log } from '@/lib/logger';
+import { withRetry } from '@/lib/retry';
 import { createQuery, updateQuery, trackUsage, addEvent } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
 import { getContextForQuery } from '@/lib/side-canal';
@@ -674,12 +675,23 @@ export async function POST(request: NextRequest) {
 
     let apiResponse;
     try {
-      apiResponse = await callProvider(selectedProvider, {
-        messages: [{ role: 'system', content: systemPrompt }, ...messages],
-        model: providerSpec.model,
-        maxTokens: 4096,
-        temperature: 0.7,
-      });
+      apiResponse = await withRetry(
+        () =>
+          callProvider(selectedProvider, {
+            messages: [{ role: 'system', content: systemPrompt }, ...messages],
+            model: providerSpec.model,
+            maxTokens: 4096,
+            temperature: 0.7,
+          }),
+        {
+          maxAttempts: 3,
+          baseDelay: 1000,
+          shouldRetry: (err) =>
+            err.message?.includes('rate') ||
+            err.message?.includes('timeout') ||
+            err.message?.includes('503'),
+        }
+      );
     } catch (apiError: any) {
       logger.query.apiError(selectedProvider.toUpperCase(), apiError.message);
       log('ERROR', 'API', `Provider ${selectedProvider} failed: ${apiError.message}`);
