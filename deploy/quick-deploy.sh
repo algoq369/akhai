@@ -27,6 +27,10 @@ rm -rf .next
 AKHAI_FREE_MODE=true npx next build
 
 echo ""
+echo "💾 Backing up current build on VPS..."
+ssh "$VPS_USER@$VPS_IP" "cp -r $REMOTE_WEB/.next $REMOTE_WEB/.next.backup 2>/dev/null || true"
+
+echo ""
 echo "📦 Syncing to Reykjavik..."
 
 # Step 2: Sync .next build output
