@@ -1,3 +1,17 @@
+export interface ConnectionData {
+  from: string;
+  to: string;
+  strength: number;
+}
+
+export interface TreeLayoutProps {
+  insights: CoreInsight[];
+  connections: ConnectionData[];
+  expandedId: string | null;
+  setExpandedId: (id: string | null) => void;
+  onDeepDive?: (query: string) => void;
+}
+
 export interface CoreInsight {
   id: string;
   rank: number;

@@ -10,6 +10,7 @@ import { GTPExecutor, analyzeQuery, type GTPResult } from '@akhai/core';
 import { createProviderFromFamily } from '@akhai/core';
 import { addQueryEvent, type QueryEvent } from './query-store';
 import { emitQueryEvent } from './event-emitter';
+import { emitEvent, buildBaseCallbacks } from './akhai-executor-callbacks';
 
 /**
  * Timeout wrapper for execution - prevents queries from hanging indefinitely
@@ -68,19 +69,6 @@ export interface GTPResultWithCost {
 }
 
 /**
- * Helper to emit events to both query-store and event-emitter (SSE)
- */
-function emitEvent(queryId: string, type: QueryEvent['type'], data: any) {
-  const event = { type, data, timestamp: Date.now() };
-
-  // Store in query-store for persistence
-  addQueryEvent(queryId, type, data);
-
-  // Emit to SSE subscribers for real-time updates
-  emitQueryEvent(queryId, event);
-}
-
-/**
  * Execute Flow A (Mother Base Decision) with event streaming
  *
  * @param queryId - Query ID for event streaming
@@ -129,59 +117,7 @@ export async function executeFlowAWithEvents(
   akhai.setupAdvisorLayer(slot1Family, slot2Family);
 
   // Create real-time callbacks that emit events as execution happens
-  const callbacks = {
-    onAdvisorStart: (slot: number, family: string, round: number) => {
-      emitEvent(queryId, 'advisor-start', {
-        round,
-        slot,
-        family,
-        status: 'thinking',
-        response: `${family} is analyzing...`,
-      });
-    },
-    onAdvisorComplete: (slot: number, family: string, round: number, output: string) => {
-      emitEvent(queryId, 'advisor-complete', {
-        round,
-        slot,
-        family,
-        status: 'complete',
-        response: output,
-      });
-    },
-    onConsensusCheck: (round: number, reached: boolean) => {
-      if (reached) {
-        emitEvent(queryId, 'consensus-reached', {
-          round,
-        });
-      }
-    },
-    onRoundComplete: (round: number, totalRounds: number) => {
-      emitEvent(queryId, 'round-complete', {
-        round,
-        totalRounds,
-      });
-    },
-    onRedactorStart: () => {
-      emitEvent(queryId, 'redactor-start', {
-        status: 'analyzing',
-        output: 'Redactor is synthesizing advisor outputs...',
-      });
-    },
-    onRedactorComplete: (synthesis: string, family: string) => {
-      emitEvent(queryId, 'redactor-complete', {
-        status: 'complete',
-        output: synthesis,
-        family,
-      });
-    },
-    onMotherBaseReview: (exchange: number, approved: boolean, response: string) => {
-      emitEvent(queryId, 'mother-base-review', {
-        exchange,
-        approved,
-        decision: response,
-      });
-    },
-  };
+  const callbacks = buildBaseCallbacks(queryId);
 
   // Execute Flow A with callbacks - wrapped in timeout (3 minutes)
   console.log(`[AkhAI] 🔥 Executing Mother Base Flow (timeout: 180s)...`);

@@ -10,8 +10,11 @@ import {
   VIZ_SIZES,
 } from './VisionBoardTypes';
 import { VizType, generateVisualization } from './VisionBoardVizHelpers';
-import { VIZ_RENDERERS } from './VisionBoardRenderers';
 import { loadState, saveState, genId } from './VisionBoardState';
+import VisionBoardTimeline from './VisionBoardTimeline';
+import VisionBoardObjectives from './VisionBoardObjectives';
+import VisionBoardProgress from './VisionBoardProgress';
+import VisionBoardNode from './VisionBoardNode';
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
@@ -34,7 +37,6 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [editingNode, setEditingNode] = useState<string | null>(null);
-  const [newObjText, setNewObjText] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [vizLoading, setVizLoading] = useState<string | null>(null);
 
@@ -312,100 +314,7 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
     }
   }, [nodes, topics, camera, addNode]);
 
-  // ── Objectives ──
-  const addObjective = useCallback(() => {
-    if (!newObjText.trim()) return;
-    setObjectives((prev) => [
-      ...prev,
-      { id: genId(), text: newObjText.trim(), done: false, createdAt: Date.now() },
-    ]);
-    setNewObjText('');
-  }, [newObjText]);
-
-  const toggleObjective = useCallback((id: string) => {
-    setObjectives((prev) => prev.map((o) => (o.id === id ? { ...o, done: !o.done } : o)));
-  }, []);
-
-  const deleteObjective = useCallback((id: string) => {
-    setObjectives((prev) => prev.filter((o) => o.id !== id));
-  }, []);
-
-  // ── Calendar Timeline ──
-  const PINS_KEY = userId ? `akhai-vision-pins-${userId}` : 'akhai-vision-pins-none';
-  const [timelinePins, setTimelinePins] = useState<{ date: string; label: string }[]>(() => {
-    if (typeof window === 'undefined' || !userId) return [];
-    try {
-      const raw = localStorage.getItem(PINS_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-  const pinsInitRef = useRef(false);
-  const [hoveredPin, setHoveredPin] = useState<{ label: string; x: number; y: number } | null>(
-    null
-  );
-  const [pinPopup, setPinPopup] = useState<{ date: string; displayDate: string; x: number } | null>(
-    null
-  );
-  const [pinLabel, setPinLabel] = useState('');
-  const timelineRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!pinsInitRef.current) {
-      pinsInitRef.current = true;
-      return;
-    }
-    try {
-      localStorage.setItem(PINS_KEY, JSON.stringify(timelinePins));
-    } catch {}
-  }, [timelinePins]);
-
-  const calendarData = useMemo(() => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    let minDate: Date;
-    if (nodes.length > 0) {
-      const earliest = Math.min(...nodes.map((n) => n.createdAt));
-      minDate = new Date(earliest);
-      minDate = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
-    } else {
-      minDate = new Date(today.getTime() - 30 * 86400000);
-    }
-    const maxDate = new Date(today.getTime() + 30 * 86400000);
-    const totalDays = Math.max(1, Math.ceil((maxDate.getTime() - minDate.getTime()) / 86400000));
-
-    // Group node activity by date key
-    const activityMap = new Map<string, { count: number; types: Record<string, number> }>();
-    nodes.forEach((n) => {
-      const d = new Date(n.createdAt);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const entry = activityMap.get(key) || { count: 0, types: {} };
-      entry.count++;
-      entry.types[n.type] = (entry.types[n.type] || 0) + 1;
-      activityMap.set(key, entry);
-    });
-    const maxActivity = Math.max(1, ...Array.from(activityMap.values()).map((v) => v.count));
-
-    // Month labels
-    const months: { label: string; x: number }[] = [];
-    let lastMonth = -1;
-    for (let i = 0; i <= totalDays; i++) {
-      const d = new Date(minDate.getTime() + i * 86400000);
-      if (d.getMonth() !== lastMonth) {
-        lastMonth = d.getMonth();
-        months.push({
-          label: d.toLocaleDateString('en-US', { month: 'short' }),
-          x: (i / totalDays) * 100,
-        });
-      }
-    }
-
-    // Today position
-    const todayPos = ((today.getTime() - minDate.getTime()) / 86400000 / totalDays) * 100;
-
-    return { minDate, maxDate, totalDays, activityMap, maxActivity, months, todayPos, today };
-  }, [nodes]);
+  // ── Derived ──
 
   const maxQueries = useMemo(() => Math.max(1, ...topics.map((t) => t.queryCount)), [topics]);
 
@@ -431,60 +340,11 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
     <div className="flex flex-col h-full bg-[#fafafa]">
       <div className="flex flex-1 overflow-hidden">
         {/* ── Left: Progress Tracker ── */}
-        <div className="w-52 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col">
-          <div className="px-3 py-2 border-b border-slate-100">
-            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-              progress
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {topicsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />
-              </div>
-            ) : topics.length === 0 ? (
-              <p className="text-[10px] text-slate-400 text-center py-4">no topics yet</p>
-            ) : (
-              topics.map((t, i) => (
-                <div
-                  key={i}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('topic-name', t.name);
-                    e.dataTransfer.setData('node-type', 'conversation');
-                    e.dataTransfer.setData('topic-data', JSON.stringify(t));
-                  }}
-                  className="group px-2 py-1.5 rounded-md hover:bg-slate-50 cursor-grab active:cursor-grabbing"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{
-                        backgroundColor:
-                          t.category === 'technology'
-                            ? '#6366f1'
-                            : t.category === 'finance'
-                              ? '#f59e0b'
-                              : t.category === 'health'
-                                ? '#db2777'
-                                : t.category === 'science'
-                                  ? '#0284c7'
-                                  : '#64748b',
-                      }}
-                    />
-                    <span className="text-[10px] text-slate-700 truncate flex-1">{t.name}</span>
-                  </div>
-                  <div className="mt-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-slate-400 rounded-full transition-all"
-                      style={{ width: `${(t.queryCount / maxQueries) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        <VisionBoardProgress
+          topics={topics}
+          topicsLoading={topicsLoading}
+          maxQueries={maxQueries}
+        />
 
         {/* ── Center: Infinite Canvas ── */}
         <div
@@ -521,126 +381,18 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
               .filter((n) => n && n.id && n.type)
               .map((node) => {
                 if (!node.data) node.data = {};
-                const style = NODE_COLORS[node.type] || NODE_COLORS.note;
-                const isSelected = selectedNode === node.id;
-                const isEditing = editingNode === node.id;
-                const VizRenderer = VIZ_RENDERERS[node.type];
                 return (
-                  <div
+                  <VisionBoardNode
                     key={node.id}
-                    onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
-                    onDoubleClick={(e) => {
-                      e.stopPropagation();
-                      if (!VizRenderer) setEditingNode(node.id);
-                    }}
-                    className="absolute rounded-lg border shadow-sm select-none"
-                    style={{
-                      left: node.x,
-                      top: node.y,
-                      width: node.w,
-                      height: node.h,
-                      backgroundColor: style.bg,
-                      borderColor: isSelected ? '#18181b' : style.border,
-                      borderWidth: isSelected ? 2 : 1,
-                      zIndex: isSelected ? 10 : 1,
-                    }}
-                  >
-                    <div
-                      className="flex items-center justify-between px-2 py-1 border-b"
-                      style={{ borderColor: style.border + '40' }}
-                    >
-                      <span
-                        className="text-[8px] font-semibold uppercase tracking-wider"
-                        style={{ color: style.border }}
-                      >
-                        {style.label}
-                      </span>
-                      {isSelected && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteNode(node.id);
-                          }}
-                          className="text-[10px] text-slate-400 hover:text-red-500"
-                        >
-                          x
-                        </button>
-                      )}
-                    </div>
-                    <div className="overflow-hidden" style={{ height: node.h - 28 }}>
-                      {VizRenderer && node.data?.vizData ? (
-                        <VizRenderer data={node.data?.vizData} />
-                      ) : isEditing ? (
-                        <div className="px-2 py-1 space-y-1">
-                          <input
-                            autoFocus
-                            value={node.data?.title || ''}
-                            onChange={(e) => updateNodeData(node.id, { title: e.target.value })}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') setEditingNode(null);
-                            }}
-                            placeholder="title"
-                            className="w-full text-[10px] font-medium text-slate-800 bg-transparent outline-none border-b border-slate-200 pb-0.5"
-                          />
-                          <textarea
-                            value={node.data?.body || ''}
-                            onChange={(e) => updateNodeData(node.id, { body: e.target.value })}
-                            placeholder="notes..."
-                            className="w-full text-[9px] text-slate-600 bg-transparent outline-none resize-none"
-                            style={{ height: node.h - 56 }}
-                          />
-                        </div>
-                      ) : node.type === 'conversation' ? (
-                        <div className="px-2 py-1.5">
-                          <div
-                            className="text-[11px] font-medium text-slate-800 overflow-hidden"
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: 'vertical' as any,
-                              wordBreak: 'break-word',
-                              lineHeight: 1.4,
-                            }}
-                          >
-                            {node.data?.title || 'untitled'}
-                          </div>
-                          <div
-                            className="text-[9px] text-slate-500 mt-1.5 overflow-hidden"
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical' as any,
-                            }}
-                          >
-                            {node.data?.body || ''}
-                          </div>
-                          {node.data?.source && (
-                            <div className="mt-1.5 flex items-center gap-1.5">
-                              <span className="px-1 py-0.5 rounded text-[7px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-500">
-                                {node.data?.source}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="px-2 py-1">
-                          <div className="text-[10px] font-medium text-slate-800 truncate">
-                            {node.data?.title || 'untitled'}
-                          </div>
-                          <div
-                            className="text-[9px] text-slate-500 mt-0.5 overflow-hidden"
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: 'vertical' as any,
-                            }}
-                          >
-                            {node.data?.body || ''}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                    node={node}
+                    isSelected={selectedNode === node.id}
+                    isEditing={editingNode === node.id}
+                    onMouseDown={handleNodeMouseDown}
+                    onDoubleClick={(id) => setEditingNode(id)}
+                    onDelete={deleteNode}
+                    onUpdateData={updateNodeData}
+                    onStopEditing={() => setEditingNode(null)}
+                  />
                 );
               })}
           </div>
@@ -700,358 +452,11 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
         </div>
 
         {/* ── Right: Objectives ── */}
-        <div className="w-52 flex-shrink-0 border-l border-slate-200 bg-white flex flex-col">
-          <div className="px-3 py-2 border-b border-slate-100">
-            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-              objectives
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {objectives.length === 0 && (
-              <p className="text-[10px] text-slate-400 text-center py-4">no objectives yet</p>
-            )}
-            {objectives.map((obj) => (
-              <div
-                key={obj.id}
-                className="group flex items-start gap-1.5 px-1.5 py-1 rounded hover:bg-slate-50"
-              >
-                <button
-                  onClick={() => toggleObjective(obj.id)}
-                  className="mt-0.5 w-3 h-3 rounded border border-slate-300 flex items-center justify-center flex-shrink-0"
-                  style={{
-                    backgroundColor: obj.done ? '#059669' : 'transparent',
-                    borderColor: obj.done ? '#059669' : undefined,
-                  }}
-                >
-                  {obj.done && <span className="text-[7px] text-white">✓</span>}
-                </button>
-                <span
-                  className={`text-[10px] flex-1 ${obj.done ? 'text-slate-400 line-through' : 'text-slate-700'}`}
-                >
-                  {obj.text}
-                </span>
-                <button
-                  onClick={() => deleteObjective(obj.id)}
-                  className="text-[9px] text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"
-                >
-                  x
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="flex-none p-2 border-t border-slate-100">
-            <div className="flex gap-1">
-              <input
-                value={newObjText}
-                onChange={(e) => setNewObjText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') addObjective();
-                }}
-                placeholder="add objective..."
-                className="flex-1 text-[10px] px-2 py-1 bg-slate-50 border border-slate-200 rounded text-slate-700 outline-none focus:border-slate-400"
-              />
-              <button
-                onClick={addObjective}
-                className="px-2 py-1 bg-slate-800 text-white text-[9px] font-medium rounded hover:bg-slate-700"
-              >
-                +
-              </button>
-            </div>
-          </div>
-        </div>
+        <VisionBoardObjectives objectives={objectives} setObjectives={setObjectives} />
       </div>
 
       {/* ── Bottom: Calendar Timeline ── */}
-      <div
-        className="flex-none bg-[#f8fafc] select-none"
-        style={{ height: 80, borderTop: '1px solid #e2e8f0' }}
-      >
-        <div className="flex h-full">
-          <div className="flex-shrink-0 flex flex-col justify-center px-3" style={{ width: 70 }}>
-            <span
-              style={{
-                fontSize: 9,
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                color: '#94a3b8',
-                letterSpacing: '0.05em',
-              }}
-            >
-              TIMELINE
-            </span>
-            <span style={{ fontSize: 8, color: '#cbd5e1', marginTop: 2 }}>
-              {nodes.length} nodes
-            </span>
-          </div>
-          <div
-            ref={timelineRef}
-            className="flex-1 relative cursor-crosshair"
-            onClick={(e) => {
-              const rect = timelineRef.current?.getBoundingClientRect();
-              if (!rect) return;
-              const pct = (e.clientX - rect.left) / rect.width;
-              const dayIdx = Math.floor(pct * calendarData.totalDays);
-              const clickedDate = new Date(calendarData.minDate.getTime() + dayIdx * 86400000);
-              const dateStr = `${clickedDate.getFullYear()}-${String(clickedDate.getMonth() + 1).padStart(2, '0')}-${String(clickedDate.getDate()).padStart(2, '0')}`;
-              const existing = timelinePins.find((p) => p.date === dateStr);
-              if (existing) {
-                setTimelinePins((prev) => prev.filter((p) => p.date !== dateStr));
-                return;
-              }
-              setPinPopup({
-                date: dateStr,
-                displayDate: clickedDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                }),
-                x: e.clientX - rect.left,
-              });
-              setPinLabel('');
-            }}
-          >
-            {/* Month labels — top 20px */}
-            <div className="absolute top-0 left-0 right-0" style={{ height: 16 }}>
-              {calendarData.months.map((m, i) => (
-                <span
-                  key={i}
-                  className="absolute"
-                  style={{
-                    left: `${m.x}%`,
-                    fontSize: 8,
-                    fontWeight: 600,
-                    color: '#94a3b8',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {m.label}
-                </span>
-              ))}
-            </div>
-
-            {/* Activity bars + pins — middle 40px */}
-            <div className="absolute left-0 right-0" style={{ top: 18, height: 40 }}>
-              <svg className="w-full h-full" preserveAspectRatio="none">
-                {/* Day markers every 5 days */}
-                {Array.from({ length: Math.ceil(calendarData.totalDays / 5) }, (_, i) => {
-                  const x = ((i * 5) / calendarData.totalDays) * 100;
-                  return (
-                    <line
-                      key={i}
-                      x1={`${x}%`}
-                      y1="0"
-                      x2={`${x}%`}
-                      y2="100%"
-                      stroke="#e2e8f0"
-                      strokeWidth={0.5}
-                    />
-                  );
-                })}
-
-                {/* Activity bars */}
-                {Array.from(calendarData.activityMap.entries()).map(([dateKey, activity]) => {
-                  const [y, m, d] = dateKey.split('-').map(Number);
-                  const date = new Date(y, m - 1, d);
-                  const dayIdx = Math.floor(
-                    (date.getTime() - calendarData.minDate.getTime()) / 86400000
-                  );
-                  const x = (dayIdx / calendarData.totalDays) * 100;
-                  const barH = (activity.count / calendarData.maxActivity) * 36;
-                  const topType = Object.entries(activity.types).sort(
-                    (a, b) => b[1] - a[1]
-                  )[0]?.[0] as BoardNodeType | undefined;
-                  const color = topType ? NODE_COLORS[topType]?.border || '#94a3b8' : '#94a3b8';
-                  const barW = Math.max(100 / calendarData.totalDays - 0.2, 0.3);
-                  return (
-                    <rect
-                      key={dateKey}
-                      x={`${x}%`}
-                      y={40 - barH}
-                      width={`${barW}%`}
-                      height={barH}
-                      rx={1}
-                      fill={color}
-                      opacity={0.75}
-                    />
-                  );
-                })}
-
-                {/* Today line */}
-                {calendarData.todayPos >= 0 && calendarData.todayPos <= 100 && (
-                  <line
-                    x1={`${calendarData.todayPos}%`}
-                    y1="0"
-                    x2={`${calendarData.todayPos}%`}
-                    y2="100%"
-                    stroke="#ef4444"
-                    strokeWidth={1.5}
-                    opacity={0.7}
-                  />
-                )}
-              </svg>
-
-              {/* Pins */}
-              {timelinePins.map((pin, i) => {
-                const [y, m, d] = pin.date.split('-').map(Number);
-                const pinDate = new Date(y, m - 1, d);
-                const dayIdx = Math.floor(
-                  (pinDate.getTime() - calendarData.minDate.getTime()) / 86400000
-                );
-                const x = (dayIdx / calendarData.totalDays) * 100;
-                if (x < 0 || x > 100) return null;
-                return (
-                  <div
-                    key={i}
-                    className="absolute"
-                    style={{ left: `${x}%`, top: 0, transform: 'translateX(-50%)' }}
-                    onMouseEnter={(e) =>
-                      setHoveredPin({ label: pin.label, x: e.clientX, y: e.clientY })
-                    }
-                    onMouseLeave={() => setHoveredPin(null)}
-                  >
-                    <svg width="10" height="10" viewBox="0 0 10 10">
-                      <polygon points="5,0 10,5 5,10 0,5" fill="#8b5cf6" />
-                    </svg>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Day numbers — bottom 20px */}
-            <div className="absolute left-0 right-0 bottom-0" style={{ height: 18 }}>
-              {Array.from({ length: Math.ceil(calendarData.totalDays / 5) }, (_, i) => {
-                const dayIdx = i * 5;
-                const d = new Date(calendarData.minDate.getTime() + dayIdx * 86400000);
-                const x = (dayIdx / calendarData.totalDays) * 100;
-                return (
-                  <span
-                    key={i}
-                    className="absolute"
-                    style={{
-                      left: `${x}%`,
-                      fontSize: 7,
-                      color: '#cbd5e1',
-                      transform: 'translateX(-50%)',
-                    }}
-                  >
-                    {d.getDate()}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Pin hover tooltip */}
-        {hoveredPin && (
-          <div
-            style={{
-              position: 'fixed',
-              left: hoveredPin.x + 8,
-              top: hoveredPin.y - 28,
-              zIndex: 50,
-              background: '#1e293b',
-              color: 'white',
-              fontSize: 9,
-              padding: '3px 8px',
-              borderRadius: 4,
-              pointerEvents: 'none',
-              fontFamily: "'JetBrains Mono', monospace",
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {hoveredPin.label}
-          </div>
-        )}
-
-        {/* Inline pin popup */}
-        {pinPopup && (
-          <div
-            style={{
-              position: 'absolute',
-              left: Math.max(
-                10,
-                Math.min(pinPopup.x + 70 - 80, (timelineRef.current?.offsetWidth || 400) - 180)
-              ),
-              bottom: 60,
-              zIndex: 50,
-              background: 'white',
-              border: '1px solid #e2e8f0',
-              borderRadius: 8,
-              padding: 8,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
-            <div style={{ fontSize: 8, color: '#94a3b8', marginBottom: 4 }}>
-              pin for {pinPopup.displayDate}
-            </div>
-            <input
-              autoFocus
-              value={pinLabel}
-              onChange={(e) => setPinLabel(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && pinLabel.trim()) {
-                  setTimelinePins((prev) => [
-                    ...prev,
-                    { date: pinPopup.date, label: pinLabel.trim() },
-                  ]);
-                  setPinPopup(null);
-                  setPinLabel('');
-                }
-                if (e.key === 'Escape') setPinPopup(null);
-              }}
-              style={{
-                fontSize: 10,
-                border: '1px solid #e2e8f0',
-                borderRadius: 4,
-                padding: '3px 6px',
-                width: 140,
-                outline: 'none',
-              }}
-              placeholder="label..."
-            />
-            <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-              <button
-                onClick={() => setPinPopup(null)}
-                style={{
-                  fontSize: 8,
-                  padding: '2px 6px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 3,
-                  background: 'white',
-                  cursor: 'pointer',
-                  color: '#94a3b8',
-                }}
-              >
-                cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (pinLabel.trim())
-                    setTimelinePins((prev) => [
-                      ...prev,
-                      { date: pinPopup.date, label: pinLabel.trim() },
-                    ]);
-                  setPinPopup(null);
-                  setPinLabel('');
-                }}
-                style={{
-                  fontSize: 8,
-                  padding: '2px 6px',
-                  border: 'none',
-                  borderRadius: 3,
-                  background: '#1e293b',
-                  cursor: 'pointer',
-                  color: 'white',
-                }}
-              >
-                add
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <VisionBoardTimeline nodes={nodes} userId={userId} />
     </div>
   );
 }

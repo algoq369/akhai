@@ -1,92 +1,31 @@
-'use client'
+'use client';
 
 /**
  * WORKBENCH CONSOLE - AI COMPUTATIONAL CONFIG
- * 
+ *
  * Features:
  * - Left: Interconnected Tree Visualization (processing flow)
  * - Right: Quick Config (top 3 layers) + Config History
  * - Bottom: Presets + Expand All Layers
  */
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useLayerStore } from '@/lib/stores/layer-store'
-import { Layer } from '@/lib/layer-registry'
-
-// ═══════════════════════════════════════════════════════════
-// AI LAYERS & CONFIG
-// ═══════════════════════════════════════════════════════════
-
-interface AILayer {
-  id: number
-  name: string
-  description: string
-  phase: 'input' | 'understanding' | 'reasoning' | 'output'
-  extremes: { low: string; high: string }
-  critical: boolean
-  color: string
-}
-
-const AI_LAYERS: AILayer[] = [
-  { id: Layer.EMBEDDING, name: 'reception', description: 'input parsing', phase: 'input', extremes: { low: 'basic', high: 'detailed' }, critical: false, color: '#78716c' },
-  { id: Layer.EXECUTOR, name: 'comprehension', description: 'semantic encoding', phase: 'input', extremes: { low: 'surface', high: 'deep' }, critical: false, color: '#a3a3a3' },
-  { id: Layer.CLASSIFIER, name: 'context', description: 'relationship mapping', phase: 'understanding', extremes: { low: 'narrow', high: 'wide' }, critical: false, color: '#facc15' },
-  { id: Layer.ENCODER, name: 'knowledge', description: 'retrieves facts and expertise', phase: 'understanding', extremes: { low: 'focused', high: 'broad' }, critical: true, color: '#6366f1' },
-  { id: Layer.REASONING, name: 'reasoning', description: 'breaks problems into steps', phase: 'reasoning', extremes: { low: 'shallow', high: 'deep' }, critical: true, color: '#818cf8' },
-  { id: Layer.EXPANSION, name: 'expansion', description: 'explores alternatives', phase: 'reasoning', extremes: { low: 'constrained', high: 'expansive' }, critical: false, color: '#34d399' },
-  { id: Layer.DISCRIMINATOR, name: 'analysis', description: 'evaluates and limits', phase: 'reasoning', extremes: { low: 'lenient', high: 'strict' }, critical: false, color: '#f87171' },
-  { id: Layer.ATTENTION, name: 'synthesis', description: 'combines insights', phase: 'reasoning', extremes: { low: 'simple', high: 'complex' }, critical: false, color: '#fbbf24' },
-  { id: Layer.SYNTHESIS, name: 'verification', description: 'checks for errors', phase: 'output', extremes: { low: 'minimal', high: 'thorough' }, critical: true, color: '#22d3ee' },
-  { id: Layer.GENERATIVE, name: 'articulation', description: 'crafts response', phase: 'output', extremes: { low: 'concise', high: 'verbose' }, critical: false, color: '#fb923c' },
-  { id: Layer.META_CORE, name: 'output', description: 'final delivery', phase: 'output', extremes: { low: 'minimal', high: 'complete' }, critical: false, color: '#a78bfa' },
-]
-
-const CRITICAL_LAYERS = AI_LAYERS.filter(l => l.critical)
-
-// Tree positions for visualization (top-to-bottom flow)
-const TREE_POSITIONS: Record<number, { x: number; y: number }> = {
-  [Layer.EMBEDDING]: { x: 100, y: 30 },   // reception (top - input)
-  [Layer.EXECUTOR]: { x: 100, y: 70 },     // comprehension
-  [Layer.CLASSIFIER]: { x: 60, y: 110 },       // context (left)
-  [Layer.ENCODER]: { x: 140, y: 110 },    // knowledge (right) ★
-  [Layer.REASONING]: { x: 100, y: 155 },  // reasoning (center) ★
-  [Layer.EXPANSION]: { x: 50, y: 195 },    // expansion (left)
-  [Layer.DISCRIMINATOR]: { x: 150, y: 195 },  // analysis (right)
-  [Layer.ATTENTION]: { x: 100, y: 235 },  // synthesis (center)
-  [Layer.SYNTHESIS]: { x: 100, y: 280 },     // verification ★
-  [Layer.GENERATIVE]: { x: 100, y: 320 },  // articulation
-  [Layer.META_CORE]: { x: 100, y: 360 },   // output (bottom)
-}
-
-// Tree connections (processing flow)
-const TREE_PATHS: [number, number][] = [
-  [Layer.EMBEDDING, Layer.EXECUTOR],      // reception → comprehension
-  [Layer.EXECUTOR, Layer.CLASSIFIER],          // comprehension → context
-  [Layer.EXECUTOR, Layer.ENCODER],        // comprehension → knowledge
-  [Layer.CLASSIFIER, Layer.REASONING],        // context → reasoning
-  [Layer.ENCODER, Layer.REASONING],      // knowledge → reasoning
-  [Layer.REASONING, Layer.EXPANSION],     // reasoning → expansion
-  [Layer.REASONING, Layer.DISCRIMINATOR],    // reasoning → analysis
-  [Layer.EXPANSION, Layer.ATTENTION],     // expansion → synthesis
-  [Layer.DISCRIMINATOR, Layer.ATTENTION],    // analysis → synthesis
-  [Layer.ATTENTION, Layer.SYNTHESIS],       // synthesis → verification
-  [Layer.SYNTHESIS, Layer.GENERATIVE],       // verification → articulation
-  [Layer.GENERATIVE, Layer.META_CORE],     // articulation → output
-]
-
-const PRESETS = [
-  { id: 'fast', name: 'fast', weights: { [Layer.REASONING]: 0.4, [Layer.ENCODER]: 0.5, [Layer.SYNTHESIS]: 0.4 } },
-  { id: 'balanced', name: 'balanced', weights: { [Layer.REASONING]: 0.7, [Layer.ENCODER]: 0.7, [Layer.SYNTHESIS]: 0.7 } },
-  { id: 'thorough', name: 'thorough', weights: { [Layer.REASONING]: 0.9, [Layer.ENCODER]: 0.85, [Layer.SYNTHESIS]: 0.9 } },
-  { id: 'creative', name: 'creative', weights: { [Layer.REASONING]: 0.7, [Layer.ENCODER]: 0.6, [Layer.SYNTHESIS]: 0.5 } },
-]
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useLayerStore } from '@/lib/stores/layer-store';
+import { Layer } from '@/lib/layer-registry';
+import {
+  AI_LAYERS,
+  CRITICAL_LAYERS,
+  TREE_POSITIONS,
+  TREE_PATHS,
+  PRESETS,
+} from './WorkbenchConsole.constants';
 
 interface ConfigHistory {
-  id: string
-  name: string
-  date: string
-  testCount: number
+  id: string;
+  name: string;
+  date: string;
+  testCount: number;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -94,44 +33,48 @@ interface ConfigHistory {
 // ═══════════════════════════════════════════════════════════
 
 export function WorkbenchConsole() {
-  const { weights, setWeight } = useLayerStore()
-  const [activePreset, setActivePreset] = useState('balanced')
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
-  const [testQuery, setTestQuery] = useState('')
-  const [isTestOpen, setIsTestOpen] = useState(false)
-  const [hoveredNode, setHoveredNode] = useState<number | null>(null)
-  const [selectedNode, setSelectedNode] = useState<number | null>(null)
-  
+  const { weights, setWeight } = useLayerStore();
+  const [activePreset, setActivePreset] = useState('balanced');
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [testQuery, setTestQuery] = useState('');
+  const [isTestOpen, setIsTestOpen] = useState(false);
+  const [hoveredNode, setHoveredNode] = useState<number | null>(null);
+  const [selectedNode, setSelectedNode] = useState<number | null>(null);
+
   const [configHistory] = useState<ConfigHistory[]>([
     { id: '1', name: 'Deep Research', date: 'Jan 29', testCount: 3 },
     { id: '2', name: 'Creative Session', date: 'Jan 28', testCount: 7 },
-  ])
+  ]);
 
-  const getWeight = (id: number) => weights[id] ?? 0.5
-  const getLayer = (id: number) => AI_LAYERS.find(l => l.id === id)
-  
+  const getWeight = (id: number) => weights[id] ?? 0.5;
+  const getLayer = (id: number) => AI_LAYERS.find((l) => l.id === id);
+
   const handleWeightChange = (id: number, value: number) => {
-    setWeight(id, value)
-    setActivePreset('custom')
-  }
+    setWeight(id, value);
+    setActivePreset('custom');
+  };
 
   const applyPreset = (presetId: string) => {
-    setActivePreset(presetId)
-    const preset = PRESETS.find(p => p.id === presetId)
+    setActivePreset(presetId);
+    const preset = PRESETS.find((p) => p.id === presetId);
     if (preset) {
       Object.entries(preset.weights).forEach(([id, weight]) => {
-        setWeight(parseInt(id), weight)
-      })
+        setWeight(parseInt(id), weight);
+      });
     }
-  }
+  };
 
   return (
     <div className="bg-white font-mono text-xs">
       {/* Header */}
       <div className="border-b border-neutral-100 px-4 py-3 flex items-center justify-between">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-neutral-400">AI Computational Config</div>
-          <div className="text-neutral-500 mt-0.5">configure processing layers for optimal responses</div>
+          <div className="text-[10px] uppercase tracking-widest text-neutral-400">
+            AI Computational Config
+          </div>
+          <div className="text-neutral-500 mt-0.5">
+            configure processing layers for optimal responses
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button className="px-3 py-1.5 text-[10px] border border-neutral-200 rounded hover:bg-neutral-50">
@@ -148,16 +91,16 @@ export function WorkbenchConsole() {
           <div className="text-[9px] uppercase tracking-wider text-neutral-400 mb-2 text-center">
             Processing Flow
           </div>
-          
+
           <svg viewBox="0 0 200 400" className="w-full">
             {/* Connection Paths */}
             {TREE_PATHS.map(([from, to], idx) => {
-              const fromPos = TREE_POSITIONS[from]
-              const toPos = TREE_POSITIONS[to]
-              const fromWeight = getWeight(from)
-              const toWeight = getWeight(to)
-              const avgWeight = (fromWeight + toWeight) / 2
-              
+              const fromPos = TREE_POSITIONS[from];
+              const toPos = TREE_POSITIONS[to];
+              const fromWeight = getWeight(from);
+              const toWeight = getWeight(to);
+              const avgWeight = (fromWeight + toWeight) / 2;
+
               return (
                 <line
                   key={idx}
@@ -169,26 +112,33 @@ export function WorkbenchConsole() {
                   strokeWidth={1 + avgWeight * 1.5}
                   strokeOpacity={0.5 + avgWeight * 0.3}
                 />
-              )
+              );
             })}
 
             {/* Flow arrows (subtle) */}
             <defs>
-              <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <marker
+                id="arrowhead"
+                markerWidth="6"
+                markerHeight="6"
+                refX="3"
+                refY="3"
+                orient="auto"
+              >
                 <path d="M0,0 L6,3 L0,6 Z" fill="#d4d4d4" />
               </marker>
             </defs>
 
             {/* Nodes */}
             {AI_LAYERS.map((layer) => {
-              const pos = TREE_POSITIONS[layer.id]
-              if (!pos) return null
-              
-              const weight = getWeight(layer.id)
-              const isHovered = hoveredNode === layer.id
-              const isSelected = selectedNode === layer.id
-              const radius = 10 + weight * 6
-              
+              const pos = TREE_POSITIONS[layer.id];
+              if (!pos) return null;
+
+              const weight = getWeight(layer.id);
+              const isHovered = hoveredNode === layer.id;
+              const isSelected = selectedNode === layer.id;
+              const radius = 10 + weight * 6;
+
               return (
                 <g
                   key={layer.id}
@@ -209,7 +159,7 @@ export function WorkbenchConsole() {
                       strokeDasharray="3 2"
                     />
                   )}
-                  
+
                   {/* Hover glow */}
                   {isHovered && !isSelected && (
                     <circle
@@ -275,18 +225,27 @@ export function WorkbenchConsole() {
                       fill={layer.critical ? '#374151' : '#9ca3af'}
                       fontWeight={layer.critical ? '600' : '400'}
                     >
-                      {layer.name}{layer.critical && ' ★'}
+                      {layer.name}
+                      {layer.critical && ' ★'}
                     </text>
                   )}
                 </g>
-              )
+              );
             })}
 
             {/* Phase labels */}
-            <text x="10" y="15" fontSize="6" fill="#d4d4d4" className="uppercase">input</text>
-            <text x="10" y="100" fontSize="6" fill="#d4d4d4" className="uppercase">understanding</text>
-            <text x="10" y="175" fontSize="6" fill="#d4d4d4" className="uppercase">reasoning</text>
-            <text x="10" y="300" fontSize="6" fill="#d4d4d4" className="uppercase">output</text>
+            <text x="10" y="15" fontSize="6" fill="#d4d4d4" className="uppercase">
+              input
+            </text>
+            <text x="10" y="100" fontSize="6" fill="#d4d4d4" className="uppercase">
+              understanding
+            </text>
+            <text x="10" y="175" fontSize="6" fill="#d4d4d4" className="uppercase">
+              reasoning
+            </text>
+            <text x="10" y="300" fontSize="6" fill="#d4d4d4" className="uppercase">
+              output
+            </text>
           </svg>
 
           {/* Selected Node Editor */}
@@ -299,23 +258,27 @@ export function WorkbenchConsole() {
                 className="mt-2 p-2 border border-neutral-200 rounded bg-neutral-50"
               >
                 {(() => {
-                  const layer = getLayer(selectedNode)
-                  if (!layer) return null
-                  const weight = getWeight(selectedNode)
+                  const layer = getLayer(selectedNode);
+                  if (!layer) return null;
+                  const weight = getWeight(selectedNode);
                   return (
                     <>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-medium" style={{ color: layer.color }}>
                           {layer.name}
                         </span>
-                        <span className="text-[9px] text-neutral-400">{Math.round(weight * 100)}%</span>
+                        <span className="text-[9px] text-neutral-400">
+                          {Math.round(weight * 100)}%
+                        </span>
                       </div>
                       <input
                         type="range"
                         min="0"
                         max="100"
                         value={Math.round(weight * 100)}
-                        onChange={(e) => handleWeightChange(selectedNode, parseInt(e.target.value) / 100)}
+                        onChange={(e) =>
+                          handleWeightChange(selectedNode, parseInt(e.target.value) / 100)
+                        }
                         className="w-full h-1 bg-neutral-200 rounded appearance-none cursor-pointer
                                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 
                                  [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full 
@@ -326,7 +289,7 @@ export function WorkbenchConsole() {
                         <span>{layer.extremes.high}</span>
                       </div>
                     </>
-                  )
+                  );
                 })()}
               </motion.div>
             )}
@@ -338,13 +301,15 @@ export function WorkbenchConsole() {
           {/* Quick Settings */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-[10px] uppercase tracking-wider text-neutral-400">Quick Settings</div>
+              <div className="text-[10px] uppercase tracking-wider text-neutral-400">
+                Quick Settings
+              </div>
               <div className="text-[9px] text-neutral-300">top 3 impact layers</div>
             </div>
 
             <div className="space-y-4">
               {CRITICAL_LAYERS.map((layer) => {
-                const weight = getWeight(layer.id)
+                const weight = getWeight(layer.id);
                 return (
                   <div key={layer.id}>
                     <div className="flex items-center justify-between mb-1">
@@ -352,16 +317,22 @@ export function WorkbenchConsole() {
                         <span className="text-neutral-400">★</span>
                         <span className="font-medium text-neutral-700">{layer.name}</span>
                       </div>
-                      <span className="text-neutral-700 tabular-nums">{Math.round(weight * 100)}%</span>
+                      <span className="text-neutral-700 tabular-nums">
+                        {Math.round(weight * 100)}%
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[9px] text-neutral-400 w-16 text-right">{layer.extremes.low}</span>
+                      <span className="text-[9px] text-neutral-400 w-16 text-right">
+                        {layer.extremes.low}
+                      </span>
                       <input
                         type="range"
                         min="0"
                         max="100"
                         value={Math.round(weight * 100)}
-                        onChange={(e) => handleWeightChange(layer.id, parseInt(e.target.value) / 100)}
+                        onChange={(e) =>
+                          handleWeightChange(layer.id, parseInt(e.target.value) / 100)
+                        }
                         className="flex-1 h-1 bg-neutral-100 rounded-full appearance-none cursor-pointer
                                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
                                  [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full 
@@ -371,18 +342,24 @@ export function WorkbenchConsole() {
                           background: `linear-gradient(to right, ${layer.color}60 0%, ${layer.color}60 ${weight * 100}%, #f5f5f5 ${weight * 100}%, #f5f5f5 100%)`,
                         }}
                       />
-                      <span className="text-[9px] text-neutral-400 w-16">{layer.extremes.high}</span>
+                      <span className="text-[9px] text-neutral-400 w-16">
+                        {layer.extremes.high}
+                      </span>
                     </div>
-                    <div className="text-[9px] text-neutral-400 mt-0.5 ml-5">{layer.description}</div>
+                    <div className="text-[9px] text-neutral-400 mt-0.5 ml-5">
+                      {layer.description}
+                    </div>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
 
           {/* Presets */}
           <div className="mb-6">
-            <div className="text-[10px] uppercase tracking-wider text-neutral-400 mb-2">Presets</div>
+            <div className="text-[10px] uppercase tracking-wider text-neutral-400 mb-2">
+              Presets
+            </div>
             <div className="flex gap-1.5">
               {PRESETS.map((preset) => (
                 <button
@@ -428,28 +405,35 @@ export function WorkbenchConsole() {
               >
                 <div className="border border-neutral-200 rounded p-3">
                   {(['input', 'understanding', 'reasoning', 'output'] as const).map((phase) => {
-                    const phaseLayers = AI_LAYERS.filter(l => l.phase === phase)
+                    const phaseLayers = AI_LAYERS.filter((l) => l.phase === phase);
                     return (
                       <div key={phase} className="mb-3 last:mb-0">
-                        <div className="text-[8px] uppercase tracking-wider text-neutral-300 mb-1.5">{phase}</div>
+                        <div className="text-[8px] uppercase tracking-wider text-neutral-300 mb-1.5">
+                          {phase}
+                        </div>
                         <div className="space-y-1.5">
                           {phaseLayers.map((layer) => {
-                            const weight = getWeight(layer.id)
+                            const weight = getWeight(layer.id);
                             return (
                               <div key={layer.id} className="flex items-center gap-2">
-                                <div 
+                                <div
                                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                                   style={{ backgroundColor: layer.color }}
                                 />
-                                <span className={`text-[10px] w-24 truncate ${layer.critical ? 'font-medium text-neutral-700' : 'text-neutral-500'}`}>
-                                  {layer.name}{layer.critical && ' ★'}
+                                <span
+                                  className={`text-[10px] w-24 truncate ${layer.critical ? 'font-medium text-neutral-700' : 'text-neutral-500'}`}
+                                >
+                                  {layer.name}
+                                  {layer.critical && ' ★'}
                                 </span>
                                 <input
                                   type="range"
                                   min="0"
                                   max="100"
                                   value={Math.round(weight * 100)}
-                                  onChange={(e) => handleWeightChange(layer.id, parseInt(e.target.value) / 100)}
+                                  onChange={(e) =>
+                                    handleWeightChange(layer.id, parseInt(e.target.value) / 100)
+                                  }
                                   className="flex-1 h-1 bg-neutral-100 rounded-full appearance-none cursor-pointer
                                            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2 
                                            [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:rounded-full
@@ -459,11 +443,11 @@ export function WorkbenchConsole() {
                                   {Math.round(weight * 100)}%
                                 </span>
                               </div>
-                            )
+                            );
                           })}
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </motion.div>
@@ -473,12 +457,14 @@ export function WorkbenchConsole() {
           {/* Config History */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] uppercase tracking-wider text-neutral-400">Configuration History</div>
+              <div className="text-[10px] uppercase tracking-wider text-neutral-400">
+                Configuration History
+              </div>
               <div className="text-[9px] text-neutral-300">{configHistory.length} saved</div>
             </div>
             <div className="space-y-1.5">
               {configHistory.map((config) => (
-                <div 
+                <div
                   key={config.id}
                   className="flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:bg-neutral-50 cursor-pointer transition-colors"
                 >
@@ -531,7 +517,7 @@ export function WorkbenchConsole() {
         </AnimatePresence>
       </div>
     </div>
-  )
+  );
 }
 
-export default WorkbenchConsole
+export default WorkbenchConsole;

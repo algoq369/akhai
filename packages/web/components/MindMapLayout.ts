@@ -1,6 +1,7 @@
 import type { Node } from './MindMap';
 import type { ClusterData, LayoutNode, TopicLink } from './MindMapUtils';
 import { GOLDEN_ANGLE } from './MindMapUtils';
+import type { AnalyseData } from './MindMapAnalysePanel';
 
 // Build connection counts per node
 export function buildConnectionCounts(topicLinks: TopicLink[]): Record<string, number> {
@@ -221,4 +222,60 @@ export function computeForceLayout(
   const vh = padTop + (maxChildren + 2) * rowH;
 
   return { positions: pos, links: intLinks, sortedNodes: sorted, vw, vh };
+}
+
+// Build analyse modal data for a selected topic
+export function buildAnalyseData(
+  selectedTopic: Node | null,
+  layoutNodes: Record<string, LayoutNode>,
+  visibleLinks: TopicLink[],
+  filteredNodes: Node[]
+): AnalyseData | null {
+  if (!selectedTopic) return null;
+  const node = layoutNodes[selectedTopic.id];
+  if (!node) return null;
+
+  const conns = visibleLinks.filter(
+    (l) => l.source === selectedTopic.id || l.target === selectedTopic.id
+  );
+  const connectedNodes = conns
+    .map((l) => {
+      const otherId = l.source === selectedTopic.id ? l.target : l.source;
+      const otherNode = filteredNodes.find((n) => n.id === otherId);
+      return otherNode
+        ? {
+            id: otherId,
+            name: otherNode.name,
+            category: otherNode.category || 'other',
+            strength: l.strength,
+          }
+        : null;
+    })
+    .filter(Boolean) as { id: string; name: string; category: string; strength: number }[];
+
+  const clusterBreakdown: Record<string, number> = {};
+  clusterBreakdown[selectedTopic.category || 'other'] =
+    clusterBreakdown[selectedTopic.category || 'other'] || 0;
+  connectedNodes.forEach((cn) => {
+    clusterBreakdown[cn.category] = (clusterBreakdown[cn.category] || 0) + 1;
+  });
+
+  const internalConns = connectedNodes.filter(
+    (cn) => cn.category === (selectedTopic.category || 'other')
+  ).length;
+  const crossConns = connectedNodes.length - internalConns;
+
+  return {
+    queryCount: selectedTopic.queryCount || 0,
+    connections: connectedNodes.length,
+    clusters: Object.keys(clusterBreakdown).length,
+    clusterBreakdown,
+    internalConns,
+    crossConns,
+    topConnections: connectedNodes.sort((a, b) => b.strength - a.strength).slice(0, 5),
+    bridges: connectedNodes
+      .filter((cn) => cn.category !== (selectedTopic.category || 'other'))
+      .map((cn) => cn.category)
+      .filter((v, i, a) => a.indexOf(v) === i),
+  };
 }

@@ -59,7 +59,6 @@ export default function ProfilePage() {
     type: 'success' | 'error';
     text: string;
   } | null>(null);
-  const [oauthLoading, setOauthLoading] = useState(false);
   const {
     settings,
     updateAppearance,
@@ -214,109 +213,6 @@ export default function ProfilePage() {
         return 'text-red-600 bg-red-50';
       default:
         return 'text-slate-600 bg-slate-50';
-    }
-  };
-
-  /**
-   * Handle connecting a social account
-   */
-  const handleConnectSocial = async (
-    platform: 'x' | 'telegram' | 'reddit' | 'mastodon' | 'youtube'
-  ) => {
-    // Prevent duplicate calls
-    if (oauthLoading) {
-      console.log('[Profile] OAuth already in progress, ignoring duplicate call');
-      return;
-    }
-
-    setOauthLoading(true);
-    try {
-      if (platform === 'x') {
-        // Twitter OAuth flow
-        const response = await fetch('/api/auth/social/x/connect');
-        const data = await response.json();
-
-        if (!response.ok) {
-          setOauthMessage({
-            type: 'error',
-            text: data.message || 'Failed to initiate Twitter OAuth',
-          });
-          setTimeout(() => setOauthMessage(null), 5000);
-          setOauthLoading(false);
-          return;
-        }
-
-        console.log('[Profile] Redirecting to OAuth:', data.authUrl);
-
-        // Use full-page redirect instead of popup (Twitter blocks popups)
-        window.location.href = data.authUrl;
-        // Keep loading state during redirect
-      } else {
-        // Other platforms not yet implemented
-        setOauthMessage({
-          type: 'error',
-          text: `${platform.toUpperCase()} integration coming soon`,
-        });
-        setTimeout(() => setOauthMessage(null), 3000);
-        setOauthLoading(false);
-      }
-    } catch (error) {
-      console.error('[Profile] Failed to connect social:', error);
-      setOauthMessage({
-        type: 'error',
-        text: 'Failed to connect account',
-      });
-      setTimeout(() => setOauthMessage(null), 5000);
-      setOauthLoading(false);
-    }
-  };
-
-  /**
-   * Handle disconnecting a social account
-   */
-  const handleDisconnectSocial = async (
-    platform: 'x' | 'telegram' | 'github' | 'reddit' | 'mastodon' | 'youtube'
-  ) => {
-    if (!confirm(`Are you sure you want to disconnect your ${platform.toUpperCase()} account?`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/auth/social/disconnect?platform=${platform}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setOauthMessage({
-          type: 'error',
-          text: data.error || 'Failed to disconnect account',
-        });
-        setTimeout(() => setOauthMessage(null), 5000);
-        return;
-      }
-
-      // Update user state to remove the connection
-      setUser((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          social_connections: prev.social_connections?.filter((c) => c.platform !== platform),
-        };
-      });
-
-      setOauthMessage({
-        type: 'success',
-        text: `Successfully disconnected ${platform.toUpperCase()} account`,
-      });
-      setTimeout(() => setOauthMessage(null), 3000);
-    } catch (error) {
-      console.error('[Profile] Failed to disconnect social:', error);
-      setOauthMessage({
-        type: 'error',
-        text: 'Failed to disconnect account',
-      });
-      setTimeout(() => setOauthMessage(null), 5000);
     }
   };
 
@@ -543,72 +439,7 @@ export default function ProfilePage() {
         )}
 
         {/* Console Tab */}
-        {activeTab === 'console' && (
-          <div>
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-16 mb-12 pb-10 border-b border-relic-mist">
-              <StatCard
-                title="TOTAL QUERIES"
-                value={stats?.stats?.queries_completed || 0}
-                subtitle="This month"
-              />
-              <StatCard title="ACTIVE SESSIONS" value="0" subtitle="Currently running" />
-              <StatCard
-                title="API CALLS"
-                value={stats?.stats?.queries_completed || 0}
-                subtitle="Last 24 hours"
-              />
-            </div>
-
-            {/* Recent Activity */}
-            <div className="mb-12 pb-10 border-b border-relic-mist">
-              <h2 className="text-sm font-mono text-relic-void mb-5">Recent Activity</h2>
-              <div className="space-y-3">
-                {stats?.recentActivity && stats.recentActivity.length > 0 ? (
-                  stats.recentActivity
-                    .slice(0, 5)
-                    .map((activity: any) => (
-                      <ActivityItem
-                        key={activity.date}
-                        action={`${activity.queries} queries executed`}
-                        time={activity.date}
-                        status="success"
-                      />
-                    ))
-                ) : (
-                  <ActivityItem action="Query executed" time="No recent activity" status="idle" />
-                )}
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div>
-              <h2 className="text-sm font-mono text-relic-void mb-5">Quick Actions</h2>
-              <div className="grid grid-cols-2 gap-x-16 gap-y-5">
-                <ActionCard
-                  title="Start New Query"
-                  description="Run a query with akhai sovereign intelligence"
-                  href="/"
-                />
-                <ActionCard
-                  title="View Documentation"
-                  description="Learn about methodologies and features"
-                  href="/philosophy"
-                />
-                <ActionCard
-                  title="Transaction History"
-                  description="Review your payment history"
-                  href="/profile?tab=transactions"
-                />
-                <ActionCard
-                  title="Development Stats"
-                  description="Check your usage analytics"
-                  href="/profile?tab=development"
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        {activeTab === 'console' && <ConsoleTab stats={stats} />}
       </main>
 
       {/* Topics Panel */}
@@ -635,68 +466,5 @@ export default function ProfilePage() {
         />
       )}
     </div>
-  );
-}
-
-// Console Tab Components
-function StatCard({
-  title,
-  value,
-  subtitle,
-}: {
-  title: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div>
-      <div className="text-[9px] font-mono text-relic-silver uppercase tracking-wider mb-2">
-        {title}
-      </div>
-      <div className="text-3xl font-mono text-relic-void mb-1 tracking-tight leading-none">
-        {value}
-      </div>
-      <div className="text-[11px] font-mono text-relic-slate">{subtitle}</div>
-    </div>
-  );
-}
-
-function ActivityItem({
-  action,
-  time,
-  status,
-}: {
-  action: string;
-  time: string;
-  status: 'idle' | 'success' | 'error';
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="text-relic-silver font-mono text-xs mt-0.5">·</div>
-      <div className="flex-1">
-        <div className="text-xs font-mono text-relic-void">{action}</div>
-        <div className="text-[11px] font-mono text-relic-slate mt-0.5">{time}</div>
-      </div>
-    </div>
-  );
-}
-
-function ActionCard({
-  title,
-  description,
-  href,
-}: {
-  title: string;
-  description: string;
-  href: string;
-}) {
-  return (
-    <a
-      href={href}
-      className="block border-b border-relic-mist pb-3 hover:border-relic-slate transition-colors"
-    >
-      <h3 className="text-xs font-mono text-relic-void mb-1.5">{title}</h3>
-      <p className="text-[11px] font-mono text-relic-slate leading-relaxed">{description}</p>
-    </a>
   );
 }

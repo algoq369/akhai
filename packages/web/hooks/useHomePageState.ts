@@ -5,8 +5,7 @@ import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useSession } from '@/lib/session-manager';
 import { useDepthAnnotations } from '@/hooks/useDepthAnnotations';
 import type { SupportedLanguage } from '@/components/LanguageSelector';
-import type { QueryCard } from '@/components/canvas/QueryCardsPanel';
-import type { VisualNode, VisualEdge } from '@/components/canvas/VisualsPanel';
+import { useCanvasAdapters } from './useCanvasAdapters';
 import { useHomePageHandlers } from './useHomePageHandlers';
 import { useHomePageEffects } from './useHomePageEffects';
 import { buildPagePropBundles } from './usePagePropBundles';
@@ -126,46 +125,8 @@ export function useHomePageState() {
   const { settings } = useSettingsStore();
   const { instinctMode, instinctConfig } = settings;
 
-  // ─── Canvas Data Adapters ────────────────────────────────
-  const queryCards = useMemo<QueryCard[]>(() => {
-    return messages
-      .filter((m) => m.role === 'user')
-      .map((m, idx) => {
-        const userIndex = messages.indexOf(m);
-        const nextAssistant = messages.find((r, i) => r.role === 'assistant' && i > userIndex);
-        return {
-          id: m.id,
-          query: m.content,
-          response: nextAssistant?.content || '',
-          timestamp: new Date(),
-          methodology: methodology,
-        };
-      });
-  }, [messages, methodology]);
-
-  const visualNodes = useMemo<VisualNode[]>(() => {
-    const nodes: VisualNode[] = [];
-    messages.forEach((m, idx) => {
-      if (m.role === 'assistant' && m.content.length > 50) {
-        nodes.push({
-          id: `node-${m.id}`,
-          label: m.content.slice(0, 40) + '...',
-          type: 'concept',
-          x: 100 + (idx % 3) * 150,
-          y: 100 + Math.floor(idx / 3) * 120,
-        });
-      }
-    });
-    return nodes;
-  }, [messages]);
-
-  const visualEdges = useMemo<VisualEdge[]>(() => {
-    return visualNodes.slice(1).map((node, idx) => ({
-      id: `edge-${idx}`,
-      source: visualNodes[idx].id,
-      target: node.id,
-    }));
-  }, [visualNodes]);
+  // ─── Canvas Data Adapters (extracted) ────────────────────
+  const { queryCards, visualNodes, visualEdges } = useCanvasAdapters(messages, methodology);
 
   // ─── Side Canal Store Integration ────────────────────────
   const {

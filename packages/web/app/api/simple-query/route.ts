@@ -4,12 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { logger, log } from '@/lib/logger';
 import { withRetry } from '@/lib/retry';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { checkCryptoQuery, getMethodologyPrompt, runGroundingGuard } from '@/lib/query-pipeline';
-import { createQuery, updateQuery, trackUsage, addEvent } from '@/lib/database';
+import { createQuery, updateQuery, trackUsage } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
 import {
   getProviderForMethodology,
@@ -18,7 +17,7 @@ import {
   type CoreMethodology,
 } from '@/lib/provider-selector';
 import { callProvider } from '@/lib/multi-provider-api';
-import { emitThought, formatDuration } from '@/lib/thought-stream';
+import { formatDuration } from '@/lib/thought-stream';
 
 // Extracted pipeline stages
 import { visitURLs } from '@/lib/query-url-visitor';
@@ -31,50 +30,7 @@ import {
   emitCompleteEvent,
   type ResponseBuilderInput,
 } from '@/lib/query-response-builder';
-
-export const dynamic = 'force-dynamic';
-
-// ============================================================================
-// ZOD INPUT VALIDATION SCHEMA
-// ============================================================================
-const QuerySchema = z.object({
-  query: z.string().min(1).max(10000),
-  methodology: z.enum(['direct', 'cod', 'sc', 'react', 'pas', 'tot', 'auto']).default('auto'),
-  conversationHistory: z.array(z.object({ role: z.string(), content: z.string() })).default([]),
-  pageContext: z.any().optional(),
-  legendMode: z.boolean().default(false),
-  layersWeights: z
-    .record(z.string(), z.number())
-    .optional()
-    .transform((w) =>
-      w
-        ? (Object.fromEntries(Object.entries(w).map(([k, v]) => [Number(k), v])) as Record<
-            number,
-            number
-          >)
-        : undefined
-    ),
-  instinctConfig: z.any().optional(),
-  liveRefinements: z.array(z.object({ type: z.string(), text: z.string() })).optional(),
-  grimoireContext: z.any().optional(),
-  queryId: z.string().optional(),
-});
-
-/** Emit thought to SSE AND persist to DB for history replay */
-function emitAndPersist(queryId: string, event: import('@/lib/thought-stream').ThoughtEvent) {
-  emitThought(queryId, event);
-  try {
-    addEvent(queryId, `pipeline:${event.stage}`, {
-      id: event.id,
-      stage: event.stage,
-      timestamp: event.timestamp,
-      data: event.data,
-      details: event.details || null,
-    });
-  } catch (e) {
-    // DB write failure is non-critical — SSE already delivered
-  }
-}
+import { QuerySchema, emitAndPersist } from './schema';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
