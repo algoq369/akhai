@@ -15,6 +15,7 @@ import {
   createRoundPauseHandlers,
   createGroundingHandlers,
 } from './useVerificationStream.handlers';
+import { parseGtpEvent, parseScEvent } from './useVerificationStream.parsers';
 
 export function useVerificationStream(queryId: string) {
   const [rounds, setRounds] = useState<ConsensusRound[]>([]);
@@ -109,83 +110,27 @@ export function useVerificationStream(queryId: string) {
             addReasoningStep('Initialize', 'Connected to query stream, starting execution...');
             break;
 
-          // TOT-specific events
+          // TOT/GTP-specific events (delegated to parser)
           case 'tot-analysis':
-            setIsGTP(true);
-            setProgress(10);
-            addReasoningStep(
-              'TOT Analysis',
-              'Query analyzed for TOT methodology - using parallel Flash architecture'
-            );
-            break;
-
           case 'flash-prepare':
-            setProgress(15);
-            // Initialize GTP advisors
-            if (data.data.roles) {
-              const initialAdvisors = data.data.roles.map((role: string, index: number) => ({
-                slot: index + 1,
-                family: '',
-                role,
-                status: 'waiting' as const,
-              }));
-              setGtpAdvisors(initialAdvisors);
-              addReasoningStep(
-                'Flash Prepare',
-                `Initialized ${initialAdvisors.length} advisor roles: ${data.data.roles.join(', ')}`
-              );
-            }
-            break;
-
           case 'flash-broadcast':
-            setProgress(20);
-            addReasoningStep(
-              'Flash Broadcast',
-              'Broadcasting context frame to all advisors simultaneously (TRUE parallelism)'
-            );
-            break;
-
           case 'advisor-failed':
-            setGtpAdvisors((prev) =>
-              prev.map((advisor) =>
-                advisor.slot === data.data.slot
-                  ? { ...advisor, status: 'failed' as const }
-                  : advisor
-              )
-            );
-            break;
-
           case 'merge-update':
-            setInsightsCount(data.data.insightsCount || 0);
-            setProgress(40 + (data.data.responsesReceived / data.data.responsesExpected) * 30);
-            break;
-
           case 'quorum-progress':
-            setQuorumStatus({
-              responsesReceived: data.data.responsesReceived,
-              responsesExpected: data.data.responsesExpected,
-              agreementLevel: data.data.agreementLevel,
-              reached: data.data.reached,
-              reason: data.data.reason,
-            });
-            break;
-
           case 'quorum-reached':
-            setProgress(75);
-            setQuorumStatus((prev) =>
-              prev ? { ...prev, reached: true, reason: data.data.reason } : undefined
-            );
-            break;
-
           case 'synthesis-start':
-            setProgress(80);
-            setSynthesisOutput('Mother Base is synthesizing advisor insights...');
-            break;
-
           case 'synthesis-complete':
-            setProgress(95);
-            setSynthesisOutput(data.data.output);
-            setFinalDecision(data.data.output);
+            parseGtpEvent(
+              data,
+              setIsGTP,
+              setGtpAdvisors,
+              setQuorumStatus,
+              setInsightsCount,
+              setSynthesisOutput,
+              setProgress,
+              setFinalDecision,
+              addReasoningStep
+            );
             break;
 
           case 'advisor-start':
@@ -384,79 +329,28 @@ export function useVerificationStream(queryId: string) {
             }
             break;
 
-          // Self-Consistency events
+          // Self-Consistency events (delegated to parser)
           case 'sc-init':
-            setIsBoT(true);
-            if (data.data?.config) {
-              setMaxBufferSize(data.data.config.maxBufferSize || 10);
-              setDistillationStrategy(data.data.config.distillationStrategy || 'hierarchical');
-            }
-            addReasoningStep('SC Initialize', 'Self-Consistency methodology activated');
-            break;
-
           case 'sc-thought-added':
-            if (data.data?.thought) {
-              setThoughtBuffer((prev) => [...prev, data.data.thought]);
-              setBufferSize((prev) => prev + 1);
-              addReasoningStep(
-                'SC Thought',
-                `New thought added (depth ${data.data.thought.depth}): ${data.data.thought.content.substring(0, 50)}...`
-              );
-            }
-            break;
-
           case 'sc-distillation-start':
-            setIsDistilling(true);
-            setDistillationProgress(0);
-            addReasoningStep(
-              'SC Distillation',
-              `Starting distillation (${data.data?.bufferSize || bufferSize} thoughts, strategy: ${data.data?.strategy || distillationStrategy})`
-            );
-            break;
-
           case 'sc-distillation-progress':
-            if (data.data?.progress !== undefined) {
-              setDistillationProgress(data.data.progress);
-            }
-            break;
-
           case 'sc-distillation-complete':
-            setIsDistilling(false);
-            setDistillationProgress(1);
-            if (data.data?.metaBuffer) {
-              setMetaBuffers((prev) => [...prev, data.data.metaBuffer]);
-              addReasoningStep(
-                'SC Meta-Buffer',
-                `Distillation complete: ${data.data.metaBuffer.keyInsights.length} key insights, ${data.data.metaBuffer.tokensSaved} tokens saved`
-              );
-            }
-            // Clear thought buffer after distillation
-            setThoughtBuffer([]);
-            setBufferSize(0);
-            break;
-
           case 'sc-buffer-update':
-            if (data.data?.snapshot) {
-              setThoughtBuffer(data.data.snapshot.thoughts || []);
-              setMetaBuffers(data.data.snapshot.metaBuffers || []);
-              setBufferSize(data.data.snapshot.thoughts?.length || 0);
-            }
-            break;
-
           case 'sc-solution-path':
-            if (data.data?.path) {
-              const pathIds = data.data.path.map((t: ThoughtNode) => t.id);
-              setThoughtBuffer((prev) =>
-                prev.map((t) => ({
-                  ...t,
-                  isOnSolutionPath: pathIds.includes(t.id),
-                }))
-              );
-              addReasoningStep(
-                'BoT Solution Path',
-                `Identified solution path with ${data.data.path.length} thoughts`
-              );
-            }
+            parseScEvent(
+              data,
+              setIsBoT,
+              setThoughtBuffer,
+              setMetaBuffers,
+              setIsDistilling,
+              setDistillationStrategy,
+              setDistillationProgress,
+              setBufferSize,
+              setMaxBufferSize,
+              bufferSize,
+              distillationStrategy,
+              addReasoningStep
+            );
             break;
 
           case 'complete':
