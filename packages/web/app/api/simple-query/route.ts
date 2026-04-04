@@ -14,6 +14,7 @@ import {
   getProviderForMethodology,
   validateProviderApiKey,
   getFallbackProvider,
+  getFallbackModelSpec,
   type CoreMethodology,
 } from '@/lib/provider-selector';
 import { callProvider } from '@/lib/multi-provider-api';
@@ -194,6 +195,7 @@ export async function POST(request: NextRequest) {
       legendMode
     );
     let selectedProvider = providerSpec.provider;
+    let usedModel = providerSpec.model;
 
     if (!validateProviderApiKey(selectedProvider)) {
       log(
@@ -219,7 +221,7 @@ export async function POST(request: NextRequest) {
     log(
       'INFO',
       'PROVIDER',
-      `Methodology: ${selectedMethod.id} → Provider: ${selectedProvider} (${providerSpec.model})`
+      `Methodology: ${selectedMethod.id} → Provider: ${selectedProvider} (${usedModel})`
     );
     log('INFO', 'PROVIDER', `Reasoning: ${providerSpec.reasoning}`);
 
@@ -309,17 +311,17 @@ export async function POST(request: NextRequest) {
       queryId,
       stage: 'generating',
       timestamp: Date.now() - startTime,
-      data: `Generating with ${providerSpec.model} via ${selectedProvider}...`,
+      data: `Generating with ${usedModel} via ${selectedProvider}...`,
       details: {
-        model: providerSpec.model,
+        model: usedModel,
         provider: selectedProvider,
         methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
       },
     });
 
     // ========== CALL AI PROVIDER ==========
-    logger.query.apiCall(selectedProvider.toUpperCase(), providerSpec.model);
-    log('INFO', 'API', `Calling ${selectedProvider} API with model: ${providerSpec.model}`);
+    logger.query.apiCall(selectedProvider.toUpperCase(), usedModel);
+    log('INFO', 'API', `Calling ${selectedProvider} API with model: ${usedModel}`);
 
     let apiResponse;
     try {
@@ -327,27 +329,58 @@ export async function POST(request: NextRequest) {
         () =>
           callProvider(selectedProvider, {
             messages: [{ role: 'system', content: systemPrompt }, ...messages],
-            model: providerSpec.model,
+            model: usedModel,
             maxTokens: 4096,
             temperature: 0.7,
           }),
         {
           maxAttempts: 3,
           baseDelay: 1000,
-          shouldRetry: (err) =>
-            err.message?.includes('rate') ||
-            err.message?.includes('timeout') ||
-            err.message?.includes('503'),
+          shouldRetry: (err) => {
+            const msg = err.message?.toLowerCase() || '';
+            // Don't retry on auth/credit errors — fall through to fallback
+            if (msg.includes('credit') || msg.includes('unauthorized') || msg.includes('invalid_api_key') || msg.includes('insufficient')) return false;
+            // Retry on transient errors
+            return msg.includes('rate') || msg.includes('timeout') || msg.includes('503') || msg.includes('529');
+          },
         }
       );
     } catch (apiError: any) {
       logger.query.apiError(selectedProvider.toUpperCase(), apiError.message);
-      log('ERROR', 'API', `Provider ${selectedProvider} failed: ${apiError.message}`);
+      log('ERROR', 'API', `Provider ${selectedProvider} failed: ${apiError.message}, trying fallback...`);
 
-      return NextResponse.json(
-        { error: `AI provider request failed: ${apiError.message}` },
-        { status: 500 }
-      );
+      // Try fallback providers before giving up
+      const fallbackProvider = getFallbackProvider(selectedProvider);
+      if (fallbackProvider !== selectedProvider) {
+        log('INFO', 'API', `Attempting fallback provider: ${fallbackProvider}`);
+        try {
+          const fallbackModelSpec = getFallbackModelSpec(fallbackProvider);
+          apiResponse = await withRetry(
+            () =>
+              callProvider(fallbackProvider, {
+                messages: [{ role: 'system', content: systemPrompt }, ...messages],
+                model: fallbackModelSpec.model,
+                maxTokens: 4096,
+                temperature: 0.7,
+              }),
+            { maxAttempts: 2, baseDelay: 500 }
+          );
+          selectedProvider = fallbackProvider;
+          usedModel = fallbackModelSpec.model;
+          log('INFO', 'API', `Fallback provider ${fallbackProvider} succeeded`);
+        } catch (fallbackError: any) {
+          log('ERROR', 'API', `Fallback provider ${fallbackProvider} also failed: ${fallbackError.message}`);
+          return NextResponse.json(
+            { error: `All AI providers failed. Primary: ${apiError.message}. Fallback: ${fallbackError.message}` },
+            { status: 500 }
+          );
+        }
+      } else {
+        return NextResponse.json(
+          { error: `AI provider request failed: ${apiError.message}` },
+          { status: 500 }
+        );
+      }
     }
 
     const content = apiResponse.content;
@@ -404,7 +437,7 @@ export async function POST(request: NextRequest) {
       },
       userId
     );
-    trackUsage(selectedProvider, providerSpec.model, inputTokens, outputTokens, cost);
+    trackUsage(selectedProvider, usedModel, inputTokens, outputTokens, cost);
     logger.query.complete(queryId, latency, cost);
 
     // ========== SIDE CANAL TOPICS ==========
@@ -418,7 +451,7 @@ export async function POST(request: NextRequest) {
       processedContent,
       content,
       selectedProvider,
-      providerSpec,
+      providerSpec: { ...providerSpec, model: usedModel },
       tokens,
       inputTokens,
       outputTokens,

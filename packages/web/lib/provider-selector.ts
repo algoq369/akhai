@@ -131,6 +131,20 @@ export function getProviderApiConfig(provider: ProviderFamily): {
 }
 
 /**
+ * Get fallback model spec for a provider (used when primary fails)
+ */
+export function getFallbackModelSpec(provider: ProviderFamily): { model: string } {
+  switch (provider) {
+    case 'openrouter': return { model: 'meta-llama/llama-3.3-70b-instruct:free' };
+    case 'deepseek': return { model: 'deepseek-chat' };
+    case 'mistral': return { model: 'mistral-large-latest' };
+    case 'xai': return { model: 'grok-2' };
+    case 'anthropic': return { model: 'claude-sonnet-4-20250514' };
+    default: return { model: 'meta-llama/llama-3.3-70b-instruct:free' };
+  }
+}
+
+/**
  * Validate that API key exists for a provider
  *
  * @param provider - Provider to validate
