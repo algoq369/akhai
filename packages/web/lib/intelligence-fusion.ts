@@ -77,7 +77,7 @@ export async function fuseIntelligence(
   // 2. Calculate Layers activations
   const layerActivations = calculateLayersActivations(query, layersWeights);
   const dominantLayers = layerActivations
-    .filter((s) => s.effectiveWeight > 0.3)
+    .filter((s) => s.effectiveWeight > 0.15)
     .map((s) => s.layerNode);
 
   // 3. Calculate path activations

@@ -39,7 +39,7 @@ export function calculateLayersActivations(
       // Use word-boundary matching to avoid false positives (e.g., "data" matching "database")
       const wordBoundaryRegex = new RegExp(`\\b${keyword}\\b`, 'i');
       if (wordBoundaryRegex.test(queryLower)) {
-        activation += 0.15;
+        activation += 0.35;
         matchedKeywords.push(keyword);
       }
     }
@@ -47,7 +47,7 @@ export function calculateLayersActivations(
     // Base activation floor: every layer gets minimum engagement
     // This ensures the tree always shows some life, even for short queries
     if (activation === 0) {
-      activation = 0.08 + Math.random() * 0.07; // 8-15% base
+      activation = 0.15 + Math.random() * 0.1; // 15-25% base
     }
 
     // Normalize activation
@@ -88,7 +88,7 @@ export function selectMethodology(
 
   // Get dominant Layers (effective weight > 0.3)
   const dominantLayers = layerActivations
-    .filter((s) => s.effectiveWeight > 0.3)
+    .filter((s) => s.effectiveWeight > 0.15)
     .map((s) => s.layerNode);
 
   // Score DIRECT
@@ -305,7 +305,7 @@ export function calculateThinkingBudget(
   const highThinkingLayers = [Layer.META_CORE, Layer.REASONING, Layer.ENCODER];
   for (const layerNode of highThinkingLayers) {
     const activation = layerActivations.find((s) => s.layerNode === layerNode);
-    if (activation && activation.effectiveWeight > 0.5) {
+    if (activation && activation.effectiveWeight > 0.3) {
       budget += 2000;
     }
   }
