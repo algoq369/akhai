@@ -16,6 +16,7 @@ import {
   getFallbackProvider,
   getFallbackModelSpec,
   type CoreMethodology,
+  type ProviderFamily,
 } from '@/lib/provider-selector';
 import { callProvider } from '@/lib/multi-provider-api';
 import { formatDuration } from '@/lib/thought-stream';
@@ -339,20 +340,45 @@ export async function POST(request: NextRequest) {
           shouldRetry: (err) => {
             const msg = err.message?.toLowerCase() || '';
             // Don't retry on auth/credit errors — fall through to fallback
-            if (msg.includes('credit') || msg.includes('unauthorized') || msg.includes('invalid_api_key') || msg.includes('insufficient')) return false;
+            if (
+              msg.includes('credit') ||
+              msg.includes('unauthorized') ||
+              msg.includes('invalid_api_key') ||
+              msg.includes('insufficient')
+            )
+              return false;
             // Retry on transient errors
-            return msg.includes('rate') || msg.includes('timeout') || msg.includes('503') || msg.includes('529');
+            return (
+              msg.includes('rate') ||
+              msg.includes('timeout') ||
+              msg.includes('503') ||
+              msg.includes('529')
+            );
           },
         }
       );
     } catch (apiError: any) {
       logger.query.apiError(selectedProvider.toUpperCase(), apiError.message);
-      log('ERROR', 'API', `Provider ${selectedProvider} failed: ${apiError.message}, trying fallback...`);
+      log('ERROR', 'API', `Provider ${selectedProvider} failed: ${apiError.message}`);
 
-      // Try fallback providers before giving up
-      const fallbackProvider = getFallbackProvider(selectedProvider);
-      if (fallbackProvider !== selectedProvider) {
-        log('INFO', 'API', `Attempting fallback provider: ${fallbackProvider}`);
+      // Try ALL remaining providers in fallback chain
+      const allProviders: ProviderFamily[] = [
+        'anthropic',
+        'openrouter',
+        'deepseek',
+        'mistral',
+        'xai',
+      ];
+      const triedProviders = new Set([selectedProvider]);
+      let fallbackSucceeded = false;
+
+      for (const fallbackProvider of allProviders) {
+        if (triedProviders.has(fallbackProvider)) continue;
+        if (!validateProviderApiKey(fallbackProvider)) continue;
+
+        triedProviders.add(fallbackProvider);
+        log('INFO', 'API', `Trying fallback provider: ${fallbackProvider}`);
+
         try {
           const fallbackModelSpec = getFallbackModelSpec(fallbackProvider);
           apiResponse = await withRetry(
@@ -363,32 +389,33 @@ export async function POST(request: NextRequest) {
                 maxTokens: 4096,
                 temperature: 0.7,
               }),
-            { maxAttempts: 2, baseDelay: 500 }
+            { maxAttempts: 1, baseDelay: 500 }
           );
           selectedProvider = fallbackProvider;
           usedModel = fallbackModelSpec.model;
           log('INFO', 'API', `Fallback provider ${fallbackProvider} succeeded`);
-        } catch (fallbackError: any) {
-          log('ERROR', 'API', `Fallback provider ${fallbackProvider} also failed: ${fallbackError.message}`);
-          return NextResponse.json(
-            { error: `All AI providers failed. Primary: ${apiError.message}. Fallback: ${fallbackError.message}` },
-            { status: 500 }
-          );
+          fallbackSucceeded = true;
+          break;
+        } catch (fbError: any) {
+          log('WARN', 'API', `Fallback ${fallbackProvider} also failed: ${fbError.message}`);
+          continue;
         }
-      } else {
+      }
+
+      if (!fallbackSucceeded) {
         return NextResponse.json(
-          { error: `AI provider request failed: ${apiError.message}` },
+          { error: `All AI providers failed. Last error: ${apiError.message}` },
           { status: 500 }
         );
       }
     }
 
-    const content = apiResponse.content;
-    const inputTokens = apiResponse.usage.inputTokens;
-    const outputTokens = apiResponse.usage.outputTokens;
-    const tokens = apiResponse.usage.totalTokens;
+    const content = apiResponse!.content;
+    const inputTokens = apiResponse!.usage.inputTokens;
+    const outputTokens = apiResponse!.usage.outputTokens;
+    const tokens = apiResponse!.usage.totalTokens;
     const latency = Date.now() - startTime;
-    const cost = apiResponse.cost;
+    const cost = apiResponse!.cost;
 
     logger.query.apiResponse(selectedProvider.toUpperCase(), tokens, latency);
     log('INFO', 'API', `Response received: ${tokens} tokens, ${latency}ms, $${cost.toFixed(6)}`);
