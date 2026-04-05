@@ -7,11 +7,14 @@ import { CoreInsight, CATEGORY_CONFIG, extractHighLevelInsights } from './LayerR
 import LayerResponseListView from './LayerResponseListView';
 import LayerResponseTreeView from './LayerResponseTreeView';
 import LayerResponseFooter from './LayerResponseFooter';
+import LayerResponseDataPanel from './LayerResponseDataPanel';
+import type { Message } from '@/lib/chat-store';
 
 interface LayerResponseProps {
   content: string;
   query: string;
   methodology?: string;
+  intelligence?: Message['intelligence'];
   onClose?: () => void;
   onSwitchToInsight?: () => void;
   onOpenMindMap?: () => void;
@@ -22,6 +25,7 @@ export default function LayerResponse({
   content,
   query,
   methodology = 'auto',
+  intelligence,
   onClose,
   onSwitchToInsight,
   onOpenMindMap,
@@ -95,7 +99,7 @@ export default function LayerResponse({
   }, [insights, grouped]);
 
   if (insights.length < 2) {
-    return <FallbackView content={content} />;
+    return <FallbackView content={content} intelligence={intelligence} />;
   }
 
   return (
@@ -176,6 +180,9 @@ export default function LayerResponse({
               exit={{ height: 0 }}
               className="overflow-hidden"
             >
+              {/* Intelligence Data Panel */}
+              {intelligence && <LayerResponseDataPanel intelligence={intelligence} />}
+
               {/* Stats Bar */}
               <div className="px-4 py-2 bg-slate-50/50 dark:bg-relic-slate/10 border-b border-slate-100 dark:border-relic-slate/30 flex items-center gap-4">
                 <div className="flex items-center gap-3">
@@ -237,7 +244,13 @@ export default function LayerResponse({
 
 /* ── Fallback view for responses with < 2 insights ─────────── */
 
-function FallbackView({ content }: { content: string }) {
+function FallbackView({
+  content,
+  intelligence,
+}: {
+  content: string;
+  intelligence?: Message['intelligence'];
+}) {
   const words = content.split(/\s+/).filter((w) => w.length > 0);
   const sentences = content.split(/[.!?]+/).filter((s) => s.trim().length > 0);
   const keywords = [
@@ -268,7 +281,11 @@ function FallbackView({ content }: { content: string }) {
             </div>
           </div>
         </div>
+        {intelligence && <LayerResponseDataPanel intelligence={intelligence} />}
         <div className="p-4 space-y-3">
+          <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+            Content Analysis
+          </div>
           {keywords.length > 0 && (
             <div>
               <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
@@ -295,9 +312,11 @@ function FallbackView({ content }: { content: string }) {
               {summary.length >= 200 ? '...' : ''}
             </p>
           </div>
-          <p className="text-[9px] text-slate-400 dark:text-slate-500 italic pt-1">
-            Layer analysis available with more structured responses
-          </p>
+          {!intelligence && (
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 italic pt-1">
+              Layer analysis available with more structured responses
+            </p>
+          )}
         </div>
       </div>
     </motion.div>

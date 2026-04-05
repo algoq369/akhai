@@ -74,6 +74,7 @@ export default function ViewTabs({
             content={message.content}
             query={previousUserQuery}
             methodology={message.methodology || methodology}
+            intelligence={message.intelligence}
             onSwitchToInsight={() => onSetVizMode('insight')}
             onOpenMindMap={onOpenMindMap}
             onDeepDive={(query) => onDeepDive(query)}
