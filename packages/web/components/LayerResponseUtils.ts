@@ -311,6 +311,55 @@ export function extractHighLevelInsights(content: string, query: string): CoreIn
     });
   }
 
+  // PRIORITY 5: Extract key sentences from plain paragraphs (fallback for short/unformatted responses)
+  if (insights.length < 2) {
+    const sentences = content
+      .split(/[.!?]+/)
+      .map((s) => s.replace(/[#*`\-\[\]]/g, '').trim())
+      .filter((s) => s.length >= 20 && s.length <= 200);
+
+    const queryWords = new Set(
+      query
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 3)
+    );
+
+    for (const sentence of sentences) {
+      if (insights.length >= 6) break;
+      const key = sentence.toLowerCase().substring(0, 30);
+      if (seen.has(key)) continue;
+
+      const sentenceWords = sentence.toLowerCase().split(/\s+/);
+      const relevance = sentenceWords.filter((w) => queryWords.has(w)).length;
+      const metrics = extractMetrics(sentence);
+      const dataDensity = calculateDataDensity(sentence);
+
+      // Accept sentences that are relevant to the query OR contain data
+      if (relevance === 0 && metrics.length === 0 && dataDensity < 0.1) continue;
+
+      seen.add(key);
+      rank++;
+
+      const category: CoreInsight['category'] =
+        dataDensity > 0.3 ? 'data' : relevance >= 2 ? 'executive' : 'insight';
+
+      insights.push({
+        id: `insight-${rank}`,
+        rank,
+        title: sentence.length > 55 ? sentence.substring(0, 52) + '...' : sentence,
+        fullContent: sentence,
+        category,
+        confidence: 0.65 + relevance * 0.08 + dataDensity * 0.15,
+        impact: 0.6 + relevance * 0.1 + dataDensity * 0.2,
+        connections: 0,
+        children: [],
+        dataDensity,
+        metrics,
+      });
+    }
+  }
+
   // Sort by: data density (40%) + impact (35%) + confidence (25%)
   return insights
     .sort((a, b) => {

@@ -253,15 +253,24 @@ function FallbackView({
 }) {
   const words = content.split(/\s+/).filter((w) => w.length > 0);
   const sentences = content.split(/[.!?]+/).filter((s) => s.trim().length > 0);
-  const keywords = [
+
+  // Use intelligence keywords if available, else extract from content
+  const layerKeywords =
+    intelligence?.layerActivations?.flatMap((l) => (l as any).keywords || []).filter(Boolean) || [];
+  const contentKeywords = [
     ...new Set(
       words.filter((w) => w.length > 4 && /^[a-zA-Z]+$/.test(w)).map((w) => w.toLowerCase())
     ),
-  ].slice(0, 3);
-  const summary = content
-    .replace(/[#*`\-]/g, '')
-    .trim()
-    .substring(0, 200);
+  ].slice(0, 5);
+  const allKeywords =
+    layerKeywords.length > 0
+      ? [...new Set([...layerKeywords, ...contentKeywords])].slice(0, 8)
+      : contentKeywords;
+
+  const methodName = intelligence?.methodologySelection?.selected?.toUpperCase() || '';
+  const confidence = intelligence?.methodologySelection?.confidence
+    ? Math.round(intelligence.methodologySelection.confidence * 100)
+    : 0;
 
   return (
     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
@@ -273,10 +282,12 @@ function FallbackView({
             </div>
             <div>
               <h3 className="text-sm font-semibold text-slate-800 dark:text-white">
-                Response Analysis
+                AI Layers Analysis
               </h3>
               <p className="text-[10px] text-slate-500 dark:text-relic-ghost/70 font-mono">
                 {words.length} words · {sentences.length} sentences
+                {methodName ? ` · ${methodName}` : ''}
+                {confidence > 0 ? ` ${confidence}%` : ''}
               </p>
             </div>
           </div>
@@ -286,36 +297,26 @@ function FallbackView({
           <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
             Content Analysis
           </div>
-          {keywords.length > 0 && (
+          {allKeywords.length > 0 && (
             <div>
               <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
-                Keywords
+                Matched Keywords
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {keywords.map((kw, i) => (
+                {allKeywords.map((kw, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-400 font-mono"
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                      layerKeywords.includes(kw)
+                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
                   >
                     {kw}
                   </span>
                 ))}
               </div>
             </div>
-          )}
-          <div>
-            <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
-              Summary
-            </div>
-            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              {summary}
-              {summary.length >= 200 ? '...' : ''}
-            </p>
-          </div>
-          {!intelligence && (
-            <p className="text-[9px] text-slate-400 dark:text-slate-500 italic pt-1">
-              Layer analysis available with more structured responses
-            </p>
           )}
         </div>
       </div>
