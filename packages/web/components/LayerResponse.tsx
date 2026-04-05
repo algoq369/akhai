@@ -7,7 +7,6 @@ import { CoreInsight, CATEGORY_CONFIG, extractHighLevelInsights } from './LayerR
 import LayerResponseListView from './LayerResponseListView';
 import LayerResponseTreeView from './LayerResponseTreeView';
 import LayerResponseFooter from './LayerResponseFooter';
-import LayerResponseDataPanel from './LayerResponseDataPanel';
 import type { Message } from '@/lib/chat-store';
 
 interface LayerResponseProps {
@@ -180,9 +179,6 @@ export default function LayerResponse({
               exit={{ height: 0 }}
               className="overflow-hidden"
             >
-              {/* Intelligence Data Panel */}
-              {intelligence && <LayerResponseDataPanel intelligence={intelligence} />}
-
               {/* Stats Bar */}
               <div className="px-4 py-2 bg-slate-50/50 dark:bg-relic-slate/10 border-b border-slate-100 dark:border-relic-slate/30 flex items-center gap-4">
                 <div className="flex items-center gap-3">
@@ -292,7 +288,6 @@ function FallbackView({
             </div>
           </div>
         </div>
-        {intelligence && <LayerResponseDataPanel intelligence={intelligence} />}
         <div className="p-4 space-y-3">
           <div className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
             Content Analysis

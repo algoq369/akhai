@@ -264,6 +264,61 @@ async function searchWeb(
   }
 }
 
+/**
+ * Brave Search fallback when DDG is rate-limited.
+ * Uses BRAVE_SEARCH_API_KEY (free tier: 2000 queries/month).
+ */
+async function searchBrave(
+  searchQuery: string
+): Promise<Array<{ url: string; title: string; snippet: string }>> {
+  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+  if (!apiKey) return [];
+
+  console.log(`[Brave] Searching: "${searchQuery.substring(0, 80)}"`);
+  try {
+    const res = await fetch(
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(searchQuery)}&count=5`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'Accept-Encoding': 'gzip',
+          'X-Subscription-Token': apiKey,
+        },
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    if (!res.ok) {
+      console.warn(`[Brave] Failed: status ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    const results = (data.web?.results || [])
+      .slice(0, 5)
+      .map((r: any) => ({
+        url: r.url,
+        title: r.title || '',
+        snippet: r.description || '',
+      }))
+      .filter((r: any) => r.url && r.title);
+    console.log(`[Brave] Found ${results.length} results`);
+    return results;
+  } catch (error) {
+    console.error(`[Brave] Error: ${error instanceof Error ? error.message : 'Unknown'}`);
+    return [];
+  }
+}
+
+/**
+ * Search with DDG first, then Brave fallback if DDG returns 0 results.
+ */
+async function searchWithFallback(
+  searchQuery: string
+): Promise<Array<{ url: string; title: string; snippet: string }>> {
+  const ddgResults = await searchWeb(searchQuery);
+  if (ddgResults.length > 0) return ddgResults;
+  return searchBrave(searchQuery);
+}
+
 // Small delay helper to avoid DDG rate-limiting between consecutive requests
 function ddgDelay(ms: number = 1500): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -307,7 +362,7 @@ export async function POST(request: NextRequest) {
 
     // Search for Insight links (use first query only)
     if (insightQueries.length > 0) {
-      const results = await searchWeb(insightQueries[0]);
+      const results = await searchWithFallback(insightQueries[0]);
       for (const result of results) {
         if (seenUrls.has(result.url)) continue;
         seenUrls.add(result.url);
@@ -330,7 +385,7 @@ export async function POST(request: NextRequest) {
 
     // Search for MiniChat links (use first query only)
     if (minichatQueries.length > 0) {
-      const results = await searchWeb(minichatQueries[0]);
+      const results = await searchWithFallback(minichatQueries[0]);
       for (const result of results) {
         if (seenUrls.has(result.url)) continue;
         seenUrls.add(result.url);
