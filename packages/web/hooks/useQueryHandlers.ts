@@ -104,7 +104,12 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
   );
 
   // Poll for result
-  const pollForResult = async (queryId: string, startTime: number, messageId?: string) => {
+  const pollForResult = async (
+    queryId: string,
+    startTime: number,
+    messageId?: string,
+    initialFusion?: any
+  ) => {
     const maxAttempts = 30;
     let attempts = 0;
 
@@ -130,8 +135,9 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
             guardAction: guardFailed ? 'pending' : undefined,
             isHidden: guardFailed,
             gnostic: data.gnostic,
-            intelligence: buildIntelligence(data.fusion),
+            intelligence: buildIntelligence(data.fusion || initialFusion),
           };
+
           setMessages((prev) => {
             const hasPlaceholder = prev.some((m) => m.id === assistantMessage.id);
             if (hasPlaceholder) {
@@ -390,7 +396,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
 
       if (data.queryId) {
         setCurrentConversationId(data.queryId);
-        await pollForResult(data.queryId, startTime, assistantMsgId);
+        await pollForResult(data.queryId, startTime, assistantMsgId, data.fusion);
       } else {
         console.log('🌳 FRONTEND: Received API response with gnostic:', {
           hasGnostic: !!data.gnostic,
@@ -414,7 +420,6 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
           gnostic: data.gnostic,
           intelligence: buildIntelligence(data.fusion),
         };
-
         console.log('🌳 FRONTEND: Created message with gnostic:', {
           messageId: assistantMessage.id,
           hasGnostic: !!assistantMessage.gnostic,
