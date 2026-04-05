@@ -26,6 +26,7 @@ export default function InsightMindmap({
   query,
   onSwitchToLayers,
   onOpenMindMap,
+  onDeepDive,
 }: InsightMindmapProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedNode, setSelectedNode] = useState<ConceptNode | null>(null);
@@ -53,8 +54,8 @@ export default function InsightMindmap({
     return headerCount >= 2 || boldCount >= 3;
   }, [content]);
 
-  if (nodes.length < 3) {
-    return <InsightFallbackView content={content} />;
+  if (nodes.length < 1) {
+    return <InsightFallbackView content={content} query={query} onDeepDive={onDeepDive} />;
   }
 
   // Get unique Layers from all nodes for the summary

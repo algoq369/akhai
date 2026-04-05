@@ -97,6 +97,7 @@ export default function ViewTabs({
             methodology={message.methodology || methodology}
             onSwitchToLayers={() => onSetVizMode('layers')}
             onOpenMindMap={onOpenMindMap}
+            onDeepDive={(q) => onDeepDive(q)}
           />
           {/* Guaranteed fallback — key sentences always visible */}
           <div className="mt-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded">

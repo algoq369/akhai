@@ -35,6 +35,7 @@ export interface InsightMindmapProps {
   methodology?: string;
   onSwitchToLayers?: () => void;
   onOpenMindMap?: () => void;
+  onDeepDive?: (query: string) => void;
 }
 
 // Layer colors
