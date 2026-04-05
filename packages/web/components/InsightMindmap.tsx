@@ -2,7 +2,12 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SparklesIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import {
+  SparklesIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  LinkIcon,
+} from '@heroicons/react/24/outline';
 import { Layer, LAYER_METADATA } from '@/lib/layer-registry';
 import {
   ConceptNode,
@@ -191,26 +196,58 @@ export default function InsightMindmap({
                 {/* Research Links - Compact */}
                 {researchLinks.length > 0 && (
                   <div className="mb-2">
-                    <div className="text-[8px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+                    <div className="text-[8px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
                       Related Resources
                     </div>
-                    {researchLinks.map((link) => (
-                      <a
-                        key={link.id}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-[9px] text-blue-600 dark:text-blue-400 hover:underline truncate"
-                      >
-                        {link.url}
-                      </a>
-                    ))}
+                    <div className="space-y-1.5">
+                      {researchLinks.map((link) => {
+                        let hostname = '';
+                        try {
+                          hostname = new URL(link.url).hostname.replace('www.', '');
+                        } catch {
+                          hostname = link.source || '';
+                        }
+                        return (
+                          <a
+                            key={link.id}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block px-2 py-1.5 rounded-md border border-slate-200/60 dark:border-slate-700/50 hover:border-blue-300 dark:hover:border-blue-600/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors group"
+                          >
+                            <div className="flex items-start gap-1.5">
+                              <LinkIcon className="w-3 h-3 text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0 group-hover:text-blue-500" />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                  {link.title || hostname}
+                                </div>
+                                {link.snippet && (
+                                  <div className="text-[9px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                                    {link.snippet}
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[8px] text-slate-400 dark:text-slate-500 font-mono">
+                                    {hostname}
+                                  </span>
+                                  {link.relevance > 0 && (
+                                    <span className="text-[8px] text-slate-400 dark:text-slate-500">
+                                      {Math.round(link.relevance * 100)}% match
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </a>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
                 {searchUnavailable && researchLinks.length === 0 && (
                   <div className="mb-2">
                     <div className="text-[8px] text-slate-400 dark:text-slate-500 italic">
-                      search unavailable
+                      Research links temporarily unavailable — results will appear on next query
                     </div>
                   </div>
                 )}

@@ -206,7 +206,13 @@ export default function MetadataStrip({ messageId, isStreaming = false }: Metada
     if (guardVerdict)
       segments.push({ sigil: '△', text: guardVerdict === 'pass' ? 'passed' : guardVerdict });
     if (dominantLayer) segments.push({ sigil: '→', text: dominantLayer });
-    if (model) segments.push({ sigil: '⊕', text: model.replace(/^meta-llama\//, '') });
+    if (model)
+      segments.push({
+        sigil: '⊕',
+        text: model
+          .replace(/^(?:meta-llama|anthropic|mistralai|deepseek|openai|google)\//, '')
+          .replace(/:free$/, ''),
+      });
     if (tok) segments.push({ sigil: '○', text: `${tok.toLocaleString()}t` });
     if (dur != null) segments.push({ sigil: '', text: formatDuration(dur) });
     if (cost && cost > 0) segments.push({ sigil: '', text: `$${cost.toFixed(4)}` });
@@ -276,8 +282,11 @@ export default function MetadataStrip({ messageId, isStreaming = false }: Metada
                   )}
                   {model && (
                     <div>
-                      <span className="text-relic-silver/40">⊕ PROVIDER</span> {model} ·{' '}
-                      {genEv?.details?.provider || 'unknown'}
+                      <span className="text-relic-silver/40">⊕ PROVIDER</span>{' '}
+                      {model
+                        .replace(/^(?:meta-llama|anthropic|mistralai|deepseek|openai|google)\//, '')
+                        .replace(/:free$/, '')}{' '}
+                      · {genEv?.details?.provider || 'unknown'}
                     </div>
                   )}
                   {completeEv?.details?.tokens && (
