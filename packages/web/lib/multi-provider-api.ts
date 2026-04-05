@@ -5,33 +5,33 @@
  * with proper request/response formatting for each provider.
  */
 
-import type { ProviderFamily } from './provider-selector'
-import { getProviderApiConfig, getProviderPricing } from './provider-selector'
+import type { ProviderFamily } from './provider-selector';
+import { getProviderApiConfig, getProviderPricing } from './provider-selector';
 
 export interface Message {
-  role: 'system' | 'user' | 'assistant'
-  content: string
+  role: 'system' | 'user' | 'assistant';
+  content: string;
 }
 
 export interface CompletionRequest {
-  messages: Message[]
-  model: string
-  maxTokens?: number
-  temperature?: number
-  systemPrompt?: string
+  messages: Message[];
+  model: string;
+  maxTokens?: number;
+  temperature?: number;
+  systemPrompt?: string;
 }
 
 export interface CompletionResponse {
-  content: string
+  content: string;
   usage: {
-    inputTokens: number
-    outputTokens: number
-    totalTokens: number
-  }
-  model: string
-  provider: ProviderFamily
-  cost: number
-  latencyMs: number
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+  model: string;
+  provider: ProviderFamily;
+  cost: number;
+  latencyMs: number;
 }
 
 /**
@@ -45,21 +45,25 @@ export async function callProvider(
   provider: ProviderFamily,
   request: CompletionRequest
 ): Promise<CompletionResponse> {
-  const startTime = Date.now()
+  const startTime = Date.now();
 
   switch (provider) {
     case 'anthropic':
-      return await callAnthropic(request, startTime)
+      return await callAnthropic(request, startTime);
     case 'deepseek':
-      return await callDeepSeek(request, startTime)
+      return await callDeepSeek(request, startTime);
     case 'mistral':
-      return await callMistral(request, startTime)
+      return await callMistral(request, startTime);
     case 'xai':
-      return await callXAI(request, startTime)
+      return await callXAI(request, startTime);
     case 'openrouter':
-      return await callOpenRouter(request, startTime)
+      return await callOpenRouter(request, startTime);
+    case 'groq':
+      return await callOpenAICompatible(request, startTime, 'groq');
+    case 'google':
+      return await callOpenAICompatible(request, startTime, 'google');
     default:
-      throw new Error(`Unsupported provider: ${provider}`)
+      throw new Error(`Unsupported provider: ${provider}`);
   }
 }
 
@@ -70,15 +74,16 @@ async function callAnthropic(
   request: CompletionRequest,
   startTime: number
 ): Promise<CompletionResponse> {
-  const config = getProviderApiConfig('anthropic')
+  const config = getProviderApiConfig('anthropic');
 
   if (!config.apiKey) {
-    throw new Error('ANTHROPIC_API_KEY not configured')
+    throw new Error('ANTHROPIC_API_KEY not configured');
   }
 
   // Anthropic uses separate system parameter
-  const messages = request.messages.filter(m => m.role !== 'system')
-  const systemPrompt = request.systemPrompt || request.messages.find(m => m.role === 'system')?.content
+  const messages = request.messages.filter((m) => m.role !== 'system');
+  const systemPrompt =
+    request.systemPrompt || request.messages.find((m) => m.role === 'system')?.content;
 
   const response = await fetch(config.baseUrl, {
     method: 'POST',
@@ -92,25 +97,25 @@ async function callAnthropic(
       max_tokens: request.maxTokens || 4096,
       temperature: request.temperature || 0.7,
       system: systemPrompt,
-      messages: messages.map(m => ({
+      messages: messages.map((m) => ({
         role: m.role === 'system' ? 'user' : m.role,
         content: m.content,
       })),
     }),
-  })
+  });
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Anthropic API error: ${response.status} - ${error}`)
+    const error = await response.text();
+    throw new Error(`Anthropic API error: ${response.status} - ${error}`);
   }
 
-  const data = await response.json()
-  const latencyMs = Date.now() - startTime
+  const data = await response.json();
+  const latencyMs = Date.now() - startTime;
 
-  const inputTokens = data.usage?.input_tokens || 0
-  const outputTokens = data.usage?.output_tokens || 0
-  const pricing = getProviderPricing('anthropic')
-  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000
+  const inputTokens = data.usage?.input_tokens || 0;
+  const outputTokens = data.usage?.output_tokens || 0;
+  const pricing = getProviderPricing('anthropic');
+  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000;
 
   return {
     content: data.content[0]?.text || '',
@@ -123,7 +128,7 @@ async function callAnthropic(
     provider: 'anthropic',
     cost,
     latencyMs,
-  }
+  };
 }
 
 /**
@@ -133,10 +138,10 @@ async function callDeepSeek(
   request: CompletionRequest,
   startTime: number
 ): Promise<CompletionResponse> {
-  const config = getProviderApiConfig('deepseek')
+  const config = getProviderApiConfig('deepseek');
 
   if (!config.apiKey) {
-    throw new Error('DEEPSEEK_API_KEY not configured')
+    throw new Error('DEEPSEEK_API_KEY not configured');
   }
 
   const response = await fetch(config.baseUrl, {
@@ -151,20 +156,20 @@ async function callDeepSeek(
       max_tokens: request.maxTokens || 4096,
       temperature: request.temperature || 0.7,
     }),
-  })
+  });
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`DeepSeek API error: ${response.status} - ${error}`)
+    const error = await response.text();
+    throw new Error(`DeepSeek API error: ${response.status} - ${error}`);
   }
 
-  const data = await response.json()
-  const latencyMs = Date.now() - startTime
+  const data = await response.json();
+  const latencyMs = Date.now() - startTime;
 
-  const inputTokens = data.usage?.prompt_tokens || 0
-  const outputTokens = data.usage?.completion_tokens || 0
-  const pricing = getProviderPricing('deepseek')
-  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000
+  const inputTokens = data.usage?.prompt_tokens || 0;
+  const outputTokens = data.usage?.completion_tokens || 0;
+  const pricing = getProviderPricing('deepseek');
+  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000;
 
   return {
     content: data.choices[0]?.message?.content || '',
@@ -177,7 +182,7 @@ async function callDeepSeek(
     provider: 'deepseek',
     cost,
     latencyMs,
-  }
+  };
 }
 
 /**
@@ -187,10 +192,10 @@ async function callMistral(
   request: CompletionRequest,
   startTime: number
 ): Promise<CompletionResponse> {
-  const config = getProviderApiConfig('mistral')
+  const config = getProviderApiConfig('mistral');
 
   if (!config.apiKey) {
-    throw new Error('MISTRAL_API_KEY not configured')
+    throw new Error('MISTRAL_API_KEY not configured');
   }
 
   const response = await fetch(config.baseUrl, {
@@ -205,20 +210,20 @@ async function callMistral(
       max_tokens: request.maxTokens || 4096,
       temperature: request.temperature || 0.7,
     }),
-  })
+  });
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Mistral API error: ${response.status} - ${error}`)
+    const error = await response.text();
+    throw new Error(`Mistral API error: ${response.status} - ${error}`);
   }
 
-  const data = await response.json()
-  const latencyMs = Date.now() - startTime
+  const data = await response.json();
+  const latencyMs = Date.now() - startTime;
 
-  const inputTokens = data.usage?.prompt_tokens || 0
-  const outputTokens = data.usage?.completion_tokens || 0
-  const pricing = getProviderPricing('mistral')
-  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000
+  const inputTokens = data.usage?.prompt_tokens || 0;
+  const outputTokens = data.usage?.completion_tokens || 0;
+  const pricing = getProviderPricing('mistral');
+  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000;
 
   return {
     content: data.choices[0]?.message?.content || '',
@@ -231,20 +236,17 @@ async function callMistral(
     provider: 'mistral',
     cost,
     latencyMs,
-  }
+  };
 }
 
 /**
  * Call xAI API (Grok)
  */
-async function callXAI(
-  request: CompletionRequest,
-  startTime: number
-): Promise<CompletionResponse> {
-  const config = getProviderApiConfig('xai')
+async function callXAI(request: CompletionRequest, startTime: number): Promise<CompletionResponse> {
+  const config = getProviderApiConfig('xai');
 
   if (!config.apiKey) {
-    throw new Error('XAI_API_KEY not configured')
+    throw new Error('XAI_API_KEY not configured');
   }
 
   const response = await fetch(config.baseUrl, {
@@ -259,20 +261,20 @@ async function callXAI(
       max_tokens: request.maxTokens || 4096,
       temperature: request.temperature || 0.7,
     }),
-  })
+  });
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`xAI API error: ${response.status} - ${error}`)
+    const error = await response.text();
+    throw new Error(`xAI API error: ${response.status} - ${error}`);
   }
 
-  const data = await response.json()
-  const latencyMs = Date.now() - startTime
+  const data = await response.json();
+  const latencyMs = Date.now() - startTime;
 
-  const inputTokens = data.usage?.prompt_tokens || 0
-  const outputTokens = data.usage?.completion_tokens || 0
-  const pricing = getProviderPricing('xai')
-  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000
+  const inputTokens = data.usage?.prompt_tokens || 0;
+  const outputTokens = data.usage?.completion_tokens || 0;
+  const pricing = getProviderPricing('xai');
+  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000;
 
   return {
     content: data.choices[0]?.message?.content || '',
@@ -285,7 +287,7 @@ async function callXAI(
     provider: 'xai',
     cost,
     latencyMs,
-  }
+  };
 }
 
 /**
@@ -295,22 +297,22 @@ async function callOpenRouter(
   request: CompletionRequest,
   startTime: number
 ): Promise<CompletionResponse> {
-  const config = getProviderApiConfig('openrouter')
+  const config = getProviderApiConfig('openrouter');
 
   if (!config.apiKey) {
-    throw new Error('OPENROUTER_API_KEY not configured')
+    throw new Error('OPENROUTER_API_KEY not configured');
   }
 
-  const messages = request.messages.map(m => ({
+  const messages = request.messages.map((m) => ({
     role: m.role,
     content: m.content,
-  }))
+  }));
 
   const response = await fetch(config.baseUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.apiKey}`,
+      Authorization: `Bearer ${config.apiKey}`,
       'HTTP-Referer': 'https://akhai.app',
       'X-Title': 'AkhAI',
     },
@@ -320,18 +322,18 @@ async function callOpenRouter(
       max_tokens: request.maxTokens || 500,
       temperature: request.temperature ?? 0.7,
     }),
-  })
+  });
 
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`OpenRouter API error: ${response.status} - ${error}`)
+    const error = await response.text();
+    throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
   }
 
-  const data = await response.json()
-  const latencyMs = Date.now() - startTime
+  const data = await response.json();
+  const latencyMs = Date.now() - startTime;
 
-  const inputTokens = data.usage?.prompt_tokens || 0
-  const outputTokens = data.usage?.completion_tokens || 0
+  const inputTokens = data.usage?.prompt_tokens || 0;
+  const outputTokens = data.usage?.completion_tokens || 0;
 
   return {
     content: data.choices?.[0]?.message?.content || '',
@@ -344,7 +346,62 @@ async function callOpenRouter(
     provider: 'openrouter',
     cost: 0,
     latencyMs,
+  };
+}
+
+/**
+ * Call OpenAI-compatible API (Groq, Google Gemini, etc.)
+ */
+async function callOpenAICompatible(
+  request: CompletionRequest,
+  startTime: number,
+  provider: ProviderFamily
+): Promise<CompletionResponse> {
+  const config = getProviderApiConfig(provider);
+
+  if (!config.apiKey) {
+    throw new Error(`${provider.toUpperCase()} API key not configured`);
   }
+
+  const response = await fetch(config.baseUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: request.model,
+      messages: request.messages,
+      max_tokens: request.maxTokens || 4096,
+      temperature: request.temperature || 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`${provider} API error: ${response.status} - ${error}`);
+  }
+
+  const data = await response.json();
+  const latencyMs = Date.now() - startTime;
+
+  const inputTokens = data.usage?.prompt_tokens || 0;
+  const outputTokens = data.usage?.completion_tokens || 0;
+  const pricing = getProviderPricing(provider);
+  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000;
+
+  return {
+    content: data.choices?.[0]?.message?.content || '',
+    usage: {
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+    },
+    model: request.model,
+    provider,
+    cost,
+    latencyMs,
+  };
 }
 
 /**
@@ -355,9 +412,9 @@ async function callOpenRouter(
  */
 export function isProviderAvailable(provider: ProviderFamily): boolean {
   try {
-    const config = getProviderApiConfig(provider)
-    return !!config.apiKey
+    const config = getProviderApiConfig(provider);
+    return !!config.apiKey;
   } catch {
-    return false
+    return false;
   }
 }

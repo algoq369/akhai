@@ -6,7 +6,14 @@
  */
 
 export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'tot' | 'auto';
-export type ProviderFamily = 'anthropic' | 'deepseek' | 'mistral' | 'xai' | 'openrouter';
+export type ProviderFamily =
+  | 'anthropic'
+  | 'deepseek'
+  | 'mistral'
+  | 'xai'
+  | 'openrouter'
+  | 'groq'
+  | 'google';
 
 export interface ProviderConfig {
   family: ProviderFamily;
@@ -127,6 +134,16 @@ export function getProviderApiConfig(provider: ProviderFamily): {
         apiKey: process.env.OPENROUTER_API_KEY,
         baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
       };
+    case 'groq':
+      return {
+        apiKey: process.env.GROQ_API_KEY,
+        baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
+      };
+    case 'google':
+      return {
+        apiKey: process.env.GOOGLE_API_KEY,
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      };
   }
 }
 
@@ -135,12 +152,22 @@ export function getProviderApiConfig(provider: ProviderFamily): {
  */
 export function getFallbackModelSpec(provider: ProviderFamily): { model: string } {
   switch (provider) {
-    case 'openrouter': return { model: 'meta-llama/llama-3.3-70b-instruct:free' };
-    case 'deepseek': return { model: 'deepseek-chat' };
-    case 'mistral': return { model: 'mistral-large-latest' };
-    case 'xai': return { model: 'grok-2' };
-    case 'anthropic': return { model: 'claude-sonnet-4-20250514' };
-    default: return { model: 'meta-llama/llama-3.3-70b-instruct:free' };
+    case 'openrouter':
+      return { model: 'meta-llama/llama-3.3-70b-instruct:free' };
+    case 'deepseek':
+      return { model: 'deepseek-chat' };
+    case 'mistral':
+      return { model: 'mistral-large-latest' };
+    case 'xai':
+      return { model: 'grok-2' };
+    case 'anthropic':
+      return { model: 'claude-sonnet-4-20250514' };
+    case 'groq':
+      return { model: 'llama-3.3-70b-versatile' };
+    case 'google':
+      return { model: 'gemini-2.0-flash' };
+    default:
+      return { model: 'meta-llama/llama-3.3-70b-instruct:free' };
   }
 }
 
@@ -163,7 +190,15 @@ export function validateProviderApiKey(provider: ProviderFamily): boolean {
  */
 export function getFallbackProvider(primary: ProviderFamily): ProviderFamily {
   // Fallback hierarchy: Anthropic > OpenRouter > DeepSeek > Mistral > xAI
-  const fallbackOrder: ProviderFamily[] = ['anthropic', 'openrouter', 'deepseek', 'mistral', 'xai'];
+  const fallbackOrder: ProviderFamily[] = [
+    'anthropic',
+    'openrouter',
+    'groq',
+    'google',
+    'deepseek',
+    'mistral',
+    'xai',
+  ];
   const primaryIndex = fallbackOrder.indexOf(primary);
 
   // Try next provider in hierarchy
@@ -190,7 +225,15 @@ export function getFallbackProvider(primary: ProviderFamily): ProviderFamily {
  * @returns Array of available provider families
  */
 export function getAvailableProviders(): ProviderFamily[] {
-  const providers: ProviderFamily[] = ['anthropic', 'openrouter', 'deepseek', 'mistral', 'xai'];
+  const providers: ProviderFamily[] = [
+    'anthropic',
+    'openrouter',
+    'groq',
+    'google',
+    'deepseek',
+    'mistral',
+    'xai',
+  ];
   return providers.filter(validateProviderApiKey);
 }
 
@@ -210,6 +253,8 @@ export function getProviderPricing(provider: ProviderFamily): {
     mistral: { input: 0.0002, output: 0.0006 },
     xai: { input: 0.002, output: 0.01 },
     openrouter: { input: 0, output: 0 },
+    groq: { input: 0, output: 0 },
+    google: { input: 0, output: 0 },
   };
 
   return rates[provider];

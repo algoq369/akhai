@@ -365,6 +365,8 @@ export async function POST(request: NextRequest) {
       const allProviders: ProviderFamily[] = [
         'anthropic',
         'openrouter',
+        'groq',
+        'google',
         'deepseek',
         'mistral',
         'xai',
