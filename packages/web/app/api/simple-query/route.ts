@@ -397,6 +397,20 @@ export async function POST(request: NextRequest) {
           usedModel = fallbackModelSpec.model;
           log('INFO', 'API', `Fallback provider ${fallbackProvider} succeeded`);
           fallbackSucceeded = true;
+
+          // Emit corrected SSE with actual provider (overrides initial "generating" event)
+          emitAndPersist(queryId, {
+            id: `${queryId}-generating-fallback`,
+            queryId,
+            stage: 'generating',
+            timestamp: Date.now() - startTime,
+            data: `Generating with ${usedModel} via ${fallbackProvider}...`,
+            details: {
+              model: usedModel,
+              provider: fallbackProvider,
+              methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+            },
+          });
           break;
         } catch (fbError: any) {
           log('WARN', 'API', `Fallback ${fallbackProvider} also failed: ${fbError.message}`);
