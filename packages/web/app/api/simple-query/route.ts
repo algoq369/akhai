@@ -494,7 +494,11 @@ export async function POST(request: NextRequest) {
       processedContent,
       content,
       selectedProvider,
-      providerSpec: { ...providerSpec, model: usedModel },
+      providerSpec: {
+        ...providerSpec,
+        model: usedModel,
+        reasoning: providerSpec.reasoning || `Fallback to ${selectedProvider}`,
+      },
       tokens,
       inputTokens,
       outputTokens,

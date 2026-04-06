@@ -181,7 +181,7 @@ export default function MetadataStrip({ messageId, isStreaming = false }: Metada
     const routingEv = messageTimeline.find((e) => e.stage === 'routing');
     const layersEv = messageTimeline.find((e) => e.stage === 'layers');
     const guardEv = messageTimeline.find((e) => e.stage === 'guard');
-    const genEv = messageTimeline.find((e) => e.stage === 'generating');
+    const genEv = [...messageTimeline].reverse().find((e) => e.stage === 'generating');
     const analysisEv = messageTimeline.find((e) => e.stage === 'analysis');
 
     const method =
