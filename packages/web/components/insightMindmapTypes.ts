@@ -250,6 +250,25 @@ export function generateNodeInsight(
   return { context, insight };
 }
 
+function inferLayerMapping(text: string): Layer[] {
+  const layers: Layer[] = [];
+  const lower = text.toLowerCase();
+
+  if (/how|process|method|step|procedure|tutorial/.test(lower)) layers.push(Layer.EXECUTOR);
+  if (/analy|compare|versus|differ|pros|cons|evaluat/.test(lower)) layers.push(Layer.DISCRIMINATOR);
+  if (/data|statistic|number|percent|measure|fact/.test(lower)) layers.push(Layer.ENCODER);
+  if (/think|reason|logic|argument|because|therefore|why/.test(lower)) layers.push(Layer.REASONING);
+  if (/create|write|design|build|imagine|story/.test(lower)) layers.push(Layer.GENERATIVE);
+  if (/overview|summary|main|key|important|significant/.test(lower)) layers.push(Layer.ATTENTION);
+  if (/risk|danger|careful|warning|error|problem|issue/.test(lower))
+    layers.push(Layer.DISCRIMINATOR);
+  if (/connect|relate|pattern|system|whole|integrat/.test(lower)) layers.push(Layer.SYNTHESIS);
+  if (/what|define|concept|mean|term/.test(lower)) layers.push(Layer.EMBEDDING);
+  if (/all|everything|complete|comprehensive|full/.test(lower)) layers.push(Layer.META_CORE);
+
+  return [...new Set(layers)].slice(0, 2);
+}
+
 export function extractInsights(content: string, query: string): ConceptNode[] {
   const nodes: ConceptNode[] = [];
   const categories = [
@@ -326,7 +345,55 @@ export function extractInsights(content: string, query: string): ConceptNode[] {
     });
   });
 
-  // Build connections
+  // PRIORITY LAST: Extract from plain text sentences when formatting-based extraction found < 3 nodes
+  if (nodes.length < 3) {
+    const plainSentences = content
+      .split(/[.!?]+/)
+      .map((s) => s.replace(/[#*`\-\[\]]/g, '').trim())
+      .filter((s) => s.length > 30 && s.length < 300);
+
+    const queryWordSet = new Set(
+      query
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 3)
+    );
+
+    const scored = plainSentences.map((sentence) => {
+      const words = sentence.toLowerCase().split(/\s+/);
+      const matchCount = words.filter((w) => queryWordSet.has(w)).length;
+      const relevance = queryWordSet.size > 0 ? matchCount / queryWordSet.size : 0.3;
+      return { sentence, relevance };
+    });
+
+    scored.sort((a, b) => b.relevance - a.relevance);
+
+    for (const { sentence, relevance } of scored.slice(0, 6)) {
+      const key = sentence.toLowerCase().substring(0, 30);
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const category = categories[nodes.length % categories.length];
+      const label = sentence.split(/\s+/).slice(0, 6).join(' ') + '...';
+      const layerMapping = inferLayerMapping(sentence);
+      const { context, insight } = generateNodeInsight(sentence, category, query);
+
+      nodes.push({
+        id: `plain-${nodes.length}`,
+        label,
+        fullText: sentence,
+        category,
+        confidence: 0.5 + relevance * 0.3,
+        relevance: Math.min(0.98, 0.5 + relevance * 0.4),
+        connections: [],
+        context,
+        insight,
+        layerMapping: layerMapping.length > 0 ? layerMapping : [Layer.ATTENTION],
+      });
+    }
+  }
+
+  // Build connections (runs after ALL extraction including plain-text)
   nodes.forEach((node, i) => {
     nodes.forEach((other, j) => {
       if (i !== j) {
