@@ -306,13 +306,13 @@ export async function POST(request: NextRequest) {
       systemPrompt = applyFusionToPrompt(systemPrompt, fusionResult, weights);
     }
 
-    // Emit: generating
+    // Emit: calling (pre-API — shows progress without committing to a model)
     emitAndPersist(queryId, {
       id: `${queryId}-generating`,
       queryId,
       stage: 'generating',
       timestamp: Date.now() - startTime,
-      data: `Generating with ${usedModel} via ${selectedProvider}...`,
+      data: `Calling AI provider...`,
       details: {
         model: usedModel,
         provider: selectedProvider,
@@ -397,20 +397,6 @@ export async function POST(request: NextRequest) {
           usedModel = fallbackModelSpec.model;
           log('INFO', 'API', `Fallback provider ${fallbackProvider} succeeded`);
           fallbackSucceeded = true;
-
-          // Emit corrected SSE with actual provider (overrides initial "generating" event)
-          emitAndPersist(queryId, {
-            id: `${queryId}-generating-fallback`,
-            queryId,
-            stage: 'generating',
-            timestamp: Date.now() - startTime,
-            data: `Generating with ${usedModel} via ${fallbackProvider}...`,
-            details: {
-              model: usedModel,
-              provider: fallbackProvider,
-              methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
-            },
-          });
           break;
         } catch (fbError: any) {
           log('WARN', 'API', `Fallback ${fallbackProvider} also failed: ${fbError.message}`);
@@ -425,6 +411,20 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // Emit: generating — now with ACTUAL provider that succeeded
+    emitAndPersist(queryId, {
+      id: `${queryId}-generating`,
+      queryId,
+      stage: 'generating',
+      timestamp: Date.now() - startTime,
+      data: `Generating with ${usedModel} via ${selectedProvider}...`,
+      details: {
+        model: usedModel,
+        provider: selectedProvider,
+        methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+      },
+    });
 
     const content = apiResponse!.content;
     const inputTokens = apiResponse!.usage.inputTokens;
