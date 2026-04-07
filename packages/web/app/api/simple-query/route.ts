@@ -309,14 +309,12 @@ export async function POST(request: NextRequest) {
 
     // Emit: calling (pre-API — shows progress without committing to a model)
     emitAndPersist(queryId, {
-      id: `${queryId}-generating`,
+      id: `${queryId}-calling`,
       queryId,
       stage: 'generating',
       timestamp: Date.now() - startTime,
       data: `Calling AI provider...`,
       details: {
-        model: usedModel,
-        provider: selectedProvider,
         methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
       },
     });
