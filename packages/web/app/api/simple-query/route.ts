@@ -197,6 +197,7 @@ export async function POST(request: NextRequest) {
     );
     let selectedProvider = providerSpec.provider;
     let usedModel = providerSpec.model;
+    const originalProvider = selectedProvider;
 
     if (!validateProviderApiKey(selectedProvider)) {
       log(
@@ -497,7 +498,10 @@ export async function POST(request: NextRequest) {
       providerSpec: {
         ...providerSpec,
         model: usedModel,
-        reasoning: providerSpec.reasoning || `Fallback to ${selectedProvider}`,
+        reasoning:
+          originalProvider === selectedProvider
+            ? providerSpec.reasoning || 'Selected by engine'
+            : `Fallback from ${originalProvider} to ${selectedProvider} (${usedModel})`,
       },
       tokens,
       inputTokens,
