@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * ProcessingIndicator — Shows live AI thinking process under the user's query.
@@ -7,13 +7,13 @@
  * Fades out when response arrives (stage === 'complete' or 'error').
  */
 
-import { motion, AnimatePresence } from 'framer-motion'
-import { useSideCanalStore } from '@/lib/stores/side-canal-store'
-import { STAGE_META, formatDuration } from '@/lib/thought-stream'
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSideCanalStore } from '@/lib/stores/side-canal-store';
+import { STAGE_META, formatDuration } from '@/lib/thought-stream';
 
 interface ProcessingIndicatorProps {
-  messageId: string
-  isVisible: boolean
+  messageId: string;
+  isVisible: boolean;
 }
 
 const STAGE_DESCRIPTIONS: Record<string, string> = {
@@ -26,41 +26,42 @@ const STAGE_DESCRIPTIONS: Record<string, string> = {
   analysis: 'Analyzing output quality...',
   complete: 'Complete',
   error: 'Error occurred',
-}
+};
 
 export default function ProcessingIndicator({ messageId, isVisible }: ProcessingIndicatorProps) {
-  const currentMetadata = useSideCanalStore(
-    (s) => s.currentMetadata?.[messageId] ?? null
-  )
+  const currentMetadata = useSideCanalStore((s) => s.currentMetadata?.[messageId] ?? null);
 
-  const stage = currentMetadata?.stage
-  const isTerminal = stage === 'complete' || stage === 'error'
+  const stage = currentMetadata?.stage;
+  const isTerminal = stage === 'complete' || stage === 'error';
 
-  if (!isVisible || !currentMetadata || isTerminal) return null
+  if (!isVisible || !currentMetadata || isTerminal) return null;
 
-  const meta = STAGE_META[stage || 'received'] || STAGE_META.received
+  const meta = STAGE_META[stage || 'received'] || STAGE_META.received;
   const description = currentMetadata.data
     ? currentMetadata.data.replace(/^query:\s*/i, '').slice(0, 60)
-    : STAGE_DESCRIPTIONS[stage || 'received'] || 'Processing...'
-  const elapsed = currentMetadata.timestamp > 0 ? formatDuration(currentMetadata.timestamp) : ''
+    : STAGE_DESCRIPTIONS[stage || 'received'] || 'Processing...';
+  const elapsed = currentMetadata.timestamp > 0 ? formatDuration(currentMetadata.timestamp) : '';
 
   // Build rich detail from routing/layers metadata
-  let detail = ''
+  let detail = '';
   if (stage === 'routing' && currentMetadata.details?.methodology?.selected) {
     const conf = currentMetadata.details.confidence
       ? ` (${Math.round(currentMetadata.details.confidence * 100)}%)`
-      : ''
-    detail = `${currentMetadata.details.methodology.selected.toUpperCase()}${conf}`
+      : '';
+    detail = `${currentMetadata.details.methodology.selected.toUpperCase()}${conf}`;
     if (currentMetadata.details.methodology.reason) {
-      detail += ` — ${currentMetadata.details.methodology.reason}`
+      detail += ` — ${currentMetadata.details.methodology.reason}`;
     }
   } else if (stage === 'layers' && currentMetadata.details?.dominantLayer) {
-    detail = `${currentMetadata.details.dominantLayer} dominant`
+    detail = `${currentMetadata.details.dominantLayer} dominant`;
   } else if (stage === 'generating' && currentMetadata.details?.model) {
-    detail = `via ${currentMetadata.details.model.replace(/^meta-llama\//, '')}`
+    const cleanModel = currentMetadata.details.model
+      .replace(/^(?:meta-llama|anthropic|mistralai|deepseek|openai|google)\//, '')
+      .replace(/:free$/, '');
+    detail = `via ${cleanModel}`;
   } else if (stage === 'guard' && currentMetadata.details?.guard) {
-    const verdict = currentMetadata.details.guard.verdict
-    detail = verdict === 'pass' ? 'all clear' : verdict
+    const verdict = currentMetadata.details.guard.verdict;
+    detail = verdict === 'pass' ? 'all clear' : verdict;
   }
 
   return (
@@ -87,7 +88,9 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
           {detail && (
             <>
               <span className="text-relic-ghost dark:text-relic-slate/20">·</span>
-              <span className="text-relic-silver/40 dark:text-relic-slate/40 truncate max-w-[300px]">{detail}</span>
+              <span className="text-relic-silver/40 dark:text-relic-slate/40 truncate max-w-[300px]">
+                {detail}
+              </span>
             </>
           )}
           {elapsed && (
@@ -96,5 +99,5 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
         </div>
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }
