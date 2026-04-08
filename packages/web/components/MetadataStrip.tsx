@@ -145,8 +145,8 @@ export default function MetadataStrip({ messageId, isStreaming = false }: Metada
                   .join('')}
               </div>
             )}
-            {/* Rich detail line for generating/fusion stage */}
-            {currentMetadata.details?.model && (
+            {/* Rich detail line for generating/fusion stage — only after complete */}
+            {currentMetadata.stage === 'complete' && currentMetadata.details?.model && (
               <div className="pl-4 text-[8px] text-relic-silver/60 dark:text-relic-slate/50">
                 model: {currentMetadata.details.model} ·{' '}
                 {currentMetadata.details.provider || 'unknown'}

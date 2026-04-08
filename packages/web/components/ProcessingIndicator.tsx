@@ -55,11 +55,8 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
     }
   } else if (stage === 'layers' && currentMetadata.details?.dominantLayer) {
     detail = `${currentMetadata.details.dominantLayer} dominant`;
-  } else if (stage === 'generating' && currentMetadata.details?.model) {
-    const cleanModel = currentMetadata.details.model
-      .replace(/^(?:meta-llama|anthropic|mistralai|deepseek|openai|google)\//, '')
-      .replace(/:free$/, '');
-    detail = `via ${cleanModel}`;
+  } else if (stage === 'generating') {
+    detail = '';
   } else if (stage === 'guard' && currentMetadata.details?.guard) {
     const verdict = currentMetadata.details.guard.verdict;
     detail = verdict === 'pass' ? 'all clear' : verdict;
