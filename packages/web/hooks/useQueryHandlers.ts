@@ -108,7 +108,8 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
     queryId: string,
     startTime: number,
     messageId?: string,
-    initialFusion?: any
+    initialFusion?: any,
+    initialMiniCanvas?: any
   ) => {
     const maxAttempts = 30;
     let attempts = 0;
@@ -136,7 +137,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
             isHidden: guardFailed,
             gnostic: data.gnostic,
             intelligence: buildIntelligence(data.fusion || initialFusion),
-            miniCanvas: data.miniCanvas,
+            miniCanvas: data.miniCanvas || initialMiniCanvas,
           };
 
           setMessages((prev) => {
@@ -397,7 +398,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
 
       if (data.queryId) {
         setCurrentConversationId(data.queryId);
-        await pollForResult(data.queryId, startTime, assistantMsgId, data.fusion);
+        await pollForResult(data.queryId, startTime, assistantMsgId, data.fusion, data.miniCanvas);
       } else {
         console.log('🌳 FRONTEND: Received API response with gnostic:', {
           hasGnostic: !!data.gnostic,
