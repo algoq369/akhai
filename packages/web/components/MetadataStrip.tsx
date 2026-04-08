@@ -162,6 +162,12 @@ export default function MetadataStrip({ messageId, isStreaming = false }: Metada
                   )}
               </div>
             )}
+            {/* Live reasoning narrative */}
+            {currentMetadata.details?.narrative && (
+              <div className="pl-4 text-[9px] text-relic-silver/50 dark:text-relic-slate/40 leading-relaxed italic">
+                {currentMetadata.details.narrative}
+              </div>
+            )}
             {/* Rich detail line for complete stage */}
             {currentMetadata.details?.tokens && (
               <div className="pl-4 text-[8px] text-relic-silver/60 dark:text-relic-slate/50">

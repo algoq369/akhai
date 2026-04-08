@@ -78,6 +78,9 @@ export interface ThoughtDetails {
     averageLevel: number;
   };
 
+  // Live reasoning narrative (prose explanation per stage)
+  narrative?: string;
+
   // generating / streaming / complete
   model?: string;
   provider?: string;

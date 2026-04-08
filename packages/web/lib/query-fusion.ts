@@ -230,6 +230,7 @@ export function emitFusionEvents(
       guardReasons: fusionResult?.guardReasons || [],
       processingMode: fusionResult?.processingMode,
       activeLenses: fusionResult?.activeLenses || [],
+      narrative: `Selected ${selectedMethod.id} methodology${fusionResult ? ` with ${Math.round(fusionResult.confidence * 100)}% confidence` : ''}. ${selectedMethod.reason || 'This approach gives the clearest signal-to-noise ratio.'}`,
     },
   });
 
@@ -274,6 +275,9 @@ export function emitFusionEvents(
         layers: layerDetails,
         dominantLayer: dominantName,
         pathActivations: pathActs,
+        narrative: dominant
+          ? `${fusionResult.dominantLayers.length} computational layers activated. ${dominantName} is dominant at ${layerDetails[dominant]?.weight || 0}% — prioritizing deep analysis.`
+          : `Computational layers analyzed — no dominant layer detected, using balanced processing.`,
       },
     });
   }

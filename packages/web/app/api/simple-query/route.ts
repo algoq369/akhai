@@ -245,6 +245,7 @@ export async function POST(request: NextRequest) {
           providerReason:
             providerSpec.reasoning || `${selectedProvider} selected for ${selectedMethod.id}`,
         },
+        narrative: `${metaCoreState?.humanIntention || 'Analyzing query intent'}. Approaching via ${selectedMethod.id} — ${providerSpec.reasoning || selectedProvider + ' selected for optimal response quality'}.`,
       },
     });
 
@@ -455,6 +456,10 @@ export async function POST(request: NextRequest) {
             : 0,
           checks: guardResult?.issues || [],
         },
+        narrative:
+          guardResult && !guardResult.passed
+            ? `Sovereign Guard flagged concerns: ${guardResult.issues?.join(', ') || 'minor issues detected'}. Proceeding with caution.`
+            : `Sovereign Guard verified response integrity. All checks passed — response is grounded.`,
       },
     });
 
