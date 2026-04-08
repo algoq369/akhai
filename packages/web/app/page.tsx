@@ -20,6 +20,9 @@ const CanvasWorkspace = dynamic(() => import('@/components/canvas/CanvasWorkspac
 const LiveRefinementCanal = dynamic(() => import('@/components/LiveRefinementCanal'), {
   ssr: false,
 });
+const MiniCanvasView = dynamic(() => import('@/components/mini-canvas/MiniCanvasView'), {
+  ssr: false,
+});
 const SideChat = dynamic(() => import('@/components/SideChat'), { ssr: false });
 const SideMiniChat = dynamic(() => import('@/components/SideMiniChat'), { ssr: false });
 
@@ -64,12 +67,12 @@ function HomePage() {
       {/* Header - Only show when expanded */}
       {s.isExpanded && (
         <ChatHeader
-          isCanvasMode={s.isCanvasMode}
+          viewMode={s.viewMode}
           methodology={s.methodology}
           onNewChat={s.handleNewChat}
-          onToggleCanvas={() => {
-            s.setIsCanvasMode(!s.isCanvasMode);
-            if (!s.isCanvasMode)
+          onSetViewMode={(mode) => {
+            s.setViewMode(mode);
+            if (mode === 'canvas')
               import('@/lib/analytics').then(({ trackCanvasOpened }) => trackCanvasOpened());
           }}
           onOpenMindMap={(view) => {
@@ -81,7 +84,7 @@ function HomePage() {
 
       {/* Main Content */}
       <main
-        className={`flex-1 flex flex-col transition-all duration-500 ease-out ${s.isExpanded && !s.isCanvasMode ? 'ml-60' : ''}`}
+        className={`flex-1 flex flex-col transition-all duration-500 ease-out ${s.isExpanded && s.viewMode === 'classic' ? 'ml-60' : ''}`}
       >
         {/* Canvas Mode */}
         {s.isCanvasMode && s.isExpanded && (
@@ -90,7 +93,7 @@ function HomePage() {
             visualNodes={s.visualNodes}
             visualEdges={s.visualEdges}
             onQuerySelect={(id) => {
-              s.setIsCanvasMode(false);
+              s.setViewMode('classic');
               requestAnimationFrame(() => {
                 setTimeout(() => {
                   const el = document.querySelector(`[data-message-id="${id}"]`);
@@ -106,13 +109,13 @@ function HomePage() {
               });
             }}
             onNodeSelect={(id) => console.log('Selected node:', id)}
-            onSwitchToClassic={() => s.setIsCanvasMode(false)}
+            onSwitchToClassic={() => s.setViewMode('classic')}
             aiInsights={s.topicInsights}
           />
         )}
 
-        {/* Classic Mode - Logo Section */}
-        {!s.isCanvasMode && !s.isExpanded && (
+        {/* Classic/Mini Canvas - Logo Section */}
+        {s.viewMode !== 'canvas' && !s.isExpanded && (
           <LogoSection
             methodology={s.methodology}
             expandedMethodology={s.expandedMethodology}
@@ -123,14 +126,21 @@ function HomePage() {
 
         {!s.isExpanded && <div className="flex-1" />}
 
-        {s.isExpanded && !s.isCanvasMode && (
+        {s.isExpanded && s.viewMode !== 'canvas' && (
           <div className="text-center py-3 mb-2">
             <span className="text-2xl font-extralight opacity-50 text-relic-mist">◊</span>
           </div>
         )}
 
-        {/* Messages Area */}
-        {s.isExpanded && !s.isCanvasMode && <ChatMessages {...s.chatMessagesProps} />}
+        {/* Mini Canvas View — shows above messages when in mini-canvas mode */}
+        {s.isExpanded && s.viewMode === 'mini-canvas' && (
+          <MiniCanvasView
+            data={s.messages.filter((m) => m.role === 'assistant').pop()?.miniCanvas}
+          />
+        )}
+
+        {/* Messages Area — visible in classic and mini-canvas modes */}
+        {s.isExpanded && s.viewMode !== 'canvas' && <ChatMessages {...s.chatMessagesProps} />}
 
         <LiveRefinementCanal
           isVisible={s.isExpanded && s.messages.length > 0}

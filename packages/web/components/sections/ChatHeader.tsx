@@ -1,18 +1,20 @@
 'use client';
 
+export type ViewMode = 'classic' | 'mini-canvas' | 'canvas';
+
 export interface ChatHeaderProps {
-  isCanvasMode: boolean;
+  viewMode: ViewMode;
   methodology: string;
   onNewChat: () => void;
-  onToggleCanvas: () => void;
+  onSetViewMode: (mode: ViewMode) => void;
   onOpenMindMap: (view: 'graph' | 'history') => void;
 }
 
 export default function ChatHeader({
-  isCanvasMode,
+  viewMode,
   methodology,
   onNewChat,
-  onToggleCanvas,
+  onSetViewMode,
   onOpenMindMap,
 }: ChatHeaderProps) {
   return (
@@ -26,17 +28,24 @@ export default function ChatHeader({
             ◊ akhai
           </button>
           <div className="flex items-center gap-3">
-            {/* Canvas Mode Toggle */}
+            {/* View Mode — 3-way selector */}
             <button
-              onClick={onToggleCanvas}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-medium transition-all ${
-                isCanvasMode
-                  ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300'
-                  : 'bg-relic-ghost text-relic-silver hover:bg-relic-mist dark:bg-relic-slate/30 dark:text-relic-ghost'
-              }`}
+              onClick={() => onSetViewMode('classic')}
+              className={`text-[9px] uppercase tracking-wider transition-colors ${viewMode === 'classic' ? 'text-relic-slate dark:text-relic-ghost font-medium' : 'text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost'}`}
             >
-              <span>{isCanvasMode ? '◫' : '☰'}</span>
-              <span>{isCanvasMode ? 'Canvas' : 'Classic'}</span>
+              ☰ classic
+            </button>
+            <button
+              onClick={() => onSetViewMode('mini-canvas')}
+              className={`text-[9px] uppercase tracking-wider transition-colors ${viewMode === 'mini-canvas' ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost'}`}
+            >
+              ◈ mini canvas
+            </button>
+            <button
+              onClick={() => onSetViewMode('canvas')}
+              className={`text-[9px] uppercase tracking-wider transition-colors ${viewMode === 'canvas' ? 'text-purple-600 dark:text-purple-400 font-medium' : 'text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost'}`}
+            >
+              ◇ canvas
             </button>
             <span className="text-[10px] text-relic-silver dark:text-relic-silver/70">
               {methodology}

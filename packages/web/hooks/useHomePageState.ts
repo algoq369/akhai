@@ -96,8 +96,9 @@ export function useHomePageState() {
   const [refinementCounts, setRefinementCounts] = useState<Record<string, number>>({});
   const pendingRefinementCount = useRef(0);
 
-  // ─── Canvas Mode ─────────────────────────────────────────
-  const [isCanvasMode, setIsCanvasMode] = useState(false);
+  // ─── View Mode (classic / mini-canvas / canvas) ──────────
+  const [viewMode, setViewMode] = useState<'classic' | 'mini-canvas' | 'canvas'>('classic');
+  const isCanvasMode = viewMode === 'canvas';
 
   // ─── Refs ────────────────────────────────────────────────
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -405,9 +406,10 @@ export function useHomePageState() {
     setRefinementCounts,
     pendingRefinementCount,
 
-    // Canvas Mode
+    // View Mode
+    viewMode,
+    setViewMode,
     isCanvasMode,
-    setIsCanvasMode,
 
     // Refs
     fileInputRef,
