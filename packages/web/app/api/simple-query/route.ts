@@ -307,16 +307,14 @@ export async function POST(request: NextRequest) {
       systemPrompt = applyFusionToPrompt(systemPrompt, fusionResult, weights);
     }
 
-    // Emit: calling (pre-API — shows model being requested)
+    // Emit: calling (pre-API — no model shown, just progress indicator)
     emitAndPersist(queryId, {
       id: `${queryId}-calling`,
       queryId,
-      stage: 'generating',
+      stage: 'calling',
       timestamp: Date.now() - startTime,
-      data: `Requesting ${usedModel} via ${selectedProvider}...`,
+      data: `Connecting to AI provider...`,
       details: {
-        model: usedModel,
-        provider: selectedProvider,
         methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
       },
     });

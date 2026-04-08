@@ -21,6 +21,7 @@ const STAGE_DESCRIPTIONS: Record<string, string> = {
   routing: 'Selecting methodology...',
   layers: 'Activating neural layers...',
   reasoning: 'Decomposing problem...',
+  calling: 'Connecting to AI provider...',
   generating: 'Generating response...',
   guard: 'Guard checking response...',
   analysis: 'Analyzing output quality...',
