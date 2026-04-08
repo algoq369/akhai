@@ -3,162 +3,167 @@
  */
 
 export interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  methodology?: string
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  methodology?: string;
   metrics?: {
-    tokens: number
-    latency: number
-    cost: number
-    source?: string
-  }
-  topics?: Array<{ id: string; name: string; category?: string }>
-  timestamp: Date
+    tokens: number;
+    latency: number;
+    cost: number;
+    source?: string;
+  };
+  topics?: Array<{ id: string; name: string; category?: string }>;
+  timestamp: Date;
   guardResult?: {
-    passed: boolean
-    issues: string[]
+    passed: boolean;
+    issues: string[];
     scores: {
-      hype: number
-      echo: number
-      drift: number
-      fact: number
-    }
-    sanityViolations: string[]
-  }
-  guardAction?: 'pending' | 'accepted' | 'refined' | 'pivoted'
-  guardActionQuery?: string
-  isHidden?: boolean
-  isStreaming?: boolean
+      hype: number;
+      echo: number;
+      drift: number;
+      fact: number;
+    };
+    sanityViolations: string[];
+  };
+  guardAction?: 'pending' | 'accepted' | 'refined' | 'pivoted';
+  guardActionQuery?: string;
+  isHidden?: boolean;
+  isStreaming?: boolean;
   // ============================================================================
   // GNOSTIC SOVEREIGN INTELLIGENCE METADATA
   // ============================================================================
   gnostic?: {
     metaCoreState: {
-      intent: string
-      boundary: string
-      reflectionMode: boolean
-      ascentLevel: number
-    } | null
+      intent: string;
+      boundary: string;
+      reflectionMode: boolean;
+      ascentLevel: number;
+    } | null;
     progressState: {
-      currentLevel: number
-      levelName: string
-      velocity: number
-      totalQueries: number
-      nextElevation: string | null
-    } | null
+      currentLevel: number;
+      levelName: string;
+      velocity: number;
+      totalQueries: number;
+      nextElevation: string | null;
+    } | null;
     layerAnalysis: {
-      activations: Record<number, number>
-      dominant: string
-      averageLevel: number
+      activations: Record<number, number>;
+      dominant: string;
+      averageLevel: number;
       synthesisInsight: {
-        insight: string
-        confidence: number
-      } | null
-    }
-    antipatternPurified: boolean
-    antipatternType: string
+        insight: string;
+        confidence: number;
+      } | null;
+    };
+    antipatternPurified: boolean;
+    antipatternType: string;
     antipatternCritique?: {
-      severity: number
+      severity: number;
       triggers: {
-        patterns: string[]
-        count: number
-      }
+        patterns: string[];
+        count: number;
+      };
       audit: {
         layerAdjustments: Array<{
-          layerNode: string
-          currentWeight: number
-          suggestedWeight: number
-          rationale: string
-          impact: 'reduce' | 'increase' | 'maintain'
-        }>
+          layerNode: string;
+          currentWeight: number;
+          suggestedWeight: number;
+          rationale: string;
+          impact: 'reduce' | 'increase' | 'maintain';
+        }>;
         pillarRebalance?: {
-          current: { left: number; middle: number; right: number }
-          suggested: { left: number; middle: number; right: number }
-          shifts: Array<{ pillar: 'left' | 'middle' | 'right'; direction: 'increase' | 'decrease'; amount: number }>
-        }
+          current: { left: number; middle: number; right: number };
+          suggested: { left: number; middle: number; right: number };
+          shifts: Array<{
+            pillar: 'left' | 'middle' | 'right';
+            direction: 'increase' | 'decrease';
+            amount: number;
+          }>;
+        };
         explanation: {
-          whatWasDetected: string
-          whyItMatters: string
-          howToFix: string
-        }
-        confidence: number
-        priority: 'low' | 'medium' | 'high' | 'critical'
-      }
+          whatWasDetected: string;
+          whyItMatters: string;
+          howToFix: string;
+        };
+        confidence: number;
+        priority: 'low' | 'medium' | 'high' | 'critical';
+      };
       purificationActions: {
-        before: string
-        after: string
+        before: string;
+        after: string;
         transformations: Array<{
-          type: 'replace' | 'remove' | 'qualify'
-          pattern: string
-          replacement: string
-        }>
-      } | null
+          type: 'replace' | 'remove' | 'qualify';
+          pattern: string;
+          replacement: string;
+        }>;
+      } | null;
       antipatternEducation: {
-        name: string
-        description: string
-        commonCauses: string[]
-        aiManifestation: string
-      }
-    } | null
-    sovereigntyFooter: string | null
-  }
+        name: string;
+        description: string;
+        commonCauses: string[];
+        aiManifestation: string;
+      };
+    } | null;
+    sovereigntyFooter: string | null;
+  };
   // ============================================================================
   // INTELLIGENCE FUSION METADATA
   // ============================================================================
   intelligence?: {
     analysis: {
-      complexity: number
-      queryType: string
-      keywords: string[]
-    }
+      complexity: number;
+      queryType: string;
+      keywords: string[];
+    };
     layerActivations: Array<{
-      layerNode: number
-      name: string
-      activation: number
-      effectiveWeight: number
-    }>
-    dominantLayers: string[]
+      layerNode: number;
+      name: string;
+      activation: number;
+      effectiveWeight: number;
+    }>;
+    dominantLayers: string[];
     pathActivations: Array<{
-      from: number
-      to: number
-      strength: number
-    }>
+      from: number;
+      to: number;
+      strength: number;
+    }>;
     methodologySelection: {
-      selected: string
-      confidence: number
+      selected: string;
+      confidence: number;
       alternatives: Array<{
-        methodology: string
-        score: number
-      }>
-    }
+        methodology: string;
+        score: number;
+      }>;
+    };
     guard: {
-      recommendation: 'proceed' | 'warn' | 'block'
-      reasons: string[]
-    }
+      recommendation: 'proceed' | 'warn' | 'block';
+      reasons: string[];
+    };
     instinct: {
-      enabled: boolean
-      activeLenses: string[]
-    }
+      enabled: boolean;
+      activeLenses: string[];
+    };
     processing: {
-      mode: 'weighted' | 'parallel' | 'adaptive'
-      extendedThinkingBudget: number
-    }
+      mode: 'weighted' | 'parallel' | 'adaptive';
+      extendedThinkingBudget: number;
+    };
     timing: {
-      fusionMs: number
-    }
-  }
+      fusionMs: number;
+    };
+  };
+  miniCanvas?: import('@/lib/mini-canvas/content-classifier').MiniCanvasData;
 }
 
 export interface ChatState {
-  messages: Message[]
-  isLoading: boolean
-  currentMethodology: string
+  messages: Message[];
+  isLoading: boolean;
+  currentMethodology: string;
 }
 
 /**
  * Generate unique message ID
  */
 export function generateId(): string {
-  return Math.random().toString(36).substring(2, 12)
+  return Math.random().toString(36).substring(2, 12);
 }

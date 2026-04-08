@@ -136,6 +136,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
             isHidden: guardFailed,
             gnostic: data.gnostic,
             intelligence: buildIntelligence(data.fusion || initialFusion),
+            miniCanvas: data.miniCanvas,
           };
 
           setMessages((prev) => {
@@ -419,6 +420,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
           isHidden: guardFailed,
           gnostic: data.gnostic,
           intelligence: buildIntelligence(data.fusion),
+          miniCanvas: data.miniCanvas,
         };
         console.log('🌳 FRONTEND: Created message with gnostic:', {
           messageId: assistantMessage.id,

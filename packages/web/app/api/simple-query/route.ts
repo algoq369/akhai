@@ -32,6 +32,7 @@ import {
   emitCompleteEvent,
   type ResponseBuilderInput,
 } from '@/lib/query-response-builder';
+import { classifyContent } from '@/lib/mini-canvas/content-classifier';
 import { QuerySchema, emitAndPersist } from './schema';
 
 export async function POST(request: NextRequest) {
@@ -487,6 +488,9 @@ export async function POST(request: NextRequest) {
     trackUsage(selectedProvider, usedModel, inputTokens, outputTokens, cost);
     logger.query.complete(queryId, latency, cost);
 
+    // ========== MINI CANVAS CLASSIFICATION ==========
+    const miniCanvas = classifyContent(content, query);
+
     // ========== SIDE CANAL TOPICS ==========
     const suggestions = await extractSideCanalTopics(queryId, query, content, userId, legendMode);
 
@@ -524,6 +528,7 @@ export async function POST(request: NextRequest) {
     };
 
     const responseData = buildResponseData(builderInput, suggestions);
+    responseData.miniCanvas = miniCanvas;
     log('INFO', 'SIDE_CANAL', `Response includes ${suggestions.length} suggestions`);
 
     trackPostHogEvents(builderInput, request);
