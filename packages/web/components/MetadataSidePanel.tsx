@@ -192,8 +192,9 @@ export default function MetadataSidePanel() {
       {/* Toggle button — always visible */}
       <button
         onClick={toggle}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-1 bg-white/90 backdrop-blur border border-zinc-200 border-r-0 rounded-l-md px-2 py-1.5 hover:bg-zinc-50 shadow-sm transition-colors group"
+        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-0.5 bg-white/90 backdrop-blur border border-zinc-200 border-r-0 rounded-l-md px-1 py-3 hover:bg-zinc-50 shadow-sm transition-colors group"
         title="Toggle metadata panel"
+        style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
       >
         <span className="text-[10px] text-zinc-600 font-mono group-hover:text-zinc-900 transition-colors">
           ◊
