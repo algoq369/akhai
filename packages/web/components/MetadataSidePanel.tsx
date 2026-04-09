@@ -66,8 +66,12 @@ function parseEntry(raw: {
     queryId: raw.queryId,
     query: (d.query || '').slice(0, 60),
     timestamp: raw.timestamp,
-    methodology: fusion.methodology || fusion.selectedMethodology || 'unknown',
-    provider: d.provider || fusion.processingMode || 'N/A',
+    methodology: typeof fusion.methodology === 'string'
+      ? fusion.methodology
+      : fusion.methodology?.family || fusion.selectedMethodology || 'unknown',
+    provider: typeof d.provider === 'string'
+      ? d.provider
+      : d.provider?.model || fusion.processingMode || 'N/A',
     cost: costStr,
     tokens: metrics.tokens || 0,
     latency: metrics.duration ? `${Math.round(metrics.duration)}ms` : 'N/A',
@@ -192,12 +196,13 @@ export default function MetadataSidePanel() {
       {/* Toggle button — always visible */}
       <button
         onClick={toggle}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-white border border-zinc-200 border-r-0 rounded-l-md px-1 py-2.5 hover:bg-zinc-50 transition-colors group shadow-sm"
+        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-white border border-zinc-200 border-r-0 rounded-l px-0.5 py-3 hover:bg-zinc-50 transition-colors group shadow-sm"
         title="Toggle metadata panel"
         style={{ writingMode: 'vertical-rl' }}
       >
-        <span className="text-[9px] text-zinc-500 font-mono group-hover:text-zinc-800 transition-colors tracking-wider">
-          ◊ metadata{entries.length > 0 && !isOpen ? ` ${entries.length}` : ''}
+        <span className="text-[8px] text-zinc-400 font-mono tracking-widest group-hover:text-zinc-700 transition-colors">
+          {'◊ metadata'}
+          {entries.length > 0 && !isOpen ? ` ${entries.length}` : ''}
         </span>
       </button>
 
