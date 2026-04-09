@@ -42,7 +42,7 @@ function parseEntry(raw: {
       const weight = la.effectiveWeight ?? la.weight ?? la.activation ?? 0;
       layers.push({
         name: meta?.aiName || la.name || la.label || `Layer ${node ?? '?'}`,
-        activation: Math.round(weight * (weight < 1 ? 100 : 1)),
+        activation: Math.round(weight < 1 ? weight * 100 : weight),
       });
     }
   }
@@ -197,13 +197,17 @@ export default function MetadataSidePanel() {
       {/* Toggle button — always visible */}
       <button
         onClick={toggle}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-white border border-zinc-200 border-r-0 rounded-l px-0.5 py-3 hover:bg-zinc-50 transition-colors group shadow-sm"
+        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-1 bg-zinc-900/80 backdrop-blur border border-zinc-700/40 border-r-0 rounded-l-md px-1.5 py-2 hover:bg-zinc-800/90 transition-colors group"
         title="Toggle metadata panel"
-        style={{ writingMode: 'vertical-rl' }}
       >
-        <span className="text-[7px] text-zinc-400 font-mono tracking-widest group-hover:text-zinc-700 transition-colors uppercase">
-          {'◊ metadata'}
+        <span className="text-[10px] text-zinc-400 font-mono group-hover:text-zinc-200 transition-colors">
+          ◊
         </span>
+        {entries.length > 0 && !isOpen && (
+          <span className="text-[8px] font-mono text-zinc-500 bg-zinc-800 px-1 rounded">
+            {entries.length}
+          </span>
+        )}
       </button>
 
       {/* Panel */}
