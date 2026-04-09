@@ -126,21 +126,30 @@ function HomePage() {
 
         {!s.isExpanded && <div className="flex-1" />}
 
-        {s.isExpanded && s.viewMode !== 'canvas' && (
+        {s.isExpanded && s.viewMode === 'classic' && (
           <div className="text-center py-3 mb-2">
             <span className="text-2xl font-extralight opacity-50 text-relic-mist">◊</span>
           </div>
         )}
 
-        {/* Mini Canvas View — shows above messages when in mini-canvas mode */}
+        {/* Mini Canvas — exclusive view: user query + 3 panels only */}
         {s.isExpanded && s.viewMode === 'mini-canvas' && (
-          <MiniCanvasView
-            data={s.messages.filter((m) => m.role === 'assistant').pop()?.miniCanvas}
-          />
+          <>
+            {s.messages.filter((m) => m.role === 'user').pop()?.content && (
+              <div className="max-w-5xl mx-auto px-6 pt-4 pb-2">
+                <p className="text-sm text-relic-slate dark:text-relic-ghost font-mono">
+                  {s.messages.filter((m) => m.role === 'user').pop()?.content}
+                </p>
+              </div>
+            )}
+            <MiniCanvasView
+              data={s.messages.filter((m) => m.role === 'assistant').pop()?.miniCanvas}
+            />
+          </>
         )}
 
-        {/* Messages Area — visible in classic and mini-canvas modes */}
-        {s.isExpanded && s.viewMode !== 'canvas' && <ChatMessages {...s.chatMessagesProps} />}
+        {/* Messages Area — only in Classic mode */}
+        {s.isExpanded && s.viewMode === 'classic' && <ChatMessages {...s.chatMessagesProps} />}
 
         <LiveRefinementCanal
           isVisible={s.isExpanded && s.messages.length > 0}
