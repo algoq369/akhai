@@ -135,7 +135,7 @@ export function WorkbenchConsole() {
               const pos = TREE_POSITIONS[layer.id];
               if (!pos) return null;
 
-              const weight = getWeight(layer.id);
+              const weight = getWeight(layer.id) || 0;
               const isHovered = hoveredNode === layer.id;
               const isSelected = selectedNode === layer.id;
               const radius = 10 + weight * 6;

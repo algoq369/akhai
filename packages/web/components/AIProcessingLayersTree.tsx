@@ -73,7 +73,7 @@ export function AIProcessingLayersTree({
         {/* Nodes with colorful orbs */}
         {ALL_LAYERS.map((layer) => {
           const pos = TREE_POSITIONS[layer];
-          const weight = getWeight(layer);
+          const weight = getWeight(layer) || 0;
           const color = NODE_COLORS[layer];
           const label = AI_LABELS[layer];
           const isCritical = CRITICAL_LAYERS.includes(layer);
