@@ -123,3 +123,38 @@ Break-even: Week 16 post-launch.
 3. Never deploy without green gates (57/57 Vitest + clean tsc + passing build)
 4. No fabricated method names
 5. Surgical edits only
+
+
+---
+
+## PHASE 2.5 — GOD VIEW FEATURES (from GOD_VIEW_TRACKER.md)
+
+These were planned for Days 73-105 but not yet started. Re-prioritize into Phase 3:
+
+| Phase | Feature | Est | Status | New Target |
+|-------|---------|-----|--------|------------|
+| GV-1 | Neural Tree God View (live query viz) | 16h | ✅ PARTIAL (Tree page exists, SSE wired) | Days 93-95 |
+| GV-2 | **Perspective Council (multi-agent)** | 20h | ⬜ NOT STARTED | Days 101-105 |
+| GV-3 | Scenario Sandbox (predict anything) | 28h | ⬜ NOT STARTED | Days 110-115 |
+| GV-4 | Voice Integration (input + output) | 14h | ⬜ NOT STARTED | Post-launch |
+
+### Perspective Council — 5 AI Computational Agents
+5 agents mapped to core reasoning layers, different LLM providers for genuine diversity.
+Fan-out/fan-in pattern: 4 perspective agents parallel → 1 synthesizer.
+
+| Agent | AI Layer | Role | Provider | Cost |
+|-------|----------|------|----------|------|
+| The Visionary | Reasoning | Novel connections | Claude Sonnet 4.6 | ~$0.02 |
+| The Analyst | Encoder | Data patterns | Claude Sonnet 4.6 | ~$0.02 |
+| The Advocate | Expansion | Opportunities | Gemini 2.5 Pro | ~$0.01 |
+| The Skeptic | Discriminator | Risks, flaws | DeepSeek V3.2 | ~$0.001 |
+| The Synthesizer | Attention | Integration | Claude Sonnet 4.6 | ~$0.02 |
+
+**Total per activation: ~$0.07 | ~10 activations/day on free tier**
+
+Stack: Vercel AI SDK (ai + @ai-sdk/anthropic + @ai-sdk/google + @ai-sdk/openai)
+API: POST /api/god-view/council
+UI: CouncilPanel.tsx + AgentCard.tsx, triggered by "◊ Council" button on responses >100 words
+
+### Canvas / Miro-style Workspace
+Already built: CanvasWorkspace.tsx with draggable panels, query cards, topic bubbles, SVG connections, select/connect/note tools, pan/zoom. Needs: query threading (lines showing conversation evolution), topic constellation (force graph), cross-query connections.
