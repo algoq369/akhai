@@ -215,9 +215,9 @@ function HomePage() {
         ContinueParamWatcher={ContinueParamWatcher}
       />
 
-      {/* Side Mini Chat */}
+      {/* Side Mini Chat — hidden in mini-canvas mode */}
       <SideMiniChat
-        isVisible={s.messages.length > 0}
+        isVisible={s.messages.length > 0 && s.viewMode !== 'mini-canvas'}
         draggable={s.isCanvasMode}
         defaultPosition={s.isCanvasMode ? { left: 10, top: 500 } : undefined}
         messages={s.messages}
