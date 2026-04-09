@@ -7,34 +7,21 @@ interface MetricsPanelProps {
   charts: ChartConfig[];
 }
 
-const COLUMNS = [
-  'Metric',
-  'Value/%',
-  'Date',
-  'Source',
-  'Link',
-  'Commentary',
-  'Expert',
-  'Scientific',
-  'Theologic',
-] as const;
+const COLUMNS = ['Metric', 'Value/%', 'Date'] as const;
 
 function SimpleBarChart({ data }: { data: ChartConfig['data'] }) {
   const max = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="flex items-end gap-1.5 h-[140px] px-2">
+    <div className="flex items-end gap-1 h-[40px] px-2">
       {data.map((d, i) => {
-        const h = (d.value / max) * 120;
+        const h = (d.value / max) * 30;
         return (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-            <span className="text-[7px] text-relic-silver/60 font-mono">
-              {d.value.toLocaleString()}
-            </span>
+          <div key={i} className="flex-1 flex flex-col items-center gap-0.5 min-w-0">
             <div
               className="w-full bg-emerald-400/60 dark:bg-emerald-500/40 rounded-t transition-all"
-              style={{ height: `${Math.max(h, 4)}px` }}
+              style={{ height: `${Math.max(h, 2)}px` }}
             />
-            <span className="text-[7px] text-relic-silver/50 truncate w-full text-center">
+            <span className="text-[6px] text-relic-silver/50 truncate w-full text-center">
               {d.name}
             </span>
           </div>
@@ -108,11 +95,10 @@ export default function MetricsPanel({ metrics, charts }: MetricsPanelProps) {
   }
 
   return (
-    <div className="space-y-3 p-2">
-      {/* Chart first when available */}
+    <div className="space-y-2 p-2">
       {metricCharts.map((chart, ci) => (
-        <div key={ci} className="bg-relic-ghost/30 dark:bg-relic-slate/10 rounded-lg p-3">
-          <div className="text-[8px] uppercase tracking-wider text-relic-silver/50 mb-2">
+        <div key={ci} className="bg-relic-ghost/30 dark:bg-relic-slate/10 rounded-lg p-2">
+          <div className="text-[7px] uppercase tracking-wider text-relic-silver/50 mb-1">
             {chart.title}
           </div>
           {chart.type === 'bar' || chart.type === 'line' ? (
@@ -123,7 +109,7 @@ export default function MetricsPanel({ metrics, charts }: MetricsPanelProps) {
         </div>
       ))}
 
-      {/* 8-Column Table */}
+      {/* Compact Table */}
       <div className="overflow-x-auto rounded-lg border border-relic-mist/30 dark:border-relic-slate/20">
         <table className="w-full text-[9px] font-mono">
           <thead>
@@ -131,7 +117,7 @@ export default function MetricsPanel({ metrics, charts }: MetricsPanelProps) {
               {COLUMNS.map((col) => (
                 <th
                   key={col}
-                  className="px-2 py-1.5 text-left text-[8px] uppercase tracking-wider text-relic-silver font-semibold whitespace-nowrap"
+                  className="px-1.5 py-0.5 text-left text-[8px] uppercase tracking-wider text-relic-silver font-semibold whitespace-nowrap"
                 >
                   {col}
                 </th>
@@ -148,60 +134,17 @@ export default function MetricsPanel({ metrics, charts }: MetricsPanelProps) {
                     : 'bg-relic-ghost/20 dark:bg-relic-slate/5'
                 }
               >
-                <td className="px-2 py-1 text-relic-slate dark:text-relic-ghost max-w-[120px] truncate">
+                <td className="px-1.5 py-0.5 text-relic-slate dark:text-relic-ghost max-w-[140px] truncate">
                   {row.metric}
                 </td>
-                <td className="px-2 py-1 font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                <td className="px-1.5 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                   {row.value}
                 </td>
-                <td className="px-2 py-1 text-relic-silver whitespace-nowrap">{row.date}</td>
-                <td className="px-2 py-1 text-relic-silver">
-                  {row.source === 'N/A' ? (
-                    <span className="italic text-relic-silver/40">N/A</span>
+                <td className="px-1.5 py-0.5 text-relic-silver whitespace-nowrap">
+                  {row.date === 'N/A' ? (
+                    <span className="italic text-relic-silver/40">—</span>
                   ) : (
-                    row.source
-                  )}
-                </td>
-                <td className="px-2 py-1">
-                  {row.link !== 'N/A' ? (
-                    <a
-                      href={row.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline"
-                    >
-                      link
-                    </a>
-                  ) : (
-                    <span className="italic text-relic-silver/40">N/A</span>
-                  )}
-                </td>
-                <td className="px-2 py-1 text-relic-silver max-w-[100px] truncate">
-                  {row.commentary === 'N/A' ? (
-                    <span className="italic text-relic-silver/40">N/A</span>
-                  ) : (
-                    row.commentary
-                  )}
-                </td>
-                <td className="px-2 py-1 text-relic-silver max-w-[80px] truncate">
-                  {row.expertConsensus === 'N/A' ? (
-                    <span className="italic text-relic-silver/40">N/A</span>
-                  ) : (
-                    row.expertConsensus
-                  )}
-                </td>
-                <td className="px-2 py-1 text-relic-silver max-w-[80px] truncate">
-                  {row.scientificPOV === 'N/A' ? (
-                    <span className="italic text-relic-silver/40">N/A</span>
-                  ) : (
-                    row.scientificPOV
-                  )}
-                </td>
-                <td className="px-2 py-1 text-relic-silver max-w-[80px] truncate">
-                  {row.theologicPOV === 'N/A' ? (
-                    <span className="italic text-relic-silver/40">N/A</span>
-                  ) : (
-                    row.theologicPOV
+                    row.date
                   )}
                 </td>
               </tr>
@@ -211,7 +154,7 @@ export default function MetricsPanel({ metrics, charts }: MetricsPanelProps) {
       </div>
 
       <div className="text-[8px] text-relic-silver/40 text-center">
-        {metrics.length} metrics across {COLUMNS.length} dimensions
+        {metrics.length} metrics extracted
       </div>
     </div>
   );

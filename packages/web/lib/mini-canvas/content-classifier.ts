@@ -295,14 +295,15 @@ function extractCorrelations(
 
     if (bestBoxScore < 1) continue;
 
+    const roleLabel = BOX_ROLE[bestBoxKey] || formatBoxKey(bestBoxKey);
+    const metricLabel = bestMetric ? bestMetric.metric.slice(0, 25) : 'general trend';
     correlations.push({
       id: generateId('corr', correlations.length),
       factRef: bestBoxKey,
       metricRef: bestMetric?.id || 'N/A',
       relationship: stripMarkdown(sentence).slice(0, 120),
       strength: determineStrength(sentence),
-      implication:
-        sentence.length > 120 ? stripMarkdown(sentence.slice(120)).trim() : 'See relationship.',
+      implication: `${roleLabel} ${determineStrength(sentence) === 'inverse' ? 'inversely impacts' : 'supports'} ${metricLabel}`,
     });
   }
   return correlations.slice(0, 8);
@@ -388,6 +389,50 @@ function formatBoxKey(key: string): string {
   return key.replace(/([A-Z])/g, ' $1').trim();
 }
 
+const BOX_ROLE: Record<string, string> = {
+  tangibleData: 'concrete numbers',
+  verifiable: 'sourced claims',
+  unrefutable: 'consensus conclusions',
+  nonBiased: 'neutral synthesis',
+  straightForward: 'direct conclusions',
+};
+
+function extractSharedTopics(a: string, b: string): string[] {
+  const wordsA = new Set(
+    a
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 4)
+  );
+  return b
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 4 && wordsA.has(w))
+    .filter((w, i, arr) => arr.indexOf(w) === i)
+    .slice(0, 3);
+}
+
+function buildRelationship(keyA: string, keyB: string, shared: string[]): string {
+  const roleA = BOX_ROLE[keyA] || formatBoxKey(keyA);
+  const roleB = BOX_ROLE[keyB] || formatBoxKey(keyB);
+  if (shared.length > 0) {
+    return `${roleA} → ${roleB}: linked via ${shared.join(', ')}`;
+  }
+  return `${roleA} → ${roleB}: thematic overlap in analysis`;
+}
+
+function buildImplication(keyA: string, keyB: string, shared: string[]): string {
+  const roleA = BOX_ROLE[keyA] || formatBoxKey(keyA);
+  const roleB = BOX_ROLE[keyB] || formatBoxKey(keyB);
+  if (shared.length >= 2) {
+    return `${roleA} validates ${roleB} through shared data points`;
+  }
+  if (shared.length === 1) {
+    return `Both reference "${shared[0]}" from different analytical angles`;
+  }
+  return `${roleA} and ${roleB} address the same subject independently`;
+}
+
 function generateImplicitCorrelations(facts: FactBoxes, metrics: MetricRow[]): CorrelationRow[] {
   const correlations: CorrelationRow[] = [];
   const boxEntries = Object.entries(facts) as [string, string][];
@@ -407,13 +452,14 @@ function generateImplicitCorrelations(facts: FactBoxes, metrics: MetricRow[]): C
           break;
         }
       }
+      const shared = extractSharedTopics(contentA, contentB);
       correlations.push({
         id: generateId('corr', correlations.length),
         factRef: keyA,
         metricRef,
-        relationship: `${formatBoxKey(keyA)} ↔ ${formatBoxKey(keyB)}`,
+        relationship: buildRelationship(keyA, keyB, shared),
         strength: overlap >= 6 ? 'strong' : overlap >= 4 ? 'moderate' : 'weak',
-        implication: `These categories share ${overlap} common concepts.`,
+        implication: buildImplication(keyA, keyB, shared),
       });
     }
   }

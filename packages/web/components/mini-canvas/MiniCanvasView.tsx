@@ -81,11 +81,7 @@ export default function MiniCanvasView({ data }: MiniCanvasViewProps) {
             collapsed={!!collapsed['facts']}
             onToggle={() => toggle('facts')}
           />
-          {!collapsed['facts'] && (
-            <div className="max-h-[500px] overflow-auto">
-              <FactsPanel facts={data.facts} charts={data.charts} />
-            </div>
-          )}
+          {!collapsed['facts'] && <FactsPanel facts={data.facts} charts={data.charts} />}
         </div>
 
         {/* Metrics — 3 columns wide */}
@@ -98,7 +94,7 @@ export default function MiniCanvasView({ data }: MiniCanvasViewProps) {
             onToggle={() => toggle('metrics')}
           />
           {!collapsed['metrics'] && (
-            <div className="max-h-[500px] overflow-auto">
+            <div className="max-h-[300px] overflow-auto">
               <MetricsPanel metrics={data.metrics} charts={data.charts} />
             </div>
           )}
@@ -115,7 +111,7 @@ export default function MiniCanvasView({ data }: MiniCanvasViewProps) {
           onToggle={() => toggle('correlation')}
         />
         {!collapsed['correlation'] && (
-          <div className="max-h-[400px] overflow-auto">
+          <div className="max-h-[300px] overflow-auto">
             <CorrelationPanel
               correlations={data.correlations}
               facts={data.facts}
