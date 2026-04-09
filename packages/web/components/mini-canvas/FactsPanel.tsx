@@ -1,6 +1,7 @@
 'use client';
 
 import type { FactItem, ChartConfig } from '@/lib/mini-canvas/content-classifier';
+import { stripMarkdown, extractTitle } from '@/lib/mini-canvas/content-classifier';
 
 interface FactsPanelProps {
   facts: FactItem[];
@@ -57,29 +58,31 @@ export default function FactsPanel({ facts, charts }: FactsPanelProps) {
 
       {/* Fact cards — 2-column grid */}
       <div className="grid grid-cols-2 gap-2">
-        {facts.map((fact, i) => (
-          <div
-            key={fact.id}
-            className={`border-l-2 ${FACT_COLORS[i % FACT_COLORS.length]} bg-white dark:bg-relic-void/40 rounded-r-lg p-2.5 shadow-sm`}
-          >
-            <div className="flex items-start gap-1.5 mb-1">
-              <span className="text-green-500 text-[10px] flex-shrink-0">✓</span>
+        {facts.map((fact, i) => {
+          const title = extractTitle(fact.statement);
+          const body = stripMarkdown(fact.statement);
+          return (
+            <div
+              key={fact.id}
+              className={`border-l-2 ${FACT_COLORS[i % FACT_COLORS.length]} bg-white dark:bg-relic-void/40 rounded-r-lg p-2.5 shadow-sm`}
+            >
+              <div className="flex items-start gap-1.5 mb-1">
+                <span className="text-green-500 text-[10px] flex-shrink-0">✓</span>
+                <span className="text-[10px] font-semibold text-relic-slate dark:text-relic-ghost leading-tight">
+                  {title}
+                </span>
+              </div>
+              <p className="text-[9px] text-relic-silver dark:text-relic-silver/70 leading-relaxed line-clamp-2 mb-1">
+                {body.length > 140 ? body.slice(0, 137) + '...' : body}
+              </p>
               {fact.dataPoint && (
-                <span className="text-[8px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded font-mono flex-shrink-0">
+                <span className="inline-block text-[8px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded font-mono">
                   {fact.dataPoint}
                 </span>
               )}
             </div>
-            <p className="text-[10px] text-relic-slate dark:text-relic-ghost leading-relaxed">
-              {fact.statement.length > 120 ? fact.statement.slice(0, 117) + '...' : fact.statement}
-            </p>
-            {fact.source && (
-              <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 bg-relic-ghost/50 dark:bg-relic-slate/20 text-relic-silver rounded-full">
-                {fact.source}
-              </span>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="text-[8px] text-relic-silver/40 text-center">

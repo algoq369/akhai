@@ -82,6 +82,23 @@ function stripBias(text: string): string {
     .trim();
 }
 
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/#{1,6}\s*/g, '')
+    .replace(/\[PATH \d+\]:\s*/gi, '')
+    .replace(/[*_`|#]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+export function extractTitle(statement: string): string {
+  const cleaned = stripMarkdown(statement);
+  const firstSentence = cleaned.split(/[.!?]/)[0] || cleaned;
+  const words = firstSentence.split(/\s+/).slice(0, 8);
+  return words.join(' ') + (words.length >= 8 ? '...' : '');
+}
+
 function extractDataPoint(sentence: string): string | undefined {
   const numbers = sentence.match(NUMBER_PATTERN);
   if (numbers && numbers.length > 0) return numbers[0].trim();
@@ -126,7 +143,7 @@ function extractFacts(sentences: string[]): FactItem[] {
     DATE_PATTERN.lastIndex = 0;
     PROPER_NOUN_PATTERN.lastIndex = 0;
 
-    const cleaned = stripBias(sentence);
+    const cleaned = stripMarkdown(stripBias(sentence));
     if (cleaned.length < 15) continue;
 
     facts.push({
