@@ -25,6 +25,7 @@ const MiniCanvasView = dynamic(() => import('@/components/mini-canvas/MiniCanvas
 });
 const SideChat = dynamic(() => import('@/components/SideChat'), { ssr: false });
 const SideMiniChat = dynamic(() => import('@/components/SideMiniChat'), { ssr: false });
+const MetadataSidePanel = dynamic(() => import('@/components/MetadataSidePanel'), { ssr: false });
 
 /**
  * Helper component to watch URL parameters
@@ -226,6 +227,9 @@ function HomePage() {
         onSendQuery={(queryText) => s.handleMiniChatSendQuery(queryText)}
         onPromoteToMain={(query, response) => s.handlePromoteToMain(query, response)}
       />
+
+      {/* Persistent Metadata Panel */}
+      <MetadataSidePanel />
     </div>
   );
 }
