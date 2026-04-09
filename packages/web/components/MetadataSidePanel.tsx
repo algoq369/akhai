@@ -192,21 +192,13 @@ export default function MetadataSidePanel() {
       {/* Toggle button — always visible */}
       <button
         onClick={toggle}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-0.5 bg-white/90 backdrop-blur border border-zinc-200 border-r-0 rounded-l-md px-1 py-3 hover:bg-zinc-50 shadow-sm transition-colors group"
+        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-white border border-zinc-200 border-r-0 rounded-l-md px-1 py-2.5 hover:bg-zinc-50 transition-colors group shadow-sm"
         title="Toggle metadata panel"
-        style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+        style={{ writingMode: 'vertical-rl' }}
       >
-        <span className="text-[10px] text-zinc-600 font-mono group-hover:text-zinc-900 transition-colors">
-          ◊
+        <span className="text-[9px] text-zinc-500 font-mono group-hover:text-zinc-800 transition-colors tracking-wider">
+          ◊ metadata{entries.length > 0 && !isOpen ? ` ${entries.length}` : ''}
         </span>
-        <span className="text-[8px] text-zinc-500 font-mono uppercase tracking-wider group-hover:text-zinc-700 transition-colors">
-          metadata
-        </span>
-        {entries.length > 0 && !isOpen && (
-          <span className="text-[7px] font-mono text-zinc-400 bg-zinc-100 px-1 rounded">
-            {entries.length}
-          </span>
-        )}
       </button>
 
       {/* Panel */}
