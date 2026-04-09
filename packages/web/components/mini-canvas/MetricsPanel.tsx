@@ -131,15 +131,15 @@ export default function MetricsPanel({ metrics, charts }: MetricsPanelProps) {
                 key={row.id}
                 className="hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30 transition-colors"
               >
-                <td className="px-1.5 py-0.5 text-relic-slate dark:text-relic-ghost max-w-[140px] truncate">
+                <td className="px-1.5 py-0.5 text-zinc-800 dark:text-relic-ghost max-w-[140px] truncate">
                   {row.metric}
                 </td>
                 <td
-                  className={`px-1.5 py-0.5 text-right font-semibold whitespace-nowrap ${isNegativeValue(row.value) ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}
+                  className={`px-1.5 py-0.5 text-right font-semibold whitespace-nowrap ${isNegativeValue(row.value) ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}
                 >
                   {row.value}
                 </td>
-                <td className="px-1.5 py-0.5 text-relic-silver whitespace-nowrap text-[8px]">
+                <td className="px-1.5 py-0.5 text-zinc-500 whitespace-nowrap text-[8px]">
                   {row.commentary !== 'N/A' ? row.commentary : '—'}
                 </td>
               </tr>

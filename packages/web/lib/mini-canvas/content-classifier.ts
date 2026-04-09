@@ -51,7 +51,6 @@ export interface MiniCanvasData {
 
 // ── Helpers ────────────────────────────────────────────────
 
-const BIAS_WORDS = /\b(best|worst|should|must|obviously|clearly|everyone knows)\b/gi;
 const NUMBER_PATTERN =
   /\b(\d[\d,.]*\s*(?:%|percent|dollars?|\$|€|£|K|M|B|billion|million|thousand|trillion|kg|lb|mph|km|mi|years?|months?|days?))\b/gi;
 const DATE_PATTERN =
@@ -74,13 +73,6 @@ function splitSentences(text: string): string[] {
     .filter((s) => s.length > 10);
 }
 
-function stripBias(text: string): string {
-  return text
-    .replace(BIAS_WORDS, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-}
-
 export function stripMarkdown(text: string): string {
   return text
     .replace(/\*\*([^*]+)\*\*/g, '$1')
@@ -89,13 +81,6 @@ export function stripMarkdown(text: string): string {
     .replace(/[*_`|#]/g, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
-}
-
-export function extractTitle(statement: string): string {
-  const cleaned = stripMarkdown(statement);
-  const firstSentence = cleaned.split(/[.!?]/)[0] || cleaned;
-  const words = firstSentence.split(/\s+/).slice(0, 8);
-  return words.join(' ') + (words.length >= 8 ? '...' : '');
 }
 
 function extractUnit(value: string): string | undefined {
@@ -122,79 +107,93 @@ const CONSENSUS_PATTERN =
 const OPINION_PATTERN =
   /\b(best|worst|should|must|amazing|terrible|obviously|clearly|arguably|controversial|debatable|believe|opinion|seems?|might|could)\b/i;
 
+const BALANCED_PATTERN =
+  /\b(however|on the other hand|both|while|although|conversely|nonetheless|yet|balanced|neutral)\b/i;
+
+function pickSentences(
+  cleaned: string[],
+  used: Set<number>,
+  test: (s: string) => boolean,
+  max: number
+): number[] {
+  const picked = cleaned
+    .map((s, i) => (test(s) && !used.has(i) ? i : -1))
+    .filter((i) => i >= 0)
+    .slice(0, max);
+  picked.forEach((i) => used.add(i));
+  return picked;
+}
+
 function extractFactBoxes(sentences: string[]): FactBoxes {
   const cleaned = sentences.map((s) => stripMarkdown(s));
+  const used = new Set<number>();
+  const join = (idxs: number[]) => idxs.map((i) => cleaned[i]).join(' ');
 
-  const tangibleSentences = cleaned.filter((s) => {
-    NUMBER_PATTERN.lastIndex = 0;
-    DATE_PATTERN.lastIndex = 0;
-    return NUMBER_PATTERN.test(s) || DATE_PATTERN.test(s);
-  });
+  const tangibleIdxs = pickSentences(
+    cleaned,
+    used,
+    (s) => {
+      NUMBER_PATTERN.lastIndex = 0;
+      DATE_PATTERN.lastIndex = 0;
+      return NUMBER_PATTERN.test(s) || DATE_PATTERN.test(s);
+    },
+    5
+  );
   const tangibleData =
-    tangibleSentences.length > 0
-      ? tangibleSentences.slice(0, 6).join(' ')
-      : 'No quantitative data identified in response.';
+    tangibleIdxs.length > 0 ? join(tangibleIdxs) : 'No quantitative data identified in response.';
 
-  const verifiableSentences = cleaned.filter((s) => SOURCE_PATTERN.test(s));
+  const verifiableIdxs = pickSentences(cleaned, used, (s) => SOURCE_PATTERN.test(s), 4);
   const verifiable =
-    verifiableSentences.length > 0
-      ? verifiableSentences.slice(0, 4).join(' ')
+    verifiableIdxs.length > 0
+      ? join(verifiableIdxs)
       : 'No externally verifiable sources cited in response.';
 
-  const unrefutableSentences = cleaned.filter((s) => CONSENSUS_PATTERN.test(s));
+  const unrefutableIdxs = pickSentences(cleaned, used, (s) => CONSENSUS_PATTERN.test(s), 3);
   const unrefutable =
-    unrefutableSentences.length > 0
-      ? unrefutableSentences.slice(0, 3).join(' ')
-      : tangibleSentences.length > 0
-        ? tangibleSentences.slice(0, 3).join(' ')
-        : 'No unrefutable conclusions could be extracted.';
+    unrefutableIdxs.length > 0
+      ? join(unrefutableIdxs)
+      : 'No unrefutable conclusions could be extracted.';
 
-  const neutralSentences = cleaned.filter((s) => !OPINION_PATTERN.test(s) && s.length > 30);
+  const neutralIdxs = pickSentences(
+    cleaned,
+    used,
+    (s) => BALANCED_PATTERN.test(s) && !OPINION_PATTERN.test(s) && s.length > 30,
+    4
+  );
   const nonBiased =
-    neutralSentences.length > 0
-      ? neutralSentences.slice(0, 4).join(' ')
-      : 'Unable to extract sufficiently neutral content.';
+    neutralIdxs.length > 0 ? join(neutralIdxs) : 'Unable to extract sufficiently neutral content.';
 
-  const substantive = cleaned.filter((s) => s.length > 40);
-  const straightForward =
-    substantive.length >= 2
-      ? `${substantive[0]} ${substantive[substantive.length - 1]}`
-      : substantive.length === 1
-        ? substantive[0]
-        : 'No direct conclusion available.';
+  const remaining = cleaned
+    .map((s, i) => (!used.has(i) && s.length > 30 ? i : -1))
+    .filter((i) => i >= 0);
+  const lastTwo = remaining.slice(-2);
+  const straightForward = lastTwo.length > 0 ? join(lastTwo) : 'No direct conclusion available.';
 
   return { tangibleData, verifiable, unrefutable, nonBiased, straightForward };
 }
 
 function extractMetricLabel(sentence: string, matchStr: string): string {
-  let label = sentence
-    .replace(matchStr, '')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/#{1,6}\s*/g, '')
-    .replace(/\[PATH \d+\]:\s*/gi, '')
-    .replace(/[*_`|#\[\]]/g, '')
-    .replace(/^\W+/, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-  const breakPoint = label.search(/[,.\-;:]/);
-  if (breakPoint > 5 && breakPoint < 40) {
-    label = label.slice(0, breakPoint).trim();
-  } else {
-    label = label.slice(0, 40).trim();
-  }
+  let label = stripMarkdown(sentence.replace(matchStr, '')).replace(/^\W+/, '').trim();
+  const bp = label.search(/[,.\-;:]/);
+  label = bp > 5 && bp < 40 ? label.slice(0, bp).trim() : label.slice(0, 40).trim();
   return label || 'Metric';
 }
 
 function inferContext(label: string, value: string): string {
   const lv = (label + ' ' + value).toLowerCase();
-  if (/market|cap|valuation|worth/i.test(lv)) return 'market size';
-  if (/growth|increase|rise|grew|expand/i.test(lv)) return 'growth rate';
-  if (/year|month|week|day|quarter|timeline|deadline|by 20/i.test(lv)) return 'timeline';
-  if (/revenue|sales|income|profit|earning/i.test(lv)) return 'revenue';
-  if (/cost|spend|budget|invest|fund/i.test(lv)) return 'investment';
-  if (/user|customer|subscriber|adoption|people/i.test(lv)) return 'adoption';
-  if (/rate|ratio|share|portion/i.test(lv)) return 'ratio';
-  if (/reduc|declin|drop|loss|fell|down/i.test(lv)) return 'decline';
+  const rules: [RegExp, string][] = [
+    [/market|cap|valuation|worth/, 'market size'],
+    [/growth|increase|rise|grew|expand/, 'growth rate'],
+    [/year|month|week|day|quarter|timeline|by 20/, 'timeline'],
+    [/revenue|sales|income|profit/, 'revenue'],
+    [/cost|spend|budget|invest|fund/, 'investment'],
+    [/user|customer|subscriber|adoption/, 'adoption'],
+    [/rate|ratio|share|portion/, 'ratio'],
+    [/reduc|declin|drop|loss|fell/, 'decline'],
+  ];
+  for (const [re, tag] of rules) {
+    if (re.test(lv)) return tag;
+  }
   if (/%|percent/i.test(value)) return 'percentage';
   if (/\$|€|£/i.test(value)) return 'monetary';
   return 'data point';
@@ -212,8 +211,16 @@ function labelSimilarity(a: string, b: string): number {
     .split(/\s+/)
     .filter((w) => w.length > 2);
   if (wa.size === 0 || wb.length === 0) return 0;
-  const shared = wb.filter((w) => wa.has(w)).length;
-  return shared / Math.max(wa.size, wb.length);
+  return wb.filter((w) => wa.has(w)).length / Math.max(wa.size, wb.length);
+}
+
+const META_NOISE =
+  /\b(need to|should|must|ground these|in the live|context:|note:|disclaimer|caveat|please)\b/i;
+
+function cleanMetricName(raw: string): string {
+  let name = raw.replace(/[\s]*[–—-]+[\s]*$/, '').trim();
+  if (name.length > 50) name = name.slice(0, 47) + '...';
+  return name;
 }
 
 function addMetric(
@@ -223,22 +230,34 @@ function addMetric(
   sentence: string,
   seen: Set<string>
 ): void {
+  const cleaned = cleanMetricName(label);
   const normalized = value.replace(/[\$€£,\s]/g, '').toLowerCase();
-  if (label.length < 3 || seen.has(normalized)) return;
+  if (cleaned.length < 3 || !normalized || normalized === '-') return;
+  if (META_NOISE.test(cleaned)) return;
+  if (seen.has(normalized)) {
+    // Same value — keep shorter name
+    const existing = metrics.find(
+      (m) => m.value.replace(/[\$€£,\s]/g, '').toLowerCase() === normalized
+    );
+    if (existing && cleaned.length < existing.metric.length) {
+      existing.metric = cleaned;
+    }
+    return;
+  }
   // Dedup by label similarity — skip if >80% overlap with existing metric
   for (const existing of metrics) {
-    if (labelSimilarity(existing.metric, label) > 0.8) return;
+    if (labelSimilarity(existing.metric, cleaned) > 0.8) return;
   }
   seen.add(normalized);
   const dateMatch = sentence.match(DATE_PATTERN);
   metrics.push({
     id: generateId('metric', metrics.length),
-    metric: label.slice(0, 40),
+    metric: cleaned,
     value,
     date: dateMatch ? dateMatch[0] : 'N/A',
     source: 'N/A',
     link: 'N/A',
-    commentary: inferContext(label, value),
+    commentary: inferContext(cleaned, value),
     expertConsensus: 'N/A',
     scientificPOV: 'N/A',
     theologicPOV: 'N/A',
@@ -339,17 +358,16 @@ function extractCorrelations(
 }
 
 function countWordOverlap(a: string, b: string): number {
-  const wordsA = new Set(
+  const wa = new Set(
     a
       .toLowerCase()
       .split(/\s+/)
       .filter((w) => w.length > 3)
   );
-  const wordsB = b
+  return b
     .toLowerCase()
     .split(/\s+/)
-    .filter((w) => w.length > 3);
-  return wordsB.filter((w) => wordsA.has(w)).length;
+    .filter((w) => w.length > 3 && wa.has(w)).length;
 }
 
 function determineStrength(sentence: string): CorrelationRow['strength'] {
