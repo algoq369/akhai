@@ -1,53 +1,32 @@
-# AkhAI Task Board
+# AkhAI Task Board — Day 93/150
 
-## Current Sprint: Day 30-35
+## Current Sprint: Days 93–100 (Phase 2 Final Polish)
 
 ### In Progress
-- [ ] Canvas Mindmap UX implementation (Milestone 2)
+- [ ] Mini Canvas metric truncation polish (word-boundary, strip [NEXT]: tags)
+- [ ] Persistent metadata side panel (accumulates per session, toggleable)
 
-### Done (This Sprint)
-- [x] Philosophy page restored (Jan 22 minimalist version)
+### Queued (this sprint)
+- [ ] VIEW tabs rendering fix (AI Layers, Insight, Mindmap)
+- [ ] Depth annotations wire into message rendering
+- [ ] DDG search integration fix
+- [ ] VPS: add TWITTER_CLIENT_ID/SECRET + confirm Reown domain
+- [ ] Bottom input/Live Refinement compaction
 
-### Queued
-- [ ] Complete DraggablePanel.tsx
-- [ ] Create QueryCardsPanel.tsx
-- [ ] Create VisualsPanel.tsx
-- [ ] Create TreesPanel.tsx
-- [ ] Main page canvas toggle integration
+### Queued (Phase 3: Days 101–120)
+- [ ] Gnostic Esoteric Layer (Kabbalistic Tree + Barbault index)
+- [ ] Metadata streaming LIVE during processing
+- [ ] Vercel AI SDK abstraction layer (sovereignty prep)
+- [ ] Esoteric Library app (port 3003)
+- [ ] Instinct Mode
 
-### Blocked
-<!-- Tasks waiting on something -->
-
-### Done (This Sprint)
-- [x] AI Config UX redesign (2,384→832 lines)
-- [x] TypeScript errors fixed (27→0)
-- [x] better-sqlite3 rebuilt for Node v24.4.1
-- [x] Colorful orb trees restored
-
----
-
-## Task Template
-
-```markdown
-## Task: [Name]
-**Status**: planning | in-progress | verifying | done
-**Priority**: critical | high | medium | low
-
-### Plan
-1. Step one
-2. Step two
-
-### Verification
-- [ ] How we prove it works
-
-### Result
-Evidence (screenshot ID, log output, test result)
-```
-
----
-
-## Quick Commands
-- Add task: append to appropriate section
-- Start task: move to "In Progress", write plan
-- Complete task: move to "Done", add result evidence
-- Block task: move to "Blocked", note why
+### Done (Phase 2)
+- [x] Mini Canvas: 18 commits, content classifier, dashboard grid
+- [x] Phase A: renamed 3 fabricated methodology IDs
+- [x] SVG circle radius guard
+- [x] God View Phase 1
+- [x] Full auth system (Email, X, Web3, GitHub)
+- [x] Security audit (removed OR user_id IS NULL)
+- [x] PostHog EU analytics
+- [x] WEBNA standards adopted
+- [x] page.tsx 3000+ → 222 lines
