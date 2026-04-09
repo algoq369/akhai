@@ -219,8 +219,31 @@ const META_NOISE =
 
 function cleanMetricName(raw: string): string {
   let name = raw.replace(/[\s]*[–—-]+[\s]*$/, '').trim();
-  if (name.length > 50) name = name.slice(0, 47) + '...';
+  // Strip markdown bold markers
+  name = name.replace(/^\*\*|\*\*$/g, '');
+  // Strip [NEXT]: and [RELATED]: prefixes
+  name = name.replace(/^\[(NEXT|RELATED)\]\s*:?\s*/i, '');
+  // Strip 'Next:' / 'Next :' prefix
+  name = name.replace(/^Next\s*:\s*/i, '');
+  // Strip leading list markers
+  name = name.replace(/^[-•*]\s+/, '');
+  // Word-boundary truncation
+  if (name.length > 45) {
+    const cut = name.lastIndexOf(' ', 45);
+    name = (cut > 10 ? name.slice(0, cut) : name.slice(0, 45)) + '...';
+  }
   return name;
+}
+
+function cleanMetricValue(raw: string, sentence: string): string {
+  let v = raw.trim();
+  // Fix '4, M' → '4M', '2, B' → '2B' (comma-space between number and unit)
+  v = v.replace(/(\d+),\s*([A-Za-z])/, '$1$2');
+  // Append 'B' to bare currency like '$2.6' when context says billion
+  if (/^\$[\d.]+$/.test(v) && /\bbillions?\b/i.test(sentence)) v += 'B';
+  if (/^\$[\d.]+$/.test(v) && /\bmillions?\b/i.test(sentence)) v += 'M';
+  if (/^\$[\d.]+$/.test(v) && /\btrillions?\b/i.test(sentence)) v += 'T';
+  return v;
 }
 
 function addMetric(
@@ -231,7 +254,8 @@ function addMetric(
   seen: Set<string>
 ): void {
   const cleaned = cleanMetricName(label);
-  const normalized = value.replace(/[\$€£,\s]/g, '').toLowerCase();
+  const fixedValue = cleanMetricValue(value, sentence);
+  const normalized = fixedValue.replace(/[\$€£,\s]/g, '').toLowerCase();
   if (cleaned.length < 3 || !normalized || normalized === '-') return;
   if (META_NOISE.test(cleaned)) return;
   if (seen.has(normalized)) {
@@ -253,11 +277,11 @@ function addMetric(
   metrics.push({
     id: generateId('metric', metrics.length),
     metric: cleaned,
-    value,
+    value: fixedValue,
     date: dateMatch ? dateMatch[0] : 'N/A',
     source: 'N/A',
     link: 'N/A',
-    commentary: inferContext(cleaned, value),
+    commentary: inferContext(cleaned, fixedValue),
     expertConsensus: 'N/A',
     scientificPOV: 'N/A',
     theologicPOV: 'N/A',
