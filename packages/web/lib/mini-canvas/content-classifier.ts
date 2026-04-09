@@ -216,15 +216,15 @@ function extractCorrelations(
   facts: FactItem[],
   metrics: MetricRow[]
 ): CorrelationRow[] {
-  if (facts.length === 0 || metrics.length === 0) return [];
+  if (facts.length === 0 && metrics.length === 0) return [];
 
   const correlations: CorrelationRow[] = [];
   for (const sentence of sentences) {
     if (!CAUSAL_PATTERN.test(sentence)) continue;
 
     // Find the closest matching fact and metric
-    let bestFact = facts[0];
-    let bestMetric = metrics[0];
+    let bestFact = facts.length > 0 ? facts[0] : null;
+    let bestMetric = metrics.length > 0 ? metrics[0] : null;
     let bestFactScore = 0;
     let bestMetricScore = 0;
 
@@ -243,14 +243,14 @@ function extractCorrelations(
       }
     }
 
-    if (bestFactScore < 1 && bestMetricScore < 1) continue;
+    if (bestFactScore < 1) continue;
 
     const strength = determineStrength(sentence);
 
     correlations.push({
       id: generateId('corr', correlations.length),
-      factRef: bestFact.id,
-      metricRef: bestMetric.id,
+      factRef: bestFact?.id || 'N/A',
+      metricRef: bestMetric?.id || 'N/A',
       relationship: sentence.slice(0, 120),
       strength,
       implication: sentence.length > 120 ? sentence.slice(120).trim() : 'See relationship.',
