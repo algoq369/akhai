@@ -18,11 +18,10 @@ import IntelligenceBadge from '@/components/IntelligenceBadge';
 import { LayerTreeFull } from '@/components/LayerTreeFull';
 import ViewTabs from '@/components/sections/ViewTabs';
 import GnosticDetails from '@/components/sections/GnosticDetails';
+import CouncilButton from '@/components/CouncilButton';
+import CouncilPanel from '@/components/CouncilPanel';
 
-/**
- * Generate LayerMini data for every query - adapts to content and evolves with conversation
- * Always returns valid activations even if gnostic metadata doesn't exist
- */
+/** Generate LayerMini data for every query — adapts to content and evolves with conversation */
 function generateLayerData(
   message: Message,
   messageIndex: number,
@@ -374,6 +373,15 @@ export default function ChatMessages({
                       />
                     )}
 
+                    {/* PERSPECTIVE COUNCIL */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <CouncilButton
+                        queryId={message.id}
+                        query={messages[messages.indexOf(message) - 1]?.content || ''}
+                        response={message.content}
+                      />
+                    </div>
+                    <CouncilPanel queryId={message.id} />
                     {/* INTELLIGENCE FUSION BADGE */}
                     {message.intelligence && (
                       <div className="mt-4 pt-3 border-t border-relic-mist/20 dark:border-relic-slate/15">
@@ -488,8 +496,6 @@ export default function ChatMessages({
             )}
           </div>
         ))}
-
-        {/* Loading indicator — now handled inline by streaming placeholder message */}
 
         <div ref={messagesEndRef} />
       </div>
