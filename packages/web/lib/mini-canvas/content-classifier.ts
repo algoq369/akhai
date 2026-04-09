@@ -158,12 +158,22 @@ function extractFacts(sentences: string[]): FactItem[] {
 }
 
 function extractMetricLabel(sentence: string, matchStr: string): string {
-  return sentence
+  let label = sentence
     .replace(matchStr, '')
-    .replace(/[*#\-•_`]/g, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/#{1,6}\s*/g, '')
+    .replace(/\[PATH \d+\]:\s*/gi, '')
+    .replace(/[*_`|#\[\]]/g, '')
+    .replace(/^\W+/, '')
     .replace(/\s{2,}/g, ' ')
-    .trim()
-    .slice(0, 50);
+    .trim();
+  const breakPoint = label.search(/[,.\-;:]/);
+  if (breakPoint > 5 && breakPoint < 40) {
+    label = label.slice(0, breakPoint).trim();
+  } else {
+    label = label.slice(0, 40).trim();
+  }
+  return label || 'Metric';
 }
 
 function addMetric(
