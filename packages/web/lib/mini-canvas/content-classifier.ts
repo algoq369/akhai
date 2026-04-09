@@ -58,7 +58,7 @@ const DATE_PATTERN =
   /\b(\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s*\d{0,4})\b/gi;
 const PROPER_NOUN_PATTERN = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g;
 const CAUSAL_PATTERN =
-  /\b(because|therefore|consequently|as a result|correlates?|inversely|due to|leads to|causes?|driven by)\b/i;
+  /\b(because|therefore|consequently|as a result|correlat(?:es?|ion|ed)|inversely|inverse|due to|leads? to|causes?|driven by|while|coupled with|decoupled from|linked to|relationship between|compared to|versus|vs\.?|relative to|tracks?|follows?|mirrors?|diverge[sd]?|converge[sd]?)\b/i;
 const UNIT_PATTERN = /(\d[\d,.]*)\s*(%|percent|\$|€|£|K|M|B|billion|million|thousand|trillion)/i;
 const CURRENCY_FIRST = /(?:\$|€|£)\s*(\d[\d,.]*)\s*(K|M|B|T|billion|million|thousand|trillion)?/gi;
 const PERCENT_PATTERN = /(\d[\d,.]*)\s*%/gi;
@@ -360,6 +360,34 @@ function generateCharts(facts: FactItem[], metrics: MetricRow[]): ChartConfig[] 
   return charts;
 }
 
+// ── Implicit Correlations ──────────────────────────────────
+
+function generateImplicitCorrelations(facts: FactItem[], metrics: MetricRow[]): CorrelationRow[] {
+  const correlations: CorrelationRow[] = [];
+  for (let i = 0; i < facts.length && correlations.length < 8; i++) {
+    for (let j = i + 1; j < facts.length && correlations.length < 8; j++) {
+      const overlap = countWordOverlap(facts[i].statement, facts[j].statement);
+      if (overlap < 2) continue;
+      let metricRef = 'N/A';
+      for (const m of metrics) {
+        if (countWordOverlap(facts[i].statement + ' ' + facts[j].statement, m.metric) >= 1) {
+          metricRef = m.id;
+          break;
+        }
+      }
+      correlations.push({
+        id: generateId('corr', correlations.length),
+        factRef: facts[i].id,
+        metricRef,
+        relationship: `${extractTitle(facts[i].statement)} ↔ ${extractTitle(facts[j].statement)}`,
+        strength: overlap >= 4 ? 'strong' : overlap >= 3 ? 'moderate' : 'weak',
+        implication: `These facts share ${overlap} common concepts and may be causally linked.`,
+      });
+    }
+  }
+  return correlations;
+}
+
 // ── Main Classifier ────────────────────────────────────────
 
 export function classifyContent(text: string, query: string): MiniCanvasData {
@@ -367,7 +395,10 @@ export function classifyContent(text: string, query: string): MiniCanvasData {
 
   const facts = extractFacts(sentences);
   const metrics = extractMetrics(sentences);
-  const correlations = extractCorrelations(sentences, facts, metrics);
+  let correlations = extractCorrelations(sentences, facts, metrics);
+  if (correlations.length === 0) {
+    correlations = generateImplicitCorrelations(facts, metrics);
+  }
   const charts = generateCharts(facts, metrics);
 
   return { facts, metrics, correlations, charts };
