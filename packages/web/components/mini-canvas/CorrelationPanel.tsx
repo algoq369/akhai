@@ -6,6 +6,7 @@ import type {
   MetricRow,
   ChartConfig,
 } from '@/lib/mini-canvas/content-classifier';
+import { extractTitle } from '@/lib/mini-canvas/content-classifier';
 
 interface CorrelationPanelProps {
   correlations: CorrelationRow[];
@@ -181,10 +182,10 @@ export default function CorrelationPanel({
           <thead>
             <tr className="bg-relic-ghost/50 dark:bg-relic-slate/20">
               <th className="px-2 py-1.5 text-left text-[8px] uppercase tracking-wider text-relic-silver font-semibold">
-                Fact Ref
+                Fact
               </th>
               <th className="px-2 py-1.5 text-left text-[8px] uppercase tracking-wider text-relic-silver font-semibold">
-                Metric Ref
+                Metric
               </th>
               <th className="px-2 py-1.5 text-left text-[8px] uppercase tracking-wider text-relic-silver font-semibold">
                 Relationship
@@ -207,9 +208,17 @@ export default function CorrelationPanel({
                     : 'bg-relic-ghost/20 dark:bg-relic-slate/5'
                 }
               >
-                <td className="px-2 py-1 text-blue-600 dark:text-blue-400">{row.factRef}</td>
-                <td className="px-2 py-1 text-emerald-600 dark:text-emerald-400">
-                  {row.metricRef}
+                <td className="px-2 py-1 text-blue-600 dark:text-blue-400 max-w-[140px] truncate">
+                  {(() => {
+                    const f = facts.find((x) => x.id === row.factRef);
+                    return f ? extractTitle(f.statement) : row.factRef;
+                  })()}
+                </td>
+                <td className="px-2 py-1 text-emerald-600 dark:text-emerald-400 max-w-[140px] truncate">
+                  {(() => {
+                    const m = metrics.find((x) => x.id === row.metricRef);
+                    return m ? `${m.metric.slice(0, 25)}: ${m.value}` : '—';
+                  })()}
                 </td>
                 <td className="px-2 py-1 text-relic-slate dark:text-relic-ghost max-w-[150px] truncate">
                   {row.relationship}
