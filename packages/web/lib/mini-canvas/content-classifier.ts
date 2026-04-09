@@ -60,6 +60,8 @@ const PROPER_NOUN_PATTERN = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g;
 const CAUSAL_PATTERN =
   /\b(because|therefore|consequently|as a result|correlates?|inversely|due to|leads to|causes?|driven by)\b/i;
 const UNIT_PATTERN = /(\d[\d,.]*)\s*(%|percent|\$|€|£|K|M|B|billion|million|thousand|trillion)/i;
+const CURRENCY_FIRST = /(?:\$|€|£)\s*(\d[\d,.]*)\s*(K|M|B|T|billion|million|thousand|trillion)?/gi;
+const PERCENT_PATTERN = /(\d[\d,.]*)\s*%/gi;
 
 function generateId(prefix: string, index: number): string {
   return `${prefix}-${index}`;
@@ -138,36 +140,73 @@ function extractFacts(sentences: string[]): FactItem[] {
   return facts.slice(0, 12);
 }
 
+function extractMetricLabel(sentence: string, matchStr: string): string {
+  return sentence
+    .replace(matchStr, '')
+    .replace(/[*#\-•_`]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .slice(0, 50);
+}
+
+function addMetric(
+  metrics: MetricRow[],
+  value: string,
+  label: string,
+  sentence: string,
+  seen: Set<string>
+): void {
+  if (label.length < 3 || seen.has(value)) return;
+  seen.add(value);
+  const dateMatch = sentence.match(DATE_PATTERN);
+  metrics.push({
+    id: generateId('metric', metrics.length),
+    metric: label,
+    value,
+    date: dateMatch ? dateMatch[0] : 'N/A',
+    source: 'N/A',
+    link: 'N/A',
+    commentary: 'N/A',
+    expertConsensus: 'N/A',
+    scientificPOV: 'N/A',
+    theologicPOV: 'N/A',
+  });
+}
+
 function extractMetrics(sentences: string[]): MetricRow[] {
   const metrics: MetricRow[] = [];
+  const seen = new Set<string>();
+
   for (const sentence of sentences) {
+    // 1. Currency-first: $95,000, €2.5B
+    CURRENCY_FIRST.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = CURRENCY_FIRST.exec(sentence)) !== null) {
+      const value = m[0].trim();
+      const label = extractMetricLabel(sentence, value);
+      addMetric(metrics, value, label, sentence, seen);
+    }
+
+    // 2. Unit-after: 95K, 45%
     UNIT_PATTERN.lastIndex = 0;
-    const match = sentence.match(UNIT_PATTERN);
-    if (!match) continue;
+    const unitMatch = sentence.match(UNIT_PATTERN);
+    if (unitMatch) {
+      const value = unitMatch[0].trim();
+      if (!seen.has(value)) {
+        const label = extractMetricLabel(sentence, value);
+        addMetric(metrics, value, label, sentence, seen);
+      }
+    }
 
-    const value = match[0].trim();
-    const metricName = sentence
-      .replace(match[0], '')
-      .replace(/[*#\-•]/g, '')
-      .trim()
-      .slice(0, 80);
-
-    if (metricName.length < 5) continue;
-
-    const dateMatch = sentence.match(DATE_PATTERN);
-
-    metrics.push({
-      id: generateId('metric', metrics.length),
-      metric: metricName,
-      value,
-      date: dateMatch ? dateMatch[0] : 'N/A',
-      source: 'N/A',
-      link: 'N/A',
-      commentary: 'N/A',
-      expertConsensus: 'N/A',
-      scientificPOV: 'N/A',
-      theologicPOV: 'N/A',
-    });
+    // 3. Standalone percent: 45%
+    PERCENT_PATTERN.lastIndex = 0;
+    while ((m = PERCENT_PATTERN.exec(sentence)) !== null) {
+      const value = m[0].trim();
+      if (!seen.has(value)) {
+        const label = extractMetricLabel(sentence, value);
+        addMetric(metrics, value, label, sentence, seen);
+      }
+    }
   }
   return metrics.slice(0, 15);
 }
