@@ -77,7 +77,7 @@ export default function MiniCanvasView({ data }: MiniCanvasViewProps) {
           <PanelHeader
             icon="◇"
             title="Facts"
-            count={data.facts.length}
+            count={5}
             collapsed={!!collapsed['facts']}
             onToggle={() => toggle('facts')}
           />

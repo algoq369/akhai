@@ -5,12 +5,12 @@
 
 // ── Types ──────────────────────────────────────────────────
 
-export interface FactItem {
-  id: string;
-  statement: string;
-  dataPoint?: string;
-  verifiable: boolean;
-  source?: string;
+export interface FactBoxes {
+  tangibleData: string;
+  verifiable: string;
+  unrefutable: string;
+  nonBiased: string;
+  straightForward: string;
 }
 
 export interface MetricRow {
@@ -43,7 +43,7 @@ export interface ChartConfig {
 }
 
 export interface MiniCanvasData {
-  facts: FactItem[];
+  facts: FactBoxes;
   metrics: MetricRow[];
   correlations: CorrelationRow[];
   charts: ChartConfig[];
@@ -132,29 +132,55 @@ function parseNumericValue(raw: string): number {
 
 // ── Extractors ─────────────────────────────────────────────
 
-function extractFacts(sentences: string[]): FactItem[] {
-  const facts: FactItem[] = [];
-  for (const sentence of sentences) {
-    if (!hasSpecificData(sentence)) continue;
-    if (BIAS_WORDS.test(sentence)) continue;
+const SOURCE_PATTERN =
+  /\b(according to|reported by|published|study|research|data from|survey|report|index|ranking|cited|source|journal|university|institute)\b/i;
+const CONSENSUS_PATTERN =
+  /\b(established|proven|confirmed|widely accepted|consensus|undeniable|fundamental|definitively|universally|historically)\b/i;
+const OPINION_PATTERN =
+  /\b(best|worst|should|must|amazing|terrible|obviously|clearly|arguably|controversial|debatable|believe|opinion|seems?|might|could)\b/i;
 
-    // Reset regex lastIndex
+function extractFactBoxes(sentences: string[]): FactBoxes {
+  const cleaned = sentences.map((s) => stripMarkdown(s));
+
+  const tangibleSentences = cleaned.filter((s) => {
     NUMBER_PATTERN.lastIndex = 0;
     DATE_PATTERN.lastIndex = 0;
-    PROPER_NOUN_PATTERN.lastIndex = 0;
+    return NUMBER_PATTERN.test(s) || DATE_PATTERN.test(s);
+  });
+  const tangibleData =
+    tangibleSentences.length > 0
+      ? tangibleSentences.slice(0, 6).join(' ')
+      : 'No quantitative data identified in response.';
 
-    const cleaned = stripMarkdown(stripBias(sentence));
-    if (cleaned.length < 15) continue;
+  const verifiableSentences = cleaned.filter((s) => SOURCE_PATTERN.test(s));
+  const verifiable =
+    verifiableSentences.length > 0
+      ? verifiableSentences.slice(0, 4).join(' ')
+      : 'No externally verifiable sources cited in response.';
 
-    facts.push({
-      id: generateId('fact', facts.length),
-      statement: cleaned,
-      dataPoint: extractDataPoint(sentence),
-      verifiable: true,
-      source: undefined,
-    });
-  }
-  return facts.slice(0, 12);
+  const unrefutableSentences = cleaned.filter((s) => CONSENSUS_PATTERN.test(s));
+  const unrefutable =
+    unrefutableSentences.length > 0
+      ? unrefutableSentences.slice(0, 3).join(' ')
+      : tangibleSentences.length > 0
+        ? tangibleSentences.slice(0, 3).join(' ')
+        : 'No unrefutable conclusions could be extracted.';
+
+  const neutralSentences = cleaned.filter((s) => !OPINION_PATTERN.test(s) && s.length > 30);
+  const nonBiased =
+    neutralSentences.length > 0
+      ? neutralSentences.slice(0, 4).join(' ')
+      : 'Unable to extract sufficiently neutral content.';
+
+  const substantive = cleaned.filter((s) => s.length > 40);
+  const straightForward =
+    substantive.length >= 2
+      ? `${substantive[0]} ${substantive[substantive.length - 1]}`
+      : substantive.length === 1
+        ? substantive[0]
+        : 'No direct conclusion available.';
+
+  return { tangibleData, verifiable, unrefutable, nonBiased, straightForward };
 }
 
 function extractMetricLabel(sentence: string, matchStr: string): string {
@@ -183,8 +209,9 @@ function addMetric(
   sentence: string,
   seen: Set<string>
 ): void {
-  if (label.length < 3 || seen.has(value)) return;
-  seen.add(value);
+  const normalized = value.replace(/[\$€£,\s]/g, '').toLowerCase();
+  if (label.length < 3 || seen.has(normalized)) return;
+  seen.add(normalized);
   const dateMatch = sentence.match(DATE_PATTERN);
   metrics.push({
     id: generateId('metric', metrics.length),
@@ -219,20 +246,16 @@ function extractMetrics(sentences: string[]): MetricRow[] {
     const unitMatch = sentence.match(UNIT_PATTERN);
     if (unitMatch) {
       const value = unitMatch[0].trim();
-      if (!seen.has(value)) {
-        const label = extractMetricLabel(sentence, value);
-        addMetric(metrics, value, label, sentence, seen);
-      }
+      const label = extractMetricLabel(sentence, value);
+      addMetric(metrics, value, label, sentence, seen);
     }
 
     // 3. Standalone percent: 45%
     PERCENT_PATTERN.lastIndex = 0;
     while ((m = PERCENT_PATTERN.exec(sentence)) !== null) {
       const value = m[0].trim();
-      if (!seen.has(value)) {
-        const label = extractMetricLabel(sentence, value);
-        addMetric(metrics, value, label, sentence, seen);
-      }
+      const label = extractMetricLabel(sentence, value);
+      addMetric(metrics, value, label, sentence, seen);
     }
   }
   return metrics.slice(0, 15);
@@ -240,28 +263,28 @@ function extractMetrics(sentences: string[]): MetricRow[] {
 
 function extractCorrelations(
   sentences: string[],
-  facts: FactItem[],
+  facts: FactBoxes,
   metrics: MetricRow[]
 ): CorrelationRow[] {
-  if (facts.length === 0 && metrics.length === 0) return [];
+  const boxEntries = Object.entries(facts) as [string, string][];
+  if (metrics.length === 0 && boxEntries.every(([, v]) => v.startsWith('No '))) return [];
 
   const correlations: CorrelationRow[] = [];
   for (const sentence of sentences) {
     if (!CAUSAL_PATTERN.test(sentence)) continue;
 
-    // Find the closest matching fact and metric
-    let bestFact = facts.length > 0 ? facts[0] : null;
-    let bestMetric = metrics.length > 0 ? metrics[0] : null;
-    let bestFactScore = 0;
-    let bestMetricScore = 0;
-
-    for (const fact of facts) {
-      const overlap = countWordOverlap(sentence, fact.statement);
-      if (overlap > bestFactScore) {
-        bestFactScore = overlap;
-        bestFact = fact;
+    let bestBoxKey = '';
+    let bestBoxScore = 0;
+    for (const [key, content] of boxEntries) {
+      const overlap = countWordOverlap(sentence, content);
+      if (overlap > bestBoxScore) {
+        bestBoxScore = overlap;
+        bestBoxKey = key;
       }
     }
+
+    let bestMetric: MetricRow | null = metrics.length > 0 ? metrics[0] : null;
+    let bestMetricScore = 0;
     for (const metric of metrics) {
       const overlap = countWordOverlap(sentence, metric.metric);
       if (overlap > bestMetricScore) {
@@ -270,17 +293,16 @@ function extractCorrelations(
       }
     }
 
-    if (bestFactScore < 1) continue;
-
-    const strength = determineStrength(sentence);
+    if (bestBoxScore < 1) continue;
 
     correlations.push({
       id: generateId('corr', correlations.length),
-      factRef: bestFact?.id || 'N/A',
+      factRef: bestBoxKey,
       metricRef: bestMetric?.id || 'N/A',
-      relationship: sentence.slice(0, 120),
-      strength,
-      implication: sentence.length > 120 ? sentence.slice(120).trim() : 'See relationship.',
+      relationship: stripMarkdown(sentence).slice(0, 120),
+      strength: determineStrength(sentence),
+      implication:
+        sentence.length > 120 ? stripMarkdown(sentence.slice(120)).trim() : 'See relationship.',
     });
   }
   return correlations.slice(0, 8);
@@ -310,7 +332,7 @@ function determineStrength(sentence: string): CorrelationRow['strength'] {
 
 // ── Chart Generation ───────────────────────────────────────
 
-function generateCharts(facts: FactItem[], metrics: MetricRow[]): ChartConfig[] {
+function generateCharts(metrics: MetricRow[]): ChartConfig[] {
   const charts: ChartConfig[] = [];
 
   // Bar chart: 3+ metrics with same unit
@@ -362,26 +384,36 @@ function generateCharts(facts: FactItem[], metrics: MetricRow[]): ChartConfig[] 
 
 // ── Implicit Correlations ──────────────────────────────────
 
-function generateImplicitCorrelations(facts: FactItem[], metrics: MetricRow[]): CorrelationRow[] {
+function formatBoxKey(key: string): string {
+  return key.replace(/([A-Z])/g, ' $1').trim();
+}
+
+function generateImplicitCorrelations(facts: FactBoxes, metrics: MetricRow[]): CorrelationRow[] {
   const correlations: CorrelationRow[] = [];
-  for (let i = 0; i < facts.length && correlations.length < 8; i++) {
-    for (let j = i + 1; j < facts.length && correlations.length < 8; j++) {
-      const overlap = countWordOverlap(facts[i].statement, facts[j].statement);
-      if (overlap < 2) continue;
+  const boxEntries = Object.entries(facts) as [string, string][];
+
+  for (let i = 0; i < boxEntries.length && correlations.length < 8; i++) {
+    for (let j = i + 1; j < boxEntries.length && correlations.length < 8; j++) {
+      const [keyA, contentA] = boxEntries[i];
+      const [keyB, contentB] = boxEntries[j];
+      if (!contentA || !contentB || contentA.startsWith('No ') || contentB.startsWith('No '))
+        continue;
+      const overlap = countWordOverlap(contentA, contentB);
+      if (overlap < 3) continue;
       let metricRef = 'N/A';
       for (const m of metrics) {
-        if (countWordOverlap(facts[i].statement + ' ' + facts[j].statement, m.metric) >= 1) {
+        if (countWordOverlap(contentA + ' ' + contentB, m.metric) >= 1) {
           metricRef = m.id;
           break;
         }
       }
       correlations.push({
         id: generateId('corr', correlations.length),
-        factRef: facts[i].id,
+        factRef: keyA,
         metricRef,
-        relationship: `${extractTitle(facts[i].statement)} ↔ ${extractTitle(facts[j].statement)}`,
-        strength: overlap >= 4 ? 'strong' : overlap >= 3 ? 'moderate' : 'weak',
-        implication: `These facts share ${overlap} common concepts and may be causally linked.`,
+        relationship: `${formatBoxKey(keyA)} ↔ ${formatBoxKey(keyB)}`,
+        strength: overlap >= 6 ? 'strong' : overlap >= 4 ? 'moderate' : 'weak',
+        implication: `These categories share ${overlap} common concepts.`,
       });
     }
   }
@@ -393,13 +425,13 @@ function generateImplicitCorrelations(facts: FactItem[], metrics: MetricRow[]): 
 export function classifyContent(text: string, query: string): MiniCanvasData {
   const sentences = splitSentences(text);
 
-  const facts = extractFacts(sentences);
+  const facts = extractFactBoxes(sentences);
   const metrics = extractMetrics(sentences);
   let correlations = extractCorrelations(sentences, facts, metrics);
   if (correlations.length === 0) {
     correlations = generateImplicitCorrelations(facts, metrics);
   }
-  const charts = generateCharts(facts, metrics);
+  const charts = generateCharts(metrics);
 
   return { facts, metrics, correlations, charts };
 }

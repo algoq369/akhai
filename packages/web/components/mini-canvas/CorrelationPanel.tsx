@@ -2,15 +2,14 @@
 
 import type {
   CorrelationRow,
-  FactItem,
+  FactBoxes,
   MetricRow,
   ChartConfig,
 } from '@/lib/mini-canvas/content-classifier';
-import { extractTitle } from '@/lib/mini-canvas/content-classifier';
 
 interface CorrelationPanelProps {
   correlations: CorrelationRow[];
-  facts: FactItem[];
+  facts: FactBoxes;
   metrics: MetricRow[];
   charts: ChartConfig[];
 }
@@ -35,7 +34,7 @@ function NetworkDiagram({
   metrics,
 }: {
   correlations: CorrelationRow[];
-  facts: FactItem[];
+  facts: FactBoxes;
   metrics: MetricRow[];
 }) {
   const width = 300;
@@ -43,10 +42,14 @@ function NetworkDiagram({
   const cx = width / 2;
   const cy = height / 2;
 
-  // Position facts on left, metrics on right
-  const factPositions = facts.slice(0, 5).map((f, i) => ({
-    id: f.id,
-    label: f.statement.slice(0, 20),
+  // Position fact boxes on left, metrics on right
+  const boxEntries = Object.entries(facts) as [string, string][];
+  const factPositions = boxEntries.slice(0, 5).map(([key, content], i) => ({
+    id: key,
+    label: key
+      .replace(/([A-Z])/g, ' $1')
+      .trim()
+      .slice(0, 20),
     x: 60,
     y: 30 + i * 35,
     type: 'fact' as const,
@@ -209,10 +212,7 @@ export default function CorrelationPanel({
                 }
               >
                 <td className="px-2 py-1 text-blue-600 dark:text-blue-400 max-w-[140px] truncate">
-                  {(() => {
-                    const f = facts.find((x) => x.id === row.factRef);
-                    return f ? extractTitle(f.statement) : row.factRef;
-                  })()}
+                  {row.factRef.replace(/([A-Z])/g, ' $1').trim()}
                 </td>
                 <td className="px-2 py-1 text-emerald-600 dark:text-emerald-400 max-w-[140px] truncate">
                   {(() => {
