@@ -18,7 +18,7 @@ import {
 } from './CanvasHelpers';
 import type { QueryCard } from './QueryCardsPanel';
 
-export function useCanvasState(queryCards: QueryCard[]) {
+export function useCanvasState(queryCards: QueryCard[] = []) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useState<CanvasNode[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);

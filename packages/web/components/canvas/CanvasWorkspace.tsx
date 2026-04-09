@@ -26,10 +26,10 @@ interface CanvasWorkspaceProps {
 
 // === MAIN COMPONENT ===
 export default function CanvasWorkspace({
-  queryCards,
-  visualNodes,
-  visualEdges,
-  aiInsights,
+  queryCards = [],
+  visualNodes = [],
+  visualEdges = [],
+  aiInsights = [],
   onQuerySelect,
   onNodeSelect,
   onInsightSelect,
@@ -113,7 +113,7 @@ export default function CanvasWorkspace({
         </svg>
 
         {/* Empty state */}
-        {cs.nodes.length === 0 && (
+        {(cs.nodes ?? []).length === 0 && (
           <div
             style={{
               position: 'absolute',
@@ -160,9 +160,10 @@ export default function CanvasWorkspace({
               </marker>
             </defs>
             {/* Connection lines */}
-            {cs.connections.map((c, i) => {
+            {(cs.connections ?? []).map((c, i) => {
               const from = cs.getCenter(c.from),
                 to = cs.getCenter(c.to);
+              if (from.x === 0 && from.y === 0 && to.x === 0 && to.y === 0) return null;
               const hl = cs.hovered && (c.from === cs.hovered || c.to === cs.hovered);
               return (
                 <line
@@ -200,7 +201,7 @@ export default function CanvasWorkspace({
                 );
               })()}
             {/* Pencil strokes */}
-            {cs.strokes.map((stroke, si) => (
+            {(cs.strokes ?? []).map((stroke, si) => (
               <polyline
                 key={`s-${si}`}
                 points={stroke.points.map((p) => `${p.x},${p.y}`).join(' ')}
@@ -226,7 +227,7 @@ export default function CanvasWorkspace({
           </svg>
 
           {/* Nodes */}
-          {cs.nodes.map((node) => (
+          {(cs.nodes ?? []).map((node) => (
             <div
               key={node.id}
               data-node="true"

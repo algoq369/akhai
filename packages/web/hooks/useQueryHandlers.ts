@@ -7,6 +7,17 @@ import { useGodViewStore } from '@/lib/stores/god-view-store';
 import { buildIntelligence, trackQuery } from '@/lib/query-helpers';
 import type { ThoughtEvent } from '@/lib/thought-stream';
 
+/** Normalize methodology to string — API may return object {selected, reason} or {family, model, reasoning} */
+function normalizeMethodology(raw: unknown): string | undefined {
+  if (!raw) return undefined;
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'object' && raw !== null) {
+    const obj = raw as Record<string, unknown>;
+    return String(obj.selected || obj.family || obj.model || obj.id || 'auto');
+  }
+  return String(raw);
+}
+
 /**
  * State subset needed by query-submission handlers.
  * Every property the handlers read or write is listed here.
@@ -129,7 +140,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
             id: messageId || generateId(),
             role: 'assistant',
             content: data.response || data.finalDecision || 'No response',
-            methodology: data.methodology,
+            methodology: normalizeMethodology(data.methodology),
             metrics: data.metrics,
             timestamp: new Date(),
             guardResult: guardFailed ? data.guardResult : undefined,
@@ -413,7 +424,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
           id: assistantMsgId,
           role: 'assistant',
           content: data.response || data.finalDecision || 'No response',
-          methodology: data.methodology || methodology,
+          methodology: normalizeMethodology(data.methodology) || methodology,
           metrics: data.metrics,
           timestamp: new Date(),
           guardResult: guardFailed ? data.guardResult : undefined,
