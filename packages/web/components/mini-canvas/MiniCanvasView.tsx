@@ -70,10 +70,10 @@ export default function MiniCanvasView({ data }: MiniCanvasViewProps) {
         backgroundSize: '20px 20px',
       }}
     >
-      {/* ROW 1: Facts (40%) + Metrics (60%) side by side */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
-        {/* Facts — 2 columns wide */}
-        <div className="md:col-span-2 border-t-2 border-t-blue-400 bg-white dark:bg-relic-void/60 rounded-lg shadow-sm border border-relic-mist/40 dark:border-relic-slate/20 overflow-hidden">
+      {/* 2-column dashboard: Facts left, Metrics+Correlation right */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {/* LEFT: Facts */}
+        <div className="border-t-2 border-t-blue-400 bg-white dark:bg-relic-void/60 rounded-lg shadow-sm border border-relic-mist/40 dark:border-relic-slate/20 overflow-hidden">
           <PanelHeader
             icon="◇"
             title="Facts"
@@ -84,42 +84,43 @@ export default function MiniCanvasView({ data }: MiniCanvasViewProps) {
           {!collapsed['facts'] && <FactsPanel facts={data.facts} charts={data.charts} />}
         </div>
 
-        {/* Metrics — 3 columns wide */}
-        <div className="md:col-span-3 border-t-2 border-t-emerald-400 bg-white dark:bg-relic-void/60 rounded-lg shadow-sm border border-relic-mist/40 dark:border-relic-slate/20 overflow-hidden">
-          <PanelHeader
-            icon="◈"
-            title="Metrics"
-            count={data.metrics.length}
-            collapsed={!!collapsed['metrics']}
-            onToggle={() => toggle('metrics')}
-          />
-          {!collapsed['metrics'] && (
-            <div className="max-h-[300px] overflow-auto">
-              <MetricsPanel metrics={data.metrics} charts={data.charts} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ROW 2: Correlation — full width */}
-      <div className="border-t-2 border-t-purple-400 bg-white dark:bg-relic-void/60 rounded-lg shadow-sm border border-relic-mist/40 dark:border-relic-slate/20 overflow-hidden">
-        <PanelHeader
-          icon="◆"
-          title="Correlation"
-          count={data.correlations.length}
-          collapsed={!!collapsed['correlation']}
-          onToggle={() => toggle('correlation')}
-        />
-        {!collapsed['correlation'] && (
-          <div className="max-h-[300px] overflow-auto">
-            <CorrelationPanel
-              correlations={data.correlations}
-              facts={data.facts}
-              metrics={data.metrics}
-              charts={data.charts}
+        {/* RIGHT: Metrics + Correlation stacked */}
+        <div className="flex flex-col gap-2">
+          <div className="border-t-2 border-t-emerald-400 bg-white dark:bg-relic-void/60 rounded-lg shadow-sm border border-relic-mist/40 dark:border-relic-slate/20 overflow-hidden">
+            <PanelHeader
+              icon="◈"
+              title="Metrics"
+              count={data.metrics.length}
+              collapsed={!!collapsed['metrics']}
+              onToggle={() => toggle('metrics')}
             />
+            {!collapsed['metrics'] && (
+              <div className="max-h-[200px] overflow-auto">
+                <MetricsPanel metrics={data.metrics} charts={data.charts} />
+              </div>
+            )}
           </div>
-        )}
+
+          <div className="border-t-2 border-t-purple-400 bg-white dark:bg-relic-void/60 rounded-lg shadow-sm border border-relic-mist/40 dark:border-relic-slate/20 overflow-hidden">
+            <PanelHeader
+              icon="◆"
+              title="Correlation"
+              count={data.correlations.length}
+              collapsed={!!collapsed['correlation']}
+              onToggle={() => toggle('correlation')}
+            />
+            {!collapsed['correlation'] && (
+              <div className="max-h-[150px] overflow-auto">
+                <CorrelationPanel
+                  correlations={data.correlations}
+                  facts={data.facts}
+                  metrics={data.metrics}
+                  charts={data.charts}
+                />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

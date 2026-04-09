@@ -56,7 +56,6 @@ const NUMBER_PATTERN =
   /\b(\d[\d,.]*\s*(?:%|percent|dollars?|\$|€|£|K|M|B|billion|million|thousand|trillion|kg|lb|mph|km|mi|years?|months?|days?))\b/gi;
 const DATE_PATTERN =
   /\b(\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s*\d{0,4})\b/gi;
-const PROPER_NOUN_PATTERN = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g;
 const CAUSAL_PATTERN =
   /\b(because|therefore|consequently|as a result|correlat(?:es?|ion|ed)|inversely|inverse|due to|leads? to|causes?|driven by|while|coupled with|decoupled from|linked to|relationship between|compared to|versus|vs\.?|relative to|tracks?|follows?|mirrors?|diverge[sd]?|converge[sd]?)\b/i;
 const UNIT_PATTERN = /(\d[\d,.]*)\s*(%|percent|\$|€|£|K|M|B|billion|million|thousand|trillion)/i;
@@ -97,22 +96,6 @@ export function extractTitle(statement: string): string {
   const firstSentence = cleaned.split(/[.!?]/)[0] || cleaned;
   const words = firstSentence.split(/\s+/).slice(0, 8);
   return words.join(' ') + (words.length >= 8 ? '...' : '');
-}
-
-function extractDataPoint(sentence: string): string | undefined {
-  const numbers = sentence.match(NUMBER_PATTERN);
-  if (numbers && numbers.length > 0) return numbers[0].trim();
-  const dates = sentence.match(DATE_PATTERN);
-  if (dates && dates.length > 0) return dates[0].trim();
-  return undefined;
-}
-
-function hasSpecificData(sentence: string): boolean {
-  return (
-    NUMBER_PATTERN.test(sentence) ||
-    DATE_PATTERN.test(sentence) ||
-    PROPER_NOUN_PATTERN.test(sentence)
-  );
 }
 
 function extractUnit(value: string): string | undefined {
@@ -202,6 +185,37 @@ function extractMetricLabel(sentence: string, matchStr: string): string {
   return label || 'Metric';
 }
 
+function inferContext(label: string, value: string): string {
+  const lv = (label + ' ' + value).toLowerCase();
+  if (/market|cap|valuation|worth/i.test(lv)) return 'market size';
+  if (/growth|increase|rise|grew|expand/i.test(lv)) return 'growth rate';
+  if (/year|month|week|day|quarter|timeline|deadline|by 20/i.test(lv)) return 'timeline';
+  if (/revenue|sales|income|profit|earning/i.test(lv)) return 'revenue';
+  if (/cost|spend|budget|invest|fund/i.test(lv)) return 'investment';
+  if (/user|customer|subscriber|adoption|people/i.test(lv)) return 'adoption';
+  if (/rate|ratio|share|portion/i.test(lv)) return 'ratio';
+  if (/reduc|declin|drop|loss|fell|down/i.test(lv)) return 'decline';
+  if (/%|percent/i.test(value)) return 'percentage';
+  if (/\$|€|£/i.test(value)) return 'monetary';
+  return 'data point';
+}
+
+function labelSimilarity(a: string, b: string): number {
+  const wa = new Set(
+    a
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2)
+  );
+  const wb = b
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
+  if (wa.size === 0 || wb.length === 0) return 0;
+  const shared = wb.filter((w) => wa.has(w)).length;
+  return shared / Math.max(wa.size, wb.length);
+}
+
 function addMetric(
   metrics: MetricRow[],
   value: string,
@@ -211,21 +225,28 @@ function addMetric(
 ): void {
   const normalized = value.replace(/[\$€£,\s]/g, '').toLowerCase();
   if (label.length < 3 || seen.has(normalized)) return;
+  // Dedup by label similarity — skip if >80% overlap with existing metric
+  for (const existing of metrics) {
+    if (labelSimilarity(existing.metric, label) > 0.8) return;
+  }
   seen.add(normalized);
   const dateMatch = sentence.match(DATE_PATTERN);
   metrics.push({
     id: generateId('metric', metrics.length),
-    metric: label,
+    metric: label.slice(0, 40),
     value,
     date: dateMatch ? dateMatch[0] : 'N/A',
     source: 'N/A',
     link: 'N/A',
-    commentary: 'N/A',
+    commentary: inferContext(label, value),
     expertConsensus: 'N/A',
     scientificPOV: 'N/A',
     theologicPOV: 'N/A',
   });
 }
+
+const PLAIN_NUMBER_UNIT =
+  /(\d[\d,.]*)\s*(trillion|billion|million|thousand|percent|years?|months?|weeks?|days?|hours?)\b/gi;
 
 function extractMetrics(sentences: string[]): MetricRow[] {
   const metrics: MetricRow[] = [];
@@ -253,6 +274,14 @@ function extractMetrics(sentences: string[]): MetricRow[] {
     // 3. Standalone percent: 45%
     PERCENT_PATTERN.lastIndex = 0;
     while ((m = PERCENT_PATTERN.exec(sentence)) !== null) {
+      const value = m[0].trim();
+      const label = extractMetricLabel(sentence, value);
+      addMetric(metrics, value, label, sentence, seen);
+    }
+
+    // 4. Plain number+unit: "4.4 trillion", "6 months"
+    PLAIN_NUMBER_UNIT.lastIndex = 0;
+    while ((m = PLAIN_NUMBER_UNIT.exec(sentence)) !== null) {
       const value = m[0].trim();
       const label = extractMetricLabel(sentence, value);
       addMetric(metrics, value, label, sentence, seen);
@@ -404,32 +433,33 @@ function extractSharedTopics(a: string, b: string): string[] {
       .split(/\s+/)
       .filter((w) => w.length > 4)
   );
-  return b
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length > 4 && wordsA.has(w))
-    .filter((w, i, arr) => arr.indexOf(w) === i)
-    .slice(0, 3);
+  return [
+    ...new Set(
+      b
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 4 && wordsA.has(w))
+    ),
+  ].slice(0, 3);
 }
 
-function buildRelationship(keyA: string, keyB: string, shared: string[]): string {
+function buildMechanism(keyA: string, keyB: string, shared: string[]): string {
   const roleA = BOX_ROLE[keyA] || formatBoxKey(keyA);
   const roleB = BOX_ROLE[keyB] || formatBoxKey(keyB);
-  if (shared.length > 0) {
-    return `${roleA} → ${roleB}: linked via ${shared.join(', ')}`;
-  }
-  return `${roleA} → ${roleB}: thematic overlap in analysis`;
-}
-
-function buildImplication(keyA: string, keyB: string, shared: string[]): string {
-  const roleA = BOX_ROLE[keyA] || formatBoxKey(keyA);
-  const roleB = BOX_ROLE[keyB] || formatBoxKey(keyB);
-  if (shared.length >= 2) {
-    return `${roleA} validates ${roleB} through shared data points`;
-  }
-  if (shared.length === 1) {
-    return `Both reference "${shared[0]}" from different analytical angles`;
-  }
+  const terms = shared.length > 0 ? ` via ${shared.join(', ')}` : '';
+  // Generate a causal mechanism phrase
+  if (keyA === 'tangibleData' && keyB === 'unrefutable')
+    return `Concrete figures${terms} validate consensus conclusions`;
+  if (keyA === 'tangibleData' && keyB === 'verifiable')
+    return `Quantitative data${terms} enables independent verification`;
+  if (keyA === 'verifiable' && keyB === 'unrefutable')
+    return `Sourced evidence${terms} reinforces established consensus`;
+  if (keyA === 'tangibleData' && keyB === 'nonBiased')
+    return `Hard numbers${terms} anchor neutral factual synthesis`;
+  if (keyA === 'nonBiased' && keyB === 'straightForward')
+    return `Neutral analysis${terms} distills into direct conclusions`;
+  if (shared.length >= 2) return `${roleA} validates ${roleB} through ${shared.join(', ')}`;
+  if (shared.length === 1) return `Both reference "${shared[0]}" from different angles`;
   return `${roleA} and ${roleB} address the same subject independently`;
 }
 
@@ -457,9 +487,9 @@ function generateImplicitCorrelations(facts: FactBoxes, metrics: MetricRow[]): C
         id: generateId('corr', correlations.length),
         factRef: keyA,
         metricRef,
-        relationship: buildRelationship(keyA, keyB, shared),
+        relationship: buildMechanism(keyA, keyB, shared),
         strength: overlap >= 6 ? 'strong' : overlap >= 4 ? 'moderate' : 'weak',
-        implication: buildImplication(keyA, keyB, shared),
+        implication: shared.length > 0 ? shared.join(', ') : 'thematic overlap',
       });
     }
   }
