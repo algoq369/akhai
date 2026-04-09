@@ -37,11 +37,12 @@ function parseEntry(raw: {
       .sort((a: any, b: any) => (b.effectiveWeight || 0) - (a.effectiveWeight || 0))
       .slice(0, 3);
     for (const la of sorted) {
-      const node = la.layerNode ?? la.layer;
+      const node = la.layerNode ?? la.layer ?? la.layerId ?? la.id;
       const meta = node != null ? LAYER_METADATA[node as Layer] : null;
+      const weight = la.effectiveWeight ?? la.weight ?? la.activation ?? 0;
       layers.push({
-        name: meta?.aiName || `Layer ${node}`,
-        activation: Math.round(la.effectiveWeight || 0),
+        name: meta?.aiName || la.name || la.label || `Layer ${node ?? '?'}`,
+        activation: Math.round(weight * (weight < 1 ? 100 : 1)),
       });
     }
   }
@@ -200,9 +201,8 @@ export default function MetadataSidePanel() {
         title="Toggle metadata panel"
         style={{ writingMode: 'vertical-rl' }}
       >
-        <span className="text-[8px] text-zinc-400 font-mono tracking-widest group-hover:text-zinc-700 transition-colors">
+        <span className="text-[7px] text-zinc-400 font-mono tracking-widest group-hover:text-zinc-700 transition-colors uppercase">
           {'◊ metadata'}
-          {entries.length > 0 && !isOpen ? ` ${entries.length}` : ''}
         </span>
       </button>
 
