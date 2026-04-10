@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { queries } from '@/lib/query-store';
 import { getQuery } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
+import { classifyContent } from '@/lib/mini-canvas/content-classifier';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,13 +39,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       // Since tokens/cost are only in database, we need to fetch them (scoped to user)
       const dbQuery = getQuery(queryId, userId) as QueryResult | undefined;
 
+      const responseText = memoryQuery.result?.finalAnswer || '';
+      const miniCanvas = responseText
+        ? classifyContent(responseText, memoryQuery.query || '')
+        : null;
+
       return NextResponse.json({
         id: queryId,
         query: memoryQuery.query,
         methodology: memoryQuery.flow,
         status: memoryQuery.status,
-        response: memoryQuery.result?.finalAnswer || null,
-        finalDecision: memoryQuery.result?.finalAnswer || null,
+        response: responseText || null,
+        finalDecision: responseText || null,
         events: memoryQuery.events || [],
         metrics: {
           tokens: dbQuery?.tokens_used || 0,
@@ -53,6 +59,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         },
         createdAt: dbQuery?.created_at || null,
         error: memoryQuery.error,
+        miniCanvas,
       });
     }
 
@@ -75,19 +82,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       console.log(`[API DEBUG] Parsed result:`, parsedResult);
 
+      const dbResponseText = parsedResult?.finalAnswer || '';
+      const dbMiniCanvas = dbResponseText
+        ? classifyContent(dbResponseText, dbQuery.query || '')
+        : null;
+
       return NextResponse.json({
         id: dbQuery.id,
         query: dbQuery.query,
         methodology: dbQuery.flow,
         status: dbQuery.status,
-        response: parsedResult?.finalAnswer || null,
-        finalDecision: parsedResult?.finalAnswer || null,
+        response: dbResponseText || null,
+        finalDecision: dbResponseText || null,
         metrics: {
           tokens: dbQuery.tokens_used || 0,
           latency: parsedResult?.duration ? parsedResult.duration * 1000 : 0,
           cost: dbQuery.cost || 0,
         },
         createdAt: dbQuery.created_at || null,
+        miniCanvas: dbMiniCanvas,
       });
     }
 
