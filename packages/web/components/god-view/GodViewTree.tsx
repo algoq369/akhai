@@ -48,19 +48,19 @@ export interface GodViewTreeProps {
 // CONSTANTS (extracted from tree-of-life/page.tsx)
 // ═══════════════════════════════════════════
 
-/** Neural tree node positions */
+/** Neural tree node positions — scaled for readability */
 export const TREE_POSITIONS: Record<Layer, { x: number; y: number }> = {
   [Layer.META_CORE]: { x: 250, y: 80 },
-  [Layer.REASONING]: { x: 380, y: 140 },
-  [Layer.ENCODER]: { x: 120, y: 140 },
-  [Layer.SYNTHESIS]: { x: 250, y: 180 },
-  [Layer.EXPANSION]: { x: 380, y: 240 },
-  [Layer.DISCRIMINATOR]: { x: 120, y: 240 },
-  [Layer.ATTENTION]: { x: 250, y: 260 },
-  [Layer.GENERATIVE]: { x: 380, y: 360 },
-  [Layer.CLASSIFIER]: { x: 120, y: 360 },
-  [Layer.EXECUTOR]: { x: 250, y: 420 },
-  [Layer.EMBEDDING]: { x: 250, y: 500 },
+  [Layer.REASONING]: { x: 406, y: 155 },
+  [Layer.ENCODER]: { x: 94, y: 155 },
+  [Layer.SYNTHESIS]: { x: 250, y: 205 },
+  [Layer.EXPANSION]: { x: 406, y: 280 },
+  [Layer.DISCRIMINATOR]: { x: 94, y: 280 },
+  [Layer.ATTENTION]: { x: 250, y: 305 },
+  [Layer.GENERATIVE]: { x: 406, y: 430 },
+  [Layer.CLASSIFIER]: { x: 94, y: 430 },
+  [Layer.EXECUTOR]: { x: 250, y: 505 },
+  [Layer.EMBEDDING]: { x: 250, y: 605 },
 }
 
 /** 22 paths of the Tree of Life */
@@ -155,7 +155,7 @@ export default function GodViewTree({
 
   const isDominant = (layer: Layer) => dominantLayers.includes(layer)
 
-  const viewBox = compact ? '0 0 500 560' : '0 0 500 580'
+  const viewBox = compact ? '0 0 500 680' : '0 0 500 700'
   const containerClass = compact
     ? 'w-full h-full'
     : 'w-full h-full'
@@ -437,11 +437,11 @@ export default function GodViewTree({
                   x={pos.x}
                   y={pos.y + radius + 18}
                   textAnchor="middle"
-                  fontSize="11"
-                  fill="#8b5cf6"
+                  fontSize="12"
+                  fill="#c4b5fd"
                   fontFamily="monospace"
-                  fontWeight="600"
-                  opacity="0.95"
+                  fontWeight="700"
+                  opacity="1"
                 >
                   {meta.aiRole.split('\u2022')[0].trim()}
                 </text>
@@ -453,11 +453,11 @@ export default function GodViewTree({
                   x={pos.x}
                   y={pos.y + radius + 14}
                   textAnchor="middle"
-                  fontSize="8"
-                  fill="#8b5cf6"
+                  fontSize="9"
+                  fill="#c4b5fd"
                   fontFamily="monospace"
-                  fontWeight="600"
-                  opacity="0.9"
+                  fontWeight="700"
+                  opacity="1"
                 >
                   {meta.name}
                 </text>
@@ -466,12 +466,12 @@ export default function GodViewTree({
               {/* Activation percentage */}
               <text
                 x={pos.x}
-                y={pos.y + radius + (compact ? 24 : 32)}
+                y={pos.y + radius + (compact ? 24 : 34)}
                 textAnchor="middle"
-                fontSize={compact ? '7' : '9'}
-                fill="#64748b"
+                fontSize={compact ? '8' : '10'}
+                fill="#94a3b8"
                 fontFamily="monospace"
-                fontWeight="500"
+                fontWeight="600"
               >
                 {(activation * 100).toFixed(0)}%
               </text>
@@ -482,7 +482,7 @@ export default function GodViewTree({
         {/* Center label */}
         <motion.text
           x="250"
-          y={compact ? '285' : '295'}
+          y={compact ? '340' : '365'}
           textAnchor="middle"
           fontSize={compact ? '7' : '9'}
           fill="#94a3b8"

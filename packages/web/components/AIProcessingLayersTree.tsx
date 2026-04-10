@@ -38,7 +38,7 @@ export function AIProcessingLayersTree({
       <div className="text-center text-[9px] uppercase tracking-wider text-relic-slate mb-2">
         AI Processing Layers
       </div>
-      <svg viewBox="0 0 500 580" className="w-full">
+      <svg viewBox="0 0 500 700" className="w-full">
         {/* Connection Paths with pillar colors */}
         {TREE_PATHS.map(([from, to], idx) => {
           const fromPos = TREE_POSITIONS[from];
