@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { COUNCIL_AGENTS } from '@/lib/god-view/agents';
 import { useCouncilStore } from '@/lib/stores/council-store';
+import AgentChat from '@/components/god-view/AgentChat';
 
 interface CouncilPanelProps {
   queryId: string;
@@ -32,7 +33,7 @@ function SkeletonCard() {
 
 export default function CouncilPanel({ queryId }: CouncilPanelProps) {
   const [expanded, setExpanded] = useState(false);
-  const { results, isLoading, activeQueryId } = useCouncilStore();
+  const { results, isLoading, activeQueryId, setDrillAgent, drillAgentId } = useCouncilStore();
   const result = results.find((r) => r.queryId === queryId);
   const isActive = isLoading && activeQueryId === queryId;
 
@@ -104,10 +105,23 @@ export default function CouncilPanel({ queryId }: CouncilPanelProps) {
                           <span className="italic text-zinc-400">Awaiting perspective...</span>
                         )}
                       </p>
+                      {perspective && (
+                        <button
+                          onClick={() => setDrillAgent(drillAgentId === agent.id ? null : agent.id, queryId)}
+                          className={`mt-1.5 text-[7px] uppercase tracking-wider transition-colors ${
+                            drillAgentId === agent.id ? 'text-purple-500' : 'text-zinc-400 hover:text-zinc-600'
+                          }`}
+                        >
+                          {drillAgentId === agent.id ? 'Close chat ×' : 'Drill deeper →'}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
           </div>
+
+          {/* Agent drill-down chat */}
+          {drillAgentId && <AgentChat />}
 
           {/* Cost footer */}
           {result && (

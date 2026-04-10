@@ -18,7 +18,7 @@ export const COUNCIL_AGENTS: CouncilAgent[] = [
   {
     id: 'visionary',
     name: 'Visionary',
-    layerId: 0,
+    layerId: 9, // Layer.REASONING
     role: 'Novel connections, future implications',
     sigil: '◈',
     provider: 'anthropic',
@@ -29,7 +29,7 @@ export const COUNCIL_AGENTS: CouncilAgent[] = [
   {
     id: 'analyst',
     name: 'Analyst',
-    layerId: 1,
+    layerId: 8, // Layer.ENCODER
     role: 'Data patterns, evidence, structure',
     sigil: '◆',
     provider: 'anthropic',
@@ -40,7 +40,7 @@ export const COUNCIL_AGENTS: CouncilAgent[] = [
   {
     id: 'advocate',
     name: 'Advocate',
-    layerId: 2,
+    layerId: 7, // Layer.EXPANSION
     role: 'Opportunities, best case, potential',
     sigil: '◇',
     // TODO: switch back to google/gemini-2.5-pro when GOOGLE_GENERATIVE_AI_API_KEY is configured
@@ -52,7 +52,7 @@ export const COUNCIL_AGENTS: CouncilAgent[] = [
   {
     id: 'skeptic',
     name: 'Skeptic',
-    layerId: 3,
+    layerId: 6, // Layer.DISCRIMINATOR
     role: 'Risks, flaws, blind spots',
     sigil: '◉',
     // TODO: switch back to deepseek/deepseek-chat when DEEPSEEK_API_KEY is configured
@@ -64,7 +64,7 @@ export const COUNCIL_AGENTS: CouncilAgent[] = [
   {
     id: 'synthesizer',
     name: 'Synthesizer',
-    layerId: 4,
+    layerId: 5, // Layer.ATTENTION
     role: 'Integration of all perspectives',
     sigil: '◎',
     provider: 'anthropic',

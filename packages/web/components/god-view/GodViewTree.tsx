@@ -14,6 +14,8 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Layer, LAYER_METADATA } from '@/lib/layer-registry'
+import { useCouncilStore } from '@/lib/stores/council-store'
+import { COUNCIL_AGENTS } from '@/lib/god-view/agents'
 
 // ═══════════════════════════════════════════
 // TYPES
@@ -156,12 +158,11 @@ export default function GodViewTree({
   const isDominant = (layer: Layer) => dominantLayers.includes(layer)
 
   const viewBox = compact ? '0 0 500 680' : '0 0 500 700'
-  const containerClass = compact
-    ? 'w-full h-full'
-    : 'w-full h-full'
+  const councilLayers = useCouncilStore((s) => s.activeAgentLayers)
+  const councilAgent = (layer: number) => COUNCIL_AGENTS.find((a) => a.layerId === layer)
 
   return (
-    <div className={`relative ${containerClass}`}>
+    <div className="relative w-full h-full">
       <svg viewBox={viewBox} width="100%" height="100%" className="w-full h-full">
         {/* Connection paths */}
         {showPathsProp && pathConnections.map((path, index) => {
@@ -405,31 +406,28 @@ export default function GodViewTree({
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               />
 
-              {/* Active badge */}
-              {isActive && !compact && (
-                <motion.circle
-                  cx={pos.x + radius - 5}
-                  cy={pos.y - radius + 5}
-                  r="8"
-                  fill="#10b981"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.3, type: 'spring' }}
-                />
+              {/* Active/Developing badge */}
+              {(isActive || isDev) && !compact && (
+                <motion.circle cx={pos.x + radius - 5} cy={pos.y - radius + 5} r={isActive ? 8 : 6}
+                  fill={isActive ? '#10b981' : '#f59e0b'} initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  transition={{ delay: 0.3, type: 'spring' }} />
               )}
 
-              {/* Developing badge */}
-              {isDev && !compact && (
-                <motion.circle
-                  cx={pos.x + radius - 5}
-                  cy={pos.y - radius + 5}
-                  r="6"
-                  fill="#f59e0b"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.3, type: 'spring' }}
-                />
-              )}
+              {/* Council agent ring + sigil */}
+              {councilLayers.includes(layer) && (() => {
+                const agent = councilAgent(layer)
+                if (!agent) return null
+                const AGENT_COLORS: Record<string, string> = { visionary: '#818cf8', analyst: '#34d399', advocate: '#fbbf24', skeptic: '#f87171', synthesizer: '#a78bfa' }
+                const agentColor = AGENT_COLORS[agent.id] || '#9ca3af'
+                const stagger = COUNCIL_AGENTS.indexOf(agent) * 0.2
+                return (<>
+                  <motion.circle cx={pos.x} cy={pos.y} r={radius + 22} fill="none" stroke={agentColor} strokeWidth="2"
+                    initial={{ opacity: 0 }} animate={{ opacity: [0, 0.7, 0.3], scale: [0.9, 1.05, 1] }}
+                    transition={{ delay: stagger, duration: 2, repeat: Infinity, ease: 'easeInOut' }} />
+                  <text x={pos.x + radius + 12} y={pos.y - radius + 2} textAnchor="start" fontSize="12"
+                    fill={agentColor} fontFamily="monospace" opacity="0.9">{agent.sigil}</text>
+                </>)
+              })()}
 
               {/* AI term label */}
               {!compact && (
