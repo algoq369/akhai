@@ -137,8 +137,18 @@ export default function SandboxPage() {
 
         {/* Error */}
         {error && (
-          <div className="font-mono text-[11px] text-red-500 border border-red-500/20 rounded px-4 py-3 mb-6">
-            {error}
+          <div className="font-mono text-[11px] border border-red-500/20 bg-red-50/50 dark:bg-red-950/10 rounded px-4 py-3 mb-6">
+            <div className="text-red-500 mb-1">{error}</div>
+            {error.toLowerCase().includes('credit') && (
+              <a
+                href="https://console.anthropic.com/settings/billing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-red-400 hover:text-red-300 underline text-[10px]"
+              >
+                Top up credits →
+              </a>
+            )}
           </div>
         )}
 

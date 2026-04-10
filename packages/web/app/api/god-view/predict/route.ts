@@ -16,6 +16,19 @@ function sseEvent(event: string, data: string): string {
   return `event: ${event}\ndata: ${data}\n\n`;
 }
 
+function isCreditError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+  return (
+    msg.includes('credit') ||
+    msg.includes('balance') ||
+    msg.includes('insufficient') ||
+    msg.includes('billing')
+  );
+}
+
+const CREDIT_ERROR_MSG =
+  'API credits exhausted. Please check your Anthropic billing at console.anthropic.com.';
+
 export async function POST(request: NextRequest) {
   try {
     const { seed, question, domain: rawDomain } = await request.json();
@@ -127,7 +140,11 @@ export async function POST(request: NextRequest) {
           const totalLatency = Date.now() - startTime;
           send('complete', { totalCost, totalLatency });
         } catch (err) {
-          const msg = err instanceof Error ? err.message : 'Unknown error';
+          const msg = isCreditError(err)
+            ? CREDIT_ERROR_MSG
+            : err instanceof Error
+              ? err.message
+              : 'Unknown error';
           controller.enqueue(
             new TextEncoder().encode(sseEvent('error', JSON.stringify({ error: msg })))
           );

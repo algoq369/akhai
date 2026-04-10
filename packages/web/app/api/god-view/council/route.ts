@@ -5,6 +5,16 @@ import type { ProviderFamily } from '@/lib/provider-selector';
 
 export const dynamic = 'force-dynamic';
 
+function isCreditError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+  return (
+    msg.includes('credit') ||
+    msg.includes('balance') ||
+    msg.includes('insufficient') ||
+    msg.includes('billing')
+  );
+}
+
 /** Call a single council agent, falling back to anthropic if provider unavailable. */
 async function callAgent(agent: CouncilAgent, context: string) {
   const available = isProviderAvailable(agent.provider as ProviderFamily);
@@ -45,7 +55,9 @@ export async function POST(request: NextRequest) {
         ? s.value
         : {
             agentId: perspectiveAgents[i].id,
-            text: `${perspectiveAgents[i].name} perspective skipped — ${perspectiveAgents[i].provider} provider not configured`,
+            text: isCreditError(s.reason)
+              ? `${perspectiveAgents[i].name} perspective unavailable — API credits exhausted`
+              : `${perspectiveAgents[i].name} perspective skipped — ${perspectiveAgents[i].provider} provider not configured`,
             latencyMs: 0,
             cost: 0,
           }
@@ -73,6 +85,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ perspectives, synthesis, totalCost });
   } catch (error) {
     console.error('Council route error:', error);
-    return NextResponse.json({ error: 'Council failed' }, { status: 500 });
+    const msg = isCreditError(error)
+      ? 'API credits exhausted. Please check your Anthropic billing at console.anthropic.com.'
+      : 'Council failed';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

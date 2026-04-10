@@ -406,8 +406,14 @@ export async function POST(request: NextRequest) {
       }
 
       if (!fallbackSucceeded) {
+        const creditKeywords = ['credit', 'balance', 'insufficient', 'billing'];
+        const isCredit = creditKeywords.some((k) => apiError.message?.toLowerCase().includes(k));
         return NextResponse.json(
-          { error: `All AI providers failed. Last error: ${apiError.message}` },
+          {
+            error: isCredit
+              ? 'API credits exhausted. Please check your provider billing.'
+              : `All AI providers failed. Last error: ${apiError.message}`,
+          },
           { status: 500 }
         );
       }

@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 
@@ -16,7 +16,6 @@ export default function NavigationMenu({
   onHistoryClick,
 }: NavigationMenuProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const menuItems = [
