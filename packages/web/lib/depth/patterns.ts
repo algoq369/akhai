@@ -25,93 +25,79 @@ const REMAINING_PATTERNS: DetectionPattern[] = [
     }),
   },
 
-  // SOURCES: Citations, references
+  // SOURCES: Citations, references — broadened to catch plain-text citations
   {
     type: 'source',
     patterns: [
-      /(?:according\s+to|per|via|from)\s+([A-Z][a-zA-Z\s]+?)(?:\s+(?:\d{4}|study|report|paper))/gi,
+      /\b(?:according\s+to|per|via)\s+([A-Z][a-zA-Z\s]{2,30})/gi,
+      /\b(?:study|research|report|survey|analysis)\s+(?:by|from)\s+([A-Z][a-zA-Z\s]+)/gi,
+      /\b(?:published|found\s+that|reported\s+that|showed\s+that|concluded\s+that)/gi,
+      /\b(?:university|institute|foundation|organization|journal)\b/gi,
       /\((?:source|ref|cite):\s*([^)]+)\)/gi,
-      /(?:research\s+(?:by|from)|study\s+(?:by|from))\s+([A-Z][a-zA-Z\s]+)/gi,
     ],
-    extractor: (match, context) => ({
-      content: match[0],
+    extractor: (match) => ({
+      content: `ˢ Source: ${match[0].trim().substring(0, 60)}`,
       confidence: 0.75,
     }),
   },
 
-  // PLAIN TEXT FALLBACKS — catch annotations in unformatted prose
-  {
-    type: 'metric',
-    patterns: [
-      // Any sentence fragment containing a number (plain prose)
-      /[^.!?\n]*\b(\d{2,}(?:,\d{3})*(?:\.\d+)?)\s*[a-zA-Z]+[^.!?\n]*/g,
-    ],
-    extractor: (match) => {
-      const num = match[1];
-      if (!num || parseInt(num) < 10) return null;
-      return { content: `ᵐ Metric: ${match[0].trim().substring(0, 60)}`, confidence: 0.6 };
-    },
-  },
-  {
-    type: 'connection',
-    patterns: [
-      // Causal reasoning phrases in plain prose
-      /[^.!?\n]*\b(?:because|since|therefore|thus|consequently|as a result|due to|leads? to|causes?|enables?)\b[^.!?\n]*/gi,
-    ],
-    extractor: (match) => {
-      const text = match[0].trim();
-      if (text.length < 15) return null;
-      return { content: `ᶜ Reasoning: ${text.substring(0, 60)}`, confidence: 0.55 };
-    },
-  },
+  // FACTS: Sentences with specific numbers, units, dates, or named data
   {
     type: 'fact',
     patterns: [
-      // Definitional statements in plain prose
-      /[^.!?\n]*\b(?:is defined as|refers to|is known as|is called|means that|is a type of|is a form of)\b[^.!?\n]*/gi,
+      /[^.!?\n]*\b\d+[\d,.]*\s*(?:%|percent|billion|million|trillion|BTC|USD|ETH|TWh|GWh?|MW|km|mph|kg|lb)\b[^.!?\n]*/gi,
+      /[^.!?\n]*\b(?:is defined as|refers to|is known as|is called|means that|is a type of)\b[^.!?\n]*/gi,
+      /[^.!?\n]*\b(?:since|in|as of)\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\b[^.!?\n]*/gi,
     ],
     extractor: (match) => {
       const text = match[0].trim();
       if (text.length < 15) return null;
-      return { content: `ᶠ Definition: ${text.substring(0, 60)}`, confidence: 0.6 };
+      return { content: `ᶠ ${text.substring(0, 70)}`, confidence: 0.7 };
     },
   },
 
-  // BROAD FALLBACKS — ensure minimum 3+ annotations per response
+  // METRICS: Comparative or change-indicating phrases
   {
-    type: 'detail',
+    type: 'metric',
     patterns: [
-      // Long sentences (> 80 chars) are substantive claims worth annotating
-      /[A-Z][^.!?]{80,}[.!?]/g,
+      /[^.!?\n]*\b(?:increased|decreased|grew|dropped|rose|fell|surged|declined|doubled|tripled)\s+(?:by\s+)?\d[^.!?\n]*/gi,
+      /[^.!?\n]*\b(\d+(?:,\d{3})*(?:\.\d+)?)\s*[a-zA-Z]+[^.!?\n]*/g,
     ],
     extractor: (match) => {
-      return { content: `◊ ${match[0].trim().substring(0, 50)}...`, confidence: 0.45 };
+      const text = match[0].trim();
+      if (text.length < 15) return null;
+      const numMatch = text.match(/\d+/);
+      if (numMatch && parseInt(numMatch[0]) < 2) return null;
+      return { content: `ᵐ ${text.substring(0, 70)}`, confidence: 0.65 };
     },
   },
+
+  // CONNECTIONS: Cross-domain comparisons and causal reasoning
   {
-    type: 'detail',
+    type: 'connection',
     patterns: [
-      // Parenthetical explanations indicate detail worth noting
-      /[^.!?\n]*\([^)]{8,}\)[^.!?\n]*/g,
+      /[^.!?\n]*\b(?:similar to|unlike|compared to|relates to|intersection of|analogous to|in contrast)\b[^.!?\n]*/gi,
+      /[^.!?\n]*\b(?:because|therefore|consequently|as a result|due to|leads? to|causes?|enables?)\b[^.!?\n]*/gi,
     ],
     extractor: (match) => {
       const text = match[0].trim();
       if (text.length < 20) return null;
-      return { content: `◊ Detail: ${text.substring(0, 55)}`, confidence: 0.5 };
+      return { content: `ᶜ ${text.substring(0, 70)}`, confidence: 0.6 };
     },
   },
+
+  // DEPTH: Deeper implications and fundamentals
   {
-    type: 'connection',
+    type: 'detail',
     patterns: [
-      // Comma-separated lists of 3+ items indicate relationships
-      /[^.!?\n]*(?:[^,]+,){2,}[^.!?\n]*/g,
+      /[^.!?\n]*\b(?:implication|consequence|underlying|fundamental|root cause|in essence|critically|notably|importantly)\b[^.!?\n]*/gi,
+      /[^.!?\n]*\([^)]{8,}\)[^.!?\n]*/g,
+      /[A-Z][^.!?]{80,}[.!?]/g,
     ],
     extractor: (match) => {
       const text = match[0].trim();
-      if (text.length < 30) return null;
-      const commaCount = (text.match(/,/g) || []).length;
-      if (commaCount < 2) return null;
-      return { content: `☿ Enumeration: ${text.substring(0, 50)}`, confidence: 0.4 };
+      if (text.length < 20) return null;
+      return { content: `ᵈ ${text.substring(0, 70)}`, confidence: 0.5 };
     },
   },
 ];

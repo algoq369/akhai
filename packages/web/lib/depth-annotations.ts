@@ -83,9 +83,8 @@ export function detectAnnotations(
   }
 
   const annotations: DepthAnnotation[] = [];
-  // More annotations for better insight - user wants maximum capabilities
   const maxAnnotations =
-    config.density === 'minimal' ? 10 : config.density === 'standard' ? 30 : 100;
+    config.density === 'minimal' ? 5 : config.density === 'standard' ? 15 : 40;
 
   console.log(
     '[detectAnnotations] Max annotations:',
@@ -153,8 +152,8 @@ export function detectAnnotations(
     .filter((ann, i, arr) => {
       if (i === 0) return true;
       const prev = arr[i - 1];
-      // Remove overlapping annotations (within 3 chars) - reduced from 10 for denser coverage
-      return ann.position - prev.position > 3;
+      // Remove overlapping annotations (within 20 chars)
+      return ann.position - prev.position > 20;
     })
     .slice(0, maxAnnotations);
 
