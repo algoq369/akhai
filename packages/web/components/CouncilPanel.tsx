@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { COUNCIL_AGENTS } from '@/lib/god-view/agents';
 import { useCouncilStore } from '@/lib/stores/council-store';
 
@@ -13,7 +13,6 @@ const STRENGTH_COLOR: Record<string, string> = {
   analyst: 'border-t-emerald-400',
   advocate: 'border-t-amber-400',
   skeptic: 'border-t-red-400',
-  synthesizer: 'border-t-purple-400',
 };
 
 function SkeletonCard() {
@@ -37,7 +36,14 @@ export default function CouncilPanel({ queryId }: CouncilPanelProps) {
   const result = results.find((r) => r.queryId === queryId);
   const isActive = isLoading && activeQueryId === queryId;
 
+  // Auto-expand when council activates
+  useEffect(() => {
+    if (isActive) setExpanded(true);
+  }, [isActive]);
+
   if (!result && !isActive) return null;
+
+  const totalLatency = result ? Math.max(...result.perspectives.map((p) => p.latencyMs)) : 0;
 
   return (
     <div className="mt-2 border border-zinc-200 dark:border-zinc-700/50 rounded-lg overflow-hidden font-mono">
@@ -45,9 +51,11 @@ export default function CouncilPanel({ queryId }: CouncilPanelProps) {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2 px-3 py-2 text-left bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors"
       >
-        <span className="text-[10px] text-purple-400">◊</span>
+        <span className={`text-[10px] text-purple-400 ${isActive ? 'animate-pulse' : ''}`}>◊</span>
         <span className="text-[9px] uppercase tracking-wider text-zinc-500">
-          Council — 5 perspectives
+          {isActive
+            ? 'Convening council...'
+            : `Council — ${result?.perspectives.length || 0} perspectives · $${result?.totalCost.toFixed(4) || '0'} · ${(totalLatency / 1000).toFixed(1)}s`}
         </span>
         <span className="text-[8px] text-zinc-400 ml-auto">{expanded ? '▲' : '▼'}</span>
       </button>
@@ -70,9 +78,9 @@ export default function CouncilPanel({ queryId }: CouncilPanelProps) {
           )}
 
           {/* Agent cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {isActive
-              ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+              ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
               : COUNCIL_AGENTS.filter((a) => a.id !== 'synthesizer').map((agent) => {
                   const perspective = result?.perspectives.find((p) => p.agentId === agent.id);
                   return (
