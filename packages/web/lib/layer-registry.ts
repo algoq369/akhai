@@ -414,7 +414,7 @@ export function generateAscentReport(state: AscentState): string {
 
 **Session:** ${state.sessionId}
 **Total Queries:** ${state.totalQueries}
-**Current Level:** ${currentMeta.name} (${currentMeta.hebrewName}) - ${currentMeta.meaning}
+**Current Level:** ${currentMeta.name} - ${currentMeta.meaning}
 **Peak Level:** ${peakMeta.name} - Highest point reached
 **Average Level:** ${state.averageLevel.toFixed(1)}
 **Ascent Velocity:** ${state.ascentVelocity.toFixed(2)} levels/query

@@ -245,14 +245,14 @@ export function SimpleLayerTree() {
                   {meta.name}
                 </text>
 
-                {/* Hebrew Name (smallest, bottom) */}
+                {/* Role label (bottom) */}
                 <text
                   x={pos.x}
                   y={pos.y + 56}
                   textAnchor="middle"
                   className="text-[7px] font-mono fill-slate-400 dark:fill-slate-500 pointer-events-none"
                 >
-                  {meta.hebrewName}
+                  {meta.aiRole.split('\u2022')[0].trim().slice(0, 20)}
                 </text>
 
                 {/* Interactive Number Input (HTML overlay) */}

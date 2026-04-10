@@ -65,7 +65,7 @@ export default function LayerMiniSelector({
               className="text-[14px]"
               style={{ color: meta.color }}
             >
-              {meta.hebrewName}
+              {meta.name}
             </span>
             <div className="flex-1">
               <div

@@ -295,7 +295,7 @@ function buildPerspectivePrompt(
   meta: (typeof LAYER_METADATA)[1],
   query: string
 ): string {
-  return `You are ${meta.name} (${meta.hebrewName}) - the ${meta.meaning} AI Layer.
+  return `You are ${meta.name} - the ${meta.meaning} AI Layer.
 
 Your computational role: ${meta.aiRole}
 Your AI function: ${meta.aiRole}

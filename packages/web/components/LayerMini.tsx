@@ -307,9 +307,9 @@ export default function LayerMini({
             transition={{ duration: 0.2 }}
             className="absolute -top-24 left-1/2 -translate-x-1/2 bg-white rounded-lg px-4 py-3 shadow-md z-50 min-w-[240px]"
           >
-            {/* Hebrew + English Name */}
+            {/* AI Layer Name */}
             <div className="text-[11px] font-mono text-relic-void font-semibold mb-1">
-              {LAYER_METADATA[selectedLayer].hebrewName} • {LAYER_METADATA[selectedLayer].name}
+              {LAYER_METADATA[selectedLayer].name}
             </div>
 
             {/* Meaning/Attribute */}

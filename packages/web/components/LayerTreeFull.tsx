@@ -398,20 +398,7 @@ export function LayerTreeFull({
               {/* Labels - Always visible if showLabels is true */}
               {showLabels && (
                 <>
-                  {/* Hebrew name (top) */}
-                  <text
-                    x={scaledX}
-                    y={scaledY + radius + 16 * scale}
-                    textAnchor="middle"
-                    fontSize={9 * scale}
-                    fill="#94a3b8"
-                    fontFamily="Arial, sans-serif"
-                    opacity="0.7"
-                  >
-                    {meta.hebrewName}
-                  </text>
-
-                  {/* English name (middle) */}
+                  {/* AI name */}
                   <text
                     x={scaledX}
                     y={scaledY + radius + 28 * scale}

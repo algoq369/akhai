@@ -48,7 +48,7 @@ export interface GodViewTreeProps {
 // CONSTANTS (extracted from tree-of-life/page.tsx)
 // ═══════════════════════════════════════════
 
-/** Kabbalistic tree positions */
+/** Neural tree node positions */
 export const TREE_POSITIONS: Record<Layer, { x: number; y: number }> = {
   [Layer.META_CORE]: { x: 250, y: 80 },
   [Layer.REASONING]: { x: 380, y: 140 },
@@ -205,14 +205,17 @@ export default function GodViewTree({
                 fill="none"
                 stroke={strokeColor}
                 strokeWidth={isHovered ? '4' : (isActive ? '3' : '2')}
+                strokeDasharray={isActive && isLive ? '8 4' : 'none'}
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{
                   pathLength: 1,
-                  opacity: isHovered ? 0.95 : (isActive ? 0.7 : 0.3)
+                  opacity: isHovered ? 0.95 : (isActive ? 0.7 : 0.3),
+                  strokeDashoffset: isActive && isLive ? [0, -24] : 0
                 }}
                 transition={{
                   pathLength: { duration: 1.2, delay: index * 0.05, ease: 'easeOut' },
-                  opacity: { duration: 0.3 }
+                  opacity: { duration: 0.3 },
+                  strokeDashoffset: { duration: 2, repeat: Infinity, ease: 'linear' }
                 }}
                 onMouseEnter={() => setHoveredPath(index)}
                 onMouseLeave={() => setHoveredPath(null)}
@@ -269,13 +272,15 @@ export default function GodViewTree({
             <motion.g
               key={`gv-node-${layer}`}
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              animate={isActive && isLive
+                ? { scale: [1, 1.04, 1], opacity: 1 }
+                : { scale: 1, opacity: 1 }
+              }
               whileHover={{ scale: 1.15 }}
-              transition={{
-                delay: layer * 0.05,
-                duration: 0.3,
-                scale: { type: 'spring', stiffness: 300, damping: 20 }
-              }}
+              transition={isActive && isLive
+                ? { scale: { duration: 3, repeat: Infinity, ease: 'easeInOut' }, opacity: { duration: 0.3 } }
+                : { delay: layer * 0.05, duration: 0.3, scale: { type: 'spring', stiffness: 300, damping: 20 } }
+              }
               style={{ cursor: onNodeClick ? 'pointer' : 'default' }}
               data-layer-node={layer}
               onClick={() => onNodeClick?.(layer)}
@@ -296,10 +301,10 @@ export default function GodViewTree({
                   fill={color}
                   opacity="0.1"
                   animate={isLive ? {
-                    r: [radius + 6, radius + 9, radius + 6],
-                    opacity: [0.1, 0.15, 0.1]
+                    r: [radius + 6, radius + 12, radius + 6],
+                    opacity: [0.1, 0.25, 0.1]
                   } : {}}
-                  transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                 />
               )}
 
@@ -313,9 +318,24 @@ export default function GodViewTree({
                   strokeWidth="2"
                   opacity="0.3"
                   animate={{
-                    r: [radius + 14, radius + 18, radius + 14],
-                    opacity: [0.3, 0.5, 0.3]
+                    r: [radius + 14, radius + 20, radius + 14],
+                    opacity: [0.3, 0.6, 0.3],
+                    strokeWidth: ['2', '3', '2']
                   }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              )}
+
+              {/* Guard pulse — Discriminator red ring when dominant */}
+              {dominant && isLive && layer === 5 && (
+                <motion.circle
+                  cx={pos.x} cy={pos.y}
+                  r={radius + 18}
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="2"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: [0, 0.6, 0], scale: [0.9, 1.1, 0.9] }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                 />
               )}

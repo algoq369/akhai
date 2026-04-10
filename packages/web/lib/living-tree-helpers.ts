@@ -207,7 +207,7 @@ export function generateSelfNarrative(
   if (activePaths.length > 0) {
     const topPath = activePaths[0];
     const pathMeta = PATH_METADATA[topPath.path];
-    narrative += `Energy flows strongest through the path of ${pathMeta?.hebrewLetter || ''} (${pathMeta?.meaning || topPath.path}). `;
+    narrative += `Energy flows strongest through the path of ${pathMeta?.meaning || topPath.path}. `;
   }
 
   // Add balance insight

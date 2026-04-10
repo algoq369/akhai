@@ -193,17 +193,7 @@ export default function LayerNeuralNetwork({
                               />
                             </circle>
                           )}
-                          <text
-                            x={(fromPos.x + toPos.x) / 2}
-                            y={(fromPos.y + toPos.y) / 2}
-                            fill="rgba(167, 139, 250, 0.5)"
-                            fontSize="2"
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            className="font-serif"
-                          >
-                            {path.hebrewLetter}
-                          </text>
+                          {/* path connection (no label) */}
                         </g>
                       );
                     })}
@@ -245,8 +235,8 @@ export default function LayerNeuralNetwork({
                             className={`w-12 h-12 rounded-full flex flex-col items-center justify-center
                             bg-gradient-to-br ${layerNode.color} shadow-lg ${layerNode.glowColor}`}
                           >
-                            <span className="text-[10px] font-serif text-slate-800/80">
-                              {layerNode.hebrewName}
+                            <span className="text-[10px] font-mono text-slate-800/80">
+                              {layerNode.name.slice(0, 3)}
                             </span>
                             <div className="w-6 h-1 bg-black/20 rounded-full overflow-hidden mt-0.5">
                               <motion.div
@@ -286,7 +276,6 @@ export default function LayerNeuralNetwork({
                             >
                               <div className="bg-slate-800/95 backdrop-blur-xl rounded-xl border border-white/10 p-3 shadow-2xl">
                                 <div className="flex items-center gap-2 mb-2">
-                                  <span className="text-lg">{layerNode.hebrewName}</span>
                                   <div>
                                     <h4 className="text-sm font-semibold text-white">
                                       {layerNode.name}
