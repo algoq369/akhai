@@ -127,34 +127,56 @@ Break-even: Week 16 post-launch.
 
 ---
 
-## PHASE 2.5 — GOD VIEW FEATURES (from GOD_VIEW_TRACKER.md)
+## PHASE 2.5 — GOD VIEW FEATURES (4 Phases from GOD_VIEW_TRACKER.md)
 
-These were planned for Days 73-105 but not yet started. Re-prioritize into Phase 3:
+### GV Phase 1: Neural Tree God View — PARTIAL (60%)
+| Step | Task | Files | Status |
+|------|------|-------|--------|
+| 1.1 | GodViewTree.tsx (extracted, reusable) | components/god-view/GodViewTree.tsx (17KB) | ✅ |
+| 1.2 | GodViewPanel.tsx (slide-in overlay) | components/god-view/GodViewPanel.tsx (3KB) | ✅ |
+| 1.3 | SSE → live tree wiring via Zustand | god-view-store.ts | ✅ |
+| 1.4 | ActivityFeed.tsx (sigil event log) | components/god-view/ActivityFeed.tsx (6.5KB) | ✅ |
+| 1.5 | Animations (node glow, path pulse, cascade) | GodViewTree.tsx + god-view.css | ⬜ ~4h |
+| 1.6 | Mobile responsive (bottom drawer) | GodViewPanel.tsx | ⬜ ~2h |
+| 1.7 | Deploy + verify | — | ⬜ |
 
-| Phase | Feature | Est | Status | New Target |
-|-------|---------|-----|--------|------------|
-| GV-1 | Neural Tree God View (live query viz) | 16h | ✅ PARTIAL (Tree page exists, SSE wired) | Days 93-95 |
-| GV-2 | **Perspective Council (multi-agent)** | 20h | ⬜ NOT STARTED | Days 101-105 |
-| GV-3 | Scenario Sandbox (predict anything) | 28h | ⬜ NOT STARTED | Days 110-115 |
-| GV-4 | Voice Integration (input + output) | 14h | ⬜ NOT STARTED | Post-launch |
+### GV Phase 2: Perspective Council — SCAFFOLD (50%)
+| Step | Task | Files | Status |
+|------|------|-------|--------|
+| 2.1 | Vercel AI SDK + providers | package.json | ✅ Installed |
+| 2.2 | 5 agent definitions + prompts | lib/god-view/agents.ts (73 lines) | ✅ |
+| 2.3 | Council API route (Promise.all fan-out) | app/api/god-view/council/route.ts (53 lines) | ⬜ Stub 501 |
+| 2.4 | CouncilButton + CouncilPanel UI | components/Council*.tsx | ✅ Skeleton |
+| 2.5 | Agent drill-down chat (click agent → mini-chat) | components/god-view/AgentChat.tsx | ⬜ |
+| 2.6 | Council → Tree node highlighting | GodViewTree.tsx + god-view-store.ts | ⬜ |
+| 2.7 | Deploy + verify | — | ⬜ |
 
-### Perspective Council — 5 AI Computational Agents
-5 agents mapped to core reasoning layers, different LLM providers for genuine diversity.
-Fan-out/fan-in pattern: 4 perspective agents parallel → 1 synthesizer.
+Agents: Visionary (◈ Claude Sonnet), Analyst (◆ Claude Sonnet), Advocate (◇ Gemini 2.5 Pro), Skeptic (◉ DeepSeek V3), Synthesizer (◎ Claude Sonnet)
+Cost: ~$0.07/activation | Store: lib/stores/council-store.ts (41 lines)
 
-| Agent | AI Layer | Role | Provider | Cost |
-|-------|----------|------|----------|------|
-| The Visionary | Reasoning | Novel connections | Claude Sonnet 4.6 | ~$0.02 |
-| The Analyst | Encoder | Data patterns | Claude Sonnet 4.6 | ~$0.02 |
-| The Advocate | Expansion | Opportunities | Gemini 2.5 Pro | ~$0.01 |
-| The Skeptic | Discriminator | Risks, flaws | DeepSeek V3.2 | ~$0.001 |
-| The Synthesizer | Attention | Integration | Claude Sonnet 4.6 | ~$0.02 |
+### GV Phase 3: Scenario Sandbox — NOT STARTED
+| Step | Task | Est |
+|------|------|-----|
+| 3.1 | /sandbox page (seed input: text/URL/file + "What if?" question) | 4h |
+| 3.2 | scenario-engine.ts (entity extraction → branch prompts → prediction) | 4h |
+| 3.3 | /api/god-view/predict SSE route (3 parallel branches) | 5h |
+| 3.4 | ScenarioTimeline (3-branch visual: optimistic/balanced/pessimistic) | 3h |
+| 3.5 | ScenarioReport cards (expandable per branch) | 3h |
+| 3.6 | ScenarioChat (chat with predicted world state) | 3h |
+| 3.7 | Entity graph visualization (mini knowledge graph) | 3h |
+| 3.8 | Main chat "predict:" prefix integration | 2h |
 
-**Total per activation: ~$0.07 | ~10 activations/day on free tier**
+3 branches: Expansion lens (bull), Attention lens (balanced), Discriminator lens (bear)
+Cost: ~$0.10-0.15/prediction | ~50 predictions/day on Pro tier
 
-Stack: Vercel AI SDK (ai + @ai-sdk/anthropic + @ai-sdk/google + @ai-sdk/openai)
-API: POST /api/god-view/council
-UI: CouncilPanel.tsx + AgentCard.tsx, triggered by "◊ Council" button on responses >100 words
+### GV Phase 4: Voice Integration — NOT STARTED
+| Step | Task | Est |
+|------|------|-----|
+| 4.1 | Voice input (Browser Web Speech API → Deepgram Nova-3 later) | 4h |
+| 4.2 | Voice output (Browser SpeechSynthesis → OpenAI TTS-1 later) | 4h |
+| 4.3 | Voice settings (speed, voice picker, auto-read toggle) | 2h |
+| 4.4 | Council mode: different voice per agent | 2h |
 
-### Canvas / Miro-style Workspace
-Already built: CanvasWorkspace.tsx with draggable panels, query cards, topic bubbles, SVG connections, select/connect/note tools, pan/zoom. Needs: query threading (lines showing conversation evolution), topic constellation (force graph), cross-query connections.
+### Canvas / Miro-style Workspace — PARTIAL
+Built: CanvasWorkspace.tsx (301 lines) with draggable panels, query cards, topic bubbles, SVG connections, select/connect/note tools, pan/zoom.
+Missing: query threading (lines showing conversation evolution), topic constellation (force graph), cross-query connections, methodology timeline.
