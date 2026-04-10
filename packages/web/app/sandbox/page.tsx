@@ -1,8 +1,12 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useSandboxStore } from '@/lib/stores/sandbox-store';
 import SandboxInput from '@/components/god-view/SandboxInput';
+import ScenarioTimeline from '@/components/god-view/ScenarioTimeline';
+import ScenarioReport from '@/components/god-view/ScenarioReport';
+import ScenarioChat from '@/components/god-view/ScenarioChat';
+import EntityGraph from '@/components/god-view/EntityGraph';
 import type { ScenarioBranch, EntityResult } from '@/lib/god-view/scenario-engine';
 
 export default function SandboxPage() {
@@ -23,6 +27,9 @@ export default function SandboxPage() {
     setInput,
     reset,
   } = useSandboxStore();
+
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
+  const [chatBranchId, setChatBranchId] = useState<string | null>(null);
 
   const handleSubmit = useCallback(
     async (data: { seed: string; url: string; question: string; domain: string }) => {
@@ -100,17 +107,7 @@ export default function SandboxPage() {
     [reset, setInput, setLoading, setStatus, setEntities, addBranch, setComplete, setError]
   );
 
-  const confidenceColor = (c: number) => {
-    if (c >= 70) return 'text-emerald-500';
-    if (c >= 40) return 'text-amber-500';
-    return 'text-red-400';
-  };
-
-  const lensAccent = (id: string) => {
-    if (id === 'optimistic') return 'border-emerald-500/30';
-    if (id === 'pessimistic') return 'border-red-500/30';
-    return 'border-slate-400/30 dark:border-relic-ghost/30';
-  };
+  const chatBranch = chatBranchId ? branches.find((b) => b.id === chatBranchId) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-relic-void dark:to-relic-void/90">
@@ -145,67 +142,43 @@ export default function SandboxPage() {
           </div>
         )}
 
-        {/* Entity Summary */}
+        {/* Entity Graph */}
         {entities && entities.entities.length > 0 && (
           <div className="mb-6">
-            <h2 className="font-mono text-[10px] uppercase tracking-widest text-slate-500 dark:text-relic-ghost mb-2">
-              Entities Detected
-            </h2>
-            <div className="flex flex-wrap gap-1.5">
-              {entities.entities.map((e, i) => (
-                <span
-                  key={i}
-                  className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-relic-slate/20 text-slate-600 dark:text-relic-ghost"
-                >
-                  {e.name}
-                  <span className="ml-1 text-slate-400 dark:text-relic-ghost/50">{e.type}</span>
-                </span>
-              ))}
-            </div>
+            <EntityGraph entities={entities} />
           </div>
         )}
 
-        {/* Branch Results */}
+        {/* Scenario Timeline */}
+        {(branches.length > 0 || isLoading) && (
+          <div className="mb-8">
+            <ScenarioTimeline
+              branches={branches}
+              onSelect={(id) => setSelectedBranch(id)}
+              isLoading={isLoading && branches.length === 0}
+            />
+          </div>
+        )}
+
+        {/* Scenario Report Cards */}
         {branches.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="font-mono text-[10px] uppercase tracking-widest text-slate-500 dark:text-relic-ghost">
-              Scenario Branches ({branches.length}/3)
-            </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             {branches.map((branch) => (
-              <div
+              <ScenarioReport
                 key={branch.id}
-                className={`border ${lensAccent(branch.id)} rounded-lg p-5 bg-white/50 dark:bg-relic-void/50 backdrop-blur-sm`}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-slate-400 dark:text-relic-ghost/60">
-                      {branch.id}
-                    </span>
-                    <h3 className="font-mono text-sm text-slate-800 dark:text-white mt-0.5">
-                      {branch.title}
-                    </h3>
-                  </div>
-                  <span className={`font-mono text-xs ${confidenceColor(branch.confidence)}`}>
-                    {branch.confidence}%
-                  </span>
-                </div>
-                <p className="font-mono text-xs text-slate-600 dark:text-relic-ghost leading-relaxed">
-                  {branch.summary.split('. ').slice(0, 2).join('. ')}.
-                </p>
-                {branch.keyEvents.length > 0 && (
-                  <div className="mt-3 space-y-1">
-                    {branch.keyEvents.slice(0, 3).map((evt, i) => (
-                      <div
-                        key={i}
-                        className="font-mono text-[10px] text-slate-500 dark:text-relic-ghost/60"
-                      >
-                        {evt}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                branch={branch}
+                isSelected={selectedBranch === branch.id}
+                onSelect={() => setSelectedBranch(branch.id)}
+                onChat={() => setChatBranchId(branch.id)}
+              />
             ))}
+          </div>
+        )}
+
+        {/* Scenario Chat */}
+        {chatBranch && (
+          <div className="mb-6">
+            <ScenarioChat branch={chatBranch} onClose={() => setChatBranchId(null)} />
           </div>
         )}
 
