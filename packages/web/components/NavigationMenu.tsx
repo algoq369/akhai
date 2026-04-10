@@ -1,42 +1,68 @@
-'use client'
+'use client';
 
-import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
-import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import Link from 'next/link';
 
 interface NavigationMenuProps {
-  user: any
-  onMindMapClick: () => void
-  onHistoryClick?: () => void
+  user: any;
+  onMindMapClick: () => void;
+  onHistoryClick?: () => void;
 }
 
-export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }: NavigationMenuProps) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+export default function NavigationMenu({
+  user,
+  onMindMapClick,
+  onHistoryClick,
+}: NavigationMenuProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const menuItems = [
-    { id: 'philosophy', label: 'philosophy', mobileLabel: 'phil', href: '/philosophy', isLink: true, accent: 'violet' },
-    { id: 'intelligence-robot-training', label: 'intelligence & robot', mobileLabel: 'robot', href: '/idea-factory?tab=customize', isLink: true },
+    {
+      id: 'philosophy',
+      label: 'philosophy',
+      mobileLabel: 'phil',
+      href: '/philosophy',
+      isLink: true,
+      accent: 'violet',
+    },
+    {
+      id: 'intelligence-robot-training',
+      label: 'intelligence & robot',
+      mobileLabel: 'robot',
+      href: '/idea-factory?tab=customize',
+      isLink: true,
+    },
+    { id: 'sandbox', label: 'sandbox', mobileLabel: 'sand', href: '/sandbox', isLink: true },
     { id: 'mindmap', label: 'mindmap', mobileLabel: 'map', onClick: onMindMapClick, isLink: false },
-    { id: 'pricing', label: '₿', mobileLabel: '₿', href: '/pricing', isLink: true, accent: 'bitcoin' },
-  ]
+    {
+      id: 'pricing',
+      label: '₿',
+      mobileLabel: '₿',
+      href: '/pricing',
+      isLink: true,
+      accent: 'bitcoin',
+    },
+  ];
 
   const isActive = (id: string) => {
-    if (id === 'philosophy' && pathname === '/philosophy') return true
-    if (id === 'history' && pathname === '/history') return true
-    if (id === 'grimoire' && pathname?.startsWith('/grimoires')) return true
-    if (id === 'pricing' && pathname === '/pricing') return true
-    if (id === 'profile' && pathname === '/profile') return true
-    if (id === 'intelligence-robot-training' && pathname === '/idea-factory') return true
-    return false
-  }
+    if (id === 'philosophy' && pathname === '/philosophy') return true;
+    if (id === 'history' && pathname === '/history') return true;
+    if (id === 'grimoire' && pathname?.startsWith('/grimoires')) return true;
+    if (id === 'pricing' && pathname === '/pricing') return true;
+    if (id === 'profile' && pathname === '/profile') return true;
+    if (id === 'intelligence-robot-training' && pathname === '/idea-factory') return true;
+    if (id === 'sandbox' && pathname === '/sandbox') return true;
+    return false;
+  };
 
   return (
     <nav className="flex items-center gap-2 overflow-hidden flex-shrink-0">
       {menuItems.map((item) => {
-        const active = isActive(item.id)
-        const hovered = hoveredItem === item.id
+        const active = isActive(item.id);
+        const hovered = hoveredItem === item.id;
 
         if (item.isLink) {
           // Special styling for Bitcoin pricing button
@@ -49,16 +75,17 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
                 onMouseLeave={() => setHoveredItem(null)}
                 className={`
                   relative text-base font-mono transition-all duration-300
-                  ${active
-                    ? 'text-relic-void dark:text-white border-b border-relic-slate dark:border-relic-ghost'
-                    : 'text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white'
+                  ${
+                    active
+                      ? 'text-relic-void dark:text-white border-b border-relic-slate dark:border-relic-ghost'
+                      : 'text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white'
                   }
                   ${hovered ? 'scale-110' : 'scale-100'}
                 `}
               >
                 {item.label}
               </Link>
-            )
+            );
           }
 
           return (
@@ -69,13 +96,14 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
               onMouseLeave={() => setHoveredItem(null)}
               className={`
                 text-[11px] font-mono transition-all duration-200
-                ${active
-                  ? item.accent === 'violet'
-                    ? 'text-violet-500 dark:text-violet-400 border-b border-violet-500 dark:border-violet-400'
-                    : 'text-relic-slate dark:text-relic-ghost border-b border-relic-slate dark:border-relic-ghost'
-                  : item.accent === 'violet'
-                    ? 'text-violet-400/70 dark:text-violet-400/80 hover:text-violet-500 dark:hover:text-violet-300'
-                    : 'text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white'
+                ${
+                  active
+                    ? item.accent === 'violet'
+                      ? 'text-violet-500 dark:text-violet-400 border-b border-violet-500 dark:border-violet-400'
+                      : 'text-relic-slate dark:text-relic-ghost border-b border-relic-slate dark:border-relic-ghost'
+                    : item.accent === 'violet'
+                      ? 'text-violet-400/70 dark:text-violet-400/80 hover:text-violet-500 dark:hover:text-violet-300'
+                      : 'text-relic-silver dark:text-relic-ghost hover:text-relic-slate dark:hover:text-white'
                 }
                 ${hovered ? 'scale-105' : ''}
               `}
@@ -83,7 +111,7 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
               <span className="hidden sm:inline">{item.label}</span>
               <span className="sm:hidden">{item.mobileLabel}</span>
             </Link>
-          )
+          );
         }
 
         return (
@@ -101,8 +129,8 @@ export default function NavigationMenu({ user, onMindMapClick, onHistoryClick }:
             <span className="hidden sm:inline">{item.label}</span>
             <span className="sm:hidden">{item.mobileLabel}</span>
           </button>
-        )
+        );
       })}
     </nav>
-  )
+  );
 }
