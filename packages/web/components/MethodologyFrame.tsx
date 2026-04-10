@@ -163,13 +163,13 @@ export default function MethodologyFrame({
         })}
 
         {/* Guard indicator */}
-        <div className="flex items-center gap-1 ml-4">
+        <div className="flex items-center gap-1 ml-2">
           <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[8px] uppercase tracking-widest text-slate-400">guard active</span>
+          <span className="text-[7px] uppercase tracking-wider text-slate-400">guard</span>
         </div>
 
         {/* Vertical separator */}
-        <div className="h-6 w-px bg-slate-700 dark:bg-slate-600 mx-3" />
+        <div className="h-3 w-px bg-slate-300 dark:bg-slate-600 mx-2" />
 
         {/* AI Config Console indicator */}
         <div
@@ -211,49 +211,23 @@ export default function MethodologyFrame({
         </div>
       </div>
 
-      {/* Selected methodology info - Full name + abbrev */}
+      {/* Selected methodology — single compact row */}
       <AnimatePresence mode="wait">
         {currentMethodology !== 'auto' && (
           <motion.div
             key={currentMethodology}
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            className="mt-3 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="mt-1 flex items-center justify-center gap-2 text-[7px] font-mono"
           >
-            {/* Symbol + Full Name + Abbrev */}
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <span className="text-sm" style={{ color: currentMethod.color }}>
-                {currentMethod.symbol}
-              </span>
-              <span className="text-[11px] font-medium" style={{ color: currentMethod.color }}>
-                {currentMethod.fullName}
-              </span>
-              <span
-                className="text-[9px] font-mono opacity-60 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800"
-                style={{ color: currentMethod.color }}
-              >
-                {currentMethod.name}
-              </span>
-            </div>
-
-            {/* Metrics */}
-            <div className="flex items-center justify-center gap-3 text-[9px]">
-              <span>
-                <span className="text-slate-300 uppercase tracking-wider">tokens:</span>{' '}
-                <span className="text-slate-500 font-mono">{currentMethod.tokens}</span>
-              </span>
-              <span className="text-slate-200">·</span>
-              <span>
-                <span className="text-slate-300 uppercase tracking-wider">latency:</span>{' '}
-                <span className="text-slate-500 font-mono">{currentMethod.latency}</span>
-              </span>
-              <span className="text-slate-200">·</span>
-              <span>
-                <span className="text-slate-300 uppercase tracking-wider">cost:</span>{' '}
-                <span className="text-slate-500 font-mono">{currentMethod.cost}</span>
-              </span>
-            </div>
+            <span style={{ color: currentMethod.color }}>{currentMethod.symbol} {currentMethod.fullName}</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
+            <span className="text-slate-400">{currentMethod.tokens} tok</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
+            <span className="text-slate-400">{currentMethod.latency}</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
+            <span className="text-slate-400">{currentMethod.cost}</span>
           </motion.div>
         )}
       </AnimatePresence>

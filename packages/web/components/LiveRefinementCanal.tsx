@@ -49,7 +49,7 @@ export default function LiveRefinementCanal({ isVisible, isLoading }: LiveRefine
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="max-w-3xl mx-auto px-6 mb-2"
+          className="max-w-3xl mx-auto px-6 mb-1"
         >
           <div className="border border-relic-mist/20 dark:border-relic-slate/20 rounded-md bg-white/50 dark:bg-relic-void/50 overflow-hidden">
             {/* Header toggle */}

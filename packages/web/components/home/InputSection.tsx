@@ -74,7 +74,7 @@ export default function InputSection(props: InputSectionProps) {
 
   return (
     <div
-      className={`transition-all duration-500 ease-out ${isExpanded ? 'pb-4 pt-2 border-t border-relic-mist/30 dark:border-relic-slate/30 bg-white dark:bg-relic-void sticky bottom-0' : 'pb-8'}`}
+      className={`transition-all duration-500 ease-out ${isExpanded ? 'pb-2 pt-1 border-t border-relic-mist/20 dark:border-relic-slate/20 bg-white dark:bg-relic-void sticky bottom-0' : 'pb-8'}`}
     >
       {/* Pipeline History Panel — fixed drawer */}
       <LiveRefinementCanal
@@ -95,7 +95,7 @@ export default function InputSection(props: InputSectionProps) {
             autoComplete="off"
             className={`
               relic-input text-sm transition-all duration-300 text-center
-              ${isExpanded ? 'py-3 px-4' : 'py-3'}
+              ${isExpanded ? 'py-2 px-4' : 'py-3'}
             `}
             autoFocus
             disabled={isLoading}
@@ -148,7 +148,7 @@ export default function InputSection(props: InputSectionProps) {
 
         {/* Methodology Dots */}
         <motion.div
-          className={`flex justify-center ${isExpanded ? 'mt-2' : 'mt-5'}`}
+          className={`flex justify-center ${isExpanded ? 'mt-1' : 'mt-5'}`}
           initial={false}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -168,7 +168,7 @@ export default function InputSection(props: InputSectionProps) {
         </div>
 
         {/* Console - Inline below methodology */}
-        <div className="mt-1.5 flex justify-center">
+        <div className="mt-0.5 flex justify-center">
           <ConversationConsole
             instinctMode={instinctModeEnabled}
             onInstinctModeChange={setInstinctModeEnabled}
