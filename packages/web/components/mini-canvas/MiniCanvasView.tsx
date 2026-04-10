@@ -8,6 +8,7 @@ import CorrelationPanel from './CorrelationPanel';
 
 interface MiniCanvasViewProps {
   data?: MiniCanvasData | null;
+  isLoading?: boolean;
 }
 
 function PanelHeader({
@@ -44,7 +45,7 @@ function PanelHeader({
   );
 }
 
-export default function MiniCanvasView({ data }: MiniCanvasViewProps) {
+export default function MiniCanvasView({ data, isLoading }: MiniCanvasViewProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setCollapsed((p) => ({ ...p, [id]: !p[id] }));
 
@@ -52,11 +53,15 @@ export default function MiniCanvasView({ data }: MiniCanvasViewProps) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="text-3xl text-relic-silver/20 mb-4">◈</div>
-          <p className="text-[11px] text-relic-silver/40">Submit a query to see visual analysis</p>
-          <p className="text-[9px] text-relic-silver/25 mt-1">
-            Facts, Metrics, and Correlations will appear here
+          <div className={`text-3xl text-relic-silver/20 mb-4 ${isLoading ? 'animate-pulse' : ''}`}>◈</div>
+          <p className="text-[11px] text-relic-silver/40">
+            {isLoading ? 'Analyzing response...' : 'Submit a query to see visual analysis'}
           </p>
+          {!isLoading && (
+            <p className="text-[9px] text-relic-silver/25 mt-1">
+              Facts, Metrics, and Correlations will appear here
+            </p>
+          )}
         </div>
       </div>
     );

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useCallback } from 'react';
+import { Suspense, useEffect, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useHomePageState } from '@/hooks/useHomePageState';
@@ -12,6 +12,7 @@ import Overlays from '@/components/home/Overlays';
 import InputSection from '@/components/home/InputSection';
 import FileDropZone from '@/components/FileDropZone';
 import { METHODOLOGIES } from '@/lib/methodology-data';
+import { classifyContent } from '@/lib/mini-canvas/content-classifier';
 
 // Lazy-load heavy components that render conditionally
 const CanvasWorkspace = dynamic(() => import('@/components/canvas/CanvasWorkspace'), {
@@ -45,6 +46,15 @@ function ContinueParamWatcher({ onContinue }: { onContinue: (id: string) => void
 
 function HomePage() {
   const s = useHomePageState();
+
+  // Client-side fallback: if miniCanvas is missing from the message, compute it from response text
+  const miniCanvasData = useMemo(() => {
+    const last = s.messages.filter((m) => m.role === 'assistant').pop();
+    if (last?.miniCanvas) return last.miniCanvas;
+    if (!last?.content || last.content.length < 50) return null;
+    const q = s.messages.filter((m) => m.role === 'user').pop()?.content || '';
+    return classifyContent(last.content, q);
+  }, [s.messages]);
 
   return (
     <div
@@ -141,9 +151,7 @@ function HomePage() {
                 </p>
               </div>
             )}
-            <MiniCanvasView
-              data={s.messages.filter((m) => m.role === 'assistant').pop()?.miniCanvas}
-            />
+            <MiniCanvasView data={miniCanvasData} isLoading={s.isLoading} />
           </>
         )}
 
