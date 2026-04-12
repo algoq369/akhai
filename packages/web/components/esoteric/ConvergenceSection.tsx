@@ -32,7 +32,7 @@ export default function ConvergenceSection({ convergence, mode }: ConvergenceSec
       <div className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">
         {mode === 'esoteric' ? '\u25C8 cross-framework convergence' : '\u25C8 framework alignment'}
       </div>
-      <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-3">
+      <div className="bg-white border border-zinc-200 rounded-lg p-3">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[16px] font-medium text-zinc-200">
             {score}/{maxScore} frameworks signal crisis phase

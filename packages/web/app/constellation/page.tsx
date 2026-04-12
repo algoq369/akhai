@@ -16,12 +16,12 @@ function LoadingSkeleton() {
     <div className="space-y-4 animate-pulse">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-16 bg-zinc-800/50 rounded-lg" />
+          <div key={i} className="h-16 bg-zinc-100 rounded-lg" />
         ))}
       </div>
-      <div className="h-24 bg-zinc-800/50 rounded-lg" />
-      <div className="h-40 bg-zinc-800/50 rounded-lg" />
-      <div className="h-32 bg-zinc-800/50 rounded-lg" />
+      <div className="h-24 bg-zinc-100 rounded-lg" />
+      <div className="h-40 bg-zinc-100 rounded-lg" />
+      <div className="h-32 bg-zinc-100 rounded-lg" />
     </div>
   );
 }
@@ -82,7 +82,7 @@ export default function ConstellationPage() {
           onClick={() => setMode('secular')}
           className={`text-[10px] px-3 py-1 rounded-md border transition-colors ${
             mode === 'secular'
-              ? 'bg-zinc-800 border-zinc-700 text-zinc-200'
+              ? 'bg-zinc-100 border-zinc-300 text-zinc-800'
               : 'border-zinc-800/50 text-zinc-500 hover:text-zinc-400'
           }`}
         >

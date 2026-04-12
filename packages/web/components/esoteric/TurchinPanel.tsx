@@ -46,7 +46,7 @@ export default function TurchinPanel({ assessment, psi, mode }: TurchinPanelProp
           const val = m.key === 'institutionalTrust' ? `${data.value}%` : (data.value as string);
           const color = statusColor(data.value);
           return (
-            <div key={m.key} className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-3">
+            <div key={m.key} className="bg-white border border-zinc-200 rounded-lg p-3">
               <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">
                 {m.label}
               </div>

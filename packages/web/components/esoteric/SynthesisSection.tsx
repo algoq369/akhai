@@ -11,7 +11,7 @@ export default function SynthesisSection({ synthesis, mode }: SynthesisSectionPr
       <div className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">
         {mode === 'esoteric' ? '\u25CA integral synthesis' : '\u25CA synthesis'}
       </div>
-      <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-3">
+      <div className="bg-white border border-zinc-200 rounded-lg p-3">
         <div className="text-[11px] text-zinc-400 leading-[1.7] mb-3">{synthesis}</div>
         <div className="flex flex-wrap gap-2">
           <span className="text-[9px] px-2 py-0.5 rounded-md bg-purple-900/30 text-purple-400 border border-purple-800/30">

@@ -23,7 +23,7 @@ export default function CrossCivilizational({ patterns, mode }: CrossCivilizatio
         {patterns.map((p, i) => (
           <div
             key={i}
-            className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-3"
+            className="bg-white border border-zinc-200 rounded-lg p-3"
             style={{ borderLeftWidth: 2, borderLeftColor: p.color }}
           >
             <div

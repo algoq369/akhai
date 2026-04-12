@@ -24,13 +24,13 @@ export default function PowerIndex({ nations, mode }: PowerIndexProps) {
       <div className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">
         {mode === 'esoteric' ? '\u25C9' : '\u25CB'} power index — top nations (dalio)
       </div>
-      <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-3 space-y-1.5">
+      <div className="bg-white border border-zinc-200 rounded-lg p-3 space-y-1.5">
         {nations.map((nation) => {
           const color = nationColors[nation.name] ?? '#64748b';
           return (
             <div key={nation.name} className="flex items-center gap-2">
               <span className="text-[10px] text-zinc-400 w-[100px] truncate">{nation.name}</span>
-              <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{ width: `${nation.score * 100}%`, backgroundColor: color }}
