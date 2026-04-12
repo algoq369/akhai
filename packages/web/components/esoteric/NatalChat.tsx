@@ -80,7 +80,7 @@ export default function NatalChat({ chart, mode }: Props) {
             <button
               key={eq}
               onClick={() => submit(eq)}
-              className="text-[9px] px-2 py-0.5 rounded-full border border-zinc-200 text-zinc-400 hover:text-zinc-600 hover:border-zinc-400 transition-colors"
+              className="text-[9px] px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-zinc-600 hover:border-zinc-400 transition-colors"
             >
               {eq}
             </button>
@@ -95,14 +95,14 @@ export default function NatalChat({ chart, mode }: Props) {
             <div
               className={`max-w-[85%] rounded-lg p-2 ${
                 msg.role === 'user'
-                  ? 'bg-zinc-100 text-zinc-700'
-                  : 'border border-zinc-200 bg-white text-zinc-600'
+                  ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
+                  : 'border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300'
               }`}
             >
               <div className="text-[11px] font-mono leading-[1.7] whitespace-pre-line">
                 {msg.content}
               </div>
-              <div className="text-[8px] text-zinc-300 mt-1">
+              <div className="text-[8px] text-zinc-400 dark:text-zinc-500 mt-1">
                 {new Date(msg.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
@@ -110,11 +110,11 @@ export default function NatalChat({ chart, mode }: Props) {
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="border border-zinc-200 bg-white rounded-lg p-2">
+            <div className="border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded-lg p-2">
               <div className="flex gap-1">
-                <span className="w-1.5 h-1.5 bg-zinc-300 rounded-full animate-pulse" />
-                <span className="w-1.5 h-1.5 bg-zinc-300 rounded-full animate-pulse [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 bg-zinc-300 rounded-full animate-pulse [animation-delay:300ms]" />
+                <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-pulse" />
+                <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-pulse [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-pulse [animation-delay:300ms]" />
               </div>
             </div>
           </div>
@@ -133,12 +133,12 @@ export default function NatalChat({ chart, mode }: Props) {
             }
           }}
           placeholder="Ask about your natal chart\u2026"
-          className="flex-1 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-[11px] font-mono text-zinc-700 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400"
+          className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-[11px] font-mono text-zinc-700 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400"
         />
         <button
           onClick={() => submit(input)}
           disabled={!input.trim() || loading}
-          className="px-3 py-2 text-[12px] bg-zinc-800 text-zinc-200 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-3 py-2 text-[12px] bg-zinc-800 text-white rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {'\u2192'}
         </button>
@@ -146,7 +146,7 @@ export default function NatalChat({ chart, mode }: Props) {
 
       {/* Cost */}
       {totalCost > 0 && (
-        <div className="text-right text-[9px] text-zinc-300 mt-1">
+        <div className="text-right text-[9px] text-zinc-400 dark:text-zinc-500 mt-1">
           ${totalCost.toFixed(4)} session cost
         </div>
       )}

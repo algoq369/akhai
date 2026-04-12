@@ -20,7 +20,7 @@ export default function AstronomicalData({ mode }: AstronomicalDataProps) {
       <div className="text-[11px] uppercase tracking-widest text-purple-400/70 mb-2">
         {'\u25C7'} astronomical data — april 2026
       </div>
-      <div className="bg-white border border-zinc-200 rounded-lg p-3">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
         <div className="grid grid-cols-2 gap-x-6 gap-y-1">
           {planets.map((p) => (
             <div key={p.name} className="text-[11px] text-zinc-400">

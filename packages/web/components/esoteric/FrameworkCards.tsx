@@ -66,9 +66,9 @@ export default function FrameworkCards({ positions, mode }: FrameworkCardsProps)
         return (
           <div
             key={card.key}
-            className={`bg-white border border-zinc-200 rounded-lg p-2.5 ${card.key === 'dalio' ? 'col-span-2 sm:col-span-1' : ''}`}
+            className={`bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 ${card.key === 'dalio' ? 'col-span-2 sm:col-span-1' : ''}`}
           >
-            <div className="text-[10px] font-medium text-zinc-300">
+            <div className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
               <EsotericTooltip termId={tooltipIds[card.key]}>
                 {mode === 'secular' ? card.secular : card.esoteric}
               </EsotericTooltip>

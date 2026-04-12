@@ -46,7 +46,7 @@ export default function TurchinPanel({ assessment, psi, mode }: TurchinPanelProp
           const val = m.key === 'institutionalTrust' ? `${data.value}%` : (data.value as string);
           const color = statusColor(data.value);
           return (
-            <div key={m.key} className="bg-white border border-zinc-200 rounded-lg p-3">
+            <div key={m.key} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
               <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">
                 {m.label}
               </div>
@@ -59,7 +59,7 @@ export default function TurchinPanel({ assessment, psi, mode }: TurchinPanelProp
         })}
       </div>
       <div className="mt-2 text-[10px] text-zinc-500">
-        Composite PSI: <span className="text-zinc-300 font-medium">{psi.toFixed(2)}</span>
+        Composite PSI: <span className="text-zinc-600 dark:text-zinc-300 font-medium">{psi.toFixed(2)}</span>
         {' \u2014 '}
         {psi >= 0.8 ? 'historical peak zone' : psi >= 0.6 ? 'elevated' : 'baseline'}
       </div>

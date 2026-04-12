@@ -40,11 +40,11 @@ function extractTopics(query: string): string[] {
 function SynthesisSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="h-3 bg-zinc-100 rounded w-1/4 mb-3" />
-      <div className="bg-white border border-zinc-200 rounded-lg p-3 space-y-2">
-        <div className="h-2 bg-zinc-100 rounded w-full" />
-        <div className="h-2 bg-zinc-100 rounded w-5/6" />
-        <div className="h-2 bg-zinc-100 rounded w-4/6" />
+      <div className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded w-1/4 mb-3" />
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3 space-y-2">
+        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded w-full" />
+        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded w-5/6" />
+        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded w-4/6" />
       </div>
     </div>
   );
@@ -160,13 +160,13 @@ export default function MacroTab({ mode }: MacroTabProps) {
             }}
             rows={2}
             placeholder="Ask the constellation \u2014 what macro pattern do you want to understand?"
-            className="flex-1 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-[11px] font-mono text-zinc-700 placeholder:text-zinc-400 resize-none focus:outline-none focus:border-zinc-400"
+            className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-[11px] font-mono text-zinc-700 dark:text-zinc-200 placeholder:text-zinc-400 resize-none focus:outline-none focus:border-zinc-400"
             style={{ maxHeight: 96 }}
           />
           <button
             onClick={() => handleSubmit(query)}
             disabled={!query.trim() || synthLoading}
-            className="self-end px-4 py-2 text-[10px] uppercase tracking-wider font-medium bg-zinc-800 text-zinc-200 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="self-end px-4 py-2 text-[10px] uppercase tracking-wider font-medium bg-zinc-800 text-white rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {synthLoading ? '\u2026' : 'ANALYZE'}
           </button>
@@ -196,7 +196,7 @@ export default function MacroTab({ mode }: MacroTabProps) {
             <button
               key={h}
               onClick={() => handleExampleClick(h)}
-              className="text-[9px] px-2 py-0.5 rounded-full border border-zinc-200 text-zinc-400 hover:text-zinc-600 hover:border-zinc-400 transition-colors"
+              className="text-[9px] px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-zinc-600 hover:border-zinc-400 transition-colors"
             >
               {h}
             </button>
@@ -206,7 +206,7 @@ export default function MacroTab({ mode }: MacroTabProps) {
               setQueryHistory([]);
               localStorage.removeItem(HISTORY_KEY);
             }}
-            className="text-[9px] text-zinc-300 hover:text-zinc-500 transition-colors ml-1"
+            className="text-[9px] text-zinc-400 hover:text-zinc-500 transition-colors ml-1"
           >
             clear
           </button>
@@ -254,7 +254,7 @@ export default function MacroTab({ mode }: MacroTabProps) {
             <div className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">
               {'\u25CA'} synthesis
             </div>
-            <div className="bg-white border border-zinc-200 rounded-lg p-3">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
               <div className="text-[11px] italic text-zinc-400">
                 Submit a query to receive a macro-cyclical analysis through 5 frameworks
               </div>

@@ -46,7 +46,7 @@ export default function CyclicalChart({ chartData, mode }: CyclicalChartProps) {
       <div className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">
         {mode === 'esoteric' ? '\u25C8' : '\u25CB'} {title}
       </div>
-      <div className="bg-white border border-zinc-200 rounded-lg p-3">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="xMidYMid meet">
           {/* Y axis */}
           <line

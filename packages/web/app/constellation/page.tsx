@@ -45,7 +45,7 @@ export default function ConstellationPage() {
     <div className="max-w-4xl mx-auto px-4 py-8 font-mono">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-[18px] font-medium text-zinc-200 mb-1">{'\u25CA'} CONSTELLATION</h1>
+        <h1 className="text-[18px] font-medium text-zinc-700 dark:text-zinc-200 mb-1">{'\u25CA'} CONSTELLATION</h1>
         <p className="text-[11px] text-zinc-500">
           Macro-cyclical analysis · personal natal chart · combined synthesis
         </p>
@@ -59,8 +59,8 @@ export default function ConstellationPage() {
             onClick={() => setActiveTab(tab.id)}
             className={`text-[10px] px-3 py-1 rounded-md border transition-colors ${
               activeTab === tab.id
-                ? 'bg-zinc-100 border-zinc-300 text-zinc-800'
-                : 'border-zinc-800/50 text-zinc-500 hover:text-zinc-400'
+                ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200'
+                : 'border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-400'
             }`}
           >
             {tab.label}
@@ -74,8 +74,8 @@ export default function ConstellationPage() {
           onClick={() => setMode('secular')}
           className={`text-[10px] px-3 py-1 rounded-md border transition-colors ${
             mode === 'secular'
-              ? 'bg-zinc-100 border-zinc-300 text-zinc-800'
-              : 'border-zinc-800/50 text-zinc-500 hover:text-zinc-400'
+              ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200'
+              : 'border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-400'
           }`}
         >
           Standard analysis
@@ -85,7 +85,7 @@ export default function ConstellationPage() {
           className={`text-[10px] px-3 py-1 rounded-md border transition-colors ${
             mode === 'esoteric'
               ? 'bg-purple-900/30 border-purple-800/50 text-purple-400'
-              : 'border-zinc-800/50 text-zinc-500 hover:text-zinc-400'
+              : 'border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-400'
           }`}
         >
           Full spectrum analysis

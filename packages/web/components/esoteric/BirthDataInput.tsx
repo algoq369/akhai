@@ -91,9 +91,9 @@ const TIMEZONES = [
 ];
 
 const SEL =
-  'bg-white border border-zinc-200 rounded-md px-2 py-1 text-[11px] font-mono text-zinc-700 focus:outline-none focus:border-zinc-400';
+  'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md px-2 py-1 text-[11px] font-mono text-zinc-700 dark:text-zinc-200 focus:outline-none focus:border-zinc-400';
 const INP =
-  'bg-white border border-zinc-200 rounded-md px-2 py-1.5 text-[11px] font-mono text-zinc-700 focus:outline-none focus:border-zinc-400';
+  'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md px-2 py-1.5 text-[11px] font-mono text-zinc-700 dark:text-zinc-200 focus:outline-none focus:border-zinc-400';
 
 interface Props {
   onChartComputed: (chart: NatalChart, data: BirthData) => void;
@@ -225,7 +225,7 @@ export default function BirthDataInput({ onChartComputed }: Props) {
   const valid = lat !== '' && lng !== '' && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng));
 
   return (
-    <div className="bg-white border border-zinc-200 rounded-lg p-4">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4">
       <div className="text-[11px] uppercase tracking-widest text-zinc-500 mb-3">birth data</div>
 
       {/* Name */}
@@ -341,7 +341,7 @@ export default function BirthDataInput({ onChartComputed }: Props) {
       <button
         onClick={handleCompute}
         disabled={!valid || computing}
-        className="w-full px-4 py-2 text-[10px] uppercase tracking-wider font-medium bg-zinc-800 text-zinc-200 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full px-4 py-2 text-[10px] uppercase tracking-wider font-medium bg-zinc-800 text-white rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {computing ? 'Computing\u2026' : 'COMPUTE CHART'}
       </button>

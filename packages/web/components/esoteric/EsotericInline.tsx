@@ -24,8 +24,8 @@ export default function EsotericInline({ query, messageId }: EsotericInlineProps
     .slice(0, 3);
 
   return (
-    <div className="mt-2 border border-zinc-200 rounded-lg p-2.5 border-l-2 border-l-[#7F77DD]">
-      <div className="text-[10px] font-mono font-medium text-zinc-600">
+    <div className="mt-2 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2.5 border-l-2 border-l-[#7F77DD]">
+      <div className="text-[10px] font-mono font-medium text-zinc-600 dark:text-zinc-300">
         {'\u25CA'} MACRO-CYCLICAL SIGNAL · {conv.score}/{conv.maxScore} convergence
       </div>
       <div className="text-[9px] font-mono text-zinc-400 mt-0.5">

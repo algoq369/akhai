@@ -45,7 +45,7 @@ export default function SynthesisTab({ mode, chart, onSwitchTab }: Props) {
   if (!chart) {
     return (
       <div className="py-12 text-center">
-        <div className="text-[24px] text-zinc-200 mb-3">{'\u25CA'}</div>
+        <div className="text-[24px] text-zinc-400 dark:text-zinc-500 mb-3">{'\u25CA'}</div>
         <div className="text-[14px] text-zinc-400 mb-2">No natal chart computed yet</div>
         <div className="text-[11px] text-zinc-500 mb-4">
           Complete your natal chart in the {'\u25C7'} Micro tab first
@@ -53,7 +53,7 @@ export default function SynthesisTab({ mode, chart, onSwitchTab }: Props) {
         {onSwitchTab && (
           <button
             onClick={() => onSwitchTab('micro')}
-            className="text-[10px] px-4 py-1.5 rounded-md border border-zinc-300 text-zinc-600 hover:bg-zinc-50 transition-colors"
+            className="text-[10px] px-4 py-1.5 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
           >
             Go to Micro tab
           </button>
@@ -102,7 +102,7 @@ export default function SynthesisTab({ mode, chart, onSwitchTab }: Props) {
     <>
       {/* Header */}
       <div className="mb-4">
-        <div className="text-[16px] font-medium text-zinc-300">
+        <div className="text-[16px] font-medium text-zinc-600 dark:text-zinc-300">
           {'\u25CA'} YOUR CHART {'\u00D7'} THE WORLD
         </div>
         <div className="text-[11px] text-zinc-500">
@@ -111,7 +111,7 @@ export default function SynthesisTab({ mode, chart, onSwitchTab }: Props) {
       </div>
 
       {/* Personal snapshot */}
-      <div className="bg-white border border-zinc-200 rounded-lg p-3 mb-3">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3 mb-3">
         <div className="text-[11px] text-purple-600 font-medium">
           {'\u260A'} North Node: {signLabel} {nn.formattedDegree} · {nn.house}
           {ord(nn.house)} house
@@ -136,7 +136,7 @@ export default function SynthesisTab({ mode, chart, onSwitchTab }: Props) {
       </div>
 
       {/* AI Synthesis */}
-      <div className="bg-white border border-zinc-200 rounded-lg p-3 mb-4">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3 mb-4">
         <div className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">
           {'\u25CA'} integral synthesis
         </div>
@@ -145,23 +145,23 @@ export default function SynthesisTab({ mode, chart, onSwitchTab }: Props) {
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
-                className="h-2 bg-zinc-100 rounded"
+                className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded"
                 style={{ width: `${90 - i * 8}%` }}
               />
             ))}
           </div>
         ) : synthesis ? (
           <>
-            <div className="text-[12px] text-zinc-600 leading-[1.7] whitespace-pre-line">
+            <div className="text-[12px] text-zinc-600 dark:text-zinc-300 leading-[1.7] whitespace-pre-line">
               {synthesis}
             </div>
             <div className="flex gap-2 mt-3">
               {cost > 0 && (
-                <span className="text-[9px] px-2 py-0.5 rounded bg-zinc-100 text-zinc-500">
+                <span className="text-[9px] px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
                   ${cost.toFixed(4)}
                 </span>
               )}
-              <span className="text-[9px] px-2 py-0.5 rounded bg-purple-50 text-purple-500">
+              <span className="text-[9px] px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-900/30 text-purple-500">
                 {mode}
               </span>
             </div>
@@ -169,7 +169,7 @@ export default function SynthesisTab({ mode, chart, onSwitchTab }: Props) {
         ) : (
           <button
             onClick={handleGenerate}
-            className="w-full px-4 py-2 text-[10px] uppercase tracking-wider font-medium bg-zinc-800 text-zinc-200 rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors"
+            className="w-full px-4 py-2 text-[10px] uppercase tracking-wider font-medium bg-zinc-800 text-white rounded-lg border border-zinc-700 hover:bg-zinc-700 transition-colors"
           >
             GENERATE SYNTHESIS
           </button>
@@ -182,9 +182,9 @@ export default function SynthesisTab({ mode, chart, onSwitchTab }: Props) {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         {resonance.map((r) => (
-          <div key={r.label} className="bg-white border border-zinc-200 rounded-lg p-3">
+          <div key={r.label} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3">
             <div className="flex items-baseline justify-between mb-1">
-              <span className="text-[10px] font-medium text-zinc-700">{r.label}</span>
+              <span className="text-[10px] font-medium text-zinc-700 dark:text-zinc-200">{r.label}</span>
               <span className="text-[9px] text-zinc-400">{r.value}</span>
             </div>
             <div className="text-[10px] text-zinc-500 leading-relaxed">{r.detail}</div>
@@ -197,7 +197,7 @@ export default function SynthesisTab({ mode, chart, onSwitchTab }: Props) {
 
 function Pill({ label }: { label: string }) {
   return (
-    <span className="text-[9px] px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-500 border border-zinc-200">
+    <span className="text-[9px] px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700">
       {label}
     </span>
   );

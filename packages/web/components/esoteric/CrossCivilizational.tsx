@@ -23,7 +23,7 @@ export default function CrossCivilizational({ patterns, mode }: CrossCivilizatio
         {patterns.map((p, i) => (
           <div
             key={i}
-            className="bg-white border border-zinc-200 rounded-lg p-3"
+            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3"
             style={{ borderLeftWidth: 2, borderLeftColor: p.color }}
           >
             <div
@@ -32,7 +32,7 @@ export default function CrossCivilizational({ patterns, mode }: CrossCivilizatio
             >
               {p.sigil} {p.traditionName} — {p.topic}
             </div>
-            <div className="text-[11px] text-zinc-400 leading-[1.7]">{p.formatted}</div>
+            <div className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-[1.7]">{p.formatted}</div>
           </div>
         ))}
       </div>
