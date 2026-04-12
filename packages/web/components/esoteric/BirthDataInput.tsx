@@ -114,7 +114,7 @@ export default function BirthDataInput({ onChartComputed }: Props) {
       {/* Date + Time */}
       <div className="grid grid-cols-5 gap-1.5 mb-3">
         <select value={year} onChange={(e) => setYear(+e.target.value)} className={SEL}>
-          {Array.from({ length: 91 }, (_, i) => 1920 + i).map((y) => (
+          {Array.from({ length: new Date().getFullYear() - 1920 + 1 }, (_, i) => 1920 + i).map((y) => (
             <option key={y} value={y}>
               {y}
             </option>
