@@ -1,5 +1,15 @@
 'use client';
 
+import EsotericTooltip from './EsotericTooltip';
+
+const tooltipIds: Record<string, string> = {
+  barbault: 'barbault',
+  turchin: 'structural-demographic-theory',
+  kondratieff: 'k-wave',
+  straussHowe: 'fourth-turning',
+  dalio: 'big-cycle',
+};
+
 interface FrameworkCardsProps {
   positions: {
     barbault: { currentIndex: number; trend: string };
@@ -59,7 +69,9 @@ export default function FrameworkCards({ positions, mode }: FrameworkCardsProps)
             className={`bg-white border border-zinc-200 rounded-lg p-2.5 ${card.key === 'dalio' ? 'col-span-2 sm:col-span-1' : ''}`}
           >
             <div className="text-[10px] font-medium text-zinc-300">
-              {mode === 'secular' ? card.secular : card.esoteric}
+              <EsotericTooltip termId={tooltipIds[card.key]}>
+                {mode === 'secular' ? card.secular : card.esoteric}
+              </EsotericTooltip>
             </div>
             <div className="text-[9px] text-zinc-500 mb-1">{card.sub}</div>
             <div className="text-[13px] font-medium truncate" style={{ color }}>

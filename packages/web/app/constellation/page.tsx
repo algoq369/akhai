@@ -130,6 +130,15 @@ export default function ConstellationPage() {
           No analysis data available. Refresh to retry.
         </div>
       )}
+
+      <div className="text-center mt-8 mb-4">
+        <a
+          href="/guide"
+          className="text-[10px] font-mono text-zinc-400 hover:text-zinc-600 transition-colors"
+        >
+          ? guide — understand the terminology
+        </a>
+      </div>
     </div>
   );
 }
