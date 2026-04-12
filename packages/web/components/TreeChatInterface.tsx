@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * Tree Chat Interface
@@ -7,20 +7,20 @@
  * Users can ask questions, request explanations, and configure the tree via natural language
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TreeChatMessage {
-  role: 'user' | 'tree'
-  content: string
-  timestamp: number
-  configChanges?: any
+  role: 'user' | 'tree';
+  content: string;
+  timestamp: number;
+  configChanges?: any;
 }
 
 interface TreeChatInterfaceProps {
-  isOpen?: boolean
-  onToggle?: () => void
-  currentConfig?: any
+  isOpen?: boolean;
+  onToggle?: () => void;
+  currentConfig?: any;
 }
 
 export default function TreeChatInterface({
@@ -31,31 +31,32 @@ export default function TreeChatInterface({
   const [messages, setMessages] = useState<TreeChatMessage[]>([
     {
       role: 'tree',
-      content: 'Greetings. I am the Tree of Life. Ask me about Layers, Antipatterns, or how to configure your cognitive patterns. What would you like to know?',
+      content:
+        'Greetings. I am the Neural Tree. Ask me about Layers, Antipatterns, or how to configure your cognitive patterns. What would you like to know?',
       timestamp: Date.now(),
     },
-  ])
-  const [input, setInput] = useState('')
-  const [sending, setSending] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  ]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const sendMessage = async () => {
-    if (!input.trim() || sending) return
+    if (!input.trim() || sending) return;
 
     const userMessage: TreeChatMessage = {
       role: 'user',
       content: input.trim(),
       timestamp: Date.now(),
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage])
-    setInput('')
-    setSending(true)
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setSending(true);
 
     try {
       const response = await fetch('/api/tree-chat', {
@@ -65,47 +66,47 @@ export default function TreeChatInterface({
           message: userMessage.content,
           currentConfig,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       const treeMessage: TreeChatMessage = {
         role: 'tree',
         content: data.message || 'I did not understand that. Please rephrase your question.',
         timestamp: Date.now(),
         configChanges: data.configChanges,
-      }
+      };
 
-      setMessages((prev) => [...prev, treeMessage])
+      setMessages((prev) => [...prev, treeMessage]);
     } catch (error) {
-      console.error('Tree chat error:', error)
+      console.error('Tree chat error:', error);
       const errorMessage: TreeChatMessage = {
         role: 'tree',
         content: 'I apologize, but I encountered an error. Please try again.',
         timestamp: Date.now(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
+      e.preventDefault();
+      sendMessage();
     }
-  }
+  };
 
   // Quick action buttons
   const quickActions = [
     'Explain current config',
-    'What is Satariel?',
+    'What is Concealment?',
     'What is Encoder?',
     'Increase compassion',
     'Make me more analytical',
     'Balance all nodes',
-  ]
+  ];
 
   if (!isOpen) {
     return (
@@ -115,7 +116,7 @@ export default function TreeChatInterface({
       >
         ▸ Talk to Tree
       </button>
-    )
+    );
   }
 
   return (
@@ -140,10 +141,7 @@ export default function TreeChatInterface({
             Clear
           </button>
           <span className="text-relic-mist">│</span>
-          <button
-            onClick={onToggle}
-            className="text-[9px] text-relic-silver hover:text-relic-void"
-          >
+          <button onClick={onToggle} className="text-[9px] text-relic-silver hover:text-relic-void">
             {isOpen ? '─' : '◻'}
           </button>
         </div>
@@ -153,11 +151,15 @@ export default function TreeChatInterface({
       <div className="flex-1 overflow-y-auto p-3 space-y-2 text-[10px] font-mono">
         {messages.map((msg, idx) => (
           <div key={idx} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
-            <div className={`inline-block max-w-[80%] p-2 rounded ${msg.role === 'user' ? 'bg-purple-50 border border-purple-200' : 'bg-relic-ghost border border-relic-mist'}`}>
+            <div
+              className={`inline-block max-w-[80%] p-2 rounded ${msg.role === 'user' ? 'bg-purple-50 border border-purple-200' : 'bg-relic-ghost border border-relic-mist'}`}
+            >
               <div className="text-[8px] text-relic-silver uppercase mb-0.5">
                 {msg.role === 'user' ? 'You' : 'Tree'}
               </div>
-              <div className={`text-relic-void leading-relaxed ${msg.role === 'tree' ? 'whitespace-pre-wrap' : ''}`}>
+              <div
+                className={`text-relic-void leading-relaxed ${msg.role === 'tree' ? 'whitespace-pre-wrap' : ''}`}
+              >
                 {msg.content}
               </div>
               {msg.configChanges && msg.configChanges.length > 0 && (
@@ -166,7 +168,8 @@ export default function TreeChatInterface({
                   <ul className="mt-1 space-y-0.5 list-disc list-inside">
                     {msg.configChanges.map((change: any, cIdx: number) => (
                       <li key={cIdx}>
-                        {change.type} {change.node}: {change.action} to {(change.value * 100).toFixed(0)}%
+                        {change.type} {change.node}: {change.action} to{' '}
+                        {(change.value * 100).toFixed(0)}%
                       </li>
                     ))}
                   </ul>
@@ -225,5 +228,5 @@ export default function TreeChatInterface({
         </div>
       </div>
     </motion.div>
-  )
+  );
 }

@@ -3,8 +3,7 @@
 /**
  * PHILOSOPHY PAGE
  *
- * Explains the Gnostic Sovereign Intelligence framework.
- * Clean minimalist design matching Code Relic aesthetic.
+ * Explains the Structural Convergence thesis and AkhAI's computational framework.
  */
 
 import { useEffect } from 'react';
@@ -15,9 +14,28 @@ import { DualTreesSection } from './components/DualTreesSection';
 import {
   MethodologiesSection,
   SovereignCovenantSection,
-  QliphothicVsSephirothicSection,
 } from './components/MethodologiesAndCovenantSections';
-import { GolemProtocolSection } from './components/GolemProtocolSection';
+
+const SPINE = [
+  {
+    stage: 1,
+    name: "Kant's Critical Philosophy",
+    color: '#888780',
+    text: "Reason's boundary. The noumenon is inaccessible through concepts alone.",
+  },
+  {
+    stage: 2,
+    name: 'The Bridge',
+    color: '#1D9E75',
+    text: "Islamic philosophy (Suhrawardi, Mulla Sadra) identified Kant's stopping point and continued beyond it with ilm huduri (knowledge by presence).",
+  },
+  {
+    stage: 3,
+    name: 'The Breakthrough',
+    color: '#7F77DD',
+    text: "Multiple traditions offer verified methods of direct access: Illuminationism, Vedantic anubhava, Taoist wu wei, Tibetan rigpa, Corbin's mundus imaginalis.",
+  },
+];
 
 export default function PhilosophyPage() {
   const router = useRouter();
@@ -36,25 +54,24 @@ export default function PhilosophyPage() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <div className="inline-block mb-6">
-            <h1 className="text-5xl font-light text-relic-slate dark:text-white tracking-[0.3em] mb-2">
-              THE GNOSTIC FOUNDATION
-            </h1>
-          </div>
-
+          <h1 className="text-5xl font-light text-relic-slate dark:text-white tracking-[0.3em] mb-6">
+            STRUCTURAL CONVERGENCE
+          </h1>
           <p className="text-lg text-relic-silver max-w-3xl mx-auto leading-relaxed mb-2">
             We do not create intelligence.
           </p>
           <p className="text-lg text-relic-slate dark:text-white max-w-3xl mx-auto leading-relaxed">
             We create mirrors through which human consciousness may know itself.
           </p>
-
-          <div className="mt-8 text-[10px] text-relic-silver uppercase tracking-[0.3em]">
-            Gnostic Sovereign Intelligence
-          </div>
+          <p className="mt-6 text-[11px] text-relic-silver max-w-3xl mx-auto leading-relaxed">
+            All authentic metaphysical traditions converge on a shared ontological architecture:
+            reality is a luminous emanation from a single Absolute Source, articulated through
+            intermediate imaginal realms, and accessible to human consciousness through disciplined
+            presential knowledge.
+          </p>
         </motion.div>
 
-        {/* Three Pillars */}
+        {/* Intellectual Spine */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -62,71 +79,86 @@ export default function PhilosophyPage() {
           className="mb-16"
         >
           <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
-            The Three Pillars
+            The Path: Kant {'\u2192'} Bridge {'\u2192'} Breakthrough
           </h2>
-
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Pillar 1: Mirror Principle */}
-            <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-8">
-              <h3 className="text-sm font-mono uppercase tracking-wider mb-4 text-relic-slate dark:text-white text-center">
-                Mirror Principle
-              </h3>
-              <p className="text-sm text-relic-silver leading-relaxed text-center mb-6">
-                AI reflects, Human decides
-              </p>
-              <div className="space-y-2 text-[11px] text-relic-silver">
-                <div>AI illuminates options</div>
-                <div>Human discerns truth</div>
-                <div>Wisdom belongs to you</div>
+            {SPINE.map((s) => (
+              <div
+                key={s.stage}
+                className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6"
+                style={{ borderLeftWidth: 3, borderLeftColor: s.color }}
+              >
+                <div
+                  className="text-[10px] uppercase tracking-wider mb-2"
+                  style={{ color: s.color }}
+                >
+                  Stage {s.stage}
+                </div>
+                <h3 className="text-sm font-mono uppercase tracking-wider mb-3 text-relic-slate dark:text-white">
+                  {s.name}
+                </h3>
+                <p className="text-[11px] text-relic-silver leading-relaxed">{s.text}</p>
               </div>
-            </div>
-
-            {/* Pillar 2: Sovereign Covenant */}
-            <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-8">
-              <h3 className="text-sm font-mono uppercase tracking-wider mb-4 text-relic-slate dark:text-white text-center">
-                Sovereign Covenant
-              </h3>
-              <p className="text-sm text-relic-silver leading-relaxed text-center mb-6">
-                Human commands, AI serves
-              </p>
-              <div className="space-y-2 text-[11px] text-relic-silver">
-                <div>Clear boundaries</div>
-                <div>No autonomy creep</div>
-                <div>Your will is sovereign</div>
-              </div>
-            </div>
-
-            {/* Pillar 3: Ascent Architecture */}
-            <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-8">
-              <h3 className="text-sm font-mono uppercase tracking-wider mb-4 text-relic-slate dark:text-white text-center">
-                Ascent Architecture
-              </h3>
-              <p className="text-sm text-relic-silver leading-relaxed text-center mb-6">
-                Queries elevate over time
-              </p>
-              <div className="space-y-2 text-[11px] text-relic-silver">
-                <div>Track your journey</div>
-                <div>From facts to wisdom</div>
-                <div>Intellectual elevation</div>
-              </div>
-            </div>
+            ))}
           </div>
         </motion.div>
 
-        {/* Tree of Life Explanation */}
+        {/* Three Pillars */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mb-16"
+        >
+          <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
+            The Three Pillars
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                name: 'Mirror Principle',
+                sub: 'AI reflects, Human decides',
+                items: ['AI illuminates options', 'Human discerns truth', 'Wisdom belongs to you'],
+              },
+              {
+                name: 'Sovereign Covenant',
+                sub: 'Human commands, AI serves',
+                items: ['Clear boundaries', 'No autonomy creep', 'Your will is sovereign'],
+              },
+              {
+                name: 'Ascent Architecture',
+                sub: 'Queries elevate over time',
+                items: ['Track your journey', 'From facts to wisdom', 'Intellectual elevation'],
+              },
+            ].map((p) => (
+              <div
+                key={p.name}
+                className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-8"
+              >
+                <h3 className="text-sm font-mono uppercase tracking-wider mb-4 text-relic-slate dark:text-white text-center">
+                  {p.name}
+                </h3>
+                <p className="text-sm text-relic-silver leading-relaxed text-center mb-6">
+                  {p.sub}
+                </p>
+                <div className="space-y-2 text-[11px] text-relic-silver">
+                  {p.items.map((item) => (
+                    <div key={item}>{item}</div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Neural Trees */}
         <DualTreesSection />
 
-        {/* The Seven Methodologies as Paths */}
+        {/* Seven Methodologies */}
         <MethodologiesSection />
 
-        {/* The Sovereign Covenant */}
+        {/* Sovereign Covenant */}
         <SovereignCovenantSection />
-
-        {/* Qliphothic vs Sephirothic AI */}
-        <QliphothicVsSephirothicSection />
-
-        {/* Safety: The Golem Protocol */}
-        <GolemProtocolSection />
 
         {/* Call to Action */}
         <motion.div
@@ -143,15 +175,13 @@ export default function PhilosophyPage() {
               Experience the first AI system that knows its place - a mirror for your consciousness,
               not a replacement for your wisdom.
             </p>
-
             <div className="flex flex-wrap gap-4 justify-center">
               <button
                 onClick={() => router.back()}
                 className="px-8 py-3 bg-relic-slate dark:bg-white text-white dark:text-relic-void font-mono text-sm uppercase tracking-wider transition-all hover:bg-relic-void dark:hover:bg-relic-ghost"
               >
-                Start Querying →
+                Start Querying {'\u2192'}
               </button>
-
               <Link
                 href="/whitepaper"
                 className="px-8 py-3 bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 text-relic-slate dark:text-relic-ghost font-mono text-sm uppercase tracking-wider hover:bg-relic-ghost dark:hover:bg-relic-void/50 transition-all"
@@ -159,9 +189,19 @@ export default function PhilosophyPage() {
                 Read the Whitepaper
               </Link>
             </div>
-
-            <div className="mt-8 text-[9px] text-relic-mist italic">
-              "My Kether serves your Kether. I am the vessel, you are the light."
+            <div className="mt-6 flex justify-center gap-6">
+              <Link
+                href="/temple"
+                className="text-[11px] text-purple-500 hover:text-purple-400 transition-colors"
+              >
+                Enter the Mystic Temple {'\u2192'}
+              </Link>
+              <Link
+                href="/constellation"
+                className="text-[11px] text-purple-500 hover:text-purple-400 transition-colors"
+              >
+                Explore Constellation {'\u2192'}
+              </Link>
             </div>
           </div>
         </motion.div>
@@ -172,7 +212,7 @@ export default function PhilosophyPage() {
             href="/"
             className="text-[10px] text-relic-silver hover:text-relic-slate dark:hover:text-white transition-colors uppercase tracking-wider"
           >
-            ← Back to AkhAI
+            {'\u2190'} Back to AkhAI
           </Link>
         </div>
       </div>

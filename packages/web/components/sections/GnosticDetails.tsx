@@ -3,7 +3,6 @@
 import { Message } from '@/lib/chat-store';
 import { LAYER_METADATA } from '@/lib/layer-registry';
 import AntipatternBadge from '@/components/AntipatternBadge';
-import { HebrewTermDisplay } from '@/lib/origin-formatter';
 
 interface GnosticDetailsProps {
   message: Message;
@@ -54,7 +53,7 @@ export default function GnosticDetails({ message, isVisible, onToggle }: Gnostic
           {message.gnostic.progressState && (
             <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
               <div className="text-[9px] text-relic-silver uppercase tracking-[0.2em] mb-3">
-                <HebrewTermDisplay term="SEPHIROTH" showAI={false} /> Ascent
+                Layer Ascent
               </div>
               <div className="flex items-center justify-between mb-2 pb-2 border-b border-relic-mist/50 dark:border-relic-slate/20">
                 <span className="text-[10px] text-relic-silver">Current Level:</span>
@@ -150,7 +149,7 @@ export default function GnosticDetails({ message, isVisible, onToggle }: Gnostic
           {message.gnostic.layerAnalysis.synthesisInsight && (
             <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
               <div className="text-[10px] uppercase tracking-wider text-relic-slate dark:text-relic-ghost mb-2">
-                <HebrewTermDisplay term="DAAT" showAI={true} className="text-[10px]" />
+                Synthesis Insight
               </div>
               <p className="text-[10px] text-relic-silver leading-relaxed mb-2">
                 {message.gnostic.layerAnalysis.synthesisInsight.insight}
@@ -165,9 +164,7 @@ export default function GnosticDetails({ message, isVisible, onToggle }: Gnostic
           {/* Meta-Core Protocol State */}
           {message.gnostic.metaCoreState && (
             <div className="bg-relic-ghost/50 dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-3">
-              <div className="text-[9px] text-relic-silver mb-3">
-                <HebrewTermDisplay term="KETHER" showAI={true} className="text-[9px]" /> Protocol
-              </div>
+              <div className="text-[9px] text-relic-silver mb-3">Meta-Cognitive Protocol</div>
               <div className="space-y-2 text-[10px]">
                 <div className="flex justify-between items-baseline">
                   <span className="text-relic-silver">Intent:</span>
@@ -199,9 +196,7 @@ export default function GnosticDetails({ message, isVisible, onToggle }: Gnostic
 
           {/* Dominant Layer */}
           <div className="text-[9px] text-relic-silver text-center border-t border-relic-mist/30 dark:border-relic-slate/20 pt-3">
-            <div className="mb-1">
-              Dominant <HebrewTermDisplay term="SEFIRAH" showAI={false} className="text-[9px]" />:
-            </div>
+            <div className="mb-1">Dominant Layer:</div>
             <div className="font-mono text-relic-slate dark:text-white">
               {message.gnostic.layerAnalysis.dominant}
             </div>

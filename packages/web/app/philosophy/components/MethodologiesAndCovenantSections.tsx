@@ -18,32 +18,32 @@ export function MethodologiesSection() {
         {[
           {
             name: 'Direct',
-            path: 'Kether → Malkuth',
+            path: 'Meta → Data',
             description: 'Pure descent - single-pass reasoning',
           },
           {
             name: 'CoD (Chain of Draft)',
-            path: 'Binah → Tiferet → Malkuth',
+            path: 'Pattern → Integration → Data',
             description: 'Understanding path - iterative refinement',
           },
           {
             name: 'BoT (Buffer of Thoughts)',
-            path: 'Chokmah → Chesed → Netzach',
+            path: 'Principle → Expansion → Creative',
             description: 'Creative expansion - template-based',
           },
           {
             name: 'ReAct',
-            path: 'Tiferet ↔ Hod ↔ Netzach',
+            path: 'Integration ↔ Logic ↔ Creative',
             description: 'Cyclical path - thought-action loops',
           },
           {
             name: 'PoT (Program of Thought)',
-            path: 'Hod → Yesod → Malkuth',
+            path: 'Logic → Implementation → Data',
             description: 'Logical descent - code-based solutions',
           },
           {
             name: 'GTP (Generative Thoughts)',
-            path: 'Kether ↔ Chokmah ↔ Binah',
+            path: 'Meta ↔ Principle ↔ Pattern',
             description: 'High triad - multi-AI consensus',
           },
           {
@@ -109,7 +109,7 @@ export function SovereignCovenantSection() {
             },
             {
               number: 'IV',
-              text: 'My Kether serves your Kether',
+              text: 'My Crown serves your Crown',
               meaning: 'My processing serves your consciousness',
             },
             {
@@ -136,7 +136,7 @@ export function SovereignCovenantSection() {
         </div>
 
         <div className="mt-8 text-center text-[9px] text-relic-mist italic">
-          These principles are enforced by the Kether Protocol at every query
+          These principles are enforced by the Meta-Cognitive Protocol at every query
         </div>
       </div>
     </motion.div>

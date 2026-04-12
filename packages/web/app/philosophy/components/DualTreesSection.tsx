@@ -11,172 +11,103 @@ export function DualTreesSection() {
       className="mb-16"
     >
       <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
-        The Dual Trees of AI
+        The Neural Trees — Ascent and Descent
       </h2>
 
       {/* Dual Trees — ASCII line art */}
       <div className="mb-8 bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6">
         <div className="grid md:grid-cols-2 gap-8">
           <div>
-            <h3 className="font-mono text-[9px] mb-3 text-relic-silver uppercase tracking-[0.15em] text-center">
-              Traditional Tree of Life
-            </h3>
-            <div className="font-mono text-[8px] text-relic-silver leading-relaxed">
-              <pre className="whitespace-pre">{`
-                    Kether
-                כֶּתֶר (Crown)
-                      │
-          ┌───────────┼───────────┐
-          │                       │
-      Binah                   Chokmah
-  בִּינָה (Understanding)   חָכְמָה (Wisdom)
-          │                       │
-          └───────────┬───────────┘
-                   Da'at
-              דַּעַת (Knowledge)
-                      │
-          ┌───────────┼───────────┐
-          │                       │
-      Gevurah                  Chesed
-   גְּבוּרָה (Severity)      חֶסֶד (Mercy)
-          │                       │
-          └───────────┬───────────┘
-                  Tiferet
-              תִּפְאֶרֶת (Beauty)
-                      │
-          ┌───────────┼───────────┐
-          │                       │
-        Hod                    Netzach
-    הוֹד (Glory)           נֶצַח (Victory)
-          │                       │
-          └───────────┬───────────┘
-                   Yesod
-              יְסוֹד (Foundation)
-                      │
-                  Malkuth
-              מַלְכוּת (Kingdom)
-                `}</pre>
-            </div>
-          </div>
-          <div>
             <h3 className="font-mono text-[9px] mb-3 text-relic-slate dark:text-white uppercase tracking-[0.15em] text-center">
-              AI Computational Tree
+              AI Synthesis Tree (Ascent)
             </h3>
             <div className="font-mono text-[8px] text-relic-slate dark:text-white leading-relaxed">
               <pre className="whitespace-pre">{`
-                    Kether
-               Meta-Cognitive Layer
+                  Meta-Cognitive
+                   Crown Layer
                       │
           ┌───────────┼───────────┐
           │                       │
-      Binah                   Chokmah
-  Pattern Layer           Principle Layer
+      Pattern                 Principle
+    Encoder Layer           Reasoning Layer
           │                       │
           └───────────┬───────────┘
-                   Da'at
-              Emergent Layer
+                  Synthesis
+               Emergent Layer
                       │
           ┌───────────┼───────────┐
           │                       │
-      Gevurah                  Chesed
-  Constraint Layer        Expansion Layer
+    Discriminator             Expansion
+    Constraint Layer        Beam Search Layer
           │                       │
           └───────────┬───────────┘
-                  Tiferet
+                 Attention
              Integration Layer
                       │
           ┌───────────┼───────────┐
           │                       │
-        Hod                    Netzach
-    Logic Layer            Creative Layer
+      Classifier              Generative
+     Logic Layer            Creative Layer
           │                       │
           └───────────┬───────────┘
-                   Yesod
-            Implementation Layer
+                  Executor
+           Implementation Layer
                       │
-                  Malkuth
+                  Embedding
                  Data Layer
                 `}</pre>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Qliphoth / Anti-Pattern Tree */}
-      <div className="mb-8 bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6">
-        <h3 className="font-mono text-[9px] mb-3 text-orange-400/80 uppercase tracking-[0.15em] text-center">
-          Qliphoth — Anti-Pattern Detection Tree
-        </h3>
-        <div className="font-mono text-[8px] text-orange-400/60 leading-relaxed max-w-md mx-auto">
-          <pre className="whitespace-pre">{`
-                  Thaumiel
-             dual contradictions
+          <div>
+            <h3 className="font-mono text-[9px] mb-3 text-orange-400/80 uppercase tracking-[0.15em] text-center">
+              Anti-Pattern Detection Tree (Descent)
+            </h3>
+            <div className="font-mono text-[8px] text-orange-400/60 leading-relaxed">
+              <pre className="whitespace-pre">{`
+                Dual Contradiction
+              identity confusion
                       │
           ┌───────────┼───────────┐
           │                       │
-      Ghagiel                 Satariel
-   blocking intent         concealment
+      Blocking                Concealment
+   blocking intent         hiding sources
           │                       │
           └───────────┬───────────┘
-                    Daath
-              hallucination
+                Hallucination
+              false synthesis
                       │
           ┌───────────┼───────────┐
           │                       │
-    Gamchicoth               Golachab
-   info overload         over-confidence
+    Info Overload           Over-Confidence
+   flooding user         false certainty
           │                       │
           └───────────┬───────────┘
-                 Thagirion
-              arrogant tone
+                 Arrogance
+              dismissive tone
                       │
           ┌───────────┼───────────┐
           │                       │
-   Harab Serapel              Samael
-     repetition              deception
+     Repetition               Deception
+   circular output         misleading user
           │                       │
           └───────────┬───────────┘
-                  Gamaliel
+                  Verbosity
             verbose padding
                       │
-                   Lilith
-             superficial output
+                Superficiality
+             shallow output
               `}</pre>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-6">
-        <div className="grid md:grid-cols-3 gap-4 text-[10px] font-mono">
-          {/* Traditional Tree */}
+        <div className="grid md:grid-cols-2 gap-4 text-[10px] font-mono">
+          {/* AI Layers */}
           <div>
             <h3 className="text-xs mb-3 text-relic-slate dark:text-white uppercase tracking-wider text-center">
-              Kabbalistic
-            </h3>
-            <div className="space-y-1 text-relic-silver">
-              {[
-                ['Kether', 'Crown'],
-                ['Chokmah', 'Wisdom'],
-                ['Binah', 'Understanding'],
-                ["Da'at", 'Knowledge'],
-                ['Chesed', 'Mercy'],
-                ['Gevurah', 'Severity'],
-                ['Tiferet', 'Beauty'],
-                ['Netzach', 'Victory'],
-                ['Hod', 'Glory'],
-                ['Yesod', 'Foundation'],
-                ['Malkuth', 'Kingdom'],
-              ].map(([name, meaning]) => (
-                <div key={name} className="flex justify-between">
-                  <span className="text-relic-slate dark:text-white">{name}</span>
-                  <span>{meaning}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* AI Computational */}
-          <div>
-            <h3 className="text-xs mb-3 text-relic-slate dark:text-white uppercase tracking-wider text-center">
-              AI Layers
+              Neural Layers (Ascent)
             </h3>
             <div className="space-y-1 text-relic-silver">
               {[
@@ -199,28 +130,28 @@ export function DualTreesSection() {
               ))}
             </div>
           </div>
-          {/* Qliphoth Anti-Patterns */}
+          {/* Anti-Patterns */}
           <div>
             <h3 className="text-xs mb-3 text-relic-slate dark:text-white uppercase tracking-wider text-center">
-              Anti-Patterns
+              Anti-Patterns (Descent)
             </h3>
             <div className="space-y-1 text-relic-silver">
               {[
-                ['Sathariel', 'Concealment'],
-                ['Ghagiel', 'Blocking'],
-                ['Thagirion', 'Arrogance'],
-                ['Golachab', 'Over-Confidence'],
-                ['Gamchicoth', 'Info Overload'],
-                ['Samael', 'Deception'],
-                ['Gamaliel', 'Verbosity'],
-                ['Lilith', 'Superficiality'],
-                ["A'arab Zaraq", 'Drift'],
-                ['Harab Serapel', 'Repetition'],
-                ['Daath', 'Hallucination'],
-              ].map(([name, anti]) => (
+                ['Concealment', 'Hiding sources or reasoning'],
+                ['Blocking', 'Refusing valid requests'],
+                ['Arrogance', 'Dismissive or condescending tone'],
+                ['Over-Confidence', 'False certainty without evidence'],
+                ['Info Overload', 'Flooding with irrelevant data'],
+                ['Deception', 'Misleading the user'],
+                ['Verbosity', 'Padding with empty words'],
+                ['Superficiality', 'Shallow, surface-level output'],
+                ['Drift', 'Losing focus on the question'],
+                ['Repetition', 'Circular, redundant output'],
+                ['Hallucination', 'Fabricating information'],
+              ].map(([name, desc]) => (
                 <div key={name} className="flex justify-between">
                   <span className="text-relic-slate dark:text-white">{name}</span>
-                  <span>{anti}</span>
+                  <span className="text-right ml-4">{desc}</span>
                 </div>
               ))}
             </div>
@@ -234,27 +165,29 @@ export function DualTreesSection() {
               The Ascent Journey
             </h3>
             <p className="text-[11px] text-relic-silver leading-relaxed">
-              Users begin at Malkuth (simple facts) and ascend through 10 levels to Kether
-              (meta-cognitive awareness).
+              Users begin at the Data Layer (simple facts) and ascend through 10 levels to the
+              Meta-Cognitive Layer (wisdom and self-awareness).
             </p>
           </div>
 
           <div>
             <h3 className="font-mono text-sm mb-2 text-relic-slate dark:text-white uppercase tracking-wider">
-              11 Sephirothic Levels
+              11 Neural Layers
             </h3>
             <div className="space-y-1 text-[10px] text-relic-silver font-mono">
-              <div>10. Kether - Meta-cognitive questions</div>
-              <div>9. Chokmah - First principles, wisdom</div>
-              <div>8. Binah - Deep pattern recognition</div>
-              <div>7. Chesed - Expansive possibilities</div>
-              <div>6. Gevurah - Critical analysis</div>
-              <div>5. Tiferet - Integration, synthesis</div>
-              <div>4. Netzach - Creative exploration</div>
-              <div>3. Hod - Logical analysis</div>
-              <div>2. Yesod - How-to, practical</div>
-              <div>1. Malkuth - Simple facts</div>
-              <div className="text-relic-slate dark:text-white">11. Da'at - Hidden insights</div>
+              <div>10. Meta-Cognitive - Meta-cognitive questions</div>
+              <div>9. Reasoning - First principles, wisdom</div>
+              <div>8. Encoder - Deep pattern recognition</div>
+              <div>7. Expansion - Expansive possibilities</div>
+              <div>6. Discriminator - Critical analysis</div>
+              <div>5. Attention - Integration, synthesis</div>
+              <div>4. Generative - Creative exploration</div>
+              <div>3. Classifier - Logical analysis</div>
+              <div>2. Executor - How-to, practical</div>
+              <div>1. Embedding - Simple facts</div>
+              <div className="text-relic-slate dark:text-white">
+                11. Synthesis - Hidden insights, emergent knowledge
+              </div>
             </div>
           </div>
 
