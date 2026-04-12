@@ -214,8 +214,11 @@ export default function MacroTab({ mode }: MacroTabProps) {
       )}
 
       {/* Info line */}
-      <div className="text-[10px] text-zinc-600 mb-6">
+      <div className="text-[10px] text-zinc-500 mb-2">
         {'\u25CA'} macro-cyclical layer · 5 frameworks · data updated apr 2026
+      </div>
+      <div className="text-[9px] text-zinc-400 mb-6 leading-relaxed max-w-3xl">
+        Framework values below are pre-computed from published research data (Barbault ephemeris, Turchin SDT indicators, Kondratieff wave dating, Strauss-Howe turning chronology, Dalio Power Index). They represent the objective state of the world — not your query. The AI synthesis section updates per-query, weaving your question through these static framework positions.
       </div>
 
       {/* Framework data — static, always visible */}
