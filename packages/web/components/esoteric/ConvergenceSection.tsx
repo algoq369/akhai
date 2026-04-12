@@ -22,10 +22,10 @@ export default function ConvergenceSection({ convergence, mode }: ConvergenceSec
   const { score, maxScore, label, frameworks } = convergence.current;
   const badgeColor =
     score >= 4
-      ? 'bg-red-900/50 text-red-400 border-red-800/50'
+      ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/50 dark:text-red-400 dark:border-red-800/50'
       : score >= 3
-        ? 'bg-amber-900/50 text-amber-400 border-amber-800/50'
-        : 'bg-green-900/50 text-green-400 border-green-800/50';
+        ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/50 dark:text-amber-400 dark:border-amber-800/50'
+        : 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-400 dark:border-green-800/50';
 
   return (
     <div>
@@ -43,7 +43,7 @@ export default function ConvergenceSection({ convergence, mode }: ConvergenceSec
           {frameworks.map((fw) => (
             <span
               key={fw.name}
-              className="text-[9px] px-2 py-0.5 rounded-full border border-zinc-700/50 text-zinc-400"
+              className="text-[9px] px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700/50 text-zinc-600 dark:text-zinc-400"
             >
               <span
                 className="inline-block w-1.5 h-1.5 rounded-full mr-1"
