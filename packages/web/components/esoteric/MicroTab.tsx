@@ -5,6 +5,7 @@ import type { NatalChart, BirthData } from '@/lib/esoteric/natal-engine';
 import BirthDataInput from '@/components/esoteric/BirthDataInput';
 import NatalChartSVG from '@/components/esoteric/NatalChartSVG';
 import NodalAnalysis from '@/components/esoteric/NodalAnalysis';
+import NatalChat from '@/components/esoteric/NatalChat';
 
 interface MicroTabProps {
   mode: 'secular' | 'esoteric';
@@ -53,7 +54,11 @@ export default function MicroTab({ mode, onChartComputed }: MicroTabProps) {
       </div>
 
       {chart ? (
-        <NodalAnalysis chart={chart} mode={mode} />
+        <>
+          <NodalAnalysis chart={chart} mode={mode} />
+          <div className="border-t border-zinc-200 my-4" />
+          <NatalChat chart={chart} mode={mode} />
+        </>
       ) : (
         <div className="bg-white border border-zinc-200 rounded-lg p-4 text-center">
           <div className="text-[11px] text-zinc-400 italic">

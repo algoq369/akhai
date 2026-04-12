@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: JSON.stringify(userData, null, 2) },
         ],
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-opus-4-6',
         maxTokens: 600,
         temperature: 0.7,
       });

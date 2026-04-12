@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-opus-4-6',
         maxTokens: 300,
         temperature: 0.7,
       });
