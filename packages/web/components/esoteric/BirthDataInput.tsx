@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { BirthData, NatalChart } from '@/lib/esoteric/natal-engine';
 import { computeNatalChart, saveBirthData, loadBirthData } from '@/lib/esoteric/natal-engine';
 
@@ -112,13 +112,54 @@ export default function BirthDataInput({ onChartComputed }: Props) {
   const [computing, setComputing] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [showCityDrop, setShowCityDrop] = useState(false);
+  const [searchResults, setSearchResults] = useState<{ label: string; lat: number; lng: number; tz: string }[]>([]);
+  const [searching, setSearching] = useState(false);
   const cityRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const filteredCities = useMemo(() => {
-    if (!citySearch.trim()) return CITIES.slice(0, 8);
-    const q = citySearch.toLowerCase();
-    return CITIES.filter((c) => c.label.toLowerCase().includes(q)).slice(0, 8);
-  }, [citySearch]);
+  // Estimate timezone from longitude (rough but functional)
+  const estimateTz = useCallback((latitude: number, longitude: number): string => {
+    const match = CITIES.find((c) => Math.abs(c.lat - latitude) < 2 && Math.abs(c.lng - longitude) < 5);
+    if (match) return match.tz;
+    const offset = Math.round(longitude / 15);
+    const tzMap: Record<number, string> = { '-5': 'America/New_York', '-6': 'America/Chicago', '-7': 'America/Denver', '-8': 'America/Los_Angeles', '0': 'Europe/London', '1': 'Europe/Paris', '2': 'Europe/Berlin', '3': 'Europe/Moscow', '4': 'Asia/Dubai', '5': 'Asia/Karachi', '6': 'Asia/Dhaka', '7': 'Asia/Bangkok', '8': 'Asia/Shanghai', '9': 'Asia/Tokyo', '10': 'Australia/Sydney' };
+    return tzMap[String(offset)] || 'UTC';
+  }, []);
+
+  // Debounced Nominatim geocoding search
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const q = citySearch.trim();
+    if (q.length < 2) {
+      setSearchResults(CITIES.slice(0, 6));
+      return;
+    }
+    // Instant local filter first
+    const local = CITIES.filter((c) => c.label.toLowerCase().includes(q.toLowerCase())).slice(0, 4);
+    setSearchResults(local);
+    // Then API after debounce
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`, {
+          headers: { 'User-Agent': 'AkhAI/1.0 (akhai.app)' },
+        });
+        const data = await res.json();
+        const apiResults = data.map((r: { display_name: string; lat: string; lon: string }) => ({
+          label: r.display_name.split(',').slice(0, 2).join(',').trim(),
+          lat: parseFloat(r.lat),
+          lng: parseFloat(r.lon),
+          tz: '',
+        }));
+        // Merge: local first, then API (deduplicated)
+        const localLabels = new Set(local.map((l) => l.label.toLowerCase()));
+        const merged = [...local, ...apiResults.filter((a: { label: string }) => !localLabels.has(a.label.toLowerCase()))].slice(0, 8);
+        setSearchResults(merged);
+      } catch { /* silently fail — local results remain */ }
+      setSearching(false);
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [citySearch, estimateTz]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -143,13 +184,13 @@ export default function BirthDataInput({ onChartComputed }: Props) {
     }
   }, []);
 
-  const selectCity = useCallback((c: (typeof CITIES)[number]) => {
+  const selectCity = useCallback((c: { label: string; lat: number; lng: number; tz: string }) => {
     setLat(String(c.lat));
     setLng(String(c.lng));
-    setTz(c.tz);
+    setTz(c.tz || estimateTz(c.lat, c.lng));
     setCitySearch(c.label);
     setShowCityDrop(false);
-  }, []);
+  }, [estimateTz]);
 
   const handleCompute = useCallback(() => {
     const latNum = parseFloat(lat);
@@ -240,15 +281,16 @@ export default function BirthDataInput({ onChartComputed }: Props) {
           placeholder="Search city (e.g. Paris, London, Karachi...)"
           className={INP + ' w-full'}
         />
-        {showCityDrop && filteredCities.length > 0 && (
+        {showCityDrop && searchResults.length > 0 && (
           <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-md shadow-sm max-h-[200px] overflow-y-auto">
-            {filteredCities.map((c) => (
+            {searching && <div className="px-3 py-1 text-[9px] text-zinc-400 italic">searching...</div>}
+            {searchResults.map((c, i) => (
               <button
-                key={c.label}
+                key={`${c.label}-${i}`}
                 onClick={() => selectCity(c)}
                 className="w-full text-left px-3 py-1.5 text-[10px] font-mono text-zinc-600 hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
               >
-                {c.label} <span className="text-zinc-300">({c.lat}, {c.lng})</span>
+                {c.label} <span className="text-zinc-300">({c.lat.toFixed(2)}, {c.lng.toFixed(2)})</span>
               </button>
             ))}
           </div>
