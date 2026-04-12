@@ -7,6 +7,7 @@ import MindMapHistoryView from './MindMapHistoryView'
 import MindMapReportView from './MindMapReportView'
 import MindMapMiniChat from './MindMapMiniChat'
 import VisionBoard from './VisionBoard'
+import PredictView from './mindmap/PredictView'
 
 export interface Node {
   id: string
@@ -27,7 +28,7 @@ interface Connection {
   toName?: string
 }
 
-type ViewMode = 'board' | 'graph' | 'history' | 'report'
+type ViewMode = 'board' | 'graph' | 'history' | 'report' | 'predict'
 
 interface MindMapProps {
   isOpen: boolean
@@ -201,6 +202,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
               { id: 'graph', label: 'graph' },
               { id: 'history', label: 'history' },
               { id: 'report', label: 'grimoire' },
+              { id: 'predict', label: 'predict' },
             ].map(({ id, label }) => (
               <button
                 key={id}
@@ -312,6 +314,8 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
             <MindMapHistoryView onClose={onClose} onContinueToChat={(query) => { setMiniChatQuery(query); setMiniChatOpen(true) }} />
           ) : viewMode === 'report' ? (
             <MindMapReportView userId={userId} selectedTopics={[]} />
+          ) : viewMode === 'predict' ? (
+            <PredictView />
           ) : null}
 
           {/* Mini-chat — visible on all tabs */}

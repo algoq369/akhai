@@ -20,6 +20,10 @@ import ViewTabs from '@/components/sections/ViewTabs';
 import GnosticDetails from '@/components/sections/GnosticDetails';
 import CouncilButton from '@/components/CouncilButton';
 import CouncilPanel from '@/components/CouncilPanel';
+import dynamic from 'next/dynamic';
+import { useEsotericStore } from '@/lib/stores/esoteric-store';
+
+const EsotericInline = dynamic(() => import('@/components/esoteric/EsotericInline'), { ssr: false });
 
 /** Generate LayerMini data for every query — adapts to content and evolves with conversation */
 function generateLayerData(
@@ -138,6 +142,9 @@ export default function ChatMessages({
   handleGuardPivot,
   handleGuardContinue,
 }: ChatMessagesProps) {
+  const esotericEnabled = useEsotericStore((s) => s.isEnabled);
+  const toggleEsoteric = useEsotericStore((s) => s.toggleEnabled);
+
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-4">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -345,6 +352,20 @@ export default function ChatMessages({
                       </div>
                     )}
 
+                    {/* Macro-cyclical toggle */}
+                    {message.role === 'assistant' && !message.isStreaming && (
+                      <button
+                        onClick={toggleEsoteric}
+                        className={`text-[8px] font-mono mt-1 transition-colors ${
+                          esotericEnabled
+                            ? 'text-purple-500 hover:text-purple-700'
+                            : 'text-relic-silver/30 hover:text-relic-silver/50'
+                        }`}
+                      >
+                        {esotericEnabled ? '◇ macro on' : '◇ macro'}
+                      </button>
+                    )}
+
                     {/* Inline Visualize Button */}
                     {(shouldShowLayers(message.content, !!message.gnostic) ||
                       shouldShowInsightMap(message.content, !!message.gnostic)) &&
@@ -382,6 +403,7 @@ export default function ChatMessages({
                       />
                     </div>
                     <CouncilPanel queryId={message.id} />
+                    <EsotericInline query={messages[messages.indexOf(message) - 1]?.content || ''} messageId={message.id} />
                     {/* INTELLIGENCE FUSION BADGE */}
                     {message.intelligence && (
                       <div className="mt-4 pt-3 border-t border-relic-mist/20 dark:border-relic-slate/15">
