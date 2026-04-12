@@ -35,6 +35,13 @@ export default function NavigationMenu({
       isLink: true,
     },
     {
+      id: 'temple',
+      label: 'temple',
+      mobileLabel: 'temp',
+      href: '/temple',
+      isLink: true,
+    },
+    {
       id: 'constellation',
       label: 'constellation',
       mobileLabel: 'const',
@@ -59,6 +66,7 @@ export default function NavigationMenu({
     if (id === 'pricing' && pathname === '/pricing') return true;
     if (id === 'profile' && pathname === '/profile') return true;
     if (id === 'intelligence-robot-training' && pathname === '/idea-factory') return true;
+    if (id === 'temple' && pathname === '/temple') return true;
     if (id === 'constellation' && pathname === '/constellation') return true;
     return false;
   };
