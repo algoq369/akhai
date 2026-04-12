@@ -1,53 +1,42 @@
-# AkhAI Task Board — Day 93/150
+# AkhAI Task Board — Day 94/150 — 55 days to launch
 
-## Current Sprint: Days 93–100 (Phase 2 Final + God View)
+## NOW: Esoteric Layer (3A) — Days 94–100
 
-### In Progress
-- [x] Mini Canvas polish (metric truncation, tag stripping) — 67f8484
-- [x] PipelineHistoryPanel restored — 3117a14
-- [x] Canvas crash fix — aa53a38
-- [x] Council scaffold (agents, store, stub API, UI) — 86f7bed
-- [x] VPS env audit (Twitter OAuth + Reown manual steps documented)
+### Next up
+- [ ] 3A.1 Data layer — precompute Barbault/Turchin/K-wave/Dalio/Strauss-Howe JSON (4h)
+- [ ] 3A.2 Engine + API — cycle-engine.ts, cross-civilizational.ts, analyze route (4h)
+- [ ] 3A.3 UI — EsotericLayer, FrameworkCards, CyclicalChart, PowerIndex, TurchinPanel (6h)
+- [ ] 3A.4 Guide/lexicon page + inline tooltips (3h)
+- [ ] 3A.5 Integration into ChatMessages + settings toggle (3h)
+- [ ] 3A.6 Polish + deploy (3h)
 
-### Next: Wire Council Fan-out (Days 94-95)
-- [ ] Promise.all fan-out in /api/god-view/council (4 parallel + 1 synth)
-- [ ] CouncilButton loading state + toggle
-- [ ] CouncilPanel: synthesis top, 4 agent cards grid
-- [ ] Agent drill-down chat (AgentChat.tsx)
-- [ ] Council → Tree node highlighting
+## Queued: Days 101–120
 
-### God View Phase 1 Finish (Days 95-97)
-- [ ] Animations: node glow, path pulse, sequential cascade
-- [ ] Mobile responsive: bottom drawer on mobile
+- [ ] 3B Sandbox polish + predict: prefix + entity graph highlighting (5h)
+- [ ] 3C Voice Integration Phase A — Web Speech API input + output (10h)
+- [ ] 3D Canvas — query threading, topic constellation, cross-query links (8h)
+- [ ] 3E.1 Gnostic integration + Instinct Mode (5h)
+- [ ] 3E.3 Esoteric Library scaffold (4h)
+- [ ] 3E.4 Deploy ALL to VPS (2h)
+- [ ] 3E.5 VPS Twitter OAuth + Reown domain (manual)
 
-### Remaining Phase 2 Polish (Days 97-100)
-- [ ] VIEW tabs rendering fix (AI Layers, Insight, Mindmap)
-- [ ] Depth annotations wire into message rendering
-- [ ] DDG search integration fix
-- [ ] Bottom input/Live Refinement compaction
-- [ ] VPS: add Twitter OAuth creds + confirm Reown domain (manual)
+## Queued: Phase 4 (Days 121–150)
 
-### Phase 3: AGI Activation (Days 101-120)
-- [ ] Gnostic Esoteric Layer (Kabbalistic Tree + Barbault cyclical index)
-- [ ] Scenario Sandbox /sandbox page (3-branch prediction)
-- [ ] Metadata streaming LIVE during processing
-- [ ] Vercel AI SDK abstraction layer (sovereignty prep)
-- [ ] Canvas: query threading, topic constellation, cross-query connections
-- [ ] Voice Integration Phase A (Browser APIs)
-- [ ] Esoteric Library app (port 3003)
-- [ ] Instinct Mode
+- [ ] Social launch Day 121 (May 6)
+- [ ] Audience building Days 121–150
+- [ ] Website launch Day 150 (Jun 4)
+- [ ] Open-source release Apache 2.0
 
-### Phase 4: Community + Launch (Days 121-150)
-- [ ] Social prep (content calendar, screenshots, demo videos)
-- [ ] Day 121 (May 6): Social launch — X account active
-- [ ] Days 121-150: Audience building
-- [ ] Day 150 (Jun 4): Website launch, pricing live
-- [ ] Open-source release: core systems Apache 2.0
+## Done (Sessions Day 93–94)
 
-### Done (This Session — Day 93)
-- [x] Mini Canvas: 18 commits (compact layout, enriched content, contrast)
-- [x] PipelineHistoryPanel restored as metadata panel
-- [x] Canvas crash fix (methodology normalization)
-- [x] Master Plan V5 written + updated
-- [x] Council scaffold: agents.ts, council-store.ts, stub API, CouncilButton, CouncilPanel
-- [x] VPS env audit complete
+- [x] Mini Canvas: 18 commits (compact layout, enriched content, contrast, fallback)
+- [x] Perspective Council: 5 agents live, tree highlighting, agent drill-down chat
+- [x] God View: animations, Hebrew removed, spacing + contrast, tree polish
+- [x] Depth annotations: plain-text patterns fixed
+- [x] Scenario Sandbox: Part 1 (page + engine + API) + Part 2 (timeline + reports + chat)
+- [x] PipelineHistoryPanel restored
+- [x] Canvas crash fix
+- [x] Bottom input compacted
+- [x] Hydration fix + API credit error handling
+- [x] VPS env audit documented
+- [x] Master Plan V5 + God View 4-phase audit

@@ -1,182 +1,231 @@
-# ◊ AKHAI — Master Plan V5
-## Day 93/150 — April 9, 2026
+# ◊ AKHAI — Master Plan V5.1
+## Day 94/150 — April 10, 2026 — 55 days to launch
 
-**420 commits | 80 features | 137 fixes | 57/57 tests green**
-**Launch: June 4, 2026 (Day 150)**
+**445 commits | 57/57 tests green | Launch: June 4, 2026**
 
 ---
 
-## TIMELINE
+## TIMELINE OVERVIEW
 
 | Phase | Days | Focus | Status |
 |-------|------|-------|--------|
-| 1. Visual Sovereignty | 1–70 | UI, Canvas, Mindmap, Depth Annotations | ✅ 95% |
-| 2. Validation + Polish | 71–100 | Family testing, Mini Canvas, content quality | 🔵 IN PROGRESS |
-| 3. AGI Activation | 101–120 | Gnostic layer, self-improving systems, alpha testers | ⬜ NEXT |
-| 4. Community + Launch | 121–150 | X account, social launch (Day 121), website (Day 151) | ⬜ QUEUED |
+| 1. Visual Sovereignty | 1–70 | UI, Canvas, Mindmap, Depth Annotations | ✅ COMPLETE |
+| 2. Validation + Polish | 71–93 | Mini Canvas, Council, God View, metadata | ✅ COMPLETE |
+| 3. AGI Activation | 94–120 | Esoteric Layer, Sandbox, Voice, Gnostic | 🔵 IN PROGRESS |
+| 4. Community + Launch | 121–150 | Social, audience building, website launch | ⬜ QUEUED |
 
 ---
 
-## PHASE 1 — COMPLETED (Days 1–70)
+## PHASE 1 — COMPLETE (Days 1–70)
 
-- ✅ 7 reasoning methodologies (SC, PaS, ToT, CoT, Direct, CoD, Auto) — all academically cited
+- ✅ 7 reasoning methodologies (SC, PaS, ToT, CoT, Direct, CoD, Auto)
 - ✅ Grounding Guard (4 detectors) + Side Canal topic extraction
-- ✅ 11 AI computational layers with slider calibration (verified: 3 configs = 3 distinct outputs)
+- ✅ 11 AI computational layers with slider calibration
 - ✅ SSE metadata pipeline (globalThis singleton + event buffer replay)
-- ✅ Canvas workspace (draggable panels, query cards, topic bubbles, SVG connections)
-- ✅ Mindmap (CLUSPLOT clusters, hover cards, click-to-expand, living graph)
+- ✅ Canvas workspace (draggable panels, query cards, SVG connections)
+- ✅ Mindmap (CLUSPLOT clusters, hover cards, click-to-expand)
 - ✅ History tab, Grimoire, Philosophy page (ASCII trees)
-- ✅ Depth annotations system (sigils: △ ⊕ ○, safe ASCII)
-- ✅ page.tsx refactored: 3,000+ → 222 lines + extracted components/hooks (WEBNA)
-- ✅ Full auth: Email (Resend), X/Twitter OAuth, Web3 Wallet (Reown AppKit), GitHub
-- ✅ Email: noreply@akhai.app via Resend, DKIM/SPF/DMARC verified
-- ✅ Security audit: removed all `OR user_id IS NULL`, scoped localStorage per userId
-- ✅ PostHog EU analytics (12 custom events, 7 components)
-- ✅ 5-model free API fallback chain (Anthropic → OpenRouter → StepFun → Nano → GPT-OSS)
-- ✅ Finance ticker (BTC, MCAP, GOLD, OIL, DXY, Fear & Greed)
-- ✅ News ticker (Brave Search: AGI/ASI/crypto)
-- ✅ God View Phase 1 (Neural Tree, ActivityFeed, SSE→Zustand)
-- ✅ Live metadata narrative during processing (Claude thinking-style)
-- ✅ Deploy pipeline: rsync + PM2 on FlokiNET Iceland VPS (akhai.app)
+- ✅ Full auth: Email (Resend), X/Twitter OAuth, Web3 Wallet, GitHub
+- ✅ Email: noreply@akhai.app via Resend, DKIM/SPF/DMARC
+- ✅ Security audit: removed all `OR user_id IS NULL`
+- ✅ PostHog EU analytics (12 events, 7 components)
+- ✅ 5-model free API fallback chain
+- ✅ Finance ticker + News ticker
+- ✅ Deploy pipeline: rsync + PM2 on FlokiNET Iceland VPS
 
-## PHASE 2 — IN PROGRESS (Days 71–100)
+## PHASE 2 — COMPLETE (Days 71–93)
 
-### ✅ Completed this phase
-- ✅ Mini Canvas: 18 commits (23c963e → 06149c2)
-  - Content classifier (facts/metrics/correlations)
-  - 5 themed fact boxes (tangible, verifiable, unrefutable, non-biased, straight forward)
-  - Dashboard 2-column grid layout
-  - Deduplication, contrast fix, noise filtering, per-category content
-- ✅ Phase A MASTER_PLAN: renamed 3 fabricated methodology IDs to real academic methods
-- ✅ SVG circle radius guard (getWeight || 0 fallback)
+### Mini Canvas (18 commits: 23c963e → 8b8c1d6)
+- ✅ Content classifier (facts/metrics/correlations extraction)
+- ✅ 5 themed fact boxes (tangible, verifiable, unrefutable, non-biased, straight forward)
+- ✅ Dashboard 2-column grid layout
+- ✅ Metric word-boundary truncation, [NEXT]/[RELATED] tag stripping
+- ✅ Client-side classifyContent fallback + poll endpoint fix
+- ✅ Contrast fix, noise filtering, per-category deduplication
 
-### 🔵 Remaining (Days 93–100)
-1. **Mini Canvas polish** — metric name truncation at word boundary, strip [NEXT]: tags, "4 m" parser fix
-2. **Persistent metadata side panel** — accumulates all engine metadata per session, toggleable, grouped by query
-3. **VIEW tabs rendering** — AI Layers, Insight, Mindmap tabs (recurring broken)
-4. **Depth annotations UI** — wire DepthText into message rendering, density slider in settings
-5. **DDG search fix** — DuckDuckGo search integration
-6. **VPS env finalization** — add TWITTER_CLIENT_ID/SECRET, confirm Reown AppKit domain
-7. **Bottom input compaction** — reduce Live Refinement vertical space
+### Perspective Council (5 commits: 86f7bed → 212edc0)
+- ✅ 5 AI computational agents (Visionary, Analyst, Advocate, Skeptic, Synthesizer)
+- ✅ Vercel AI SDK installed (ai, @ai-sdk/anthropic, @ai-sdk/google, @ai-sdk/openai)
+- ✅ Promise.allSettled fan-out (4 parallel + 1 synthesis)
+- ✅ CouncilButton + CouncilPanel with auto-expand + loading skeleton
+- ✅ Provider fallback: all agents use anthropic when google/deepseek keys missing
+- ✅ Tree node highlighting with agent-colored glow + sigils during council
+- ✅ Agent drill-down chat (click agent → mini-chat with that perspective)
+- ✅ AgentChat.tsx + POST /api/god-view/agent-chat
+- ✅ Council description text + 30s timeout safety
+
+### God View Phase 1 — Neural Tree (4 commits: 679fb48 → 4f9aaa5)
+- ✅ GodViewTree.tsx (extracted, reusable, 17KB)
+- ✅ GodViewPanel.tsx (slide-in overlay)
+- ✅ ActivityFeed.tsx (sigil event log)
+- ✅ SSE → live tree wiring via Zustand
+- ✅ Animations: node glow, path pulse, guard pulse, sequential cascade
+- ✅ Hebrew/Kabbalistic labels removed from all visible UI (10 locations, 8 files)
+- ✅ Node spacing increased 25% + text contrast improved
+- ✅ Mobile responsive (bottom drawer) — partial
+
+### Other Phase 2 completions
+- ✅ Depth annotations: patterns fixed for plain-text responses (3b91798)
+- ✅ PipelineHistoryPanel restored as metadata panel (3117a14)
+- ✅ Canvas crash fix — methodology normalization + null guards (aa53a38)
+- ✅ Bottom input compaction — ~50px vertical savings (dbaa7a6)
+- ✅ Hydration mismatch fix + API credit error handling (21eb0ba)
+- ✅ Phase A MASTER_PLAN: renamed 3 fabricated methodology IDs
+- ✅ VPS env audit (Twitter OAuth + Reown domain — manual steps documented)
+- ✅ Master Plan V5 + God View 4-phase audit
+
+## PHASE 3 — IN PROGRESS (Days 94–120)
+
+### ✅ Already started
+- ✅ Scenario Sandbox Part 1: page + engine + SSE predict API (4d975a0)
+- ✅ Scenario Sandbox Part 2: timeline viz + scenario reports + world-state chat (dc311d2)
+
+### 3A. Macro-Cyclical Esoteric Layer (Days 94–100, ~23h total)
+
+5-framework analysis engine with dual-mode presentation (Standard ↔ Full Spectrum).
+Frameworks: Barbault Index, Turchin SDT, Kondratieff/Perez, Strauss-Howe, Dalio Big Cycle.
+All converge on 2020s as multi-dimensional crisis peak.
+
+| Step | Task | Est | Status |
+|------|------|-----|--------|
+| 3A.1 | Data layer — precompute all JSON datasets | 4h | ⬜ |
+|      | Barbault Index (monthly 1900-2050, ~63KB via Python ephemeris) | | |
+|      | K-wave phase dating (6 waves, boundaries, driving tech) | | |
+|      | Strauss-Howe turning dates + generational archetypes | | |
+|      | Dalio Power Index (18 factors × 10 nations snapshot) | | |
+|      | Turchin PSI proxies (FRED/Census indicator values) | | |
+|      | Cross-civilizational pattern templates (Hermetic/Vedic/Islamic/Chinese) | | |
+| 3A.2 | Engine + API | 4h | ⬜ |
+|      | lib/esoteric/cycle-engine.ts — load data, compute positions, convergence score | | |
+|      | lib/esoteric/cross-civilizational.ts — pattern templates per topic | | |
+|      | app/api/esoteric/analyze/route.ts — POST, returns frameworks + AI prose | | |
+|      | Query detection: keyword classifier for macro/geopolitical/economic topics | | |
+| 3A.3 | UI components | 6h | ⬜ |
+|      | EsotericLayer.tsx — main container with secular/esoteric toggle | | |
+|      | FrameworkCards.tsx — 5 mini cards showing current values | | |
+|      | CyclicalChart.tsx — SVG timeline (Barbault + K-wave overlay) | | |
+|      | PowerIndex.tsx — Dalio bar chart | | |
+|      | TurchinPanel.tsx — PSI metric cards | | |
+|      | CrossCivilizational.tsx — esoteric-mode-only pattern cards | | |
+|      | AstronomicalData.tsx — esoteric-mode-only planetary positions | | |
+| 3A.4 | Guide/lexicon page + inline tooltips | 3h | ⬜ |
+|      | /guide page with searchable, categorized term definitions | | |
+|      | 18+ terms with plain-language explanations + real-world examples | | |
+|      | Inline hover tooltips from guide data when terms appear in analysis | | |
+|      | Dual labels: esoteric names ↔ secular names from same JSON | | |
+| 3A.5 | Integration into ChatMessages + settings | 3h | ⬜ |
+|      | Show EsotericLayer below responses when macro topics detected | | |
+|      | User toggle in settings: on/off + mode preference | | |
+|      | Esoteric store (Zustand) for mode state + cached analysis | | |
+| 3A.6 | Polish + deploy | 3h | ⬜ |
+|      | Chart animations on scroll-into-view | | |
+|      | Mobile responsive | | |
+|      | Deploy to VPS | | |
+
+### 3B. Remaining God View features (Days 101–105)
+
+| Step | Task | Est | Status |
+|------|------|-----|--------|
+| 3B.1 | Scenario Sandbox polish — test end-to-end with API credits | 2h | ⬜ |
+| 3B.2 | Main chat "predict:" prefix → redirect to /sandbox | 1h | ⬜ |
+| 3B.3 | Entity graph click → highlight across 3 scenario cards | 2h | ⬜ |
+
+### 3C. Voice Integration Phase A (Days 106–110, ~10h)
+
+| Step | Task | Est | Status |
+|------|------|-----|--------|
+| 3C.1 | Voice input — Web Speech API (Chrome/Edge), mic button next to input | 4h | ⬜ |
+| 3C.2 | Voice output — SpeechSynthesis API, speaker icon per response | 4h | ⬜ |
+| 3C.3 | Voice settings (speed, voice picker, auto-read toggle) | 2h | ⬜ |
+
+### 3D. Canvas enhancements (Days 111–114, ~8h)
+
+| Step | Task | Est | Status |
+|------|------|-----|--------|
+| 3D.1 | Query threading — lines showing conversation evolution | 3h | ⬜ |
+| 3D.2 | Topic constellation — force-directed graph of extracted topics | 3h | ⬜ |
+| 3D.3 | Cross-query connections — shared topics create visible links | 2h | ⬜ |
+
+### 3E. Remaining items (Days 115–120)
+
+| Step | Task | Est | Status |
+|------|------|-----|--------|
+| 3E.1 | Gnostic integration — wire esoteric layer into gnostic state | 2h | ⬜ |
+| 3E.2 | Instinct Mode (holistic hermetic analysis) | 3h | ⬜ |
+| 3E.3 | Esoteric Library app scaffold (port 3003, PDF reader) | 4h | ⬜ |
+| 3E.4 | Deploy ALL Phase 3 features to VPS (akhai.app) | 2h | ⬜ |
+| 3E.5 | VPS: add Twitter OAuth creds + confirm Reown domain | 30min | ⬜ manual |
+| 3E.6 | Alpha tester expansion (10→20 users, family feedback) | ongoing | ⬜ |
 
 ---
-
-## PHASE 3 — AGI ACTIVATION (Days 101–120)
-
-| Task | Priority | Est |
-|------|----------|-----|
-| Gnostic Esoteric Layer (Kabbalistic Tree + Barbault cyclical index) | HIGH | 5d |
-| Metadata streaming LIVE during processing (not post-response) | HIGH | 2d |
-| Sovereign transition: Vercel AI SDK abstraction layer | MEDIUM | 3d |
-| Esoteric Library app (PDF reader, audio console, 11 categories) | MEDIUM | 4d |
-| Alpha tester expansion (10→20 users) | MEDIUM | ongoing |
-| Instinct Mode (holistic hermetic analysis) | LOW | 3d |
 
 ## PHASE 4 — COMMUNITY + LAUNCH (Days 121–150)
 
-| Task | Day | Description |
-|------|-----|-------------|
-| Social prep | 101–120 | Content calendar, screenshots, demo videos |
-| Day 121: Social launch | May 6 | X account active, first posts |
-| Days 121–150 | May 6–Jun 3 | Audience building, engagement |
-| Day 150: Website launch | Jun 4 | akhai.app public, pricing live |
-| Open-source release | Jun 4 | Core systems Apache 2.0 on github.com/algoq369/akhai |
+| Step | Day | Task | Est |
+|------|-----|------|-----|
+| 4.1 | 101–120 | Content calendar, screenshots, demo videos | ongoing |
+| 4.2 | Day 121 (May 6) | Social launch — X account active, first posts | 1d |
+| 4.3 | 121–150 | Audience building, engagement campaigns | ongoing |
+| 4.4 | Day 150 (Jun 4) | Website launch — akhai.app public, pricing live | 1d |
+| 4.5 | Day 150 | Open-source release: core systems Apache 2.0 | 1d |
+|     |           | github.com/algoq369/akhai | |
+
+---
+
+## COMPLETE REMAINING WORK ESTIMATE
+
+| Block | Days | Hours | Status |
+|-------|------|-------|--------|
+| Esoteric Layer (3A) | 94–100 | 23h | ⬜ NEXT |
+| God View polish (3B) | 101–105 | 5h | ⬜ |
+| Voice Integration (3C) | 106–110 | 10h | ⬜ |
+| Canvas enhancements (3D) | 111–114 | 8h | ⬜ |
+| Remaining items (3E) | 115–120 | 12h | ⬜ |
+| Community + Launch (4) | 121–150 | ongoing | ⬜ |
+| **TOTAL remaining dev** | **94–120** | **~58h** | |
+
+At ~3-4h/day dev time = 15-20 working days → fits within Days 94-120.
 
 ---
 
 ## INFRASTRUCTURE
 
-| Component | Current | Target |
-|-----------|---------|--------|
-| VPS | FlokiNET Iceland €10.99/mo (1CPU, 1GB, 20GB NVMe) | Same until revenue |
-| AI Provider | Claude Opus 4.6 (primary) + free fallback chain | Same |
-| Domain | akhai.app (Namecheap + Resend DNS) | Same |
-| Reverse proxy | Caddy (auto-SSL) | Same |
-| Process mgmt | PM2 | Same |
-| Deploy | rsync via quick-deploy.sh | Same |
-| Auth | Email + GitHub + X/Twitter + Web3 Wallet | Same |
-| Analytics | PostHog EU | Same |
-| Payments | USDT ERC20 | + BTC, XMR |
+| Component | Current | Notes |
+|-----------|---------|-------|
+| VPS | FlokiNET Iceland €10.99/mo | 1CPU, 1GB, 20GB NVMe |
+| AI Provider | Claude Opus 4.6 + free fallback chain | Top up credits needed |
+| Domain | akhai.app (Namecheap + Resend DNS) | |
+| Reverse proxy | Caddy (auto-SSL) | |
+| Process mgmt | PM2 | Full delete+start for env changes |
+| Deploy | rsync via quick-deploy.sh | Exclude .env.local |
+| Auth | Email + GitHub + X/Twitter + Web3 Wallet | Twitter needs VPS env vars |
+| Analytics | PostHog EU | |
+| Payments | USDT ERC20 | + BTC, XMR planned |
 
 ## PRICING (v3)
 
-| Tier | Price | Tokens/day | Target |
-|------|-------|------------|--------|
-| Free | $0 | 50K | Onboarding |
-| Pro | $20/mo | 1M | Power users |
-| Legend | $200/mo | Unlimited | Enterprises |
+| Tier | Price | Tokens/day |
+|------|-------|------------|
+| Free | $0 | 50K |
+| Pro | $20/mo | 1M |
+| Legend | $200/mo | Unlimited |
 
 Break-even: Week 16 post-launch.
 
-## ON THE HORIZON (Post-launch)
+## POST-LAUNCH HORIZON
 
-- Sovereign hardware: DGX Spark ($3,999) → dual-RTX 4090 (~€8,500) → Hetzner GEX131 (€889/mo)
-- Sovereign models: Qwen 2.5-72B primary → full migration Q1 2027
+- Sovereign hardware: DGX Spark ($3,999) → dual-RTX 4090 → Hetzner GEX131
+- Sovereign models: Qwen 2.5-72B → full migration Q1 2027
 - Sovereign terminal + phone/computer hardware
 - Robotics integration
 - G&BV partnership (20% APY, 1-year lock, $200K–500K seed)
+- Voice Phase B: Deepgram Nova-3 STT + OpenAI TTS-1
+- Voice Phase C: self-hosted Whisper V3 + Qwen3-TTS
 
-## WEBNA IRON RULES (non-negotiable)
+## WEBNA IRON RULES
 
 1. Every file under 500 lines
 2. Commit after every working change
 3. Never deploy without green gates (57/57 Vitest + clean tsc + passing build)
 4. No fabricated method names
 5. Surgical edits only
-
-
----
-
-## PHASE 2.5 — GOD VIEW FEATURES (4 Phases from GOD_VIEW_TRACKER.md)
-
-### GV Phase 1: Neural Tree God View — PARTIAL (60%)
-| Step | Task | Files | Status |
-|------|------|-------|--------|
-| 1.1 | GodViewTree.tsx (extracted, reusable) | components/god-view/GodViewTree.tsx (17KB) | ✅ |
-| 1.2 | GodViewPanel.tsx (slide-in overlay) | components/god-view/GodViewPanel.tsx (3KB) | ✅ |
-| 1.3 | SSE → live tree wiring via Zustand | god-view-store.ts | ✅ |
-| 1.4 | ActivityFeed.tsx (sigil event log) | components/god-view/ActivityFeed.tsx (6.5KB) | ✅ |
-| 1.5 | Animations (node glow, path pulse, cascade) | GodViewTree.tsx + god-view.css | ⬜ ~4h |
-| 1.6 | Mobile responsive (bottom drawer) | GodViewPanel.tsx | ⬜ ~2h |
-| 1.7 | Deploy + verify | — | ⬜ |
-
-### GV Phase 2: Perspective Council — SCAFFOLD (50%)
-| Step | Task | Files | Status |
-|------|------|-------|--------|
-| 2.1 | Vercel AI SDK + providers | package.json | ✅ Installed |
-| 2.2 | 5 agent definitions + prompts | lib/god-view/agents.ts (73 lines) | ✅ |
-| 2.3 | Council API route (Promise.all fan-out) | app/api/god-view/council/route.ts (53 lines) | ⬜ Stub 501 |
-| 2.4 | CouncilButton + CouncilPanel UI | components/Council*.tsx | ✅ Skeleton |
-| 2.5 | Agent drill-down chat (click agent → mini-chat) | components/god-view/AgentChat.tsx | ⬜ |
-| 2.6 | Council → Tree node highlighting | GodViewTree.tsx + god-view-store.ts | ⬜ |
-| 2.7 | Deploy + verify | — | ⬜ |
-
-Agents: Visionary (◈ Claude Sonnet), Analyst (◆ Claude Sonnet), Advocate (◇ Gemini 2.5 Pro), Skeptic (◉ DeepSeek V3), Synthesizer (◎ Claude Sonnet)
-Cost: ~$0.07/activation | Store: lib/stores/council-store.ts (41 lines)
-
-### GV Phase 3: Scenario Sandbox — NOT STARTED
-| Step | Task | Est |
-|------|------|-----|
-| 3.1 | /sandbox page (seed input: text/URL/file + "What if?" question) | 4h |
-| 3.2 | scenario-engine.ts (entity extraction → branch prompts → prediction) | 4h |
-| 3.3 | /api/god-view/predict SSE route (3 parallel branches) | 5h |
-| 3.4 | ScenarioTimeline (3-branch visual: optimistic/balanced/pessimistic) | 3h |
-| 3.5 | ScenarioReport cards (expandable per branch) | 3h |
-| 3.6 | ScenarioChat (chat with predicted world state) | 3h |
-| 3.7 | Entity graph visualization (mini knowledge graph) | 3h |
-| 3.8 | Main chat "predict:" prefix integration | 2h |
-
-3 branches: Expansion lens (bull), Attention lens (balanced), Discriminator lens (bear)
-Cost: ~$0.10-0.15/prediction | ~50 predictions/day on Pro tier
-
-### GV Phase 4: Voice Integration — NOT STARTED
-| Step | Task | Est |
-|------|------|-----|
-| 4.1 | Voice input (Browser Web Speech API → Deepgram Nova-3 later) | 4h |
-| 4.2 | Voice output (Browser SpeechSynthesis → OpenAI TTS-1 later) | 4h |
-| 4.3 | Voice settings (speed, voice picker, auto-read toggle) | 2h |
-| 4.4 | Council mode: different voice per agent | 2h |
-
-### Canvas / Miro-style Workspace — PARTIAL
-Built: CanvasWorkspace.tsx (301 lines) with draggable panels, query cards, topic bubbles, SVG connections, select/connect/note tools, pan/zoom.
-Missing: query threading (lines showing conversation evolution), topic constellation (force graph), cross-query connections, methodology timeline.
