@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { BirthData, NatalChart } from '@/lib/esoteric/natal-engine';
 import { computeNatalChart, saveBirthData, loadBirthData } from '@/lib/esoteric/natal-engine';
 
@@ -8,8 +8,70 @@ const CITIES: { label: string; lat: number; lng: number; tz: string }[] = [
   { label: 'Paris', lat: 48.86, lng: 2.35, tz: 'Europe/Paris' },
   { label: 'London', lat: 51.51, lng: -0.13, tz: 'Europe/London' },
   { label: 'New York', lat: 40.71, lng: -74.01, tz: 'America/New_York' },
+  { label: 'Los Angeles', lat: 34.05, lng: -118.24, tz: 'America/Los_Angeles' },
+  { label: 'Chicago', lat: 41.88, lng: -87.63, tz: 'America/Chicago' },
   { label: 'Tokyo', lat: 35.68, lng: 139.69, tz: 'Asia/Tokyo' },
+  { label: 'Berlin', lat: 52.52, lng: 13.41, tz: 'Europe/Berlin' },
+  { label: 'Rome', lat: 41.90, lng: 12.50, tz: 'Europe/Rome' },
+  { label: 'Madrid', lat: 40.42, lng: -3.70, tz: 'Europe/Madrid' },
+  { label: 'Lisbon', lat: 38.72, lng: -9.14, tz: 'Europe/Lisbon' },
+  { label: 'Amsterdam', lat: 52.37, lng: 4.90, tz: 'Europe/Amsterdam' },
+  { label: 'Brussels', lat: 50.85, lng: 4.35, tz: 'Europe/Brussels' },
+  { label: 'Vienna', lat: 48.21, lng: 16.37, tz: 'Europe/Vienna' },
+  { label: 'Geneva', lat: 46.20, lng: 6.14, tz: 'Europe/Zurich' },
+  { label: 'Stockholm', lat: 59.33, lng: 18.07, tz: 'Europe/Stockholm' },
+  { label: 'Moscow', lat: 55.76, lng: 37.62, tz: 'Europe/Moscow' },
+  { label: 'Istanbul', lat: 41.01, lng: 28.98, tz: 'Europe/Istanbul' },
+  { label: 'Dubai', lat: 25.20, lng: 55.27, tz: 'Asia/Dubai' },
+  { label: 'Mumbai', lat: 19.08, lng: 72.88, tz: 'Asia/Kolkata' },
+  { label: 'Delhi', lat: 28.61, lng: 77.21, tz: 'Asia/Kolkata' },
+  { label: 'Beijing', lat: 39.90, lng: 116.40, tz: 'Asia/Shanghai' },
+  { label: 'Shanghai', lat: 31.23, lng: 121.47, tz: 'Asia/Shanghai' },
+  { label: 'Seoul', lat: 37.57, lng: 126.98, tz: 'Asia/Seoul' },
+  { label: 'Bangkok', lat: 13.76, lng: 100.50, tz: 'Asia/Bangkok' },
+  { label: 'Singapore', lat: 1.35, lng: 103.82, tz: 'Asia/Singapore' },
+  { label: 'Sydney', lat: -33.87, lng: 151.21, tz: 'Australia/Sydney' },
+  { label: 'Melbourne', lat: -37.81, lng: 144.96, tz: 'Australia/Melbourne' },
+  { label: 'São Paulo', lat: -23.55, lng: -46.63, tz: 'America/Sao_Paulo' },
+  { label: 'Buenos Aires', lat: -34.60, lng: -58.38, tz: 'America/Argentina/Buenos_Aires' },
+  { label: 'Mexico City', lat: 19.43, lng: -99.13, tz: 'America/Mexico_City' },
+  { label: 'Cairo', lat: 30.04, lng: 31.24, tz: 'Africa/Cairo' },
+  { label: 'Lagos', lat: 6.52, lng: 3.38, tz: 'Africa/Lagos' },
+  { label: 'Nairobi', lat: -1.29, lng: 36.82, tz: 'Africa/Nairobi' },
+  { label: 'Casablanca', lat: 33.57, lng: -7.59, tz: 'Africa/Casablanca' },
+  { label: 'Johannesburg', lat: -26.20, lng: 28.05, tz: 'Africa/Johannesburg' },
+  { label: 'Toronto', lat: 43.65, lng: -79.38, tz: 'America/Toronto' },
+  { label: 'Montreal', lat: 45.50, lng: -73.57, tz: 'America/Toronto' },
+  { label: 'Tehran', lat: 35.69, lng: 51.39, tz: 'Asia/Tehran' },
+  { label: 'Islamabad', lat: 33.69, lng: 73.04, tz: 'Asia/Karachi' },
+  { label: 'Karachi', lat: 24.86, lng: 67.01, tz: 'Asia/Karachi' },
+  { label: 'Lahore', lat: 31.55, lng: 74.35, tz: 'Asia/Karachi' },
+  { label: 'Kabul', lat: 34.53, lng: 69.17, tz: 'Asia/Kabul' },
+  { label: 'Riyadh', lat: 24.69, lng: 46.72, tz: 'Asia/Riyadh' },
+  { label: 'Doha', lat: 25.29, lng: 51.53, tz: 'Asia/Qatar' },
+  { label: 'Algiers', lat: 36.75, lng: 3.04, tz: 'Africa/Algiers' },
+  { label: 'Tunis', lat: 36.81, lng: 10.17, tz: 'Africa/Tunis' },
+  { label: 'Dakar', lat: 14.69, lng: -17.44, tz: 'Africa/Dakar' },
+  { label: 'Beirut', lat: 33.89, lng: 35.50, tz: 'Asia/Beirut' },
+  { label: 'Baghdad', lat: 33.31, lng: 44.37, tz: 'Asia/Baghdad' },
+  { label: 'Jakarta', lat: -6.21, lng: 106.85, tz: 'Asia/Jakarta' },
+  { label: 'Kuala Lumpur', lat: 3.14, lng: 101.69, tz: 'Asia/Kuala_Lumpur' },
+  { label: 'Manila', lat: 14.60, lng: 120.98, tz: 'Asia/Manila' },
+  { label: 'Quetta', lat: 30.18, lng: 66.98, tz: 'Asia/Karachi' },
+  { label: 'Peshawar', lat: 34.01, lng: 71.58, tz: 'Asia/Karachi' },
+  { label: 'Marseille', lat: 43.30, lng: 5.37, tz: 'Europe/Paris' },
+  { label: 'Lyon', lat: 45.76, lng: 4.84, tz: 'Europe/Paris' },
+  { label: 'Bordeaux', lat: 44.84, lng: -0.58, tz: 'Europe/Paris' },
+  { label: 'Strasbourg', lat: 48.57, lng: 7.75, tz: 'Europe/Paris' },
+  { label: 'Athens', lat: 37.98, lng: 23.73, tz: 'Europe/Athens' },
+  { label: 'Warsaw', lat: 52.23, lng: 21.01, tz: 'Europe/Warsaw' },
+  { label: 'Prague', lat: 50.08, lng: 14.44, tz: 'Europe/Prague' },
+  { label: 'Budapest', lat: 47.50, lng: 19.04, tz: 'Europe/Budapest' },
+  { label: 'Dublin', lat: 53.35, lng: -6.26, tz: 'Europe/Dublin' },
   { label: 'Zurich', lat: 47.38, lng: 8.54, tz: 'Europe/Zurich' },
+  { label: 'Copenhagen', lat: 55.68, lng: 12.57, tz: 'Europe/Copenhagen' },
+  { label: 'Oslo', lat: 59.91, lng: 10.75, tz: 'Europe/Oslo' },
+  { label: 'Helsinki', lat: 60.17, lng: 24.94, tz: 'Europe/Helsinki' },
 ];
 
 const TIMEZONES = [
@@ -48,6 +110,23 @@ export default function BirthDataInput({ onChartComputed }: Props) {
   const [lng, setLng] = useState('');
   const [tz, setTz] = useState('UTC');
   const [computing, setComputing] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
+  const [showCityDrop, setShowCityDrop] = useState(false);
+  const cityRef = useRef<HTMLDivElement>(null);
+
+  const filteredCities = useMemo(() => {
+    if (!citySearch.trim()) return CITIES.slice(0, 8);
+    const q = citySearch.toLowerCase();
+    return CITIES.filter((c) => c.label.toLowerCase().includes(q)).slice(0, 8);
+  }, [citySearch]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (cityRef.current && !cityRef.current.contains(e.target as Node)) setShowCityDrop(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   useEffect(() => {
     const saved = loadBirthData();
@@ -68,6 +147,8 @@ export default function BirthDataInput({ onChartComputed }: Props) {
     setLat(String(c.lat));
     setLng(String(c.lng));
     setTz(c.tz);
+    setCitySearch(c.label);
+    setShowCityDrop(false);
   }, []);
 
   const handleCompute = useCallback(() => {
@@ -150,31 +231,44 @@ export default function BirthDataInput({ onChartComputed }: Props) {
         </select>
       </div>
 
-      {/* Location */}
-      <div className="grid grid-cols-2 gap-1.5 mb-2">
+      {/* City search */}
+      <div ref={cityRef} className="relative mb-2">
+        <input
+          value={citySearch}
+          onChange={(e) => { setCitySearch(e.target.value); setShowCityDrop(true); }}
+          onFocus={() => setShowCityDrop(true)}
+          placeholder="Search city (e.g. Paris, London, Karachi...)"
+          className={INP + ' w-full'}
+        />
+        {showCityDrop && filteredCities.length > 0 && (
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-md shadow-sm max-h-[200px] overflow-y-auto">
+            {filteredCities.map((c) => (
+              <button
+                key={c.label}
+                onClick={() => selectCity(c)}
+                className="w-full text-left px-3 py-1.5 text-[10px] font-mono text-zinc-600 hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
+              >
+                {c.label} <span className="text-zinc-300">({c.lat}, {c.lng})</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Lat/Lng (auto-filled from city, or manual) */}
+      <div className="grid grid-cols-2 gap-1.5 mb-3">
         <input
           value={lat}
           onChange={(e) => setLat(e.target.value)}
-          placeholder="Latitude (e.g. 48.86)"
+          placeholder="Latitude"
           className={INP}
         />
         <input
           value={lng}
           onChange={(e) => setLng(e.target.value)}
-          placeholder="Longitude (e.g. 2.35)"
+          placeholder="Longitude"
           className={INP}
         />
-      </div>
-      <div className="flex flex-wrap gap-1 mb-3">
-        {CITIES.map((c) => (
-          <button
-            key={c.label}
-            onClick={() => selectCity(c)}
-            className="text-[9px] px-2 py-0.5 rounded-full border border-zinc-200 text-zinc-400 hover:text-zinc-600 hover:border-zinc-400 transition-colors"
-          >
-            {c.label}
-          </button>
-        ))}
       </div>
 
       {/* Timezone */}
