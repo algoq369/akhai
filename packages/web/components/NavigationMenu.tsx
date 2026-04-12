@@ -35,6 +35,13 @@ export default function NavigationMenu({
       isLink: true,
     },
     { id: 'sandbox', label: 'sandbox', mobileLabel: 'sand', href: '/sandbox', isLink: true },
+    {
+      id: 'constellation',
+      label: 'constellation',
+      mobileLabel: 'const',
+      href: '/constellation',
+      isLink: true,
+    },
     { id: 'mindmap', label: 'mindmap', mobileLabel: 'map', onClick: onMindMapClick, isLink: false },
     {
       id: 'pricing',
@@ -54,6 +61,7 @@ export default function NavigationMenu({
     if (id === 'profile' && pathname === '/profile') return true;
     if (id === 'intelligence-robot-training' && pathname === '/idea-factory') return true;
     if (id === 'sandbox' && pathname === '/sandbox') return true;
+    if (id === 'constellation' && pathname === '/constellation') return true;
     return false;
   };
 
