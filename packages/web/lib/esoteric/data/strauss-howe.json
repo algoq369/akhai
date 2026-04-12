@@ -1,0 +1,88 @@
+{
+  "turnings": [
+    {
+      "id": 1,
+      "name": "High",
+      "character": "Institutions strong, individualism weak. Society unified around post-crisis consensus.",
+      "duration": "~20 years",
+      "mood": "Conformist, optimistic, civic-minded",
+      "example": "Post-WWII America (1946-1964)"
+    },
+    {
+      "id": 2,
+      "name": "Awakening",
+      "character": "Cultural rebellion against institutional conformity. Spiritual and values upheaval.",
+      "duration": "~20 years",
+      "mood": "Passionate, idealistic, divisive",
+      "example": "Consciousness Revolution (1964-1984)"
+    },
+    {
+      "id": 3,
+      "name": "Unraveling",
+      "character": "Institutions decay and are distrusted. Individualism and cynicism peak.",
+      "duration": "~20 years",
+      "mood": "Cynical, pragmatic, fragmented",
+      "example": "Culture Wars era (1984-2008)"
+    },
+    {
+      "id": 4,
+      "name": "Crisis",
+      "character": "Existential challenge forces institutional rebuilding. Old civic order destroyed and rebuilt.",
+      "duration": "~20 years",
+      "mood": "Urgent, decisive, collectivist",
+      "example": "Current era (2008-~2033)"
+    }
+  ],
+  "archetypes": [
+    { "name": "Prophet", "turningBorn": 1, "crisisRole": "Elder visionary leaders", "example": "Boomers (born 1943-1960)" },
+    { "name": "Nomad", "turningBorn": 2, "crisisRole": "Pragmatic midlife managers", "example": "Gen X (born 1961-1981)" },
+    { "name": "Hero", "turningBorn": 3, "crisisRole": "Young adult soldiers/builders", "example": "Millennials (born 1982-2004)" },
+    { "name": "Artist", "turningBorn": 4, "crisisRole": "Protected children", "example": "Gen Z / Homelanders (born 2005+)" }
+  ],
+  "saecula": [
+    {
+      "name": "Revolutionary",
+      "span": [1704, 1794],
+      "crisis": [1773, 1794],
+      "crisisEvent": "American Revolution",
+      "resolution": "Constitutional republic"
+    },
+    {
+      "name": "Civil War",
+      "span": [1794, 1865],
+      "crisis": [1860, 1865],
+      "crisisEvent": "Civil War",
+      "resolution": "Preserved union, abolished slavery"
+    },
+    {
+      "name": "Great Power",
+      "span": [1865, 1946],
+      "crisis": [1929, 1946],
+      "crisisEvent": "Depression + WWII",
+      "resolution": "New Deal + global hegemony"
+    },
+    {
+      "name": "Millennial",
+      "span": [1946, null],
+      "crisis": [2008, 2033],
+      "crisisEvent": "Financial crisis → pandemic → geopolitical restructuring",
+      "resolution": null,
+      "current": true
+    }
+  ],
+  "currentPosition": {
+    "turning": 4,
+    "turningName": "Crisis",
+    "startYear": 2008,
+    "projectedEnd": 2033,
+    "catalysts": ["2008 Financial Crisis", "2016 populist upheaval", "2020 COVID pandemic", "2022 Ukraine war"],
+    "climax": "Projected 2025-2030 (historically the most intense ~5 years of a Crisis turning)",
+    "generationInCrisis": {
+      "prophet": "Boomers (elderhood — ideological leadership)",
+      "nomad": "Gen X (midlife — pragmatic management)",
+      "hero": "Millennials (young adult — institutional builders)",
+      "artist": "Gen Z (childhood/youth — shaped by crisis)"
+    }
+  },
+  "credibilityNote": "Popular in strategic planning (Bannon, Pentagon) but criticized by academic historians as unfalsifiable and selectively fitted. Peter Turchin calls it 'prophecy, not science.' Useful as pattern language, dangerous as prediction tool."
+}

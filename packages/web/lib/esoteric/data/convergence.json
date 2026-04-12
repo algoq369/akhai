@@ -1,0 +1,77 @@
+{
+  "current": {
+    "score": 4,
+    "maxScore": 5,
+    "label": "Critical alignment",
+    "assessed": "2026-Q1",
+    "frameworks": [
+      {
+        "name": "Barbault",
+        "tradition": "Hermetic",
+        "status": "Rising from 2020 minimum — index ~600, dispersal phase",
+        "signal": "crisis-recovery",
+        "detail": "Post-trough recovery. Saturn-Neptune conjunction (2026) is the defining event. Index projected to peak ~750 by 2028."
+      },
+      {
+        "name": "Turchin SDT",
+        "tradition": "Ibn Khaldun",
+        "status": "PSI at 0.87 — highest recorded level for US",
+        "signal": "crisis",
+        "detail": "All three components (MMP, EMP, SFD) elevated simultaneously. Historical precedent: 1850s (pre-Civil War) and 1920s (pre-Depression)."
+      },
+      {
+        "name": "Kondratieff",
+        "tradition": "Economic",
+        "status": "Late Winter of 5th wave / 6th wave installation",
+        "signal": "crisis-transition",
+        "detail": "Perez 'Turning Point' — between Installation frenzy and potential Deployment golden age. Requires institutional recomposition."
+      },
+      {
+        "name": "Strauss-Howe",
+        "tradition": "Generational",
+        "status": "4th Turning (2008-2033), approaching climax",
+        "signal": "crisis",
+        "detail": "Projected crisis climax 2025-2030. Generational archetype alignment: Boomers as elder Prophets, Millennials as young-adult Heroes."
+      },
+      {
+        "name": "Dalio",
+        "tradition": "Geopolitical",
+        "status": "Stage 5 — pre-breakdown, rising-power challenge",
+        "signal": "crisis",
+        "detail": "US debt/GDP 123%, internal political dysfunction, China's power index converging. Reserve currency status under pressure but not yet threatened."
+      }
+    ],
+    "synthesis": "All five frameworks independently indicate the 2020s as a period of systemic transition. The convergence is remarkable because these frameworks were developed in different centuries, by different civilizations, using different methodologies. Whether this reflects genuine macro-cyclical patterns or confirmation bias in pattern-matching primates remains an open question — which is itself the most interesting question."
+  },
+  "historicalConvergences": [
+    {
+      "year": 1914,
+      "frameworks": 3,
+      "event": "World War I",
+      "alignment": ["Barbault trough (~600)", "K-wave 3 Summer peak", "Strauss-Howe 3rd Turning"],
+      "outcome": "Destruction of 4 empires (Ottoman, Austro-Hungarian, Russian, German). Redrew world map."
+    },
+    {
+      "year": 1939,
+      "frameworks": 4,
+      "event": "World War II",
+      "alignment": ["Barbault rising from trough", "K-wave 3 Winter", "Strauss-Howe 4th Turning", "Dalio power transition (UK→US)"],
+      "outcome": "New world order: UN, Bretton Woods, US hegemony, nuclear age."
+    },
+    {
+      "year": 1982,
+      "frameworks": 3,
+      "event": "Cold War peak / economic restructuring",
+      "alignment": ["Barbault deep trough (497)", "K-wave 4 Winter", "Saturn-Pluto conjunction"],
+      "outcome": "Neoliberal revolution (Reagan/Thatcher). Set stage for Soviet collapse."
+    },
+    {
+      "year": 2020,
+      "frameworks": 5,
+      "event": "COVID + geopolitical reset",
+      "alignment": ["Barbault 21st-century minimum (400)", "Turchin PSI peak", "K-wave 5 Winter", "Strauss-Howe 4th Turning", "Dalio Stage 5 + Saturn-Pluto conjunction"],
+      "outcome": "Ongoing. Pandemic, supply chain restructuring, AI emergence, geopolitical realignment."
+    }
+  ],
+  "caveat": "Convergence scoring is inherently subjective. These frameworks were not designed to interoperate. Their apparent agreement may reflect: (1) genuine macro-cyclical patterns in complex systems, (2) the tendency of ~50-year cycles to occasionally synchronize, (3) retrospective fitting bias, or (4) the human capacity to find patterns in noise. AkhAI presents all four possibilities honestly."
+}

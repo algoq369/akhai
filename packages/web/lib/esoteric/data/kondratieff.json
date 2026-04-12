@@ -1,0 +1,97 @@
+{
+  "waves": [
+    {
+      "id": 1,
+      "name": "Industrial Revolution",
+      "tech": "Steam, cotton, iron, canal transport",
+      "start": 1780,
+      "end": 1842,
+      "spring": [1780, 1800],
+      "summer": [1800, 1815],
+      "autumn": [1815, 1825],
+      "winter": [1825, 1842],
+      "hegemon": "Britain",
+      "crisisEvent": "1837 financial panic"
+    },
+    {
+      "id": 2,
+      "name": "Railway Age",
+      "tech": "Railways, steel, telegraph, steamships",
+      "start": 1842,
+      "end": 1897,
+      "spring": [1842, 1857],
+      "summer": [1857, 1873],
+      "autumn": [1873, 1883],
+      "winter": [1883, 1897],
+      "hegemon": "Britain",
+      "crisisEvent": "1873 Long Depression"
+    },
+    {
+      "id": 3,
+      "name": "Electrical Age",
+      "tech": "Electricity, chemicals, heavy engineering, telephone",
+      "start": 1897,
+      "end": 1940,
+      "spring": [1897, 1907],
+      "summer": [1907, 1920],
+      "autumn": [1920, 1929],
+      "winter": [1929, 1940],
+      "hegemon": "Britain → USA transition",
+      "crisisEvent": "1929 Great Depression"
+    },
+    {
+      "id": 4,
+      "name": "Oil & Auto Age",
+      "tech": "Oil, automobiles, mass production, aerospace",
+      "start": 1940,
+      "end": 1985,
+      "spring": [1940, 1953],
+      "summer": [1953, 1966],
+      "autumn": [1966, 1973],
+      "winter": [1973, 1985],
+      "hegemon": "United States",
+      "crisisEvent": "1973 oil crisis + stagflation"
+    },
+    {
+      "id": 5,
+      "name": "Information Age",
+      "tech": "Computers, internet, telecom, software",
+      "start": 1985,
+      "end": 2025,
+      "spring": [1985, 1995],
+      "summer": [1995, 2000],
+      "autumn": [2000, 2008],
+      "winter": [2008, 2025],
+      "hegemon": "United States",
+      "crisisEvent": "2008 Global Financial Crisis"
+    },
+    {
+      "id": 6,
+      "name": "AI & Bio Age",
+      "tech": "AI, biotech, green energy, quantum computing, robotics",
+      "start": 2020,
+      "end": null,
+      "spring": null,
+      "summer": null,
+      "autumn": null,
+      "winter": null,
+      "phase": "installation/irruption",
+      "hegemon": "USA ↔ China contestation",
+      "crisisEvent": null
+    }
+  ],
+  "currentPosition": {
+    "wave": 6,
+    "phase": "winter-to-spring transition",
+    "perezStage": "Turning Point",
+    "perezNote": "Installation period ending. Financial capital dominated 2010-2024 (crypto, SPACs, venture excess). Golden age possible but requires institutional recomposition — historically takes 10-15 years after the crash.",
+    "confidence": "moderate — small N problem (only 5 completed waves)",
+    "perezPhases": [
+      { "name": "Irruption", "character": "New technology erupts into mature economy", "duration": "10-15 years" },
+      { "name": "Frenzy", "character": "Financial capital floods into new paradigm", "duration": "10-15 years" },
+      { "name": "Turning Point", "character": "Crash + institutional adaptation", "duration": "5-10 years" },
+      { "name": "Synergy (Golden Age)", "character": "Production capital leads, broad prosperity", "duration": "15-20 years" },
+      { "name": "Maturity", "character": "Paradigm exhausted, next tech emerging", "duration": "5-10 years" }
+    ]
+  }
+}

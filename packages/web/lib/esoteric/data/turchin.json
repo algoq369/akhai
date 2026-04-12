@@ -1,0 +1,104 @@
+{
+  "us": {
+    "psiHistory": [
+      { "year": 1960, "psi": 0.20, "mmp": 0.15, "emp": 0.10, "sfd": 0.15 },
+      { "year": 1965, "psi": 0.22, "mmp": 0.18, "emp": 0.12, "sfd": 0.16 },
+      { "year": 1970, "psi": 0.35, "mmp": 0.25, "emp": 0.20, "sfd": 0.30 },
+      { "year": 1975, "psi": 0.30, "mmp": 0.28, "emp": 0.22, "sfd": 0.25 },
+      { "year": 1980, "psi": 0.28, "mmp": 0.22, "emp": 0.25, "sfd": 0.20 },
+      { "year": 1985, "psi": 0.25, "mmp": 0.20, "emp": 0.28, "sfd": 0.18 },
+      { "year": 1990, "psi": 0.30, "mmp": 0.25, "emp": 0.35, "sfd": 0.22 },
+      { "year": 1995, "psi": 0.38, "mmp": 0.30, "emp": 0.42, "sfd": 0.30 },
+      { "year": 2000, "psi": 0.45, "mmp": 0.35, "emp": 0.50, "sfd": 0.38 },
+      { "year": 2005, "psi": 0.55, "mmp": 0.42, "emp": 0.58, "sfd": 0.48 },
+      { "year": 2010, "psi": 0.65, "mmp": 0.55, "emp": 0.65, "sfd": 0.60 },
+      { "year": 2012, "psi": 0.68, "mmp": 0.58, "emp": 0.68, "sfd": 0.62 },
+      { "year": 2014, "psi": 0.72, "mmp": 0.62, "emp": 0.72, "sfd": 0.65 },
+      { "year": 2016, "psi": 0.76, "mmp": 0.65, "emp": 0.78, "sfd": 0.70 },
+      { "year": 2018, "psi": 0.80, "mmp": 0.68, "emp": 0.82, "sfd": 0.75 },
+      { "year": 2020, "psi": 0.85, "mmp": 0.72, "emp": 0.88, "sfd": 0.82 },
+      { "year": 2022, "psi": 0.86, "mmp": 0.74, "emp": 0.89, "sfd": 0.83 },
+      { "year": 2024, "psi": 0.86, "mmp": 0.74, "emp": 0.90, "sfd": 0.84 },
+      { "year": 2026, "psi": 0.87, "mmp": 0.75, "emp": 0.90, "sfd": 0.85 }
+    ],
+    "currentAssessment": {
+      "phase": "disintegrative",
+      "secularCyclePosition": "late expansion / early crisis",
+      "fathersSonsCycle": "peak (50-year oscillation)",
+      "eliteOverproduction": {
+        "value": "high",
+        "metric": "Lawyer/pop ratio at historical peak; PhD overproduction 3x 1970 levels"
+      },
+      "massWellbeing": {
+        "value": "stagnant",
+        "metric": "Real wages flat vs GDP per capita since 1975; life expectancy declining since 2014"
+      },
+      "stateFiscalHealth": {
+        "value": "critical",
+        "metric": "Debt/GDP 123%; structural deficit ~6% GDP"
+      },
+      "institutionalTrust": {
+        "value": 22,
+        "metric": "Gallup institutional trust %"
+      },
+      "politicalPolarization": {
+        "value": "extreme",
+        "metric": "Congressional bipartisanship at lowest measured level"
+      }
+    }
+  },
+  "otherNations": [
+    {
+      "name": "China",
+      "phase": "integrative (late)",
+      "psi": 0.35,
+      "notes": "Post-1949 secular cycle maturing. Elite competition intensifying within CCP. Demographics shifting toward stress."
+    },
+    {
+      "name": "Russia",
+      "phase": "disintegrative",
+      "psi": 0.70,
+      "notes": "Post-Soviet secular cycle. High elite competition, wartime fiscal strain, demographic crisis."
+    },
+    {
+      "name": "India",
+      "phase": "integrative (early-mid)",
+      "psi": 0.40,
+      "notes": "Young demographic profile delays PSI peak. Rising elite overproduction in IT/professional class."
+    },
+    {
+      "name": "European Union",
+      "phase": "disintegrative (moderate)",
+      "psi": 0.55,
+      "notes": "Aging demographics, rising populism, fiscal stress in southern members. Institutional trust declining."
+    },
+    {
+      "name": "Brazil",
+      "phase": "disintegrative (moderate)",
+      "psi": 0.60,
+      "notes": "High inequality, elite fragmentation, institutional polarization. Young population partially buffers."
+    }
+  ],
+  "ibnKhaldun": {
+    "stages": [
+      "Conquest/Foundation",
+      "Consolidation",
+      "Prosperity/Luxury",
+      "Fiscal strain/Decline",
+      "Collapse/Replacement"
+    ],
+    "westernCycle": {
+      "startYear": 1776,
+      "currentStage": 4,
+      "stageLabel": "Fiscal strain & elite fragmentation",
+      "cycleLength": 250,
+      "note": "Ibn Khaldun observed ~120-year dynastic cycles in North Africa. Western nation-states may run longer due to institutional complexity, but the pattern of asabiyyah decay is visible."
+    },
+    "asabiyyahIndicators": {
+      "socialCohesion": "declining — trust in institutions at historic lows",
+      "eliteSolidarity": "fragmented — bipartisan cooperation collapsed",
+      "collectiveWillingness": "low — declining military/civic service participation",
+      "luxuryDecay": "advanced — consumption-to-production ratio at extremes"
+    }
+  }
+}

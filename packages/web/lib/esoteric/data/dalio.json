@@ -1,0 +1,113 @@
+{
+  "stages": [
+    { "id": 1, "name": "New Order", "character": "Rules established after war/revolution. New leadership consolidates power, sets new currency/trade rules.", "duration": "10-25 years" },
+    { "id": 2, "name": "Early Prosperity", "character": "Productivity and education drive growth. Debts low, social mobility high, institutions trusted.", "duration": "20-40 years" },
+    { "id": 3, "name": "Late Prosperity", "character": "Borrowing fuels growth, complacency rises. Financial innovation outpaces regulation.", "duration": "15-25 years" },
+    { "id": 4, "name": "Overextension", "character": "Debts pile up, inequality grows, speculation rampant. Internal divisions widen.", "duration": "10-20 years" },
+    { "id": 5, "name": "Pre-breakdown", "character": "Internal conflict intensifies, external rival rises. Currency/debt questioned. Populism and extremism grow.", "duration": "5-15 years" },
+    { "id": 6, "name": "Great Disorder", "character": "Old order collapses, new one forms. May involve revolution, civil conflict, or managed transition.", "duration": "5-20 years" }
+  ],
+  "eightPowers": [
+    "Education",
+    "Competitiveness/Innovation",
+    "Trade",
+    "Output (GDP)",
+    "Military strength",
+    "Financial center status",
+    "Reserve currency status",
+    "Resource allocation efficiency"
+  ],
+  "powerIndex": {
+    "updated": "2024",
+    "nations": [
+      {
+        "name": "United States",
+        "score": 0.82,
+        "stage": 5,
+        "trend": "declining",
+        "strengths": ["innovation", "military", "reserve currency", "financial center", "technology"],
+        "weaknesses": ["debt burden", "internal conflict", "education decline", "inequality", "political dysfunction"],
+        "reserveCurrencyShare": 0.59,
+        "debtToGdp": 1.23
+      },
+      {
+        "name": "China",
+        "score": 0.73,
+        "stage": 2,
+        "trend": "rising (decelerating)",
+        "strengths": ["education", "competitiveness", "trade", "manufacturing", "infrastructure"],
+        "weaknesses": ["capital markets", "innovation freedom", "demographics", "rule of law", "property bubble"],
+        "reserveCurrencyShare": 0.025,
+        "debtToGdp": 0.83
+      },
+      {
+        "name": "European Union",
+        "score": 0.48,
+        "stage": 4,
+        "trend": "stagnant",
+        "strengths": ["rule of law", "quality of life", "education", "trade integration"],
+        "weaknesses": ["growth", "military", "demographics", "political fragmentation", "energy dependency"]
+      },
+      {
+        "name": "Japan",
+        "score": 0.42,
+        "stage": 4,
+        "trend": "declining slowly",
+        "strengths": ["technology", "social order", "manufacturing precision", "financial reserves"],
+        "weaknesses": ["demographics", "debt", "growth", "military capability", "innovation pace"]
+      },
+      {
+        "name": "United Kingdom",
+        "score": 0.40,
+        "stage": 4,
+        "trend": "declining",
+        "strengths": ["financial center", "innovation", "language/culture", "intelligence services"],
+        "weaknesses": ["manufacturing", "inequality", "growth", "post-Brexit trade friction"]
+      },
+      {
+        "name": "Germany",
+        "score": 0.44,
+        "stage": 3,
+        "trend": "stagnant to declining",
+        "strengths": ["manufacturing", "education", "trade surplus", "engineering"],
+        "weaknesses": ["energy dependency", "military", "digital transformation", "demographics"]
+      },
+      {
+        "name": "India",
+        "score": 0.38,
+        "stage": 2,
+        "trend": "rising",
+        "strengths": ["demographics", "tech workforce", "IT services", "democratic institutions"],
+        "weaknesses": ["infrastructure", "governance", "inequality", "education access", "manufacturing"]
+      },
+      {
+        "name": "Russia",
+        "score": 0.29,
+        "stage": 5,
+        "trend": "declining",
+        "strengths": ["natural resources", "military", "nuclear capability", "space technology"],
+        "weaknesses": ["innovation", "demographics", "sanctions", "brain drain", "governance"]
+      },
+      {
+        "name": "Saudi Arabia",
+        "score": 0.25,
+        "stage": 2,
+        "trend": "rising (from low base)",
+        "strengths": ["resources", "sovereign wealth", "strategic position", "Vision 2030 investment"],
+        "weaknesses": ["diversification", "human capital", "governance model", "water scarcity"]
+      },
+      {
+        "name": "Brazil",
+        "score": 0.22,
+        "stage": 2,
+        "trend": "volatile",
+        "strengths": ["resources", "demographics", "agriculture", "biodiversity"],
+        "weaknesses": ["governance", "education", "infrastructure", "institutional instability"]
+      }
+    ]
+  },
+  "debtCycle": {
+    "shortTerm": { "period": "5-8 years", "currentPhase": "Late expansion / early contraction", "note": "Rate hikes 2022-2024 ended easy-money era" },
+    "longTerm": { "period": "75-100 years", "currentPhase": "Late stage — approaching limits", "note": "US long-term debt cycle began post-WWII (1945). Near maximum debt capacity relative to income" }
+  }
+}

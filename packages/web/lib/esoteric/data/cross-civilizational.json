@@ -1,0 +1,64 @@
+{
+  "traditions": [
+    {
+      "id": "hermetic",
+      "name": "Hermetic",
+      "sigil": "\u2623",
+      "principle": "As above, so below",
+      "color": "#7F77DD",
+      "origin": "Hermes Trismegistus — Greco-Egyptian synthesis, Corpus Hermeticum (~2nd century CE)",
+      "patterns": [
+        { "topic": "technology", "insight": "Jupiter-Saturn Air Era (2020-2219): shift from material to informational economies. Technology cycles mirror celestial concentration patterns. The Barbault minimum of 2020 marks the turning point — dispersal now favors distributed/decentralized systems." },
+        { "topic": "geopolitics", "insight": "Planetary dispersal after 2020 minimum suggests reconstruction phase. Saturn-Neptune conjunction (2026) marks ideological restructuring — historically dissolves one paradigm and seeds the next. Previous: 1989 dissolved communism." },
+        { "topic": "markets", "insight": "Celestial concentration historically correlates with market volatility. Current dispersal favors gradual recovery but 2026 conjunction tests resilience. Jupiter-Uranus conjunction (2024) in Taurus historically triggers commodity/currency paradigm shifts." },
+        { "topic": "ai", "insight": "Uranus in Gemini (2025-2033) — the sign of communication and information. Last transit: 1941-1949, which birthed computing (ENIAC, information theory). Current transit: AI as communication revolution." },
+        { "topic": "crypto", "insight": "Jupiter-Saturn Air Era favors dematerialized value. Saturn-Uranus square (2021-2022) stress-tested crypto; surviving protocols gain Saturn-validation. Next test: Saturn-Neptune (2026)." }
+      ]
+    },
+    {
+      "id": "khaldunian",
+      "name": "Ibn Khaldun",
+      "sigil": "\u25c7",
+      "principle": "Asabiyyah cycle — social cohesion rises and decays over ~4 generations",
+      "color": "#BA7517",
+      "origin": "Ibn Khaldun — Muqaddimah (1377 CE), Tunis. Founder of social science, historiography",
+      "patterns": [
+        { "topic": "technology", "insight": "Late-cycle luxury pattern: credential inflation in tech mirrors dynastic 4th-generation decay. Renewal emerges from peripheral innovators with high asabiyyah (startups, open-source communities, non-Western tech ecosystems)." },
+        { "topic": "geopolitics", "insight": "Western institutions at ~250 years from founding (1776). Classic Khaldunian transition: old elite fragments, new cohesive group emerges from periphery. Question is whether transition is internal renewal or external replacement." },
+        { "topic": "markets", "insight": "Fiscal overextension (Debt/GDP 123%) matches late-dynastic pattern. Historical resolution: currency debasement or institutional reset. Khaldun noted that tax increases in late dynasty accelerate decline rather than resolve it." },
+        { "topic": "ai", "insight": "AI as 'new periphery' — high asabiyyah in AI research communities mirrors the cohesive groups that historically replace fragmented elites. The question: will AI serve the old dynasty or catalyze the new?" },
+        { "topic": "crypto", "insight": "Decentralized finance as peripheral challenge to central banking — a classic Khaldunian dynamic. But crypto communities themselves show luxury-phase decay (speculation over utility)." }
+      ]
+    },
+    {
+      "id": "vedic",
+      "name": "Vedic",
+      "sigil": "\u25c9",
+      "principle": "Yuga cycle — consciousness expansion/contraction over cosmic timescales",
+      "color": "#1D9E75",
+      "origin": "Sri Yukteswar — The Holy Science (1894), calibrating Vedic yuga astronomy. Based on Manu Smriti + Surya Siddhanta",
+      "patterns": [
+        { "topic": "technology", "insight": "Ascending Dwapara Yuga (energy/awareness age, began ~1700 CE): AI emergence maps to expected consciousness-technology coupling. Electricity, atomic energy, now artificial intelligence — progressive mastery of subtler forces." },
+        { "topic": "geopolitics", "insight": "Transitional friction between ascending yugas is expected. Current disruption = birth pains of expanding awareness, not terminal decline. Dwapara yuga favors decentralized governance over empire." },
+        { "topic": "markets", "insight": "Dwapara economy favors energy and information over material accumulation. Crypto/digital assets align with yuga characteristics — value as energy pattern rather than physical substance." },
+        { "topic": "ai", "insight": "Dwapara consciousness perceives energy directly. AI as externalized cognition aligns with yuga trajectory — humanity creating thinking systems as it develops capacity to perceive non-material reality." },
+        { "topic": "crypto", "insight": "Money evolving from matter (gold) to energy (electricity-backed crypto) matches Dwapara progression. Store of value becomes store of energy." }
+      ]
+    },
+    {
+      "id": "chinese",
+      "name": "Chinese",
+      "sigil": "\u25b3",
+      "principle": "Jiazi 60-year cycle — Heavenly Stems × Earthly Branches",
+      "color": "#D85A30",
+      "origin": "Chinese cosmological tradition — Shang Dynasty oracle bones (~1200 BCE). Integrated into Yi Jing, feng shui, TCM",
+      "patterns": [
+        { "topic": "technology", "insight": "60-year Jiazi renewal (2024-2084): historically correlates with new governance models and institutional forms. AI governance = expected pattern. Wood Dragon year (2024) specifically associated with ambitious new beginnings." },
+        { "topic": "geopolitics", "insight": "Previous Jiazi (1964): Cultural Revolution + global upheaval. Before that (1904): Qing Dynasty collapse, Russo-Japanese War. Pattern: old forms collapse, new crystallize within 20 years." },
+        { "topic": "markets", "insight": "Jiazi renewal phases historically restructure economic paradigms. First 20 years favor innovation and new entrants over incumbents. Dragon/Snake years (2024-2025) historically volatile but foundational." },
+        { "topic": "ai", "insight": "New Jiazi cycle (2024) arrives with AI transition. Previous cycles brought electricity (1904) and computing/internet (1964). Pattern: each Jiazi inaugurates a new relationship between humanity and a fundamental force." },
+        { "topic": "crypto", "insight": "60-year financial infrastructure cycles: 1904 (Federal Reserve founding era), 1964 (Bretton Woods stress), 2024 (Bitcoin ETF, CBDC competition). Each Jiazi restructures what counts as money." }
+      ]
+    }
+  ]
+}
