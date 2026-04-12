@@ -227,6 +227,42 @@
       "plain": "The 36-year cycle where Saturn (structure, reality) meets Neptune (ideals, illusion). Each conjunction dissolves a dominant ideology and seeds its replacement. The most politically predictive of all planetary cycles.",
       "example": "1917: Tsarism dissolved, Communism born. 1953: Stalin died, Cold War ideology shifted. 1989: Communism dissolved, liberal democratic 'End of History' born. 2026: Liberal internationalism dissolving — what replaces it?",
       "related": ["barbault", "conjunction", "planetary-cycle"]
+    },
+    {
+      "id": "north-node",
+      "category": "celestial",
+      "sigil": "\u260A",
+      "name": "North Node",
+      "secularName": "Ascending lunar node",
+      "type": "core concept",
+      "color": "#7F77DD",
+      "plain": "The point where the Moon's orbit crosses the ecliptic heading north. In astrology, it represents your growth direction — the qualities and life areas you're developing toward. It moves backward through the zodiac on an 18.6-year cycle.",
+      "example": "A North Node in Aquarius suggests growth through innovation, collective service, and independent thinking — moving away from South Node Leo patterns of ego-centered self-expression.",
+      "related": ["south-node", "conjunction", "planetary-cycle"]
+    },
+    {
+      "id": "south-node",
+      "category": "celestial",
+      "sigil": "\u260B",
+      "name": "South Node",
+      "secularName": "Descending lunar node",
+      "type": "core concept",
+      "color": "#888780",
+      "plain": "Always exactly opposite the North Node. Represents ingrained patterns, comfort zones, and past tendencies. Growth comes from moving toward North Node qualities while integrating (not abandoning) South Node strengths.",
+      "example": "South Node in Leo with North Node in Aquarius: natural leadership and self-expression are your foundation, but growth requires channeling these gifts toward collective rather than personal goals.",
+      "related": ["north-node"]
+    },
+    {
+      "id": "natal-chart",
+      "category": "celestial",
+      "sigil": "\u25CE",
+      "name": "Natal chart",
+      "secularName": "Birth chart",
+      "type": "tool",
+      "color": "#7F77DD",
+      "plain": "A map of planetary positions at your exact moment of birth, projected onto the zodiac and divided into 12 houses representing life areas. The North/South Node axis is the most growth-oriented element — it shows where you're coming from and where you're heading.",
+      "example": "Your natal chart is computed from three inputs: date, time, and location of birth. The time determines which zodiac sign was rising on the eastern horizon (your Ascendant), which sets all 12 house positions.",
+      "related": ["north-node", "south-node"]
     }
   ]
 }

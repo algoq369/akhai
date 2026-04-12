@@ -8,16 +8,21 @@ import NodalAnalysis from '@/components/esoteric/NodalAnalysis';
 
 interface MicroTabProps {
   mode: 'secular' | 'esoteric';
+  onChartComputed?: (chart: NatalChart) => void;
 }
 
-export default function MicroTab({ mode }: MicroTabProps) {
+export default function MicroTab({ mode, onChartComputed }: MicroTabProps) {
   const [chart, setChart] = useState<NatalChart | null>(null);
   const [birthName, setBirthName] = useState('');
 
-  const handleChartComputed = useCallback((c: NatalChart, data: BirthData) => {
-    setChart(c);
-    setBirthName(data.name || 'You');
-  }, []);
+  const handleChartComputed = useCallback(
+    (c: NatalChart, data: BirthData) => {
+      setChart(c);
+      setBirthName(data.name || 'You');
+      onChartComputed?.(c);
+    },
+    [onChartComputed]
+  );
 
   return (
     <>

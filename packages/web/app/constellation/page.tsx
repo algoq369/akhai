@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useEsotericStore } from '@/lib/stores/esoteric-store';
+import type { NatalChart } from '@/lib/esoteric/natal-engine';
+import { loadBirthData, computeNatalChart } from '@/lib/esoteric/natal-engine';
 import MacroTab from '@/components/esoteric/MacroTab';
 import MicroTab from '@/components/esoteric/MicroTab';
 import SynthesisTab from '@/components/esoteric/SynthesisTab';
@@ -17,6 +19,27 @@ const TABS: { id: Tab; label: string }[] = [
 export default function ConstellationPage() {
   const { mode, setMode } = useEsotericStore();
   const [activeTab, setActiveTab] = useState<Tab>('macro');
+  const [natalChart, setNatalChart] = useState<NatalChart | null>(null);
+
+  // Load saved chart from localStorage on mount
+  useEffect(() => {
+    const saved = loadBirthData();
+    if (saved) {
+      try {
+        setNatalChart(computeNatalChart(saved));
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
+
+  const handleChartComputed = useCallback((chart: NatalChart) => {
+    setNatalChart(chart);
+  }, []);
+
+  const handleSwitchTab = useCallback((tab: string) => {
+    setActiveTab(tab as Tab);
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 font-mono">
@@ -71,8 +94,10 @@ export default function ConstellationPage() {
 
       {/* Active tab */}
       {activeTab === 'macro' && <MacroTab mode={mode} />}
-      {activeTab === 'micro' && <MicroTab mode={mode} />}
-      {activeTab === 'synthesis' && <SynthesisTab mode={mode} />}
+      {activeTab === 'micro' && <MicroTab mode={mode} onChartComputed={handleChartComputed} />}
+      {activeTab === 'synthesis' && (
+        <SynthesisTab mode={mode} chart={natalChart} onSwitchTab={handleSwitchTab} />
+      )}
     </div>
   );
 }
