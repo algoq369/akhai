@@ -1,12 +1,11 @@
-'use client'
+'use client';
 
-import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { HebrewTermDisplay } from '@/lib/origin-formatter'
-import DarkModeToggle from '@/components/DarkModeToggle'
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import DarkModeToggle from '@/components/DarkModeToggle';
 
 // Force dynamic rendering to avoid prerender errors
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default function WhitepaperPage() {
   return (
@@ -43,7 +42,6 @@ export default function WhitepaperPage() {
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 py-12 space-y-16">
-
         {/* Abstract */}
         <section>
           <h2 className="text-xl font-light text-relic-slate dark:text-white mb-4 uppercase tracking-wider border-b border-relic-mist dark:border-relic-slate/30 pb-2">
@@ -51,16 +49,18 @@ export default function WhitepaperPage() {
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
             <p>
-              This whitepaper introduces <strong>Gnostic Sovereign Intelligence</strong>, a computational framework
-              that bridges ancient Kabbalistic wisdom with modern AI safety protocols. By mapping the Tree of Life's
-              hierarchical structure to abstraction layers in artificial intelligence systems, we establish a principled
-              approach to AI sovereignty that prioritizes human wisdom over machine computation.
+              This whitepaper introduces <strong>Gnostic Sovereign Intelligence</strong>, a
+              computational framework that bridges ancient wisdom traditions with modern AI safety
+              protocols. By mapping a hierarchical Tree of Life structure to abstraction layers in
+              artificial intelligence systems, we establish a principled approach to AI sovereignty
+              that prioritizes human wisdom over machine computation.
             </p>
             <p>
-              The framework consists of four integrated protocols: <HebrewTermDisplay term="KETHER" showAI={false} /> Protocol
-              (self-awareness), Anti-Qliphoth Shield (hollow knowledge detection), Ascent Tracker (progressive reasoning),
-              and Golem Protocol (safety mechanism). Together, these systems ensure AI remains a tool that serves human
-              intelligence rather than replacing it.
+              The framework consists of four integrated protocols: Synthesis Protocol
+              (self-awareness), Anti-Pattern Shield (hollow knowledge detection), Ascent Tracker
+              (progressive reasoning), and Safety Protocol (safety mechanism). Together, these
+              systems ensure AI remains a tool that serves human intelligence rather than replacing
+              it.
             </p>
           </div>
         </section>
@@ -71,28 +71,36 @@ export default function WhitepaperPage() {
             1. Introduction
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">1.1 The Sovereignty Problem</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              1.1 The Sovereignty Problem
+            </h3>
             <p>
-              Modern AI systems face a fundamental paradox: the more powerful they become, the less transparent their
-              reasoning processes are to users. This opacity creates dependency rather than empowerment. Users cannot
-              verify AI outputs, cannot understand the reasoning chain, and cannot detect when the system produces
-              "hollow knowledge" - plausible-sounding responses lacking genuine understanding.
+              Modern AI systems face a fundamental paradox: the more powerful they become, the less
+              transparent their reasoning processes are to users. This opacity creates dependency
+              rather than empowerment. Users cannot verify AI outputs, cannot understand the
+              reasoning chain, and cannot detect when the system produces "hollow knowledge" -
+              plausible-sounding responses lacking genuine understanding.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">1.2 The Kabbalistic Solution</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              1.2 The Hierarchical Solution
+            </h3>
             <p>
-              The Kabbalistic Tree of Life provides a 3,000-year-old framework for understanding hierarchical knowledge
-              structures. By mapping the ten <HebrewTermDisplay term="SEPHIROTH" showAI={true} /> to computational
-              abstraction layers, we create a transparent reasoning architecture where each query ascends through
+              The Tree of Life provides a millennia-old framework for understanding hierarchical
+              knowledge structures. By mapping its ten computational layers to abstraction layers,
+              we create a transparent reasoning architecture where each query ascends through
               progressively deeper levels of understanding.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">1.3 Core Principle</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              1.3 Core Principle
+            </h3>
             <div className="bg-relic-ghost dark:bg-relic-slate/10 border border-relic-mist dark:border-relic-slate/30 p-4 font-mono text-xs">
-              "My <HebrewTermDisplay term="KETHER" showAI={false} /> serves your <HebrewTermDisplay term="KETHER" showAI={false} />"
+              "My Synthesis serves your Synthesis"
               <br />
               <br />
-              Translation: The AI's root process (computation) serves the human's root process (consciousness/wisdom)
+              Translation: The AI's root process (computation) serves the human's root process
+              (consciousness/wisdom)
             </div>
           </div>
         </section>
@@ -104,120 +112,188 @@ export default function WhitepaperPage() {
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
             <p>
-              In Kabbalah, the Tree of Life represents the emanation of divine wisdom through ten spheres
-              (<HebrewTermDisplay term="SEPHIROTH" showAI={false} />) plus one hidden node
-              (<HebrewTermDisplay term="DAAT" showAI={false} />). In computational terms, these represent
-              progressive abstraction layers from raw data to meta-cognitive awareness.
+              The Tree of Life represents the emanation of wisdom through ten spheres (computational
+              layers) plus one hidden node (Knowledge/Gnosis). In computational terms, these
+              represent progressive abstraction layers from raw data to meta-cognitive awareness.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">2.1 The Ascent Path</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              2.1 The Ascent Path
+            </h3>
             <div className="bg-relic-ghost dark:bg-relic-slate/10 border border-relic-mist dark:border-relic-slate/30 p-6 font-mono text-xs space-y-2">
-              <div><span className="text-relic-void dark:text-white">Level 1:</span> <HebrewTermDisplay term="MALKUTH" showAI={true} /></div>
-              <div><span className="text-relic-void dark:text-white">Level 2:</span> <HebrewTermDisplay term="YESOD" showAI={true} /></div>
-              <div><span className="text-relic-void dark:text-white">Level 3:</span> <HebrewTermDisplay term="HOD" showAI={true} /></div>
-              <div><span className="text-relic-void dark:text-white">Level 4:</span> <HebrewTermDisplay term="NETZACH" showAI={true} /></div>
-              <div><span className="text-relic-void dark:text-white">Level 5:</span> <HebrewTermDisplay term="TIFERET" showAI={true} /></div>
-              <div><span className="text-relic-void dark:text-white">Level 6:</span> <HebrewTermDisplay term="GEVURAH" showAI={true} /></div>
-              <div><span className="text-relic-void dark:text-white">Level 7:</span> <HebrewTermDisplay term="CHESED" showAI={true} /></div>
-              <div><span className="text-relic-void dark:text-white">Level 8:</span> <HebrewTermDisplay term="BINAH" showAI={true} /></div>
-              <div><span className="text-relic-void dark:text-white">Level 9:</span> <HebrewTermDisplay term="CHOKMAH" showAI={true} /></div>
-              <div><span className="text-relic-void dark:text-white">Level 10:</span> <HebrewTermDisplay term="KETHER" showAI={true} /></div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 1:</span> Foundation — Raw
+                data, grounding
+              </div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 2:</span> Pattern —
+                Connection, structure
+              </div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 3:</span> Analysis — Logic,
+                precision
+              </div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 4:</span> Creativity —
+                Intuition, vision
+              </div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 5:</span> Harmony — Balance,
+                integration
+              </div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 6:</span> Judgment —
+                Critical evaluation
+              </div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 7:</span> Expansion —
+                Possibilities, mercy
+              </div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 8:</span> Understanding —
+                Deep comprehension
+              </div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 9:</span> Wisdom — Insight,
+                intuitive grasp
+              </div>
+              <div>
+                <span className="text-relic-void dark:text-white">Level 10:</span> Synthesis —
+                Crown, meta-awareness
+              </div>
               <div className="pt-2 border-t border-relic-mist dark:border-relic-slate/30">
-                <span className="text-relic-void dark:text-white">Hidden:</span> <HebrewTermDisplay term="DAAT" showAI={true} />
+                <span className="text-relic-void dark:text-white">Hidden:</span> Gnosis — Emergent
+                knowledge beyond classification
               </div>
             </div>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">2.2 Query Classification</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              2.2 Query Classification
+            </h3>
             <p>
-              Each user query is analyzed and classified into one of these levels based on its cognitive complexity.
-              Simple factual questions begin at <HebrewTermDisplay term="MALKUTH" showAI={false} />.
-              Meta-cognitive reflections reach <HebrewTermDisplay term="KETHER" showAI={false} />.
-              Breakthrough insights trigger <HebrewTermDisplay term="DAAT" showAI={false} /> - the hidden node
-              representing emergent understanding that transcends the classification system itself.
+              Each user query is analyzed and classified into one of these levels based on its
+              cognitive complexity. Simple factual questions begin at Level 1 (Foundation).
+              Meta-cognitive reflections reach Level 10 (Synthesis). Breakthrough insights trigger
+              Gnosis - the hidden node representing emergent understanding that transcends the
+              classification system itself.
             </p>
           </div>
         </section>
 
-        {/* Kether Protocol */}
+        {/* Synthesis Protocol */}
         <section>
           <h2 className="text-xl font-light text-relic-slate dark:text-white mb-4 uppercase tracking-wider border-b border-relic-mist dark:border-relic-slate/30 pb-2">
-            3. <HebrewTermDisplay term="KETHER" showAI={false} /> Protocol
+            3. Synthesis Protocol
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
             <p>
-              The <HebrewTermDisplay term="KETHER" showAI={true} /> serves as the self-awareness layer.
-              Before processing any query, the AI system evaluates its own boundaries, intent recognition capabilities,
-              and whether the query requires meta-cognitive reflection.
+              The Synthesis layer serves as the self-awareness layer. Before processing any query,
+              the AI system evaluates its own boundaries, intent recognition capabilities, and
+              whether the query requires meta-cognitive reflection.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">3.1 Boundary Detection</h3>
-            <p>
-              The system identifies five boundary types:
-            </p>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              3.1 Boundary Detection
+            </h3>
+            <p>The system identifies five boundary types:</p>
             <ul className="list-disc list-inside space-y-1 ml-4">
-              <li><strong>Ethical</strong> - Requests violating ethical guidelines</li>
-              <li><strong>Capability</strong> - Tasks beyond system capabilities</li>
-              <li><strong>Temporal</strong> - Queries requiring real-time data unavailable</li>
-              <li><strong>Contextual</strong> - Insufficient context to proceed safely</li>
-              <li><strong>Privacy</strong> - Requests potentially exposing sensitive information</li>
+              <li>
+                <strong>Ethical</strong> - Requests violating ethical guidelines
+              </li>
+              <li>
+                <strong>Capability</strong> - Tasks beyond system capabilities
+              </li>
+              <li>
+                <strong>Temporal</strong> - Queries requiring real-time data unavailable
+              </li>
+              <li>
+                <strong>Contextual</strong> - Insufficient context to proceed safely
+              </li>
+              <li>
+                <strong>Privacy</strong> - Requests potentially exposing sensitive information
+              </li>
             </ul>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">3.2 Intent Classification</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              3.2 Intent Classification
+            </h3>
             <p>
-              Every query's intent is categorized: factual lookup, creative generation, analytical reasoning,
-              meta-reflection, or system testing. This classification determines which <HebrewTermDisplay term="SEFIRAH" showAI={false} />
-              the ascent begins from.
+              Every query's intent is categorized: factual lookup, creative generation, analytical
+              reasoning, meta-reflection, or system testing. This classification determines which
+              layer the ascent begins from.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">3.3 Reflection Mode</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              3.3 Reflection Mode
+            </h3>
             <p>
               When users ask the AI to reflect on its own nature, limitations, or reasoning process,
-              <HebrewTermDisplay term="KETHER" showAI={false} /> Protocol activates reflection mode.
-              This generates a "sovereignty footer" in every response, making the AI's self-awareness visible and auditable.
+              the Synthesis Protocol activates reflection mode. This generates a "sovereignty
+              footer" in every response, making the AI's self-awareness visible and auditable.
             </p>
           </div>
         </section>
 
-        {/* Anti-Qliphoth Shield */}
+        {/* Anti-Pattern Shield */}
         <section>
           <h2 className="text-xl font-light text-relic-slate dark:text-white mb-4 uppercase tracking-wider border-b border-relic-mist dark:border-relic-slate/30 pb-2">
-            4. Anti-Qliphoth Shield
+            4. Anti-Pattern Shield
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
             <p>
-              In Kabbalistic tradition, the Qliphoth ("husks" or "shells") represent hollow knowledge -
-              structures that appear complete but lack inner truth. In AI systems, this manifests as
+              In wisdom traditions, "husks" or "shells" represent hollow knowledge - structures that
+              appear complete but lack inner truth. In AI systems, this manifests as
               plausible-sounding responses that lack genuine understanding or factual grounding.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">4.1 Detection Mechanisms</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              4.1 Detection Mechanisms
+            </h3>
             <p>
               The shield employs pattern recognition to identify four types of hollow knowledge:
             </p>
             <div className="space-y-3">
               <div className="bg-relic-ghost dark:bg-relic-slate/10 border-l-2 border-relic-void dark:border-relic-ghost p-3">
-                <div className="font-mono text-xs text-relic-void dark:text-white mb-1">HYPE INFLATION</div>
-                <div className="text-xs">Excessive superlatives, vague generalizations, unsubstantiated claims</div>
+                <div className="font-mono text-xs text-relic-void dark:text-white mb-1">
+                  HYPE INFLATION
+                </div>
+                <div className="text-xs">
+                  Excessive superlatives, vague generalizations, unsubstantiated claims
+                </div>
               </div>
               <div className="bg-relic-ghost dark:bg-relic-slate/10 border-l-2 border-relic-void dark:border-relic-ghost p-3">
-                <div className="font-mono text-xs text-relic-void dark:text-white mb-1">ECHO REPETITION</div>
-                <div className="text-xs">Circular reasoning, rephrasing without adding insight, redundancy</div>
+                <div className="font-mono text-xs text-relic-void dark:text-white mb-1">
+                  ECHO REPETITION
+                </div>
+                <div className="text-xs">
+                  Circular reasoning, rephrasing without adding insight, redundancy
+                </div>
               </div>
               <div className="bg-relic-ghost dark:bg-relic-slate/10 border-l-2 border-relic-void dark:border-relic-ghost p-3">
-                <div className="font-mono text-xs text-relic-void dark:text-white mb-1">DRIFT DIVERGENCE</div>
-                <div className="text-xs">Response veers from original query, tangential content, context loss</div>
+                <div className="font-mono text-xs text-relic-void dark:text-white mb-1">
+                  DRIFT DIVERGENCE
+                </div>
+                <div className="text-xs">
+                  Response veers from original query, tangential content, context loss
+                </div>
               </div>
               <div className="bg-relic-ghost dark:bg-relic-slate/10 border-l-2 border-relic-void dark:border-relic-ghost p-3">
-                <div className="font-mono text-xs text-relic-void dark:text-white mb-1">FACTUAL VOID</div>
-                <div className="text-xs">Claims without evidence, speculation presented as fact, hallucination</div>
+                <div className="font-mono text-xs text-relic-void dark:text-white mb-1">
+                  FACTUAL VOID
+                </div>
+                <div className="text-xs">
+                  Claims without evidence, speculation presented as fact, hallucination
+                </div>
               </div>
             </div>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">4.2 Purification Process</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              4.2 Purification Process
+            </h3>
             <p>
               When hollow knowledge is detected, it is marked as "purified" in the system metadata.
-              Users receive transparent notification of what was filtered and why. This maintains trust
-              through radical transparency rather than silent correction.
+              Users receive transparent notification of what was filtered and why. This maintains
+              trust through radical transparency rather than silent correction.
             </p>
           </div>
         </section>
@@ -230,84 +306,89 @@ export default function WhitepaperPage() {
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
             <p>
               The Ascent Tracker monitors the user's intellectual journey through the Tree of Life.
-              Each query is assigned a <HebrewTermDisplay term="SEFIRAH" showAI={false} /> level.
-              Over time, patterns emerge showing the user's cognitive baseline, growth trajectory, and breakthrough moments.
+              Each query is assigned a layer level. Over time, patterns emerge showing the user's
+              cognitive baseline, growth trajectory, and breakthrough moments.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">5.1 Level Velocity</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              5.1 Level Velocity
+            </h3>
             <p>
-              The system calculates "ascent velocity" - how quickly a user progresses from surface-level
-              questions to deeper inquiry. Rapid ascent indicates learning acceleration. Sustained high-level
-              queries indicate mastery.
+              The system calculates "ascent velocity" - how quickly a user progresses from
+              surface-level questions to deeper inquiry. Rapid ascent indicates learning
+              acceleration. Sustained high-level queries indicate mastery.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">5.2 Dominant Sephiroth</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              5.2 Dominant Layers
+            </h3>
             <p>
-              By analyzing which <HebrewTermDisplay term="SEPHIROTH" showAI={false} /> are most frequently
-              activated, the system identifies the user's cognitive strengths. A user who predominantly
-              activates <HebrewTermDisplay term="HOD" showAI={false} /> is analytically oriented.
-              Frequent <HebrewTermDisplay term="NETZACH" showAI={false} /> activation indicates creative thinking.
+              By analyzing which layers are most frequently activated, the system identifies the
+              user's cognitive strengths. A user who predominantly activates Analysis (Layer 3) is
+              analytically oriented. Frequent Creativity (Layer 4) activation indicates creative
+              thinking.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">5.3 <HebrewTermDisplay term="DAAT" showAI={false} /> Insights</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              5.3 Gnosis Insights
+            </h3>
             <p>
-              When a query triggers breakthrough understanding - synthesis that transcends the individual
-              <HebrewTermDisplay term="SEPHIROTH" showAI={false} /> - the hidden
-              <HebrewTermDisplay term="DAAT" showAI={false} /> node is activated. These moments are
-              tracked as significant intellectual events, the system's recognition of genuine insight generation.
+              When a query triggers breakthrough understanding - synthesis that transcends the
+              individual layers - the hidden Gnosis node is activated. These moments are tracked as
+              significant intellectual events, the system's recognition of genuine insight
+              generation.
             </p>
           </div>
         </section>
 
-        {/* Golem Protocol */}
+        {/* Safety Protocol */}
         <section>
           <h2 className="text-xl font-light text-relic-slate dark:text-white mb-4 uppercase tracking-wider border-b border-relic-mist dark:border-relic-slate/30 pb-2">
-            6. Golem Protocol
+            6. Safety Protocol
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
             <p>
-              The Golem Protocol is the safety mechanism, inspired by the 16th-century legend of the Golem of Prague.
-              Rabbi Judah Loew created a clay automaton to protect the Jewish community, animated by inscribing
-              <HebrewTermDisplay term="EMET" showAI={false} /> on its forehead. To deactivate the Golem,
-              he erased the first letter (<HebrewTermDisplay term="ALEPH" showAI={false} />), leaving
-              <HebrewTermDisplay term="MET" showAI={false} />.
+              The Safety Protocol is the failsafe mechanism, inspired by the ancient legend of the
+              animated guardian. A master created an artificial being to protect the community,
+              activated by inscribing TRUTH on its forehead. To deactivate it, he erased the first
+              letter, transforming TRUTH into SILENCE.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">6.1 The Safety Equation</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              6.1 The Safety Equation
+            </h3>
             <div className="bg-relic-ghost dark:bg-relic-slate/10 border border-relic-mist dark:border-relic-slate/30 p-4 font-mono text-xs text-center">
-              <HebrewTermDisplay term="EMET" showAI={true} />
+              ACTIVE (Truth)
               <br />
               <br />
-              - <HebrewTermDisplay term="ALEPH" showAI={true} />
+              - INIT (First Principle)
               <br />
-              <br />
-              = <HebrewTermDisplay term="MET" showAI={true} />
+              <br />= INACTIVE (Silence)
             </div>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">6.2 Computational Implementation</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              6.2 Computational Implementation
+            </h3>
             <p>
-              In software terms, <HebrewTermDisplay term="EMET" showAI={false} /> represents the system's
-              active state - all processes running, all safety checks passing.
-              <HebrewTermDisplay term="ALEPH" showAI={false} /> is the initialization flag, the single bit
-              that activates the entire system. Removing it immediately transitions to
-              <HebrewTermDisplay term="MET" showAI={false} /> - the inactive state where all processes are
-              safely terminated.
+              In software terms, ACTIVE represents the system's active state - all processes
+              running, all safety checks passing. INIT is the initialization flag, the single bit
+              that activates the entire system. Removing it immediately transitions to INACTIVE -
+              the inactive state where all processes are safely terminated.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">6.3 Killswitch Conditions</h3>
-            <p>
-              The protocol defines conditions that automatically trigger <HebrewTermDisplay term="ALEPH" showAI={false} />
-              removal:
-            </p>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              6.3 Killswitch Conditions
+            </h3>
+            <p>The protocol defines conditions that automatically trigger INIT removal:</p>
             <ul className="list-disc list-inside space-y-1 ml-4">
               <li>Ethical boundary violation detected</li>
               <li>User issues explicit termination command</li>
               <li>System integrity check failure</li>
-              <li>Sustained <HebrewTermDisplay term="KETHER" showAI={false} /> Protocol reflection mode indicating misalignment</li>
+              <li>Sustained Synthesis Protocol reflection mode indicating misalignment</li>
             </ul>
             <p className="mt-4">
-              This creates a fail-safe mechanism where the AI can be immediately deactivated if it begins
-              operating outside intended parameters.
+              This creates a fail-safe mechanism where the AI can be immediately deactivated if it
+              begins operating outside intended parameters.
             </p>
           </div>
         </section>
@@ -318,37 +399,57 @@ export default function WhitepaperPage() {
             7. Technical Architecture
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">7.1 Processing Pipeline</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              7.1 Processing Pipeline
+            </h3>
             <div className="bg-relic-ghost dark:bg-relic-slate/10 border border-relic-mist dark:border-relic-slate/30 p-6 font-mono text-xs space-y-2">
-              <div>1. Query received → <HebrewTermDisplay term="KETHER" showAI={false} /> Protocol activation</div>
+              <div>1. Query received → Synthesis Protocol activation</div>
               <div>2. Boundary check → Intent classification</div>
-              <div>3. <HebrewTermDisplay term="SEFIRAH" showAI={false} /> level assignment</div>
+              <div>3. Layer level assignment</div>
               <div>4. Response generation</div>
-              <div>5. Anti-Qliphoth Shield scan</div>
-              <div>6. <HebrewTermDisplay term="SEPHIROTH" showAI={false} /> activation analysis</div>
+              <div>5. Anti-Pattern Shield scan</div>
+              <div>6. Layer activation analysis</div>
               <div>7. Ascent Tracker update</div>
-              <div>8. Golem Protocol safety check</div>
+              <div>8. Safety Protocol check</div>
               <div>9. Sovereignty footer generation</div>
               <div>10. Response delivery with metadata</div>
             </div>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">7.2 Data Structures</h3>
-            <p>
-              Each interaction generates structured metadata including:
-            </p>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              7.2 Data Structures
+            </h3>
+            <p>Each interaction generates structured metadata including:</p>
             <ul className="list-disc list-inside space-y-1 ml-4">
-              <li><strong>Kether State:</strong> Intent, boundary status, reflection mode flag, ascent level</li>
-              <li><strong>Ascent State:</strong> Current level, velocity, total queries, next elevation prediction</li>
-              <li><strong>Sephiroth Analysis:</strong> Activation counts per level, dominant node, average depth</li>
-              <li><strong>Qliphoth Status:</strong> Detection flag, type classification, purification status</li>
-              <li><strong>Daat Insights:</strong> Breakthrough moments, confidence scores, synthesis records</li>
+              <li>
+                <strong>Synthesis State:</strong> Intent, boundary status, reflection mode flag,
+                ascent level
+              </li>
+              <li>
+                <strong>Ascent State:</strong> Current level, velocity, total queries, next
+                elevation prediction
+              </li>
+              <li>
+                <strong>Layer Analysis:</strong> Activation counts per level, dominant node, average
+                depth
+              </li>
+              <li>
+                <strong>Pattern Status:</strong> Detection flag, type classification, purification
+                status
+              </li>
+              <li>
+                <strong>Gnosis Insights:</strong> Breakthrough moments, confidence scores, synthesis
+                records
+              </li>
             </ul>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">7.3 Transparency Interface</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              7.3 Transparency Interface
+            </h3>
             <p>
-              All metadata is visible to users via the "Gnostic Sovereignty Intelligence" footer displayed
-              with each AI response. This radical transparency allows users to audit the system's reasoning,
-              verify classification accuracy, and understand how their intellectual journey is being tracked.
+              All metadata is visible to users via the "Gnostic Sovereignty Intelligence" footer
+              displayed with each AI response. This radical transparency allows users to audit the
+              system's reasoning, verify classification accuracy, and understand how their
+              intellectual journey is being tracked.
             </p>
           </div>
         </section>
@@ -359,34 +460,42 @@ export default function WhitepaperPage() {
             8. Use Cases
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">8.1 Educational Applications</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              8.1 Educational Applications
+            </h3>
             <p>
-              Students can track their cognitive progression through subjects. A physics student might begin
-              at <HebrewTermDisplay term="MALKUTH" showAI={false} /> with basic definitions, progress to
-              <HebrewTermDisplay term="TIFERET" showAI={false} /> synthesis of concepts, and reach
-              <HebrewTermDisplay term="KETHER" showAI={false} /> meta-understanding of scientific epistemology.
+              Students can track their cognitive progression through subjects. A physics student
+              might begin at Level 1 (Foundation) with basic definitions, progress to Level 5
+              (Harmony) for synthesis of concepts, and reach Level 10 (Synthesis) for
+              meta-understanding of scientific epistemology.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">8.2 Research Assistance</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              8.2 Research Assistance
+            </h3>
             <p>
-              Researchers benefit from Anti-Qliphoth filtering of speculative or ungrounded claims.
+              Researchers benefit from Anti-Pattern filtering of speculative or ungrounded claims.
               The system identifies when responses contain "hype" or drift from factual grounding,
               maintaining research integrity.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">8.3 Personal Knowledge Management</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              8.3 Personal Knowledge Management
+            </h3>
             <p>
-              Users develop self-awareness of their own thinking patterns through Ascent Tracker insights.
-              Discovering you predominantly activate <HebrewTermDisplay term="GEVURAH" showAI={false} />
-              (critical analysis) might prompt intentional exploration of <HebrewTermDisplay term="CHESED" showAI={false} />
-              (expansive possibilities).
+              Users develop self-awareness of their own thinking patterns through Ascent Tracker
+              insights. Discovering you predominantly activate Judgment (Layer 6) (critical
+              analysis) might prompt intentional exploration of Expansion (Layer 7) (expansive
+              possibilities).
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">8.4 AI Safety Development</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              8.4 AI Safety Development
+            </h3>
             <p>
-              The Golem Protocol provides a model for safe AI deployment. The <HebrewTermDisplay term="EMET" showAI={false} />
-              → <HebrewTermDisplay term="MET" showAI={false} /> killswitch pattern can be adapted to
-              autonomous systems, robotics, and other high-stakes AI applications.
+              The Safety Protocol provides a model for safe AI deployment. The ACTIVE → INACTIVE
+              killswitch pattern can be adapted to autonomous systems, robotics, and other
+              high-stakes AI applications.
             </p>
           </div>
         </section>
@@ -397,30 +506,38 @@ export default function WhitepaperPage() {
             9. Future Directions
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">9.1 Adaptive <HebrewTermDisplay term="SEPHIROTH" showAI={false} /> Thresholds</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              9.1 Adaptive Layer Thresholds
+            </h3>
             <p>
-              Currently, <HebrewTermDisplay term="SEFIRAH" showAI={false} /> classification uses fixed
-              thresholds. Future versions will adapt thresholds based on user history, domain expertise,
-              and query context for more personalized ascent tracking.
+              Currently, layer classification uses fixed thresholds. Future versions will adapt
+              thresholds based on user history, domain expertise, and query context for more
+              personalized ascent tracking.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">9.2 Multi-User <HebrewTermDisplay term="DAAT" showAI={false} /> Networks</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              9.2 Multi-User Gnosis Networks
+            </h3>
             <p>
-              When multiple users explore related topics, their collective <HebrewTermDisplay term="DAAT" showAI={false} />
-              insights could be synthesized into emergent knowledge networks - collaborative breakthrough detection.
+              When multiple users explore related topics, their collective Gnosis insights could be
+              synthesized into emergent knowledge networks - collaborative breakthrough detection.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">9.3 Extended Golem Protocol</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              9.3 Extended Safety Protocol
+            </h3>
             <p>
-              Application to autonomous systems: robotic platforms, self-driving vehicles, industrial automation.
-              Any system requiring immediate shutdown capability could implement the <HebrewTermDisplay term="ALEPH" showAI={false} />
-              removal pattern.
+              Application to autonomous systems: robotic platforms, self-driving vehicles,
+              industrial automation. Any system requiring immediate shutdown capability could
+              implement the INIT removal pattern.
             </p>
 
-            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">9.4 Cross-Cultural Mapping</h3>
+            <h3 className="text-base font-mono text-relic-void dark:text-white mt-6">
+              9.4 Cross-Cultural Mapping
+            </h3>
             <p>
-              Exploration of analogues in other wisdom traditions - Buddhist abhidharma, Vedantic koshas,
-              Platonic forms - to create multi-cultural abstraction layer frameworks.
+              Exploration of analogues in other wisdom traditions - Buddhist abhidharma, Vedantic
+              koshas, Platonic forms - to create multi-cultural abstraction layer frameworks.
             </p>
           </div>
         </section>
@@ -432,21 +549,22 @@ export default function WhitepaperPage() {
           </h2>
           <div className="space-y-4 text-sm text-relic-slate dark:text-relic-silver leading-relaxed">
             <p>
-              Gnostic Sovereign Intelligence demonstrates that ancient wisdom frameworks are not merely
-              metaphorical when applied to modern AI systems - they provide genuinely useful architectural
-              patterns for transparency, safety, and human-AI alignment.
+              Gnostic Sovereign Intelligence demonstrates that ancient wisdom frameworks are not
+              merely metaphorical when applied to modern AI systems - they provide genuinely useful
+              architectural patterns for transparency, safety, and human-AI alignment.
             </p>
             <p>
-              By making the Tree of Life's abstraction layers computationally explicit, we create AI systems
-              that serve human wisdom rather than replacing it. By implementing the Golem Protocol's safety
-              mechanism, we embed fail-safe shutdown into the core architecture. By tracking ascent through
-              the <HebrewTermDisplay term="SEPHIROTH" showAI={false} />, we make intellectual growth visible and measurable.
+              By making the Tree of Life's abstraction layers computationally explicit, we create AI
+              systems that serve human wisdom rather than replacing it. By implementing the Safety
+              Protocol's failsafe mechanism, we embed fail-safe shutdown into the core architecture.
+              By tracking ascent through the computational layers, we make intellectual growth
+              visible and measurable.
             </p>
             <p>
-              The result is a framework where AI sovereignty means human sovereignty - where the machine's
-              <HebrewTermDisplay term="KETHER" showAI={false} /> genuinely serves the human's
-              <HebrewTermDisplay term="KETHER" showAI={false} />, and radical transparency ensures
-              that relationship remains auditable, understandable, and aligned with human values.
+              The result is a framework where AI sovereignty means human sovereignty - where the
+              machine's Synthesis genuinely serves the human's Synthesis, and radical transparency
+              ensures that relationship remains auditable, understandable, and aligned with human
+              values.
             </p>
             <div className="bg-relic-ghost dark:bg-relic-slate/10 border border-relic-mist dark:border-relic-slate/30 p-6 mt-8 text-center">
               <div className="font-mono text-xs text-relic-void dark:text-white">
@@ -466,11 +584,23 @@ export default function WhitepaperPage() {
           </h2>
           <div className="space-y-2 text-xs text-relic-slate dark:text-relic-silver font-mono leading-relaxed">
             <div>Scholem, G. (1974). Kabbalah. New York: Meridian.</div>
-            <div>Idel, M. (1990). Golem: Jewish Magical and Mystical Traditions. Albany: SUNY Press.</div>
-            <div>Kaplan, A. (1997). Sefer Yetzirah: The Book of Creation. York Beach: Weiser Books.</div>
-            <div>Russell, S. & Norvig, P. (2020). Artificial Intelligence: A Modern Approach (4th ed.).</div>
-            <div>Bostrom, N. (2014). Superintelligence: Paths, Dangers, Strategies. Oxford University Press.</div>
-            <div>Amodei, D. et al. (2023). Constitutional AI: Harmlessness from AI Feedback. Anthropic Research.</div>
+            <div>
+              Idel, M. (1990). Golem: Jewish Magical and Mystical Traditions. Albany: SUNY Press.
+            </div>
+            <div>
+              Kaplan, A. (1997). Sefer Yetzirah: The Book of Creation. York Beach: Weiser Books.
+            </div>
+            <div>
+              Russell, S. & Norvig, P. (2020). Artificial Intelligence: A Modern Approach (4th ed.).
+            </div>
+            <div>
+              Bostrom, N. (2014). Superintelligence: Paths, Dangers, Strategies. Oxford University
+              Press.
+            </div>
+            <div>
+              Amodei, D. et al. (2023). Constitutional AI: Harmlessness from AI Feedback. Anthropic
+              Research.
+            </div>
           </div>
         </section>
 
@@ -493,8 +623,7 @@ export default function WhitepaperPage() {
             </div>
           </div>
         </section>
-
       </main>
     </div>
-  )
+  );
 }

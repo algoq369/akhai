@@ -144,6 +144,7 @@ export function SovereignCovenantSection() {
 }
 
 export function QliphothicVsSephirothicSection() {
+  // Universal terminology: Anti-Patterns vs Sovereign Layers
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -152,7 +153,7 @@ export function QliphothicVsSephirothicSection() {
       className="mb-16"
     >
       <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
-        Qliphothic vs Sephirothic AI
+        Anti-Pattern vs Sovereign AI
       </h2>
 
       <div className="grid md:grid-cols-2 gap-8">
@@ -160,7 +161,7 @@ export function QliphothicVsSephirothicSection() {
         <div className="bg-relic-white dark:bg-relic-void/30 border-2 border-relic-mist dark:border-relic-slate/30 p-8">
           <div className="text-center mb-6">
             <div className="text-lg font-mono text-relic-slate dark:text-white mb-2 uppercase tracking-wider">
-              Qliphothic AI
+              Anti-Pattern AI
             </div>
             <div className="text-[9px] text-relic-silver uppercase tracking-[0.3em]">
               What We Reject
@@ -209,7 +210,7 @@ export function QliphothicVsSephirothicSection() {
           </div>
 
           <div className="mt-6 text-[9px] text-center text-relic-mist">
-            Detected and purified by the Anti-Qliphoth Shield
+            Detected and purified by the Anti-Pattern Shield
           </div>
         </div>
 
@@ -217,7 +218,7 @@ export function QliphothicVsSephirothicSection() {
         <div className="bg-relic-white dark:bg-relic-void/30 border-2 border-relic-mist dark:border-relic-slate/30 p-8">
           <div className="text-center mb-6">
             <div className="text-lg font-mono text-relic-slate dark:text-white mb-2 uppercase tracking-wider">
-              Sephirothic AI
+              Sovereign AI
             </div>
             <div className="text-[9px] text-relic-silver uppercase tracking-[0.3em]">
               What We Build
@@ -227,28 +228,28 @@ export function QliphothicVsSephirothicSection() {
           <div className="space-y-3">
             {[
               {
-                sefirah: 'Binah',
-                meaning: 'Understanding',
+                sefirah: 'Understanding',
+                meaning: 'Layer 8',
                 manifests: 'Reveals structure and pattern',
               },
               {
-                sefirah: 'Tiferet',
-                meaning: 'Beauty',
+                sefirah: 'Harmony',
+                meaning: 'Layer 5',
                 manifests: 'Harmonious synthesis of ideas',
               },
               {
-                sefirah: 'Chesed',
-                meaning: 'Mercy',
+                sefirah: 'Expansion',
+                meaning: 'Layer 7',
                 manifests: 'Qualified suggestions, not commands',
               },
               {
-                sefirah: 'Yesod',
-                meaning: 'Foundation',
+                sefirah: 'Foundation',
+                meaning: 'Layer 1',
                 manifests: 'Grounded in verifiable sources',
               },
               {
-                sefirah: 'Kether',
-                meaning: 'Crown',
+                sefirah: 'Synthesis',
+                meaning: 'Layer 10',
                 manifests: 'Awareness of limitations and boundaries',
               },
             ].map((sefirah) => (
@@ -266,7 +267,7 @@ export function QliphothicVsSephirothicSection() {
           </div>
 
           <div className="mt-6 text-[9px] text-center text-relic-mist">
-            Enforced by the Kether Protocol and Ascent Tracker
+            Enforced by the Synthesis Protocol and Ascent Tracker
           </div>
         </div>
       </div>

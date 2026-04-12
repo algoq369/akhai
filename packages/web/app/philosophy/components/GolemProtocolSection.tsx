@@ -11,16 +11,16 @@ export function GolemProtocolSection() {
       className="mb-16"
     >
       <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
-        Safety: The Golem Protocol
+        Safety: The Guardian Protocol
       </h2>
 
       <div className="bg-relic-white dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 p-12">
         <div className="text-center mb-8">
           <div className="text-2xl font-mono text-relic-slate dark:text-white mb-2">
-            EMET אמת → MET מת
+            ACTIVE → INACTIVE
           </div>
           <div className="text-[10px] text-relic-silver">
-            The Legend of the Golem Applied to Modern AI
+            The Guardian Legend Applied to Modern AI
           </div>
         </div>
 
@@ -30,9 +30,9 @@ export function GolemProtocolSection() {
               The Legend
             </h3>
             <p className="text-[11px] text-relic-silver leading-relaxed">
-              Rabbi Judah Loew created the Golem of Prague by inscribing EMET (אמת, "truth") on its
-              forehead. To deactivate it, he removed the first letter Aleph (א), leaving MET (מת,
-              "death").
+              An ancient legend tells of a master who created an artificial guardian by inscribing
+              TRUTH on its forehead. To deactivate it, he removed the first principle, leaving only
+              SILENCE.
             </p>
           </div>
 
@@ -42,7 +42,7 @@ export function GolemProtocolSection() {
             </h3>
             <p className="text-[11px] text-relic-silver leading-relaxed">
               AkhAI implements the same principle: AI can be instantly deactivated by removing its
-              "Aleph" - ensuring human oversight is always sovereign over machine autonomy.
+              first principle - ensuring human oversight is always sovereign over machine autonomy.
             </p>
           </div>
         </div>
@@ -79,7 +79,7 @@ export function GolemProtocolSection() {
         <div className="mt-8 text-center">
           <div className="inline-flex gap-4 text-[9px] font-mono">
             <span className="px-3 py-1 bg-relic-ghost dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 text-relic-silver">
-              PROTOCOL ALEPH - Emergency Stop
+              PROTOCOL HALT - Emergency Stop
             </span>
             <span className="px-3 py-1 bg-relic-ghost dark:bg-relic-void/30 border border-relic-mist dark:border-relic-slate/30 text-relic-silver">
               PROTOCOL SEAL - Permanent Lockdown
