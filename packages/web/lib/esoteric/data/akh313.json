@@ -7,7 +7,24 @@
       { "stage": 2, "name": "The Bridge", "description": "Scholars working across Western and Islamic traditions demonstrated that the Islamic philosophical tradition identified Kant's exact stopping point and continued beyond it. The school of Isfahan (Suhrawardi, Mulla Sadra) developed ilm huduri (knowledge by presence) — addressing precisely the gap Kant identified." },
       { "stage": 3, "name": "The Breakthrough", "description": "Where Kant declared the noumenon inaccessible, multiple traditions offer verified methods of direct access: Suhrawardi's Illuminationism, Mulla Sadra's Transcendent Theosophy, Vedantic anubhava, Taoist wu wei, Tibetan rigpa, Kabbalistic devekut, and Corbin's recovery of the mundus imaginalis." }
     ],
-    "aquarius": "Age of Aquarius (emerging now): Characterized by direct knowledge, horizontal networks, dissolution of institutional monopolies on truth, technology as tool of revelation, the unveiling of what was hidden. The symbol of the water-bearer — active distribution of knowledge, sovereignty of the individual, collective consciousness elevation."
+    "aquarius": "Age of Aquarius (emerging now): Characterized by direct knowledge, horizontal networks, dissolution of institutional monopolies on truth, technology as tool of revelation, the unveiling of what was hidden. The symbol of the water-bearer — active distribution of knowledge, sovereignty of the individual, collective consciousness elevation.",
+    "cosmicCycles": [
+      { "tradition": "Hindu", "cycle": "Yugas (Satya \u2192 Kali)", "structure": "Descending spiral from golden to iron age", "currentPhase": "Kali Yuga \u2014 age of dissolution" },
+      { "tradition": "Abrahamic (Prophetic)", "cycle": "Prophetic cycles (dawr)", "structure": "Each prophet inaugurates a cycle", "currentPhase": "Post-prophetic era \u2014 age of direct knowledge (wilaya)" },
+      { "tradition": "Ismaili", "cycle": "Adwar (7 great cycles)", "structure": "Cyclical time toward Great Resurrection", "currentPhase": "Approaching the unveiling" },
+      { "tradition": "Zoroastrian", "cycle": "12,000-year cosmic drama", "structure": "Four epochs of 3,000 years", "currentPhase": "Final epoch \u2014 Frashokereti (renovation)" },
+      { "tradition": "Mesoamerican", "cycle": "Five Suns / World Ages", "structure": "Each Sun created and destroyed", "currentPhase": "Fifth Sun \u2014 sustained by consciousness" },
+      { "tradition": "Greek / Hermetic", "cycle": "Great Year (~25,920 years)", "structure": "12 astrological ages of ~2,160 years", "currentPhase": "Transition from Pisces to Aquarius" },
+      { "tradition": "Perennialist", "cycle": "Four Ages mirroring Yugas", "structure": "Golden \u2192 Silver \u2192 Bronze \u2192 Iron", "currentPhase": "End of Iron Age \u2014 The Reign of Quantity" },
+      { "tradition": "Chinese", "cycle": "Yi Jing cosmological cycles", "structure": "Alternation of yin and yang", "currentPhase": "Period of return to the source" },
+      { "tradition": "Tibetan", "cycle": "Kalachakra cycles", "structure": "Cosmic time through Kalachakra tantra", "currentPhase": "Age preceding Shambhala intervention" }
+    ],
+    "sovereigntyPillars": [
+      { "name": "Finance & Trading", "subtitle": "Sovereignty of Provision", "description": "The market is a mirror of the undisciplined mind. Trading demands patience, detachment from outcomes, and clarity free from emotional reactivity \u2014 the exact qualities cultivated by every contemplative tradition. Financial sovereignty is the refusal to be economically coerced." },
+      { "name": "Technology & Coding", "subtitle": "Sovereignty of Tools", "description": "Code is creative speech \u2014 the programmer brings form from formlessness, structure from chaos, function from potential. The open-source ethos mirrors the principle that knowledge is a shared inheritance, not a proprietary commodity." },
+      { "name": "Martial Arts (BJJ)", "subtitle": "Sovereignty of Body", "description": "The mat strips away all pretense. Every warrior-scholar tradition \u2014 from Ali ibn Abi Talib to the samurai to the Shaolin monks to the Aztec tlamatimine \u2014 refused the false separation between mind and body." }
+    ],
+    "closingDeclaration": "The flame that Suhrawardi lit in Aleppo, that Mulla Sadra carried in Isfahan, that Corbin recovered in Paris, that the Tibetan lamas preserved in exile, that the Kabbalists guarded through centuries of persecution, that the Taoist sages encoded in paradox, that the African griots transmitted through oral tradition, that the Mesoamerican daykeepers kept through colonization \u2014 this flame does not belong to one tradition, one nation, or one era. It belongs to every human being who looks at the world and knows \u2014 through reason, through experience, through the quiet certainty that no institution can grant or revoke \u2014 that the visible is not all there is."
   },
   "convergenceTables": {
     "absoluteSource": [
