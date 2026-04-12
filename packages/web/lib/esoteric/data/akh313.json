@@ -1,0 +1,95 @@
+{
+  "thesis": {
+    "centralClaim": "All authentic metaphysical traditions — Islamic, Hermetic, Gnostic, Neoplatonic, Vedantic, Taoist, African, Mesoamerican, Tibetan, Kabbalistic, Zoroastrian, and the Perennialist synthesis — converge on a shared ontological architecture: reality is a luminous emanation from a single Absolute Source, articulated through intermediate imaginal realms, and accessible to human consciousness through disciplined presential knowledge, not merely discursive reason.",
+    "method": "This is not syncretism (flattening all traditions into one). It is structural convergence — recognizing that independent civilizations, working from different starting points with different vocabularies, arrived at remarkably parallel metaphysical architectures.",
+    "spine": [
+      { "stage": 1, "name": "Kant's Critical Philosophy", "description": "Establishes the Western epistemological framework. The Critique of Pure Reason draws the boundary of what discursive reason alone can achieve. The noumenal/phenomenal distinction creates a gap — Kant proves that reason cannot reach the Absolute through concepts alone." },
+      { "stage": 2, "name": "The Bridge", "description": "Scholars working across Western and Islamic traditions demonstrated that the Islamic philosophical tradition identified Kant's exact stopping point and continued beyond it. The school of Isfahan (Suhrawardi, Mulla Sadra) developed ilm huduri (knowledge by presence) — addressing precisely the gap Kant identified." },
+      { "stage": 3, "name": "The Breakthrough", "description": "Where Kant declared the noumenon inaccessible, multiple traditions offer verified methods of direct access: Suhrawardi's Illuminationism, Mulla Sadra's Transcendent Theosophy, Vedantic anubhava, Taoist wu wei, Tibetan rigpa, Kabbalistic devekut, and Corbin's recovery of the mundus imaginalis." }
+    ],
+    "aquarius": "Age of Aquarius (emerging now): Characterized by direct knowledge, horizontal networks, dissolution of institutional monopolies on truth, technology as tool of revelation, the unveiling of what was hidden. The symbol of the water-bearer — active distribution of knowledge, sovereignty of the individual, collective consciousness elevation."
+  },
+  "convergenceTables": {
+    "absoluteSource": [
+      { "tradition": "Islamic (Sadra)", "term": "Wujud al-Mutlaq", "character": "Self-subsistent, simple, infinite" },
+      { "tradition": "Islamic (Ibn Arabi)", "term": "al-Haqq (the Real)", "character": "That which discloses itself through all forms" },
+      { "tradition": "Neoplatonic", "term": "To Hen (the One)", "character": "Beyond being, beyond thought" },
+      { "tradition": "Vedantic", "term": "Brahman (nirguna)", "character": "Without qualities, pure consciousness" },
+      { "tradition": "Taoist", "term": "Tao (the Way)", "character": "That which cannot be named" },
+      { "tradition": "Kabbalistic", "term": "Ein Sof (the Infinite)", "character": "Limitless, prior to all emanation" },
+      { "tradition": "Hermetic", "term": "The All / To Pan", "character": "That from which all proceeds" },
+      { "tradition": "Kemetic", "term": "Atum / Nun", "character": "The primordial completeness / the abyss" },
+      { "tradition": "Mesoamerican", "term": "Teotl (Aztec)", "character": "Self-generating cosmic process" }
+    ],
+    "emanation": [
+      { "tradition": "Islamic (Sadra)", "mechanism": "Tashkik al-wujud (gradation of Being)", "keyTerms": "Existence intensifies and weakens across levels" },
+      { "tradition": "Islamic (Suhrawardi)", "mechanism": "Emanation of Light (ishraq)", "keyTerms": "Cascading luminosity from Light of Lights to darkness of matter" },
+      { "tradition": "Neoplatonic", "mechanism": "Proodos (procession)", "keyTerms": "The One \u2192 Nous \u2192 Psyche \u2192 Physis" },
+      { "tradition": "Vedantic", "mechanism": "Vivartavada", "keyTerms": "Brahman appears as the world without changing" },
+      { "tradition": "Kabbalistic", "mechanism": "Tzimtzum + Sefirot", "keyTerms": "Divine contraction creates space; 10 attributes structure creation" },
+      { "tradition": "Hermetic", "mechanism": "As above, so below", "keyTerms": "Macrocosm-microcosm correspondence at every level" },
+      { "tradition": "Tibetan", "mechanism": "Three kayas", "keyTerms": "Dharmakaya \u2192 Sambhogakaya \u2192 Nirmanakaya" },
+      { "tradition": "Chinese", "mechanism": "Tao \u2192 qi \u2192 10,000 things", "keyTerms": "The nameless gives rise to multiplicity" }
+    ],
+    "intermediateRealm": [
+      { "tradition": "Islamic (Corbin)", "name": "Mundus imaginalis", "function": "Ontologically real intermediate world" },
+      { "tradition": "Islamic (General)", "name": "Barzakh", "function": "Isthmus between worlds" },
+      { "tradition": "Tibetan", "name": "Bardo", "function": "Intermediate state \u2014 navigable realm with specific topography" },
+      { "tradition": "Kabbalistic", "name": "Olam Yetzirah", "function": "World of Formation \u2014 angelic realm" },
+      { "tradition": "Zoroastrian", "name": "Menog", "function": "Spiritual dimension of every material reality" },
+      { "tradition": "Hermetic", "name": "The astral plane", "function": "Realm of planetary intelligences" },
+      { "tradition": "Egyptian", "name": "Duat", "function": "Underworld of transformation" },
+      { "tradition": "African (Kongo)", "name": "Kalunga line", "function": "Boundary-and-bridge between living and ancestors" }
+    ],
+    "returnAscent": [
+      { "tradition": "Islamic (Sadra)", "process": "Harakah jawhariyyah", "goal": "All existence moves toward its origin" },
+      { "tradition": "Islamic (Sufi)", "process": "Fana' and baqa'", "goal": "Annihilation of ego, subsistence in the Real" },
+      { "tradition": "Neoplatonic", "process": "Epistrophe (return)", "goal": "The soul turns back toward the One" },
+      { "tradition": "Vedantic", "process": "Moksha", "goal": "Liberation through realization of identity with Brahman" },
+      { "tradition": "Tibetan", "process": "Recognition of clear light", "goal": "Recognizing the luminous ground of mind" },
+      { "tradition": "Kabbalistic", "process": "Tikkun (repair)", "goal": "Gathering scattered sparks; restoring unity" },
+      { "tradition": "Hermetic", "process": "Henosis / divinization", "goal": "Soul ascends through planetary spheres to the source" },
+      { "tradition": "Taoist", "process": "Return to the Tao", "goal": "Effortless alignment with the natural flow of reality" }
+    ]
+  },
+  "schools": [
+    { "id": 1, "name": "Orientation / Gateway", "family": "gateway", "texts": ["Nasr, Three Muslim Sages", "Murata & Chittick, The Vision of Islam"] },
+    { "id": 2, "name": "Kant / Western Critical Philosophy", "family": "gateway", "texts": ["Kant, Critique of Pure Reason", "Allison, Kant's Transcendental Idealism"] },
+    { "id": 3, "name": "East-West Epistemological Bridge", "family": "gateway", "texts": ["Ha'iri Yazdi, Principles of Epistemology in Islamic Philosophy", "Kalin, Knowledge in Later Islamic Philosophy"] },
+    { "id": 4, "name": "Neoplatonism", "family": "gateway", "texts": ["Plotinus, Enneads", "Wallis, Neoplatonism"] },
+    { "id": 5, "name": "Suhrawardi / Illuminationism", "family": "islamic", "texts": ["Suhrawardi, Philosophy of Illumination", "Walbridge, The Leaven of the Ancients"] },
+    { "id": 6, "name": "Mulla Sadra / Transcendent Theosophy", "family": "islamic", "texts": ["Sadra, The Wisdom of the Throne", "Rizvi, Mulla Sadra and Metaphysics"] },
+    { "id": 7, "name": "Ibn Arabi / Akbarian Metaphysics", "family": "islamic", "texts": ["Ibn Arabi, Fusus al-Hikam", "Chittick, The Sufi Path of Knowledge"] },
+    { "id": 8, "name": "Shia Esotericism", "family": "islamic", "texts": ["Amir-Moezzi, The Divine Guide in Early Shi'ism", "Corbin, History of Islamic Philosophy"] },
+    { "id": 9, "name": "Corbin / The Imaginal World", "family": "islamic", "texts": ["Corbin, Alone with the Alone", "Corbin, The Man of Light in Iranian Sufism"] },
+    { "id": 10, "name": "Sufi Classics", "family": "islamic", "texts": ["Al-Qushayri, Al-Risala", "Hujwiri, Kashf al-Mahjub"] },
+    { "id": 11, "name": "Hermeticism", "family": "western", "texts": ["Copenhaver, Hermetica", "Ebeling, The Secret History of Hermes Trismegistus"] },
+    { "id": 12, "name": "Gnosticism", "family": "western", "texts": ["Robinson, The Nag Hammadi Library", "King, What is Gnosticism?"] },
+    { "id": 13, "name": "Perennialism / Traditionalist School", "family": "western", "texts": ["Gu\u00e9non, The Crisis of the Modern World", "Schuon, The Transcendent Unity of Religions"] },
+    { "id": 14, "name": "Western Esotericism (Academic)", "family": "western", "texts": ["Hanegraaff, Western Esotericism: A Guide", "Faivre, Access to Western Esotericism"] },
+    { "id": 15, "name": "Zoroastrianism", "family": "universal", "texts": ["Skj\u00e6rv\u00f8, The Spirit of Zoroastrianism", "Zaehner, Zurvan: A Zoroastrian Dilemma"] },
+    { "id": 16, "name": "Indian / Vedanta", "family": "universal", "texts": ["Olivelle, Upanisads", "Deutsch, Advaita Vedanta"] },
+    { "id": 17, "name": "Chinese / Taoism", "family": "universal", "texts": ["Lao Tzu, Tao Te Ching (Mair)", "Zhuangzi, Essential Selections (Ziporyn)"] },
+    { "id": 18, "name": "Mesoamerican", "family": "universal", "texts": ["Christenson, Popol Vuh", "Maffie, Aztec Philosophy"] },
+    { "id": 19, "name": "Sub-Saharan African Philosophy", "family": "universal", "texts": ["Mbiti, African Religions and Philosophy", "Mudimbe, The Invention of Africa"] },
+    { "id": 20, "name": "Ancient Egyptian / Kemetic", "family": "universal", "texts": ["Faulkner, The Ancient Egyptian Book of the Dead", "Karenga, Maat: The Moral Ideal"] },
+    { "id": 21, "name": "Kabbalah / Jewish Mysticism", "family": "universal", "texts": ["Matt, The Essential Kabbalah", "Kaplan, Sefer Yetzirah"] },
+    { "id": 22, "name": "Picatrix / Astral Magic", "family": "universal", "texts": ["Attrell & Porreca, Picatrix", "Saif, Arabic Influences on Early Modern Occult Philosophy"] },
+    { "id": 23, "name": "Tibetan / Bardo", "family": "universal", "texts": ["Padmasambhava, The Tibetan Book of the Dead", "Fremantle, Luminous Emptiness"] },
+    { "id": 24, "name": "Comparative Ontology & Bridging", "family": "comparative", "texts": ["Shah-Kazemi, Paths to Transcendence", "Kamal, From Essence to Being"] }
+  ],
+  "familyLabels": {
+    "gateway": "Gateway & Critical Foundations",
+    "islamic": "The Islamic Philosophical Synthesis",
+    "western": "Western Esoteric Traditions",
+    "universal": "Universal Traditions",
+    "comparative": "Synthesis"
+  },
+  "familyColors": {
+    "gateway": "#888780",
+    "islamic": "#1D9E75",
+    "western": "#7F77DD",
+    "universal": "#BA7517",
+    "comparative": "#D85A30"
+  }
+}
