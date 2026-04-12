@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import ThesisRoom from '@/components/temple/ThesisRoom';
-import LibraryRoom from '@/components/temple/LibraryRoom';
+import MuseumRoom from '@/components/temple/MuseumRoom';
 
-type Room = 'thesis' | 'constellation' | 'library';
+type Room = 'thesis' | 'constellation' | 'museum';
 
 const ROOMS: { id: Room; label: string }[] = [
   { id: 'thesis', label: '\u25CA The Thesis' },
   { id: 'constellation', label: '\u25C8 Constellation' },
-  { id: 'library', label: '\u25C7 The Library' },
+  { id: 'museum', label: '\u25C7 The Museum' },
 ];
 
 export default function TemplePage() {
@@ -51,7 +51,7 @@ export default function TemplePage() {
 
       {/* Active room */}
       {activeRoom === 'thesis' && <ThesisRoom />}
-      {activeRoom === 'library' && <LibraryRoom />}
+      {activeRoom === 'museum' && <MuseumRoom />}
     </div>
   );
 }
