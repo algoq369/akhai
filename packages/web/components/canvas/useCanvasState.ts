@@ -47,6 +47,8 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
   const [pencilColor, setPencilColor] = useState('#1e293b');
 
   const [showThreads, setShowThreads] = useState(true);
+  const [highlightedTopic, setHighlightedTopic] = useState<string | null>(null);
+  const [highlightedQueries, setHighlightedQueries] = useState<Set<string>>(new Set());
 
   const weights = useLayerStore((s) => s.weights);
   const activePreset = useLayerStore((s) => s.activePreset);
@@ -56,7 +58,7 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
     if (queryCards.length === 0) return;
     const newNodes: CanvasNode[] = [];
     const newConns: Connection[] = [];
-    const topicMap: Record<string, { count: number; nodeId: string }> = {};
+    const topicMap: Record<string, { count: number; nodeId: string; queryIds: string[] }> = {};
     let topicX = 850,
       topicY = 80;
 
@@ -76,7 +78,7 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
         const tKey = topic.toLowerCase();
         if (!topicMap[tKey]) {
           const tId = `t-${tKey.replace(/\s/g, '-')}`;
-          topicMap[tKey] = { count: 1, nodeId: tId };
+          topicMap[tKey] = { count: 1, nodeId: tId, queryIds: [qId] };
           newNodes.push({
             id: tId,
             type: 'topic',
@@ -84,7 +86,7 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
             y: topicY,
             w: 110,
             h: 44,
-            data: { name: topic, count: 1, color: getTopicColor(topic) },
+            data: { name: topic, count: 1, queryIds: [qId], color: getTopicColor(topic) },
           });
           topicY += 56;
           if (topicY > 500) {
@@ -93,8 +95,12 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
           }
         } else {
           topicMap[tKey].count++;
+          topicMap[tKey].queryIds.push(qId);
           const existing = newNodes.find((n) => n.id === topicMap[tKey].nodeId);
-          if (existing) existing.data.count = topicMap[tKey].count;
+          if (existing) {
+            existing.data.count = topicMap[tKey].count;
+            existing.data.queryIds = topicMap[tKey].queryIds;
+          }
         }
         newConns.push({ from: qId, to: topicMap[tKey].nodeId, color: getTopicColor(topic) });
       });
@@ -123,6 +129,31 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
         color: isBranch ? '#d4d4d8' : '#a1a1aa',
         label: isBranch ? 'branch' : 'thread',
       });
+    }
+
+    // Reposition merged topics to center of their connected queries
+    for (const tKey of Object.keys(topicMap)) {
+      const entry = topicMap[tKey];
+      if (entry.count < 2) continue;
+      const topicNode = newNodes.find((n) => n.id === entry.nodeId);
+      if (!topicNode) continue;
+      let sumX = 0,
+        sumY = 0,
+        ct = 0;
+      for (const qid of entry.queryIds) {
+        const qn = newNodes.find((n) => n.id === qid);
+        if (qn) {
+          sumX += qn.x + qn.w;
+          sumY += qn.y + qn.h / 2;
+          ct++;
+        }
+      }
+      if (ct > 0) {
+        topicNode.x = sumX / ct + 60 + (Math.random() - 0.5) * 40;
+        topicNode.y = sumY / ct - topicNode.h / 2 + (Math.random() - 0.5) * 30;
+      }
+      // Scale width for multi-referenced topics
+      topicNode.w = entry.count >= 3 ? 150 : 130;
     }
 
     newNodes.push({
@@ -437,6 +468,26 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
   const nodeOpacity = (nodeId: string) =>
     !hovered ? 1 : nodeId === hovered || isConnected(nodeId) ? 1 : 0.25;
 
+  const handleTopicClick = useCallback(
+    (nodeId: string) => {
+      const node = nodesRef.current.find((n) => n.id === nodeId && n.type === 'topic');
+      if (!node || !node.data.queryIds) return;
+      if (highlightedTopic === nodeId) {
+        setHighlightedTopic(null);
+        setHighlightedQueries(new Set());
+      } else {
+        setHighlightedTopic(nodeId);
+        setHighlightedQueries(new Set(node.data.queryIds));
+      }
+    },
+    [highlightedTopic]
+  );
+
+  const clearHighlights = useCallback(() => {
+    setHighlightedTopic(null);
+    setHighlightedQueries(new Set());
+  }, []);
+
   const selectedIsQuery = selected ? nodes.find((n) => n.id === selected)?.type === 'query' : false;
 
   return {
@@ -476,5 +527,9 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
     deleteSelected,
     nodeOpacity,
     selectedIsQuery,
+    highlightedTopic,
+    highlightedQueries,
+    handleTopicClick,
+    clearHighlights,
   };
 }

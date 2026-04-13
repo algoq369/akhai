@@ -91,7 +91,10 @@ export default function CanvasWorkspace({
                 ? 'grabbing'
                 : 'grab',
         }}
-        onMouseDown={cs.handleMouseDown}
+        onMouseDown={(e) => {
+          cs.clearHighlights();
+          cs.handleMouseDown(e);
+        }}
         onMouseMove={cs.handleMouseMove}
         onMouseUp={cs.handleMouseUp}
         onMouseLeave={cs.handleMouseLeave}
@@ -216,6 +219,10 @@ export default function CanvasWorkspace({
                   to = cs.getCenter(c.to);
                 if (from.x === 0 && from.y === 0 && to.x === 0 && to.y === 0) return null;
                 const hl = cs.hovered && (c.from === cs.hovered || c.to === cs.hovered);
+                const topicHl =
+                  cs.highlightedTopic &&
+                  (c.from === cs.highlightedTopic || c.to === cs.highlightedTopic);
+                const hasHighlights = cs.highlightedQueries.size > 0;
                 return (
                   <line
                     key={`c-${i}`}
@@ -224,8 +231,10 @@ export default function CanvasWorkspace({
                     x2={to.x}
                     y2={to.y}
                     stroke={c.color || '#94a3b8'}
-                    strokeWidth={hl ? 2 : 1}
-                    strokeOpacity={cs.hovered ? (hl ? 0.7 : 0.08) : 0.25}
+                    strokeWidth={topicHl ? 3 : hl ? 2 : 1}
+                    strokeOpacity={
+                      topicHl ? 0.8 : hasHighlights ? 0.06 : cs.hovered ? (hl ? 0.7 : 0.08) : 0.25
+                    }
                     strokeDasharray={c.color === '#94a3b8' ? '4 4' : 'none'}
                     style={{ transition: 'all 0.15s' }}
                   />
@@ -278,51 +287,65 @@ export default function CanvasWorkspace({
           </svg>
 
           {/* Nodes */}
-          {(cs.nodes ?? []).map((node) => (
-            <div
-              key={node.id}
-              data-node="true"
-              onMouseDown={(e) => cs.startDrag(node.id, e)}
-              onMouseEnter={() => cs.setHovered(node.id)}
-              onMouseLeave={() => cs.setHovered(null)}
-              style={{
-                position: 'absolute',
-                left: node.x,
-                top: node.y,
-                width: node.w,
-                height: node.h,
-                ...getNodeStyle(node, cs.selected),
-                cursor: cs.tool === 'connect' ? 'crosshair' : 'move',
-                opacity: cs.nodeOpacity(node.id),
-                transition:
-                  cs.dragging?.id === node.id ? 'none' : 'opacity 0.15s, box-shadow 0.15s',
-                boxShadow:
-                  cs.selected === node.id
-                    ? '0 2px 12px rgba(0,0,0,0.06)'
-                    : cs.hovered === node.id && VIZ_COLORS[node.type as VizType]
-                      ? `0 0 12px ${VIZ_COLORS[node.type as VizType]}26`
-                      : 'none',
-                zIndex: cs.selected === node.id ? 10 : 1,
-                overflow: 'hidden',
-              }}
-            >
-              <CanvasNodeContent
-                node={node}
-                selected={cs.selected}
-                editingNote={cs.editingNote}
-                tool={cs.tool}
-                onSetEditingNote={cs.setEditingNote}
-                onUpdateNodeText={(nodeId, text) =>
-                  cs.setNodes((prev) =>
-                    prev.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, text } } : n))
-                  )
-                }
-                onQuerySelect={onQuerySelect}
-                onGenerateDiagram={() => cs.handleGenerate('diagram')}
-                onGenerateChart={() => cs.handleGenerate('chart')}
-              />
-            </div>
-          ))}
+          {(cs.nodes ?? []).map((node) => {
+            const hasHighlights = cs.highlightedQueries.size > 0;
+            const isHighlighted =
+              cs.highlightedQueries.has(node.id) || cs.highlightedTopic === node.id;
+            const dimmed = hasHighlights && !isHighlighted;
+            return (
+              <div
+                key={node.id}
+                data-node="true"
+                onMouseDown={(e) => cs.startDrag(node.id, e)}
+                onClick={() => {
+                  if (node.type === 'topic') cs.handleTopicClick(node.id);
+                }}
+                onMouseEnter={() => cs.setHovered(node.id)}
+                onMouseLeave={() => cs.setHovered(null)}
+                style={{
+                  position: 'absolute',
+                  left: node.x,
+                  top: node.y,
+                  width: node.w,
+                  height: node.h,
+                  ...getNodeStyle(node, cs.selected, isHighlighted),
+                  cursor:
+                    node.type === 'topic'
+                      ? 'pointer'
+                      : cs.tool === 'connect'
+                        ? 'crosshair'
+                        : 'move',
+                  opacity: dimmed ? 0.25 : cs.nodeOpacity(node.id),
+                  transition:
+                    cs.dragging?.id === node.id ? 'none' : 'opacity 0.15s, box-shadow 0.15s',
+                  boxShadow:
+                    cs.selected === node.id
+                      ? '0 2px 12px rgba(0,0,0,0.06)'
+                      : cs.hovered === node.id && VIZ_COLORS[node.type as VizType]
+                        ? `0 0 12px ${VIZ_COLORS[node.type as VizType]}26`
+                        : 'none',
+                  zIndex: cs.selected === node.id ? 10 : 1,
+                  overflow: 'hidden',
+                }}
+              >
+                <CanvasNodeContent
+                  node={node}
+                  selected={cs.selected}
+                  editingNote={cs.editingNote}
+                  tool={cs.tool}
+                  onSetEditingNote={cs.setEditingNote}
+                  onUpdateNodeText={(nodeId, text) =>
+                    cs.setNodes((prev) =>
+                      prev.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, text } } : n))
+                    )
+                  }
+                  onQuerySelect={onQuerySelect}
+                  onGenerateDiagram={() => cs.handleGenerate('diagram')}
+                  onGenerateChart={() => cs.handleGenerate('chart')}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
 

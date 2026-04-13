@@ -189,21 +189,43 @@ export function CanvasNodeContent({
             alignItems: 'center',
             justifyContent: 'center',
             gap: 5,
+            position: 'relative',
           }}
         >
           <div
             style={{
-              width: 7,
-              height: 7,
+              width: node.data.count >= 3 ? 9 : 7,
+              height: node.data.count >= 3 ? 9 : 7,
               borderRadius: '50%',
               background: node.data.color,
             }}
           />
-          <span style={{ fontSize: 10, fontWeight: 600, color: node.data.color }}>
+          <span
+            style={{
+              fontSize: node.data.count >= 3 ? 12 : node.data.count === 2 ? 11 : 10,
+              fontWeight: node.data.count >= 3 ? 600 : 600,
+              color: node.data.color,
+            }}
+          >
             {node.data.name}
           </span>
           {node.data.count > 1 && (
-            <span style={{ fontSize: 8, color: '#cbd5e1' }}>×{node.data.count}</span>
+            <span
+              style={{
+                position: 'absolute',
+                top: 2,
+                right: 6,
+                fontSize: 8,
+                fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+                background: '#e4e4e7',
+                color: '#71717a',
+                padding: '0 4px',
+                borderRadius: 8,
+                lineHeight: '14px',
+              }}
+            >
+              ×{node.data.count}
+            </span>
           )}
         </div>
       )}
@@ -438,17 +460,31 @@ function EditableTextNode({
 }
 
 /** Get node style based on type and selection state */
-export function getNodeStyle(node: CanvasNode, selected: string | null): React.CSSProperties {
+export function getNodeStyle(
+  node: CanvasNode,
+  selected: string | null,
+  highlighted?: boolean
+): React.CSSProperties {
   const styles: Record<string, React.CSSProperties> = {
     query: {
       background: 'rgba(255,255,255,0.97)',
-      border: selected === node.id ? '1.5px solid #6366f1' : '1px solid #e2e8f0',
+      border: highlighted
+        ? `2px solid ${node.data.color || '#8b5cf6'}`
+        : selected === node.id
+          ? '1.5px solid #6366f1'
+          : '1px solid #e2e8f0',
       borderRadius: 6,
+      boxShadow: highlighted ? `0 0 12px ${node.data.color || '#8b5cf6'}30` : undefined,
     },
     topic: {
       background: `${node.data.color}10`,
-      border:
-        selected === node.id ? `1.5px solid ${node.data.color}` : `1px solid ${node.data.color}30`,
+      border: highlighted
+        ? `2px solid ${node.data.color}`
+        : selected === node.id
+          ? `1.5px solid ${node.data.color}`
+          : node.data.count > 1
+            ? `2px solid ${node.data.color}4D`
+            : `1px solid ${node.data.color}30`,
       borderRadius: 20,
     },
     note: {

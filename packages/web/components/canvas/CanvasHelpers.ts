@@ -82,7 +82,78 @@ export const VIZ_SIZES: Record<VizType, { w: number; h: number }> = {
   radar: { w: 320, h: 280 },
 };
 
+const CATEGORY_KEYWORDS: Record<string, { keywords: string[]; color: string }> = {
+  technical: {
+    keywords: [
+      'code',
+      'api',
+      'algorithm',
+      'software',
+      'database',
+      'framework',
+      'programming',
+      'server',
+      'deploy',
+      'compiler',
+      'runtime',
+      'protocol',
+    ],
+    color: '#378ADD',
+  },
+  financial: {
+    keywords: [
+      'money',
+      'market',
+      'crypto',
+      'btc',
+      'bitcoin',
+      'price',
+      'trading',
+      'stock',
+      'investment',
+      'economy',
+      'finance',
+      'currency',
+    ],
+    color: '#BA7517',
+  },
+  geopolitical: {
+    keywords: [
+      'country',
+      'war',
+      'policy',
+      'regulation',
+      'government',
+      'election',
+      'sanction',
+      'nation',
+      'political',
+      'diplomacy',
+    ],
+    color: '#1D9E75',
+  },
+  scientific: {
+    keywords: [
+      'research',
+      'study',
+      'physics',
+      'biology',
+      'chemistry',
+      'experiment',
+      'data',
+      'science',
+      'hypothesis',
+      'theory',
+    ],
+    color: '#7F77DD',
+  },
+};
+
 export function getTopicColor(name: string): string {
+  const lower = name.toLowerCase();
+  for (const cat of Object.values(CATEGORY_KEYWORDS)) {
+    if (cat.keywords.some((kw) => lower.includes(kw))) return cat.color;
+  }
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return TOPIC_COLORS[Math.abs(hash) % TOPIC_COLORS.length];
