@@ -160,45 +160,48 @@ export function getTopicColor(name: string): string {
   return TOPIC_COLORS[Math.abs(hash) % TOPIC_COLORS.length];
 }
 
+const STOP_WORDS = new Set([
+  'This','That','These','Those','What','When','Where','Which','There','Here',
+  'Three','Four','Five','Several','Many','Some','Each','Both','Most','Much',
+  'Very','Also','However','Therefore','Furthermore','Moreover','Additionally',
+  'Sorry','Please','Error','From','Into','With','About','Over','Under','Between',
+  'Through','After','Before','During','Without','Within','Along','Among','Beyond',
+  'Every','Together','Image','Supply','Full','Thus','Early','Pool','Shor','Such',
+  'While','Since','Until','Once','Already','Still','Just','Only','Even','Rather',
+  'Instead','Despite','Although','Though','Because','Whether','Whereas','Unless',
+  'Meanwhile','Otherwise','Anyway','Perhaps','Probably','Certainly','Clearly',
+  'Simply','Merely','Essentially','Basically','Actually','Really','Quite','Rather',
+  'Fairly','Pretty','Somewhat','Almost','Nearly','Entirely','Completely','Totally',
+  'Absolutely','Exactly','Precisely','Approximately','Roughly','Generally','Usually',
+  'Often','Sometimes','Always','Never','Rarely','Frequently','Occasionally',
+  'According','Based','Given','Using','Including','Considering','Regarding',
+  'Following','Leading','Resulting','Making','Taking','Getting','Being','Having',
+  'Doing','Going','Coming','Becoming','Keeping','Leaving','Putting','Setting',
+  'Running','Working','Turning','Looking','Showing','Playing','Moving','Living',
+  'First','Second','Third','Fourth','Fifth','Sixth','Seventh','Eighth','Ninth','Tenth',
+  'Last','Next','Previous','Current','Former','Latter','Final','Initial','Original',
+  'Overall','Total','Complete','Entire','Whole','Partial','Main','Major','Minor',
+  'Primary','Secondary','Key','Important','Significant','Critical','Essential',
+  'Necessary','Required','Available','Possible','Likely','Certain','Sure','Clear',
+  'Known','Common','Popular','Similar','Different','Various','Specific','Particular',
+  'General','Typical','Standard','Normal','Regular','Special','Unique','Distinct',
+  'Large','Small','Long','Short','High','Low','Wide','Narrow','Deep','Broad',
+  'Great','Good','Best','Better','Worst','Worse','New','Old','Young','Modern',
+  'Recent','Late','Early','Fast','Slow','Quick','Strong','Weak','Hard','Soft',
+  'True','False','Real','Actual','Potential','Effective','Successful','Significant',
+  'Preliminary','Administrative','Ownership','Clinical','Precision',
+  'Able','Like','Same','Other','Another','Own','Certain','Open','Closed',
+  'Public','Private','Local','Global','National','International','Social','Political',
+  'Economic','Financial','Technical','Digital','Physical','Natural','Human',
+  'Note','Example','Case','Point','Part','Form','Type','Kind','Sort','Way',
+  'Time','Year','Month','Week','Day','Hour','Minute','Number','Amount','Level',
+  'Rate','Percent','Billion','Million','Thousand','Hundred',
+]);
+
 export function extractTopics(text: string): string[] {
   const words = text.match(/[A-Z][a-z]+(?:\s[A-Z][a-z]+)*/g) || [];
   return [...new Set(words)]
-    .filter(
-      (w) =>
-        w.length > 3 &&
-        ![
-          'This',
-          'That',
-          'These',
-          'Those',
-          'What',
-          'When',
-          'Where',
-          'Which',
-          'There',
-          'Here',
-          'Three',
-          'Four',
-          'Five',
-          'Several',
-          'Many',
-          'Some',
-          'Each',
-          'Both',
-          'Most',
-          'Much',
-          'Very',
-          'Also',
-          'However',
-          'Therefore',
-          'Furthermore',
-          'Moreover',
-          'Additionally',
-          'Sorry',
-          'Please',
-          'Error',
-        ].includes(w)
-    )
+    .filter((w) => w.length > 4 && !STOP_WORDS.has(w.split(' ')[0]) && !STOP_WORDS.has(w))
     .slice(0, 5);
 }
 
