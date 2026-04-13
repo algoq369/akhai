@@ -47,6 +47,7 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
   const [pencilColor, setPencilColor] = useState('#1e293b');
 
   const [showThreads, setShowThreads] = useState(true);
+  const [showCrossLinks, setShowCrossLinks] = useState(true);
   const [highlightedTopic, setHighlightedTopic] = useState<string | null>(null);
   const [highlightedQueries, setHighlightedQueries] = useState<Set<string>>(new Set());
 
@@ -154,6 +155,33 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
       }
       // Scale width for multi-referenced topics
       topicNode.w = entry.count >= 3 ? 150 : 130;
+    }
+
+    // Cross-query connections: detect shared topics between non-consecutive queries
+    const crossPairs: Record<string, string[]> = {};
+    for (const tKey of Object.keys(topicMap)) {
+      const qids = topicMap[tKey].queryIds;
+      if (qids.length < 2) continue;
+      for (let a = 0; a < qids.length; a++) {
+        for (let b = a + 1; b < qids.length; b++) {
+          const pairKey = [qids[a], qids[b]].sort().join('|');
+          if (!crossPairs[pairKey]) crossPairs[pairKey] = [];
+          crossPairs[pairKey].push(topicMap[tKey].nodeId.replace('t-', '').replace(/-/g, ' '));
+        }
+      }
+    }
+    for (const pairKey of Object.keys(crossPairs)) {
+      const topics = crossPairs[pairKey];
+      if (topics.length < 2) continue;
+      const [fromId, toId] = pairKey.split('|');
+      // Skip if already connected by thread/branch
+      const alreadyThreaded = newConns.some(
+        (c) =>
+          (c.label === 'thread' || c.label === 'branch') &&
+          ((c.from === fromId && c.to === toId) || (c.from === toId && c.to === fromId))
+      );
+      if (alreadyThreaded) continue;
+      newConns.push({ from: fromId, to: toId, color: '#d4d4d8', label: 'cross-query', topics });
     }
 
     newNodes.push({
@@ -531,5 +559,7 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
     highlightedQueries,
     handleTopicClick,
     clearHighlights,
+    showCrossLinks,
+    setShowCrossLinks,
   };
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { QueryCard } from './QueryCardsPanel';
 import type { VisualNode, VisualEdge } from './VisualsPanel';
 import type { AIInsight } from './AILayersPanel';
@@ -36,6 +37,9 @@ export default function CanvasWorkspace({
   onSwitchToClassic,
 }: CanvasWorkspaceProps) {
   const cs = useCanvasState(queryCards);
+  const [hoveredConn, setHoveredConn] = useState<{ x: number; y: number; topics: string[] } | null>(
+    null
+  );
 
   // === RENDER ===
   return (
@@ -71,6 +75,8 @@ export default function CanvasWorkspace({
         onGenerate={cs.handleGenerate}
         showThreads={cs.showThreads}
         setShowThreads={cs.setShowThreads}
+        showCrossLinks={cs.showCrossLinks}
+        setShowCrossLinks={cs.setShowCrossLinks}
       />
 
       {/* Canvas area */}
@@ -186,6 +192,41 @@ export default function CanvasWorkspace({
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#d4d4d8" />
               </marker>
             </defs>
+            {/* Cross-query connections (behind everything) */}
+            {cs.showCrossLinks &&
+              (cs.connections ?? [])
+                .filter((c) => c.label === 'cross-query')
+                .map((c, i) => {
+                  const from = cs.getCenter(c.from),
+                    to = cs.getCenter(c.to);
+                  if (from.x === 0 && from.y === 0 && to.x === 0 && to.y === 0) return null;
+                  const count = c.topics?.length || 2;
+                  const sw = count >= 4 ? 2 : count >= 3 ? 1.5 : 1;
+                  return (
+                    <line
+                      key={`xq-${i}`}
+                      x1={from.x}
+                      y1={from.y}
+                      x2={to.x}
+                      y2={to.y}
+                      stroke="#d4d4d8"
+                      strokeWidth={sw}
+                      strokeOpacity={0.4}
+                      strokeDasharray="2 4"
+                      style={{ transition: 'all 0.15s', pointerEvents: 'stroke', cursor: 'help' }}
+                      onMouseEnter={(e) => {
+                        const rect = cs.canvasRef.current?.getBoundingClientRect();
+                        if (rect && c.topics)
+                          setHoveredConn({
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top - 30,
+                            topics: c.topics,
+                          });
+                      }}
+                      onMouseLeave={() => setHoveredConn(null)}
+                    />
+                  );
+                })}
             {/* Thread/branch connection lines (behind other connections) */}
             {cs.showThreads &&
               (cs.connections ?? [])
@@ -213,7 +254,9 @@ export default function CanvasWorkspace({
                 })}
             {/* Connection lines */}
             {(cs.connections ?? [])
-              .filter((c) => c.label !== 'thread' && c.label !== 'branch')
+              .filter(
+                (c) => c.label !== 'thread' && c.label !== 'branch' && c.label !== 'cross-query'
+              )
               .map((c, i) => {
                 const from = cs.getCenter(c.from),
                   to = cs.getCenter(c.to);
@@ -347,6 +390,27 @@ export default function CanvasWorkspace({
             );
           })}
         </div>
+        {/* Cross-query hover tooltip */}
+        {hoveredConn && (
+          <div
+            style={{
+              position: 'absolute',
+              left: hoveredConn.x,
+              top: hoveredConn.y,
+              background: '#27272a',
+              color: '#fafafa',
+              fontSize: 9,
+              fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+              padding: '4px 8px',
+              borderRadius: 4,
+              pointerEvents: 'none',
+              zIndex: 50,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Shared: {hoveredConn.topics.join(', ')}
+          </div>
+        )}
       </div>
 
       {/* Bottom hints */}

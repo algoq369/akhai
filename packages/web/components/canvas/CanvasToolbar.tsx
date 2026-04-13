@@ -32,6 +32,8 @@ interface CanvasToolbarProps {
   onGenerate: (type: VizType) => void;
   showThreads?: boolean;
   setShowThreads?: (v: boolean) => void;
+  showCrossLinks?: boolean;
+  setShowCrossLinks?: (v: boolean) => void;
 }
 
 const TOOLS = [
@@ -74,6 +76,8 @@ export function CanvasToolbar({
   onGenerate,
   showThreads = true,
   setShowThreads,
+  showCrossLinks = true,
+  setShowCrossLinks,
 }: CanvasToolbarProps) {
   const hasQueries = nodes.filter((n) => n.type === 'query').length > 0;
 
@@ -164,6 +168,24 @@ export function CanvasToolbar({
           }}
         >
           threads
+        </button>
+      )}
+      {/* Cross-query toggle */}
+      {setShowCrossLinks && (
+        <button
+          onClick={() => setShowCrossLinks(!showCrossLinks)}
+          style={{
+            fontSize: 9,
+            padding: '3px 7px',
+            borderRadius: 3,
+            border: showCrossLinks ? '1px solid #d4d4d8' : '1px solid transparent',
+            background: showCrossLinks ? '#d4d4d810' : 'transparent',
+            color: showCrossLinks ? '#71717a' : '#cbd5e1',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          cross
         </button>
       )}
 

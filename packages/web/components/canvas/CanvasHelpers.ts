@@ -33,6 +33,7 @@ export interface Connection {
   to: string;
   color: string;
   label?: string;
+  topics?: string[];
 }
 export interface DrawPoint {
   x: number;
