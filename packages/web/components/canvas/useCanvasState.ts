@@ -60,21 +60,28 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
     const newNodes: CanvasNode[] = [];
     const newConns: Connection[] = [];
     const topicMap: Record<string, { count: number; nodeId: string; queryIds: string[] }> = {};
-    let topicX = 850,
-      topicY = 80;
+
+    // Layout: queries flow horizontally, topics below each query
+    const Q_START_X = 40;
+    const Q_SPACING_X = 420; // horizontal gap between queries
+    const Q_Y = 40;
+    const TOPIC_OFFSET_Y = 170; // topics start below their query
+    const TOPIC_SPACING_Y = 52;
 
     queryCards.forEach((card, i) => {
       const qId = `q-${card.id}`;
+      const qX = Q_START_X + i * Q_SPACING_X;
       newNodes.push({
         id: qId,
         type: 'query',
-        x: 40,
-        y: 40 + i * 170,
+        x: qX,
+        y: Q_Y,
         w: 320,
         h: 150,
         data: { ...card, methodology: card.methodology || 'auto', threadIndex: i },
       });
       const topics = extractTopics(card.response);
+      let topicIdx = 0;
       topics.forEach((topic) => {
         const tKey = topic.toLowerCase();
         if (!topicMap[tKey]) {
@@ -83,17 +90,13 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
           newNodes.push({
             id: tId,
             type: 'topic',
-            x: topicX + (Math.random() - 0.5) * 120,
-            y: topicY,
+            x: qX + 30 + (topicIdx % 2) * 140,
+            y: TOPIC_OFFSET_Y + Q_Y + Math.floor(topicIdx / 2) * TOPIC_SPACING_Y,
             w: 110,
             h: 44,
             data: { name: topic, count: 1, queryIds: [qId], color: getTopicColor(topic) },
           });
-          topicY += 56;
-          if (topicY > 500) {
-            topicY = 60;
-            topicX += 140;
-          }
+          topicIdx++;
         } else {
           topicMap[tKey].count++;
           topicMap[tKey].queryIds.push(qId);
