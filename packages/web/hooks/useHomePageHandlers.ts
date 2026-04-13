@@ -282,6 +282,7 @@ export function useHomePageHandlers(state: HomePageStateForHandlers) {
         isHidden: data.guardResult?.passed === false,
         gnostic: data.gnostic,
         intelligence: buildIntelligence(data.fusion),
+        instinctMode: data.instinctMode || false,
       };
       setSideChats((prev) =>
         prev.map((c) =>

@@ -85,9 +85,9 @@ export default function ConversationConsole({
         <button
           key={key}
           onClick={() => set(!on)}
-          className={`transition-colors ${on ? 'text-emerald-500 font-medium' : 'hover:text-relic-void'}`}
+          className={`transition-colors ${on ? (key === 'instinct' ? 'text-purple-500 font-medium' : 'text-emerald-500 font-medium') : 'hover:text-relic-void'}`}
         >
-          {key}
+          {key === 'instinct' && on ? '◊ instinct' : key}
         </button>
       ))}
 

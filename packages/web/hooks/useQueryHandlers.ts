@@ -433,6 +433,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
           gnostic: data.gnostic,
           intelligence: buildIntelligence(data.fusion),
           miniCanvas: data.miniCanvas,
+          instinctMode: data.instinctMode || false,
         };
         console.log('🌳 FRONTEND: Created message with gnostic:', {
           messageId: assistantMessage.id,

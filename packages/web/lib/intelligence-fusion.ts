@@ -11,7 +11,9 @@
  * This is the brain of AkhAI - where all systems converge.
  */
 
-import { InstinctConfig, generateInstinctPrompt } from './instinct-mode';
+import type { InstinctConfig } from './instinct-mode';
+import { buildInstinctPrompt, buildEsotericContext } from './instinct-prompt';
+import { getCurrentPositions } from './esoteric/cycle-engine';
 
 // Re-export all types
 export type {
@@ -89,8 +91,17 @@ export async function fuseIntelligence(
   // 5. Assess Guard status
   const { recommendation, reasons } = assessGuardStatus(query, analysis);
 
-  // 6. Generate Instinct prompt
-  const instinctPrompt = generateInstinctPrompt(instinctConfig);
+  // 6. Generate Instinct prompt (with live esoteric context)
+  let esotericContext: string | undefined;
+  if (instinctConfig.enabled) {
+    try {
+      const positions = getCurrentPositions();
+      esotericContext = buildEsotericContext(positions);
+    } catch {
+      /* esoteric data optional */
+    }
+  }
+  const instinctPrompt = buildInstinctPrompt(instinctConfig, esotericContext);
 
   // 7. Calculate thinking budget
   const extendedThinkingBudget = calculateThinkingBudget(analysis, layerActivations);

@@ -22,6 +22,7 @@ export const QuerySchema = z.object({
           >)
         : undefined
     ),
+  instinctMode: z.boolean().optional(),
   instinctConfig: z.any().optional(),
   liveRefinements: z.array(z.object({ type: z.string(), text: z.string() })).optional(),
   grimoireContext: z.any().optional(),

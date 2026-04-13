@@ -23,7 +23,9 @@ import CouncilPanel from '@/components/CouncilPanel';
 import dynamic from 'next/dynamic';
 import { useEsotericStore } from '@/lib/stores/esoteric-store';
 
-const EsotericInline = dynamic(() => import('@/components/esoteric/EsotericInline'), { ssr: false });
+const EsotericInline = dynamic(() => import('@/components/esoteric/EsotericInline'), {
+  ssr: false,
+});
 
 /** Generate LayerMini data for every query — adapts to content and evolves with conversation */
 function generateLayerData(
@@ -403,7 +405,16 @@ export default function ChatMessages({
                       />
                     </div>
                     <CouncilPanel queryId={message.id} />
-                    <EsotericInline query={messages[messages.indexOf(message) - 1]?.content || ''} messageId={message.id} />
+                    <EsotericInline
+                      query={messages[messages.indexOf(message) - 1]?.content || ''}
+                      messageId={message.id}
+                    />
+                    {/* INSTINCT MODE BADGE */}
+                    {message.instinctMode && (
+                      <span className="inline-block mt-2 text-[9px] font-mono text-purple-400 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/40">
+                        ◊ instinct
+                      </span>
+                    )}
                     {/* INTELLIGENCE FUSION BADGE */}
                     {message.intelligence && (
                       <div className="mt-4 pt-3 border-t border-relic-mist/20 dark:border-relic-slate/15">

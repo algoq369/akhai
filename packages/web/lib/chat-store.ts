@@ -153,6 +153,7 @@ export interface Message {
     };
   };
   miniCanvas?: import('@/lib/mini-canvas/content-classifier').MiniCanvasData;
+  instinctMode?: boolean;
 }
 
 export interface ChatState {

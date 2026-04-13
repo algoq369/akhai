@@ -67,11 +67,16 @@ export async function POST(request: NextRequest) {
       pageContext,
       legendMode,
       layersWeights,
-      instinctConfig,
+      instinctMode,
+      instinctConfig: rawInstinctConfig,
       liveRefinements,
       grimoireContext,
       queryId: clientQueryId,
     } = parsed.data;
+    // Merge instinctMode flag into instinctConfig.enabled
+    const instinctConfig = rawInstinctConfig
+      ? { ...rawInstinctConfig, enabled: instinctMode === true }
+      : undefined;
 
     // Use client-provided queryId if available (enables live SSE), otherwise generate
     queryId = clientQueryId || Math.random().toString(36).slice(2, 10);
@@ -535,6 +540,7 @@ export async function POST(request: NextRequest) {
 
     const responseData = buildResponseData(builderInput, suggestions);
     responseData.miniCanvas = miniCanvas;
+    if (instinctMode) responseData.instinctMode = true;
     log('INFO', 'SIDE_CANAL', `Response includes ${suggestions.length} suggestions`);
 
     trackPostHogEvents(builderInput, request);
