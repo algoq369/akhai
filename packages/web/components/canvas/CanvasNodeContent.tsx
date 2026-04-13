@@ -53,8 +53,27 @@ export function CanvasNodeContent({
                 flexDirection: 'column',
                 padding: '10px 12px',
                 borderLeft: `3px solid ${mc}`,
+                position: 'relative',
               }}
             >
+              {node.data.threadIndex !== undefined && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    left: 4,
+                    fontSize: 8,
+                    fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+                    background: '#f4f4f5',
+                    color: '#71717a',
+                    padding: '0 4px',
+                    borderRadius: 2,
+                    lineHeight: '14px',
+                  }}
+                >
+                  Q{node.data.threadIndex + 1}
+                </span>
+              )}
               <div
                 style={{
                   fontSize: 11,

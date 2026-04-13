@@ -69,6 +69,8 @@ export default function CanvasWorkspace({
         onSwitchToClassic={onSwitchToClassic}
         onDeleteSelected={cs.deleteSelected}
         onGenerate={cs.handleGenerate}
+        showThreads={cs.showThreads}
+        setShowThreads={cs.setShowThreads}
       />
 
       {/* Canvas area */}
@@ -158,28 +160,77 @@ export default function CanvasWorkspace({
               <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
                 <polygon points="0 0, 8 3, 0 6" fill="#cbd5e1" />
               </marker>
+              <marker
+                id="thread-arrow"
+                viewBox="0 0 10 10"
+                refX="10"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#a1a1aa" />
+              </marker>
+              <marker
+                id="branch-arrow"
+                viewBox="0 0 10 10"
+                refX="10"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#d4d4d8" />
+              </marker>
             </defs>
+            {/* Thread/branch connection lines (behind other connections) */}
+            {cs.showThreads &&
+              (cs.connections ?? [])
+                .filter((c) => c.label === 'thread' || c.label === 'branch')
+                .map((c, i) => {
+                  const from = cs.getCenter(c.from),
+                    to = cs.getCenter(c.to);
+                  if (from.x === 0 && from.y === 0 && to.x === 0 && to.y === 0) return null;
+                  const isThread = c.label === 'thread';
+                  return (
+                    <line
+                      key={`th-${i}`}
+                      x1={from.x}
+                      y1={from.y}
+                      x2={to.x}
+                      y2={to.y}
+                      stroke={c.color || '#a1a1aa'}
+                      strokeWidth={1}
+                      strokeOpacity={0.5}
+                      strokeDasharray={isThread ? '6 4' : '3 6'}
+                      markerEnd={isThread ? 'url(#thread-arrow)' : 'url(#branch-arrow)'}
+                      style={{ transition: 'all 0.15s' }}
+                    />
+                  );
+                })}
             {/* Connection lines */}
-            {(cs.connections ?? []).map((c, i) => {
-              const from = cs.getCenter(c.from),
-                to = cs.getCenter(c.to);
-              if (from.x === 0 && from.y === 0 && to.x === 0 && to.y === 0) return null;
-              const hl = cs.hovered && (c.from === cs.hovered || c.to === cs.hovered);
-              return (
-                <line
-                  key={`c-${i}`}
-                  x1={from.x}
-                  y1={from.y}
-                  x2={to.x}
-                  y2={to.y}
-                  stroke={c.color || '#94a3b8'}
-                  strokeWidth={hl ? 2 : 1}
-                  strokeOpacity={cs.hovered ? (hl ? 0.7 : 0.08) : 0.25}
-                  strokeDasharray={c.color === '#94a3b8' ? '4 4' : 'none'}
-                  style={{ transition: 'all 0.15s' }}
-                />
-              );
-            })}
+            {(cs.connections ?? [])
+              .filter((c) => c.label !== 'thread' && c.label !== 'branch')
+              .map((c, i) => {
+                const from = cs.getCenter(c.from),
+                  to = cs.getCenter(c.to);
+                if (from.x === 0 && from.y === 0 && to.x === 0 && to.y === 0) return null;
+                const hl = cs.hovered && (c.from === cs.hovered || c.to === cs.hovered);
+                return (
+                  <line
+                    key={`c-${i}`}
+                    x1={from.x}
+                    y1={from.y}
+                    x2={to.x}
+                    y2={to.y}
+                    stroke={c.color || '#94a3b8'}
+                    strokeWidth={hl ? 2 : 1}
+                    strokeOpacity={cs.hovered ? (hl ? 0.7 : 0.08) : 0.25}
+                    strokeDasharray={c.color === '#94a3b8' ? '4 4' : 'none'}
+                    style={{ transition: 'all 0.15s' }}
+                  />
+                );
+              })}
             {/* Active connection drag line */}
             {cs.connecting &&
               (() => {

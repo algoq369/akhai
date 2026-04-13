@@ -30,6 +30,8 @@ interface CanvasToolbarProps {
   onSwitchToClassic?: () => void;
   onDeleteSelected: () => void;
   onGenerate: (type: VizType) => void;
+  showThreads?: boolean;
+  setShowThreads?: (v: boolean) => void;
 }
 
 const TOOLS = [
@@ -70,6 +72,8 @@ export function CanvasToolbar({
   onSwitchToClassic,
   onDeleteSelected,
   onGenerate,
+  showThreads = true,
+  setShowThreads,
 }: CanvasToolbarProps) {
   const hasQueries = nodes.filter((n) => n.type === 'query').length > 0;
 
@@ -142,6 +146,25 @@ export function CanvasToolbar({
             />
           ))}
         </div>
+      )}
+
+      {/* Thread toggle */}
+      {setShowThreads && (
+        <button
+          onClick={() => setShowThreads(!showThreads)}
+          style={{
+            fontSize: 9,
+            padding: '3px 7px',
+            borderRadius: 3,
+            border: showThreads ? '1px solid #a1a1aa' : '1px solid transparent',
+            background: showThreads ? '#a1a1aa10' : 'transparent',
+            color: showThreads ? '#71717a' : '#cbd5e1',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          threads
+        </button>
       )}
 
       <div style={{ width: 1, height: 14, background: '#e2e8f0', margin: '0 2px' }} />

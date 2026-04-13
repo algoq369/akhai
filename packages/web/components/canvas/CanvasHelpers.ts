@@ -32,6 +32,7 @@ export interface Connection {
   from: string;
   to: string;
   color: string;
+  label?: string;
 }
 export interface DrawPoint {
   x: number;

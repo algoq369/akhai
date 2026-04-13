@@ -46,6 +46,8 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
   const [currentStroke, setCurrentStroke] = useState<DrawPoint[] | null>(null);
   const [pencilColor, setPencilColor] = useState('#1e293b');
 
+  const [showThreads, setShowThreads] = useState(true);
+
   const weights = useLayerStore((s) => s.weights);
   const activePreset = useLayerStore((s) => s.activePreset);
 
@@ -67,7 +69,7 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
         y: 40 + i * 170,
         w: 320,
         h: 150,
-        data: { ...card, methodology: card.methodology || 'auto' },
+        data: { ...card, methodology: card.methodology || 'auto', threadIndex: i },
       });
       const topics = extractTopics(card.response);
       topics.forEach((topic) => {
@@ -97,6 +99,32 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
         newConns.push({ from: qId, to: topicMap[tKey].nodeId, color: getTopicColor(topic) });
       });
     });
+    // Thread connections: link consecutive query nodes
+    for (let idx = 1; idx < queryCards.length; idx++) {
+      const prevId = `q-${queryCards[idx - 1].id}`;
+      const currId = `q-${queryCards[idx].id}`;
+      // Simple keyword extraction for branch detection
+      const getKeywords = (text: string) => {
+        const words = text.toLowerCase().match(/[a-z]{4,}/g) || [];
+        return new Set(words);
+      };
+      const prevKeywords = getKeywords(
+        queryCards[idx - 1].query + ' ' + queryCards[idx - 1].response
+      );
+      const currKeywords = getKeywords(queryCards[idx].query + ' ' + queryCards[idx].response);
+      let shared = 0;
+      prevKeywords.forEach((w) => {
+        if (currKeywords.has(w)) shared++;
+      });
+      const isBranch = shared === 0;
+      newConns.push({
+        from: prevId,
+        to: currId,
+        color: isBranch ? '#d4d4d8' : '#a1a1aa',
+        label: isBranch ? 'branch' : 'thread',
+      });
+    }
+
     newNodes.push({
       id: 'cfg',
       type: 'config',
@@ -416,6 +444,8 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
     nodes,
     setNodes,
     connections,
+    showThreads,
+    setShowThreads,
     pan,
     setPan,
     zoom,
