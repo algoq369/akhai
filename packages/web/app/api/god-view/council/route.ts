@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
             agentId: perspectiveAgents[i].id,
             text: isCreditError(s.reason)
               ? `${perspectiveAgents[i].name} perspective unavailable — API credits exhausted`
-              : `${perspectiveAgents[i].name} perspective skipped — ${perspectiveAgents[i].provider} provider not configured`,
+              : `${perspectiveAgents[i].name} perspective skipped — ${s.reason instanceof Error ? s.reason.message : String(s.reason)}`,
             latencyMs: 0,
             cost: 0,
           }
