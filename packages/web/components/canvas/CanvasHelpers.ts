@@ -196,12 +196,36 @@ const STOP_WORDS = new Set([
   'Note','Example','Case','Point','Part','Form','Type','Kind','Sort','Way',
   'Time','Year','Month','Week','Day','Hour','Minute','Number','Amount','Level',
   'Rate','Percent','Billion','Million','Thousand','Hundred',
+  // Months + days
+  'January','February','March','April','May','June','July','August','September','October','November','December',
+  'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Today','Tomorrow','Yesterday',
+  // Common adjectives/participles that slip through
+  'Connected','Algorithmic','Interference','Detailed','Advanced','Traditional','Significant',
+  'Fundamental','Substantial','Comprehensive','Established','Distributed','Decentralized',
+  'Centralized','Integrated','Automated','Sophisticated','Dedicated','Associated','Related',
+  'Combined','Proposed','Designed','Developed','Introduced','Implemented','Maintained',
+  'Increased','Decreased','Improved','Enhanced','Expanded','Extended','Reduced','Limited',
+  'Applied','Defined','Described','Observed','Measured','Estimated','Calculated','Determined',
+  'Considered','Recognized','Identified','Classified','Characterized','Distinguished',
+  'Parallel','Sequential','Recursive','Iterative','Abstract','Concrete','Relative','Absolute',
+  'Constant','Variable','Direct','Indirect','Explicit','Implicit','Formal','Informal',
+  'Positive','Negative','Active','Passive','Simple','Complex','Basic','Fundamental',
+  'Theoretical','Practical','Experimental','Empirical','Analytical','Numerical','Statistical',
 ]);
+
+const ADJECTIVE_ENDINGS = /^[A-Z][a-z]+(ing|tion|ment|ness|ance|ence|ible|able|ious|eous|ular|ical|ated|ized|ised|ying|ful|less|ive|ous|ant|ent)$/;
 
 export function extractTopics(text: string): string[] {
   const words = text.match(/[A-Z][a-z]+(?:\s[A-Z][a-z]+)*/g) || [];
   return [...new Set(words)]
-    .filter((w) => w.length > 4 && !STOP_WORDS.has(w.split(' ')[0]) && !STOP_WORDS.has(w))
+    .filter((w) => {
+      if (w.length < 5) return false;
+      const firstWord = w.split(' ')[0];
+      if (STOP_WORDS.has(firstWord) || STOP_WORDS.has(w)) return false;
+      // Single words that look like generic adjectives/gerunds — filter out
+      if (!w.includes(' ') && ADJECTIVE_ENDINGS.test(w)) return false;
+      return true;
+    })
     .slice(0, 5);
 }
 
