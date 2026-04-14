@@ -139,8 +139,14 @@ export async function runFusionPipeline(
   }
 
   try {
-    // Create instinct config (auto-detect lenses from query)
-    const effectiveInstinctConfig = instinctConfig || createAutoInstinctConfig(query, 0.5, weights);
+    // Only use instinct mode when user explicitly toggled it ON
+    const effectiveInstinctConfig = instinctConfig || {
+      enabled: false,
+      activeLenses: [],
+      depth: 'standard' as const,
+      includeLayers: false,
+      includeYechidah: false,
+    };
 
     // Run Intelligence Fusion
     fusionResult = await fuseIntelligence(query, weights, effectiveInstinctConfig, {
