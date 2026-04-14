@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { COUNCIL_AGENTS, type CouncilAgent } from '@/lib/god-view/agents';
-import { callProvider, isProviderAvailable } from '@/lib/multi-provider-api';
+import { callProvider } from '@/lib/multi-provider-api';
 import type { ProviderFamily } from '@/lib/provider-selector';
 
 export const dynamic = 'force-dynamic';
@@ -17,9 +17,10 @@ function isCreditError(err: unknown): boolean {
 
 /** Call a single council agent, falling back to anthropic if provider unavailable. */
 async function callAgent(agent: CouncilAgent, context: string) {
-  const available = isProviderAvailable(agent.provider as ProviderFamily);
-  const provider: ProviderFamily = available ? (agent.provider as ProviderFamily) : 'anthropic';
-  const model = available ? agent.model : 'claude-sonnet-4-6';
+  // Direct env check — bypasses module caching issues with isProviderAvailable
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const provider: ProviderFamily = anthropicKey ? 'anthropic' : (agent.provider as ProviderFamily);
+  const model = anthropicKey ? 'claude-sonnet-4-6' : agent.model;
 
   const result = await callProvider(provider, {
     messages: [
