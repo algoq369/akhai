@@ -166,3 +166,4 @@ packages/stdlib/
 packages/web/STDLIB_MIGRATION.md
 packages/web/lib/methodology-runner.ts
 packages/web/lib/resilient-provider.ts
+.claude/
