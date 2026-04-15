@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { getLayerColorForAnnotation } from '@/lib/layer-colors'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getLayerColorForAnnotation } from '@/lib/layer-colors';
 
 interface DepthSigilProps {
-  content: string
-  term: string
+  content: string;
+  term: string;
 }
 
 export function DepthSigil({ content, term }: DepthSigilProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const layers = getLayerColorForAnnotation(content)
+  const [isExpanded, setIsExpanded] = useState(false);
+  const layers = getLayerColorForAnnotation(content);
 
   return (
     <span className="inline-flex flex-col items-start">
@@ -19,10 +19,10 @@ export function DepthSigil({ content, term }: DepthSigilProps) {
         {/* Clickable Colored Sigil */}
         <button
           onClick={(e) => {
-            e.stopPropagation()
-            setIsExpanded(!isExpanded)
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
           }}
-          className="depth-sigil inline-flex items-center justify-center w-3 h-3 mx-0.5 cursor-pointer transition-all hover:scale-125"
+          className="depth-sigil inline-flex items-center justify-center w-3.5 h-3.5 mx-0.5 text-[13px] cursor-pointer transition-all opacity-70 hover:opacity-100 hover:scale-125"
           style={{ color: layers.color }}
           title={`${layers.name} - ${layers.meaning}. Click to ${isExpanded ? 'collapse' : 'expand'}`}
         >
@@ -41,11 +41,14 @@ export function DepthSigil({ content, term }: DepthSigilProps) {
             className="block ml-4 mt-0.5 text-[8px] text-slate-500 leading-relaxed max-w-[850px] font-normal"
             style={{ color: '#64748b' }}
           >
-            └─ <span className="text-[8px]" style={{ color: layers.color }}>{layers.shape}</span>{' '}
+            └─{' '}
+            <span className="text-[8px]" style={{ color: layers.color }}>
+              {layers.shape}
+            </span>{' '}
             <span className="text-slate-500">{content}</span>
           </motion.span>
         )}
       </AnimatePresence>
     </span>
-  )
+  );
 }

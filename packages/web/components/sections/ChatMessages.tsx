@@ -11,6 +11,7 @@ import { shouldShowMindmap } from '@/components/ResponseMindmap';
 import GuardWarning from '@/components/GuardWarning';
 import ProcessingIndicator from '@/components/ProcessingIndicator';
 import { DepthText } from '@/components/DepthAnnotation';
+import ResponseRenderer from '@/components/ResponseRenderer';
 import MetadataStrip from '@/components/MetadataStrip';
 import { InlineConsole } from '@/components/ConversationConsole';
 import ResponseMindmap from '@/components/ResponseMindmap';
@@ -261,39 +262,19 @@ export default function ChatMessages({
                     {/* TEXT - Always shown after visualizations (skip if streaming with no content) */}
                     {message.isStreaming && !message.content ? (
                       <ProcessingIndicator messageId={message.id} isVisible={true} />
-                    ) : depthConfig.enabled &&
-                      messageAnnotations[message.id] &&
-                      messageAnnotations[message.id].length > 0 ? (
-                      <DepthText
-                        text={message.content}
-                        annotations={messageAnnotations[message.id]}
-                        config={depthConfig}
-                        className="text-relic-slate leading-relaxed text-sm"
-                        onExpand={(query) => {
-                          // When user clicks an expandable annotation, set it as the query
-                          setQuery(query);
-                        }}
-                      />
                     ) : (
-                      <div className="text-relic-slate leading-relaxed whitespace-pre-wrap text-sm">
-                        {message.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part, idx) => {
-                          // Check if this part is a URL
-                          if (/^https?:\/\//.test(part)) {
-                            return (
-                              <a
-                                key={idx}
-                                href={part}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-relic-slate dark:text-white underline hover:text-relic-void dark:hover:text-relic-ghost transition-colors"
-                              >
-                                {part}
-                              </a>
-                            );
-                          }
-                          return <span key={idx}>{part}</span>;
-                        })}
-                      </div>
+                      <ResponseRenderer
+                        content={message.content}
+                        dominantLayer={
+                          (message as any).metadata?.fusion?.dominantLayers?.[0] ||
+                          message.gnostic?.layerAnalysis?.dominant ||
+                          undefined
+                        }
+                        annotations={messageAnnotations[message.id]}
+                        depthConfig={depthConfig}
+                        onExpand={(query) => setQuery(query)}
+                        className="text-relic-slate"
+                      />
                     )}
 
                     {/* Metadata Thought Stream — real-time pipeline stage */}
