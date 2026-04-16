@@ -293,6 +293,62 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
     },
   },
 
+  // PERSON NAMES: Detect named individuals with role context for biographical hints
+  {
+    type: 'detail',
+    patterns: [
+      // Role + Name: 'president Jean-Claude Trichet', 'CEO Sam Altman'
+      /\b(?:president|chairman|director|minister|chancellor|governor|CEO|CTO|CFO|founder|secretary|ambassador|commissioner|professor|admiral|general|commander|prince|king|queen)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})/gi,
+      // Name + Role: 'Jean-Claude Trichet, former ECB president'
+      /([A-Z][a-z]+(?:[-\s][A-Z][a-z]+){1,3}),?\s+(?:former|current|then|acting|ex-)?\s*(?:president|chairman|director|minister|CEO|CTO|CFO|founder|secretary|governor|head)\b/gi,
+      // Possessive name pattern: 'Van Rompuy's EU presidency', 'Trichet's tenure'
+      /([A-Z][a-z]+(?:[-\s][A-Z][a-z]+){0,2})'s\s+(?:EU|UN|NATO|IMF|WEF|ECB|WHO|presidency|tenure|leadership|administration|reign|era)\b/gi,
+      // 'chaired by Name', 'led by Name', 'attended by Name'
+      /(?:chaired|led|headed|founded|created|attended|joined|appointed)\s+(?:by|previously\s+by)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})/gi,
+    ],
+    extractor: (match, context) => {
+      const fullMatch = match[0];
+      // Extract the actual name (first capture group or derive from match)
+      const name = (match[1] || '').trim();
+      if (!name || name.length < 4) return null;
+
+      // Extract surrounding role context (±100 chars around the match)
+      const matchPos = context.indexOf(fullMatch);
+      const start = Math.max(0, matchPos - 100);
+      const end = Math.min(context.length, matchPos + fullMatch.length + 100);
+      const surrounding = context.substring(start, end).replace(/\n/g, ' ').trim();
+
+      // Build biographical hint from context
+      const roleMatch = fullMatch.match(
+        /(?:president|chairman|director|minister|chancellor|governor|CEO|CTO|CFO|founder|secretary|ambassador|commissioner|professor|head|leader)/i
+      );
+      const role = roleMatch ? roleMatch[0] : 'notable figure';
+
+      const orgMatch = surrounding.match(
+        /(?:of|at|for)\s+(?:the\s+)?([A-Z][A-Za-z\s&]+?)(?:\s*[,.\-—(]|$)/
+      );
+      const org = orgMatch ? orgMatch[1].trim() : '';
+
+      const timeMatch = surrounding.match(
+        /\b(19\d{2}|20\d{2})(?:\s*[-–]\s*(19\d{2}|20\d{2}|present))?\b/
+      );
+      const period = timeMatch
+        ? timeMatch[2]
+          ? `${timeMatch[1]}–${timeMatch[2]}`
+          : timeMatch[1]
+        : '';
+
+      const content = `${name} — ${role}${org ? ' of ' + org : ''}${period ? ' (' + period + ')' : ''}. Mentioned in context of ${surrounding.substring(0, 80).trim()}…`;
+
+      return {
+        content,
+        confidence: 0.9,
+        expandable: true,
+        expandQuery: `Who is ${name}? Biography, career, and significance`,
+      };
+    },
+  },
+
   // FACTS: Named entities, dates, definitions
   {
     type: 'fact',
