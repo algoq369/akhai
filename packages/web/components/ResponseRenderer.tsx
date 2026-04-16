@@ -152,23 +152,23 @@ function extractTables(text: string): { text: string; tables: TableData[] } {
   const tableRegex = /^\|(.+)\|\s*\n\|([\s\-:|]+)\|\s*\n((?:\|.+\|\s*\n?)+)/gm;
 
   const modifiedText = text.replace(tableRegex, (match, headerRow, _sep, bodyRows) => {
-    const headers = headerRow
-      .split('|')
-      .map((c: string) => c.trim())
-      .filter(Boolean);
+    // Consistent parseRow: strip only | wrapper, preserve interior empty cells
+    const parseRow = (line: string): string[] =>
+      line
+        .replace(/^\||\|\s*$/g, '')
+        .split('|')
+        .map((c: string) => c.trim());
+
+    const headers = parseRow(headerRow);
     const rows = bodyRows
       .trim()
       .split('\n')
-      .map((line: string) =>
-        line
-          .replace(/^\||\|$/g, '')
-          .split('|')
-          .map((c: string) => c.trim())
-      )
+      .map(parseRow)
       .filter((row: string[]) => row.length === headers.length);
 
     if (headers.length >= 2 && rows.length >= 1) {
-      const placeholder = `__TABLE_${tables.length}__`;
+      // Wrap in newlines so placeholder sits on its own paragraph
+      const placeholder = `\n\n__TABLE_${tables.length}__\n\n`;
       tables.push({ headers, rows });
       return placeholder;
     }
