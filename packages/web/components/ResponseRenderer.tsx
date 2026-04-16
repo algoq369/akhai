@@ -142,6 +142,42 @@ function stripMarkdown(text: string): string {
   );
 }
 
+interface TableData {
+  headers: string[];
+  rows: string[][];
+}
+
+function extractTables(text: string): { text: string; tables: TableData[] } {
+  const tables: TableData[] = [];
+  const tableRegex = /^\|(.+)\|\s*\n\|([\s\-:|]+)\|\s*\n((?:\|.+\|\s*\n?)+)/gm;
+
+  const modifiedText = text.replace(tableRegex, (match, headerRow, _sep, bodyRows) => {
+    const headers = headerRow
+      .split('|')
+      .map((c: string) => c.trim())
+      .filter(Boolean);
+    const rows = bodyRows
+      .trim()
+      .split('\n')
+      .map((line: string) =>
+        line
+          .replace(/^\||\|$/g, '')
+          .split('|')
+          .map((c: string) => c.trim())
+      )
+      .filter((row: string[]) => row.length === headers.length);
+
+    if (headers.length >= 2 && rows.length >= 1) {
+      const placeholder = `__TABLE_${tables.length}__`;
+      tables.push({ headers, rows });
+      return placeholder;
+    }
+    return match;
+  });
+
+  return { text: modifiedText, tables };
+}
+
 const DENYLIST_TITLES = /^(RELATED|NEXT|FINAL ANSWER|SUGGESTED|FOLLOW[\s-]?UP)$/i;
 
 function parseIntoSections(text: string): { title: string | null; body: string }[] {
@@ -273,6 +309,43 @@ function splitEntityParagraphs(
   return result;
 }
 
+// ============ TABLE COMPONENT ============
+
+function MarkdownTable({ data }: { data: TableData }) {
+  return (
+    <div className="my-4 overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
+            {data.headers.map((h, i) => (
+              <th
+                key={i}
+                className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-zinc-600 dark:text-zinc-400"
+              >
+                {stripMarkdown(h)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.rows.map((row, rIdx) => (
+            <tr
+              key={rIdx}
+              className={`border-b border-zinc-100 dark:border-zinc-800/50 ${rIdx % 2 === 0 ? '' : 'bg-zinc-50/30 dark:bg-zinc-900/20'}`}
+            >
+              {row.map((cell, cIdx) => (
+                <td key={cIdx} className="px-3 py-2 text-zinc-700 dark:text-zinc-300 align-top">
+                  {stripMarkdown(cell)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ============ COMPONENT ============
 
 interface ResponseRendererProps {
@@ -292,7 +365,8 @@ export default function ResponseRenderer({
   onExpand,
   className,
 }: ResponseRendererProps) {
-  const sections = useMemo(() => parseIntoSections(content), [content]);
+  const { text: textWithoutTables, tables } = useMemo(() => extractTables(content), [content]);
+  const sections = useMemo(() => parseIntoSections(textWithoutTables), [textWithoutTables]);
 
   return (
     <div className={className}>
@@ -333,24 +407,31 @@ export default function ResponseRenderer({
                 </span>
               </div>
             )}
-            {paragraphs.map((para, pIdx) => (
-              <div
-                key={pIdx}
-                className={`text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed ${pIdx > 0 ? 'mt-3' : ''}`}
-              >
-                {annotations && annotations.length > 0 ? (
-                  <DepthText
-                    text={para}
-                    annotations={annotations.filter((a) => para.includes(a.term || ''))}
-                    config={depthConfig || { ...DEFAULT_DEPTH_CONFIG, enabled: true }}
-                    className=""
-                    onExpand={onExpand}
-                  />
-                ) : (
-                  para
-                )}
-              </div>
-            ))}
+            {paragraphs.map((para, pIdx) => {
+              const tableMatch = para.match(/^__TABLE_(\d+)__$/);
+              if (tableMatch) {
+                const tableData = tables[parseInt(tableMatch[1])];
+                if (tableData) return <MarkdownTable key={pIdx} data={tableData} />;
+              }
+              return (
+                <div
+                  key={pIdx}
+                  className={`text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed ${pIdx > 0 ? 'mt-3' : ''}`}
+                >
+                  {annotations && annotations.length > 0 ? (
+                    <DepthText
+                      text={para}
+                      annotations={annotations.filter((a) => para.includes(a.term || ''))}
+                      config={depthConfig || { ...DEFAULT_DEPTH_CONFIG, enabled: true }}
+                      className=""
+                      onExpand={onExpand}
+                    />
+                  ) : (
+                    para
+                  )}
+                </div>
+              );
+            })}
             {idx < sections.length - 1 && (
               <div className="mt-4 border-t border-zinc-100 dark:border-zinc-800" />
             )}
