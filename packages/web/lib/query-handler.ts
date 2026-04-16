@@ -8,6 +8,7 @@ import {
 import type { ModelFamily } from '@akhai/core';
 import { createTracker } from '@/lib/stdlib/tracker';
 import { createContext } from '@/lib/stdlib/context';
+import { UNIVERSAL_STRUCTURE_INSTRUCTION } from './prompts/structure-instruction';
 
 // Methodology-specific instruction prefixes
 // These create distinct execution paths for each methodology
@@ -20,6 +21,9 @@ Follow this iterative refinement process:
 4. FINAL: Present polished, verified response
 
 Show all drafts explicitly.
+
+${UNIVERSAL_STRUCTURE_INSTRUCTION}
+
 ---
 USER QUERY: `,
 
@@ -30,6 +34,9 @@ Follow this decomposition process:
 3. CONTRACT: Synthesize atoms into unified response
 
 Show your decomposition and synthesis explicitly.
+
+${UNIVERSAL_STRUCTURE_INSTRUCTION}
+
 ---
 USER QUERY: `,
 
@@ -41,6 +48,9 @@ Sample multiple reasoning paths and take majority vote:
 4. CONSENSUS: Take the majority answer across paths
 
 Show all reasoning paths explicitly.
+
+${UNIVERSAL_STRUCTURE_INSTRUCTION}
+
 ---
 USER QUERY: `,
 };
@@ -180,6 +190,8 @@ Write in a direct, humble, data-grounded voice:
 - Focus on actionable insights
 
 FORBIDDEN: "Great question!", "Absolutely!", "I'd be happy to...", "Revolutionary", excessive hedging.
+
+${UNIVERSAL_STRUCTURE_INSTRUCTION}
 
 Respond directly and accurately. Use conversation context when relevant.`,
         });

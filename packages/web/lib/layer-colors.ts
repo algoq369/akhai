@@ -4,12 +4,12 @@
  */
 
 export interface LayerColorInfo {
-  name: string
-  hebrew: string
-  meaning: string
-  color: string
-  shape: string
-  annotationType: string
+  name: string;
+  hebrew: string;
+  meaning: string;
+  color: string;
+  shape: string;
+  annotationType: string;
 }
 
 export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
@@ -19,7 +19,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Crown',
     color: '#9333EA', // Deep Purple
     shape: '◊',
-    annotationType: 'meta-insight'
+    annotationType: 'meta-insight',
   },
   reasoning: {
     name: 'Reasoning',
@@ -27,7 +27,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Wisdom',
     color: '#3B82F6', // Blue
     shape: '→',
-    annotationType: 'strategic-fact'
+    annotationType: 'strategic-fact',
   },
   encoder: {
     name: 'Encoder',
@@ -35,7 +35,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Understanding',
     color: '#1E40AF', // Dark Blue
     shape: '△',
-    annotationType: 'pattern'
+    annotationType: 'pattern',
   },
   expansion: {
     name: 'Expansion',
@@ -43,7 +43,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Mercy',
     color: '#60A5FA', // Light Blue
     shape: '⊕',
-    annotationType: 'context'
+    annotationType: 'context',
   },
   discriminator: {
     name: 'Discriminator',
@@ -51,7 +51,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Severity',
     color: '#DC2626', // Red
     shape: '△',
-    annotationType: 'critical-metric'
+    annotationType: 'critical-metric',
   },
   attention: {
     name: 'Attention',
@@ -59,7 +59,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Beauty',
     color: '#F59E0B', // Amber
     shape: '○',
-    annotationType: 'synthesis'
+    annotationType: 'synthesis',
   },
   generative: {
     name: 'Generative',
@@ -67,7 +67,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Victory',
     color: '#10B981', // Emerald
     shape: '→',
-    annotationType: 'innovation'
+    annotationType: 'innovation',
   },
   classifier: {
     name: 'Classifier',
@@ -75,7 +75,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Glory',
     color: '#F97316', // Orange
     shape: '○',
-    annotationType: 'data-point'
+    annotationType: 'data-point',
   },
   executor: {
     name: 'Executor',
@@ -83,7 +83,7 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Foundation',
     color: '#8B5CF6', // Violet
     shape: '○',
-    annotationType: 'implementation'
+    annotationType: 'implementation',
   },
   embedding: {
     name: 'Embedding',
@@ -91,61 +91,92 @@ export const LAYER_COLOR_MAP: Record<string, LayerColorInfo> = {
     meaning: 'Kingdom',
     color: '#78716C', // Stone
     shape: '○',
-    annotationType: 'raw-data'
-  }
-}
+    annotationType: 'raw-data',
+  },
+};
 
 /**
  * Get Layers layer by annotation type
  */
 export function getLayerColorForAnnotation(content: string): LayerColorInfo {
-  const contentLower = content.toLowerCase()
+  const contentLower = content.toLowerCase();
 
   // Meta-cognitive insights (Meta-Core)
   if (/paradigm|revolutionary|fundamental\s+shift|meta-|redefin|transform/i.test(contentLower)) {
-    return LAYER_COLOR_MAP.metaCore
+    return LAYER_COLOR_MAP.metaCore;
   }
 
   // Critical metrics (Discriminator)
-  if (/\$[\d,]+[KMB]|\d+%|\d+x\s+(?:faster|slower|more)|valuation|revenue|growth/i.test(contentLower)) {
-    return LAYER_COLOR_MAP.discriminator
+  if (
+    /\$[\d,]+[KMB]|\d+%|\d+x\s+(?:faster|slower|more)|valuation|revenue|growth/i.test(contentLower)
+  ) {
+    return LAYER_COLOR_MAP.discriminator;
   }
 
   // Strategic facts (Reasoning)
   if (/first|leader|pioneer|dominant|advantage|strategy|position/i.test(contentLower)) {
-    return LAYER_COLOR_MAP.reasoning
+    return LAYER_COLOR_MAP.reasoning;
   }
 
   // Innovation/Breakthrough (Generative)
   if (/breakthrough|novel|innovative|unique|unprecedented|achievement/i.test(contentLower)) {
-    return LAYER_COLOR_MAP.generative
+    return LAYER_COLOR_MAP.generative;
   }
 
   // Pattern recognition (Encoder)
   if (/similar\s+to|compared\s+to|like|cycle|pattern|historical|trend/i.test(contentLower)) {
-    return LAYER_COLOR_MAP.encoder
+    return LAYER_COLOR_MAP.encoder;
   }
 
   // Synthesis (Attention)
   if (/combin|integrat|merg|unif|synthesis|balanc/i.test(contentLower)) {
-    return LAYER_COLOR_MAP.attention
+    return LAYER_COLOR_MAP.attention;
   }
 
   // Data points (Classifier)
-  if (/\d+\s+(?:users|downloads|customers|subscribers)|data\s+shows|statistics/i.test(contentLower)) {
-    return LAYER_COLOR_MAP.classifier
+  if (
+    /\d+\s+(?:users|downloads|customers|subscribers)|data\s+shows|statistics/i.test(contentLower)
+  ) {
+    return LAYER_COLOR_MAP.classifier;
   }
 
   // Implementation details (Executor)
   if (/built\s+on|uses|implements|based\s+on|architecture|framework|api/i.test(contentLower)) {
-    return LAYER_COLOR_MAP.executor
+    return LAYER_COLOR_MAP.executor;
   }
 
   // Context (Expansion)
   if (/context|background|originated|developed\s+by|founded/i.test(contentLower)) {
-    return LAYER_COLOR_MAP.expansion
+    return LAYER_COLOR_MAP.expansion;
+  }
+
+  // Brand/product names (Classifier — orange)
+  if (
+    /\b(OpenAI|Anthropic|Google|DeepMind|Meta|Microsoft|Apple|Amazon|Tesla|xAI|Mistral|Cohere|Claude|GPT|Gemini|Llama|Grok|ChatGPT|AlphaFold|AlphaGo|Aadhaar|Copilot)\b/i.test(
+      content
+    )
+  ) {
+    return LAYER_COLOR_MAP.classifier;
+  }
+
+  // Technical terms (Executor — purple)
+  if (
+    /\b(API|SDK|algorithm|framework|protocol|architecture|deployment|infrastructure|pipeline|model|training|inference)\b/i.test(
+      content
+    )
+  ) {
+    return LAYER_COLOR_MAP.executor;
+  }
+
+  // Countries/regions (Encoder — indigo)
+  if (
+    /\b(India|China|USA|Europe|Africa|Japan|Singapore|Brazil|Russia|UK|Germany|France)\b/i.test(
+      content
+    )
+  ) {
+    return LAYER_COLOR_MAP.encoder;
   }
 
   // Default: Raw data (Embedding)
-  return LAYER_COLOR_MAP.embedding
+  return LAYER_COLOR_MAP.embedding;
 }

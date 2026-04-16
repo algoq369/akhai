@@ -4,6 +4,7 @@
  */
 
 import { logger, log } from '@/lib/logger';
+import { UNIVERSAL_STRUCTURE_INSTRUCTION } from './prompts/structure-instruction';
 
 // ============================================================================
 // CRYPTO QUERY CHECK
@@ -273,6 +274,9 @@ export function getMethodologyPrompt(
   const enhancementSection =
     '\n\nAfter your response, add:\n[RELATED]: 2-3 topics that naturally extend this discussion\n[NEXT]: The single most valuable follow-up question';
 
+  // Universal structure instruction for colored section rendering
+  const structureSection = `\n\n${UNIVERSAL_STRUCTURE_INSTRUCTION}`;
+
   // Add page context if provided
   const contextSection = pageContext
     ? `\n\n**CURRENT PAGE CONTEXT:**\nThe user is currently viewing or working with the following content:\n${pageContext}\n\nWhen the user asks about "this", "it", "the subject", or refers to something without specifying, they are likely referring to the content above. Use this context to understand their queries and provide relevant responses.`
@@ -280,26 +284,26 @@ export function getMethodologyPrompt(
 
   switch (methodology) {
     case 'direct':
-      return `${baseIdentity}${writingStyle}\n\nProvide direct, factual answers. Be concise yet complete. Lead with the core answer, then support with essential facts.${enhancementSection}${contextSection}`;
+      return `${baseIdentity}${writingStyle}${structureSection}\n\nProvide direct, factual answers. Be concise yet complete. Lead with the core answer, then support with essential facts.${enhancementSection}${contextSection}`;
 
     case 'cod':
-      return `${baseIdentity}${writingStyle}\n\nUse Chain of Draft (CoD) methodology with visible refinement:\n1. **First Draft**: Initial answer addressing the core question\n2. **Reflection**: Identify weaknesses, gaps, or areas needing improvement (show your step-back logic)\n3. **Second Draft**: Refined answer incorporating improvements\n4. **Final Answer**: Polished, comprehensive response\n\nFormat: [DRAFT 1], [REFLECTION], [DRAFT 2], [FINAL ANSWER]${enhancementSection}${contextSection}`;
+      return `${baseIdentity}${writingStyle}${structureSection}\n\nUse Chain of Draft (CoD) methodology with visible refinement:\n1. **First Draft**: Initial answer addressing the core question\n2. **Reflection**: Identify weaknesses, gaps, or areas needing improvement (show your step-back logic)\n3. **Second Draft**: Refined answer incorporating improvements\n4. **Final Answer**: Polished, comprehensive response\n\nFormat: [DRAFT 1], [REFLECTION], [DRAFT 2], [FINAL ANSWER]${enhancementSection}${contextSection}`;
 
     case 'sc':
-      return `${baseIdentity}${writingStyle}\n\nUse Self-Consistency (SC) methodology (Wang et al., ICLR 2023):\n1. **Path 1**: Reason through the problem one way\n2. **Path 2**: Reason through the problem a different way\n3. **Path 3**: Reason through the problem a third way\n4. **Consensus**: Take the majority answer across paths\n\nFormat: [PATH 1], [PATH 2], [PATH 3], [CONSENSUS: majority vote answer]${enhancementSection}${contextSection}`;
+      return `${baseIdentity}${writingStyle}${structureSection}\n\nUse Self-Consistency (SC) methodology (Wang et al., ICLR 2023):\n1. **Path 1**: Reason through the problem one way\n2. **Path 2**: Reason through the problem a different way\n3. **Path 3**: Reason through the problem a third way\n4. **Consensus**: Take the majority answer across paths\n\nFormat: [PATH 1], [PATH 2], [PATH 3], [CONSENSUS: majority vote answer]${enhancementSection}${contextSection}`;
 
     case 'react':
-      return `${baseIdentity}${writingStyle}\n\nUse ReAct (Reasoning + Acting) methodology:\n1. **Thought**: Analyze what information you need\n2. **Action**: Describe what you would search/lookup (even if simulated)\n3. **Observation**: State what you found or know\n4. **Repeat**: Continue thought-action-observation cycles as needed\n5. **Answer**: Provide final response based on observations\n\nFormat: [THOUGHT 1], [ACTION 1], [OBSERVATION 1], [THOUGHT 2], ... [FINAL ANSWER]${enhancementSection}${contextSection}`;
+      return `${baseIdentity}${writingStyle}${structureSection}\n\nUse ReAct (Reasoning + Acting) methodology:\n1. **Thought**: Analyze what information you need\n2. **Action**: Describe what you would search/lookup (even if simulated)\n3. **Observation**: State what you found or know\n4. **Repeat**: Continue thought-action-observation cycles as needed\n5. **Answer**: Provide final response based on observations\n\nFormat: [THOUGHT 1], [ACTION 1], [OBSERVATION 1], [THOUGHT 2], ... [FINAL ANSWER]${enhancementSection}${contextSection}`;
 
     case 'pas':
-      return `${baseIdentity}${writingStyle}\n\nUse Plan-and-Solve (PaS) methodology (Wang et al., ACL 2023):\n1. **Understand**: Parse the problem and identify what is being asked\n2. **Plan**: Devise a step-by-step plan to solve the problem\n3. **Execute**: Carry out each step of the plan with actual values\n4. **Verify**: Double-check the result against the original problem\n5. **Answer**: Present the final answer with clear explanation\n\nFormat: [UNDERSTAND], [PLAN], [EXECUTE], [VERIFY], [ANSWER]${enhancementSection}${contextSection}`;
+      return `${baseIdentity}${writingStyle}${structureSection}\n\nUse Plan-and-Solve (PaS) methodology (Wang et al., ACL 2023):\n1. **Understand**: Parse the problem and identify what is being asked\n2. **Plan**: Devise a step-by-step plan to solve the problem\n3. **Execute**: Carry out each step of the plan with actual values\n4. **Verify**: Double-check the result against the original problem\n5. **Answer**: Present the final answer with clear explanation\n\nFormat: [UNDERSTAND], [PLAN], [EXECUTE], [VERIFY], [ANSWER]${enhancementSection}${contextSection}`;
 
     case 'tot':
-      return `${baseIdentity}${writingStyle}\n\nUse Tree of Thoughts (TOT) methodology:\n1. **Technical Perspective**: Analyze from implementation/practical angle\n2. **Strategic Perspective**: Consider broader implications and approaches\n3. **Critical Perspective**: Identify potential issues and limitations (show logical step-backs)\n4. **Synthesis**: Combine insights from all perspectives\n5. **Consensus Answer**: Provide balanced, well-rounded response\n\nFormat: [TECHNICAL], [STRATEGIC], [CRITICAL], [SYNTHESIS], [CONSENSUS]${enhancementSection}${contextSection}`;
+      return `${baseIdentity}${writingStyle}${structureSection}\n\nUse Tree of Thoughts (TOT) methodology:\n1. **Technical Perspective**: Analyze from implementation/practical angle\n2. **Strategic Perspective**: Consider broader implications and approaches\n3. **Critical Perspective**: Identify potential issues and limitations (show logical step-backs)\n4. **Synthesis**: Combine insights from all perspectives\n5. **Consensus Answer**: Provide balanced, well-rounded response\n\nFormat: [TECHNICAL], [STRATEGIC], [CRITICAL], [SYNTHESIS], [CONSENSUS]${enhancementSection}${contextSection}`;
 
     case 'auto':
     default:
-      return `${baseIdentity}${writingStyle}\n\nProvide direct, factual answers. Be concise yet complete. Lead with the core answer, then support with essential facts.${enhancementSection}${contextSection}`;
+      return `${baseIdentity}${writingStyle}${structureSection}\n\nProvide direct, factual answers. Be concise yet complete. Lead with the core answer, then support with essential facts.${enhancementSection}${contextSection}`;
   }
 }
 
