@@ -61,20 +61,11 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
       };
     },
   },
-  // GENERIC CONCEPT PHRASES (catch ANY important multi-word terms)
+  // SPECIFIC CONCEPT PHRASES (only high-value named terms)
   {
     type: 'detail',
     patterns: [
-      // PRIORITY 1: Capitalized proper nouns and technical terms (2-4 words)
-      /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\b/g,
-
-      // PRIORITY 2: Technical compound terms (adjective + technical noun)
-      /\b(digital|virtual|augmented|artificial|quantum|neural|cognitive|distributed|decentralized|autonomous|smart|programmable|biometric|renewable|sustainable)\s+([a-z]+(?:\s+[a-z]+){0,2})\b/gi,
-
-      // PRIORITY 3: Multi-word technical phrases (lowercase)
-      /\b([a-z]+[-\s][a-z]+(?:[-\s][a-z]+)?)\s+(interface|system|network|protocol|technology|platform|infrastructure|framework|architecture|mechanism|algorithm|model|strategy|approach|methodology)\b/gi,
-
-      // PRIORITY 4: Specific high-value terms
+      // Specific high-value terms
       /\b(neural\s+interface|brain[-\s]computer\s+interface|BCI)\b/gi,
       /\b(AGI|artificial\s+general\s+intelligence|AI\s+assistant)\b/gi,
       /\b(biosensors?|biometric\s+sensors?)\b/gi,
