@@ -3,8 +3,6 @@
  * Category-specific patterns are in patterns-general.ts, patterns-tech.ts, patterns-science.ts
  */
 
-import type { DepthAnnotation } from '@/lib/depth-annotations';
-import { HEBREW_TERMS, HebrewTermKey } from '@/components/OriginTerm';
 import { GENERAL_PATTERNS, type DetectionPattern } from './patterns-general';
 import { TECH_PATTERNS } from './patterns-tech';
 import { SCIENCE_PATTERNS } from './patterns-science';
@@ -109,37 +107,4 @@ const DETECTION_PATTERNS: DetectionPattern[] = [
   ...REMAINING_PATTERNS,
 ];
 
-// ============ HEBREW/KABBALISTIC TERM DETECTION ============
-
-const KABBALISTIC_TERMS = Object.keys(HEBREW_TERMS);
-
-function detectHebrewTerms(text: string): DepthAnnotation[] {
-  const annotations: DepthAnnotation[] = [];
-
-  for (const termKey of KABBALISTIC_TERMS) {
-    const term = HEBREW_TERMS[termKey as HebrewTermKey];
-    if (!term) continue;
-
-    // Match transliteration (case insensitive)
-    const regex = new RegExp(`\\b${termKey}\\b`, 'gi');
-    let match;
-
-    while ((match = regex.exec(text)) !== null) {
-      annotations.push({
-        id: `hebrew-${termKey}-${match.index}`,
-        type: 'detail',
-        term: match[0],
-        content: `${term.hebrew} · ${term.english}`,
-        position: match.index,
-        confidence: 1.0,
-        expandable: true,
-        expandQuery: `Explain the Kabbalistic concept of ${termKey} and its role in AI`,
-        metadata: { hebrewTerm: termKey },
-      });
-    }
-  }
-
-  return annotations;
-}
-
-export { DETECTION_PATTERNS, type DetectionPattern, detectHebrewTerms };
+export { DETECTION_PATTERNS, type DetectionPattern };

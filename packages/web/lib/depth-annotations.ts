@@ -61,7 +61,7 @@ export const DEPTH_COLORS: Record<AnnotationType, string> = {
 };
 
 // Detection patterns extracted to depth/patterns.ts
-import { DETECTION_PATTERNS, type DetectionPattern, detectHebrewTerms } from '@/lib/depth/patterns';
+import { DETECTION_PATTERNS, type DetectionPattern } from '@/lib/depth/patterns';
 
 // ============ CORE DETECTION ENGINE ============
 
@@ -90,11 +90,6 @@ export function detectAnnotations(
     config.density,
     ')'
   );
-
-  // Detect Hebrew/Kabbalistic terms first (highest priority)
-  if (config.annotationTypes.includes('detail')) {
-    annotations.push(...detectHebrewTerms(text));
-  }
 
   // Run pattern detection
   for (const detector of DETECTION_PATTERNS) {

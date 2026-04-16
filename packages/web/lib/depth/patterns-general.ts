@@ -11,56 +11,6 @@ export interface DetectionPattern {
 }
 
 export const GENERAL_PATTERNS: DetectionPattern[] = [
-  // FREE-TIER TAG PATTERNS ([TECHNICAL], [STRATEGIC], numbered steps, etc.)
-  {
-    type: 'detail',
-    patterns: [
-      /\[(?:TECHNICAL|STRATEGIC|CRITICAL|KEY|SUMMARY|INSIGHT|IMPORTANT|NOTE|CONSENSUS|ANALYSIS)\](?::?\s*)/gi,
-      /\[(?:RELATED|NEXT|IMPACT|RISK|OPPORTUNITY|EXAMPLE|DRAFT\s*\d*|PERSPECTIVE|OVERVIEW)\](?::?\s*)/gi,
-    ],
-    extractor: (match) => {
-      const tag = match[0].replace(/[\[\]:]/g, '').trim();
-      const sigilMap: Record<string, string> = {
-        TECHNICAL: '▽',    // Executor
-        STRATEGIC: '→',    // Reasoning
-        CRITICAL: '◈',     // Discriminator
-        KEY: '◊',          // Meta-Core
-        SUMMARY: '✦',      // Synthesis
-        INSIGHT: '⊕',      // Generative
-        IMPORTANT: '◈',    // Discriminator
-        NOTE: '◊',         // Meta-Core
-        CONSENSUS: '✦',    // Synthesis
-        ANALYSIS: '□',     // Classifier
-        DRAFT: '→',        // Reasoning
-        PERSPECTIVE: '○',  // Expansion
-        OVERVIEW: '○',     // Expansion
-        RELATED: '△',      // Encoder
-        NEXT: '→',         // Reasoning
-        IMPACT: '◈',       // Discriminator
-        RISK: '◈',         // Discriminator
-        OPPORTUNITY: '⊕',  // Generative
-        EXAMPLE: '⊕',      // Generative
-      };
-      return {
-        content: `${sigilMap[tag.toUpperCase()] || '◊'} ${tag}`,
-        confidence: 0.85,
-        expandQuery: `Explain the ${tag.toLowerCase()} aspects in more detail`,
-      };
-    },
-  },
-  {
-    type: 'detail',
-    patterns: [
-      // Numbered steps pattern (1. Step description)
-      /^\d+\.\s+(.{10,80})$/gm,
-    ],
-    extractor: (match) => {
-      return {
-        content: `→ Step progression`,
-        confidence: 0.7,
-      };
-    },
-  },
   // SPECIFIC CONCEPT PHRASES (only high-value named terms)
   {
     type: 'detail',
