@@ -143,9 +143,30 @@ export function detectAnnotations(
     }
   }
 
-  // Sort by position, dedupe overlapping, limit by density
+  // Relevance gate — reject annotations that add no value
+  function isValuableAnnotation(ann: DepthAnnotation): boolean {
+    // 1. Reject if content is just the term repeated (no added info)
+    if (ann.content.toLowerCase().trim() === ann.term.toLowerCase().trim()) return false;
+
+    // 2. Reject if content is too short to be informative
+    if (ann.content.length < 30) return false;
+
+    // 3. Reject if term is inside a markdown header (##, #) — already emphasized
+    const lineStart = text.lastIndexOf('\n', ann.position) + 1;
+    const lineEnd = text.indexOf('\n', ann.position);
+    const line = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+    if (/^#{1,3}\s/.test(line)) return false;
+
+    // 4. Reject if term is inside a bold-wrapped label on its own line
+    if (/^\*\*[A-Z][^*]+\*\*\s*$/.test(line.trim())) return false;
+
+    return true;
+  }
+
+  // Sort by position, dedupe overlapping, filter by relevance, limit by density
   const sorted = annotations
     .sort((a, b) => a.position - b.position)
+    .filter((ann) => isValuableAnnotation(ann))
     .filter((ann, i, arr) => {
       if (i === 0) return true;
       const prev = arr[i - 1];
