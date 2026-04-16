@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export interface MacroResult {
   queryId: string;
   relevant: boolean;
+  strongRelevance?: boolean;
   positions?: any;
   convergence?: any;
   synthesis?: string;
