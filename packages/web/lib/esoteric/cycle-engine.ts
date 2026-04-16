@@ -233,62 +233,9 @@ export function searchLexicon(query: string): LexiconTerm[] {
   );
 }
 
-const RELEVANCE_KEYWORDS = [
-  'war',
-  'peace',
-  'geopolit',
-  'civilization',
-  'empire',
-  'decline',
-  'future',
-  '2030',
-  '2040',
-  '2050',
-  'cycle',
-  'economy',
-  'market',
-  'crisis',
-  'collapse',
-  'global',
-  'world order',
-  'currency',
-  'inflation',
-  'debt',
-  'power',
-  'sovereignty',
-  'ai future',
-  'humanity',
-  'macro',
-  'superpower',
-  'hegemony',
-  'revolution',
-  'demographic',
-  'generation',
-  'millennial',
-  'boomer',
-  'capitalism',
-  'socialism',
-  'paradigm',
-  'institutional',
-  'reserve currency',
-  'dollar',
-  'yuan',
-  'bretton',
-  'cold war',
-  'world war',
-  'nuclear',
-  'climate',
-  'kondratieff',
-  'turchin',
-  'dalio',
-  'strauss',
-  'barbault',
-];
-
-export function detectEsotericRelevance(query: string): boolean {
-  const q = query.toLowerCase();
-  return RELEVANCE_KEYWORDS.some((kw) => q.includes(kw));
-}
+// Keyword list moved to ./relevance.ts (single source of truth, client-safe).
+// Re-export here for backward compatibility with existing imports.
+export { detectEsotericRelevance } from './relevance';
 
 export function getAllLexiconTerms(): LexiconTerm[] {
   return lexicon.terms;
