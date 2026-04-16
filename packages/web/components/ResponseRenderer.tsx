@@ -210,11 +210,19 @@ function splitEntityParagraphs(
     const paragraphs = section.body.split(/\n\n+/).filter((p) => p.trim());
     const entityParas = paragraphs.filter((p) => entityPattern.test(p));
 
-    if (entityParas.length >= 3 && entityParas.length === paragraphs.length) {
-      if (section.title) {
+    // Allow intro paragraph + 3+ entity paragraphs (60% entity threshold)
+    if (entityParas.length >= 3 && entityParas.length / paragraphs.length >= 0.6) {
+      // Keep non-entity intro paragraphs with parent section title
+      const introParas = paragraphs.filter((p) => !entityPattern.test(p));
+      const entityParasOnly = paragraphs.filter((p) => entityPattern.test(p));
+
+      if (introParas.length > 0) {
+        result.push({ title: section.title, body: introParas.join('\n\n') });
+      } else if (section.title) {
         result.push({ title: section.title, body: '' });
       }
-      for (const para of paragraphs) {
+
+      for (const para of entityParasOnly) {
         const match = para.match(entityPattern);
         const entityTitle = match ? match[1].trim() : null;
         const entityBody = match ? para.slice(match[0].length).trim() : para;

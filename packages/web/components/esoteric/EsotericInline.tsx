@@ -16,7 +16,7 @@ export default function EsotericInline({ query, messageId }: EsotericInlineProps
   const isEnabled = useEsotericStore((s) => s.isEnabled);
 
   if (!isEnabled) return null;
-  if (!query || !detectEsotericRelevance(query)) return null;
+  // Show macro card whenever esoteric mode is toggled ON — relevance check removed
 
   const signals = conv.frameworks
     .filter((f) => f.signal.includes('crisis'))

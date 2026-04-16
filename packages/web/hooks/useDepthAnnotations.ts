@@ -1,24 +1,24 @@
-'use client'
+'use client';
 
 /**
  * USE DEPTH ANNOTATIONS HOOK
- * 
+ *
  * React hook for integrating depth annotations with streaming responses.
  * Handles real-time detection, state management, and configuration.
- * 
+ *
  * Usage:
  *   const { annotations, processChunk, config, setConfig } = useDepthAnnotations()
- *   
+ *
  *   // In streaming handler:
  *   onChunk={(chunk) => {
  *     setText(prev => prev + chunk)
  *     processChunk(chunk)
  *   }}
- * 
+ *
  * @module useDepthAnnotations
  */
 
-import React, { useState, useCallback, useRef, createContext, useContext, ReactNode } from 'react'
+import React, { useState, useCallback, useRef, createContext, useContext, ReactNode } from 'react';
 import {
   DepthAnnotation,
   DepthConfig,
@@ -29,111 +29,117 @@ import {
   getDepthConfig,
   saveDepthConfig,
   DEFAULT_DEPTH_CONFIG,
-} from '@/lib/depth-annotations'
+} from '@/lib/depth-annotations';
 
 interface UseDepthAnnotationsOptions {
   /** Initial configuration override */
-  initialConfig?: Partial<DepthConfig>
+  initialConfig?: Partial<DepthConfig>;
   /** User context for connection detection */
   userContext?: {
-    topics?: string[]
-    previousQueries?: string[]
-  }
+    topics?: string[];
+    previousQueries?: string[];
+  };
   /** Callback when new annotations are detected */
-  onAnnotation?: (annotation: DepthAnnotation) => void
+  onAnnotation?: (annotation: DepthAnnotation) => void;
 }
 
 interface UseDepthAnnotationsReturn {
   /** Current annotations */
-  annotations: DepthAnnotation[]
+  annotations: DepthAnnotation[];
   /** Current configuration */
-  config: DepthConfig
+  config: DepthConfig;
   /** Update configuration */
-  setConfig: (config: DepthConfig) => void
+  setConfig: (config: DepthConfig) => void;
   /** Process a streaming chunk */
-  processChunk: (chunk: string) => DepthAnnotation[]
+  processChunk: (chunk: string) => DepthAnnotation[];
   /** Process complete text (non-streaming) */
-  processText: (text: string) => DepthAnnotation[]
+  processText: (text: string) => DepthAnnotation[];
   /** Reset state for new response */
-  reset: () => void
+  reset: () => void;
   /** Is currently processing */
-  isProcessing: boolean
+  isProcessing: boolean;
 }
 
 export function useDepthAnnotations(
   options: UseDepthAnnotationsOptions = {}
 ): UseDepthAnnotationsReturn {
-  const { initialConfig, userContext, onAnnotation } = options
-  
+  const { initialConfig, userContext, onAnnotation } = options;
+
   // Configuration state
   const [config, setConfigState] = useState<DepthConfig>(() => ({
     ...DEFAULT_DEPTH_CONFIG,
     ...getDepthConfig(),
     ...initialConfig,
-  }))
-  
+  }));
+
   // Annotations state
-  const [annotations, setAnnotations] = useState<DepthAnnotation[]>([])
-  const [isProcessing, setIsProcessing] = useState(false)
-  
+  const [annotations, setAnnotations] = useState<DepthAnnotation[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // Streaming state ref (mutable to avoid re-renders during streaming)
-  const streamingState = useRef<StreamingDepthState>(createStreamingDepthState())
-  
+  const streamingState = useRef<StreamingDepthState>(createStreamingDepthState());
+
   // Save config changes
   const setConfig = useCallback((newConfig: DepthConfig) => {
-    setConfigState(newConfig)
-    saveDepthConfig(newConfig)
-  }, [])
-  
+    setConfigState(newConfig);
+    saveDepthConfig(newConfig);
+  }, []);
+
   // Process a streaming chunk
-  const processChunk = useCallback((chunk: string): DepthAnnotation[] => {
-    if (!config.enabled) return []
-    
-    setIsProcessing(true)
-    
-    const { state, newAnnotations } = processStreamingChunk(
-      streamingState.current,
-      chunk,
-      config,
-      userContext
-    )
-    
-    streamingState.current = state
-    
-    if (newAnnotations.length > 0) {
-      setAnnotations(prev => [...prev, ...newAnnotations])
-      
-      // Trigger callbacks
-      newAnnotations.forEach(ann => onAnnotation?.(ann))
-    }
-    
-    setIsProcessing(false)
-    return newAnnotations
-  }, [config, userContext, onAnnotation])
-  
+  const processChunk = useCallback(
+    (chunk: string): DepthAnnotation[] => {
+      // Always process annotations — the toggle only controls visibility, not detection
+
+      setIsProcessing(true);
+
+      const { state, newAnnotations } = processStreamingChunk(
+        streamingState.current,
+        chunk,
+        config,
+        userContext
+      );
+
+      streamingState.current = state;
+
+      if (newAnnotations.length > 0) {
+        setAnnotations((prev) => [...prev, ...newAnnotations]);
+
+        // Trigger callbacks
+        newAnnotations.forEach((ann) => onAnnotation?.(ann));
+      }
+
+      setIsProcessing(false);
+      return newAnnotations;
+    },
+    [config, userContext, onAnnotation]
+  );
+
   // Process complete text (non-streaming)
-  const processText = useCallback((text: string): DepthAnnotation[] => {
-    if (!config.enabled) return []
-    
-    setIsProcessing(true)
-    
-    const detected = detectAnnotations(text, config, userContext)
-    setAnnotations(detected)
-    
-    // Trigger callbacks
-    detected.forEach(ann => onAnnotation?.(ann))
-    
-    setIsProcessing(false)
-    return detected
-  }, [config, userContext, onAnnotation])
-  
+  const processText = useCallback(
+    (text: string): DepthAnnotation[] => {
+      // Always process annotations — the toggle only controls visibility, not detection
+
+      setIsProcessing(true);
+
+      const detected = detectAnnotations(text, config, userContext);
+      setAnnotations(detected);
+
+      // Trigger callbacks
+      detected.forEach((ann) => onAnnotation?.(ann));
+
+      setIsProcessing(false);
+      return detected;
+    },
+    [config, userContext, onAnnotation]
+  );
+
   // Reset for new response
   const reset = useCallback(() => {
-    streamingState.current = createStreamingDepthState()
-    setAnnotations([])
-    setIsProcessing(false)
-  }, [])
-  
+    streamingState.current = createStreamingDepthState();
+    setAnnotations([]);
+    setIsProcessing(false);
+  }, []);
+
   return {
     annotations,
     config,
@@ -142,24 +148,24 @@ export function useDepthAnnotations(
     processText,
     reset,
     isProcessing,
-  }
+  };
 }
 
 // ============ PROVIDER FOR GLOBAL DEPTH CONFIG ============
 
 interface DepthContextValue {
-  config: DepthConfig
-  setConfig: (config: DepthConfig) => void
-  globalShowDepth: boolean
-  setGlobalShowDepth: (show: boolean) => void
+  config: DepthConfig;
+  setConfig: (config: DepthConfig) => void;
+  globalShowDepth: boolean;
+  setGlobalShowDepth: (show: boolean) => void;
 }
 
-const DepthContext = React.createContext<DepthContextValue | null>(null)
-const DepthContextProvider = DepthContext.Provider
+const DepthContext = React.createContext<DepthContextValue | null>(null);
+const DepthContextProvider = DepthContext.Provider;
 
 interface DepthProviderProps {
-  children: ReactNode
-  initialConfig?: Partial<DepthConfig>
+  children: ReactNode;
+  initialConfig?: Partial<DepthConfig>;
 }
 
 export function DepthProvider({ children, initialConfig }: DepthProviderProps) {
@@ -167,24 +173,24 @@ export function DepthProvider({ children, initialConfig }: DepthProviderProps) {
     ...DEFAULT_DEPTH_CONFIG,
     ...getDepthConfig(),
     ...initialConfig,
-  }))
+  }));
 
-  const [globalShowDepth, setGlobalShowDepth] = useState(true)
+  const [globalShowDepth, setGlobalShowDepth] = useState(true);
 
   const setConfig = useCallback((newConfig: DepthConfig) => {
-    setConfigState(newConfig)
-    saveDepthConfig(newConfig)
-  }, [])
+    setConfigState(newConfig);
+    saveDepthConfig(newConfig);
+  }, []);
 
   return React.createElement(
     DepthContextProvider,
     { value: { config, setConfig, globalShowDepth, setGlobalShowDepth } },
     children
-  )
+  );
 }
 
 export function useDepthConfig(): DepthContextValue {
-  const context = React.useContext(DepthContext)
+  const context = React.useContext(DepthContext);
   if (!context) {
     // Return defaults if not in provider
     return {
@@ -192,24 +198,27 @@ export function useDepthConfig(): DepthContextValue {
       setConfig: () => {},
       globalShowDepth: true,
       setGlobalShowDepth: () => {},
-    }
+    };
   }
-  return context
+  return context;
 }
 
 // ============ CONVENIENCE HOOK FOR EXPANDABLE QUERIES ============
 
 interface UseDepthExpandOptions {
-  onExpand: (query: string) => void
+  onExpand: (query: string) => void;
 }
 
 export function useDepthExpand({ onExpand }: UseDepthExpandOptions) {
-  const handleExpand = useCallback((query: string) => {
-    // Could add analytics, logging, etc.
-    onExpand(query)
-  }, [onExpand])
-  
-  return { handleExpand }
+  const handleExpand = useCallback(
+    (query: string) => {
+      // Could add analytics, logging, etc.
+      onExpand(query);
+    },
+    [onExpand]
+  );
+
+  return { handleExpand };
 }
 
-export default useDepthAnnotations
+export default useDepthAnnotations;
