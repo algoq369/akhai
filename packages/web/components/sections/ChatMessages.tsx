@@ -335,18 +335,27 @@ export default function ChatMessages({
                       </div>
                     )}
 
-                    {/* Macro-cyclical toggle */}
+                    {/* Macro-cyclical toggle + Constellation link */}
                     {message.role === 'assistant' && !message.isStreaming && (
-                      <button
-                        onClick={toggleEsoteric}
-                        className={`text-[8px] font-mono mt-1 transition-colors ${
-                          esotericEnabled
-                            ? 'text-purple-500 hover:text-purple-700'
-                            : 'text-relic-silver/30 hover:text-relic-silver/50'
-                        }`}
-                      >
-                        {esotericEnabled ? '◇ macro on' : '◇ macro'}
-                      </button>
+                      <div className="flex items-center gap-2 mt-1">
+                        <button
+                          onClick={toggleEsoteric}
+                          className={`text-[9px] font-mono transition-colors ${
+                            esotericEnabled
+                              ? 'text-purple-500 hover:text-purple-700'
+                              : 'text-relic-silver/40 hover:text-relic-silver/70'
+                          }`}
+                        >
+                          {esotericEnabled ? '◇ macro on' : '◇ macro'}
+                        </button>
+                        <Link
+                          href="/constellation"
+                          className="text-[9px] font-mono text-purple-400 hover:text-purple-600 transition-colors"
+                          title="Open full Constellation dashboard"
+                        >
+                          → constellation
+                        </Link>
+                      </div>
                     )}
 
                     {/* Inline Visualize Button */}

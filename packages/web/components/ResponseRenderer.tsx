@@ -131,6 +131,8 @@ function stripMarkdown(text: string): string {
       .replace(/^\s*\*\*\[[A-Z][^\]]{1,80}\]\*\*\s*:?\s*/gm, '')
       // Strip plain bracketed section markers at line start: [TAG] or [TAG]:
       .replace(/^\s*\[[A-Z][^\]]{1,80}\]\s*:?\s*/gm, '')
+      // Strip bold-only section headers: **CONSENSUS:** → nothing
+      .replace(/\*\*([A-Z][A-Z\s\d]+(?:\s*\([^)]+\))?)\s*:\*\*/g, '')
       // Strip inline tags
       .replace(/\[FINAL ANSWER\]:?\s*/gi, '')
       .replace(/\[RELATED\]:?[^\n]*/gi, '')
@@ -154,14 +156,18 @@ function parseIntoSections(text: string): { title: string | null; body: string }
 
   const sections: { title: string | null; body: string }[] = [];
 
-  // Matches: '## Header' OR '**[TAG]**' OR '[TAG]' OR '[TAG]:' — where TAG starts with uppercase
-  // Captures: (1) md marker, (2) md title, (3) bracket title
-  const sectionRegex = /^(?:(#{1,3})\s+(.+)|\*{0,2}\[([A-Z][^\]]{1,80})\]\*{0,2}\s*:?\s*)/gm;
+  // Matches:
+  //   ## Header                          → capture group 2
+  //   **[TAG]**                          → capture group 3
+  //   [TAG]                              → capture group 3
+  //   **PATH 1 (label):** or **CONSENSUS:** → capture group 4 (bold-only with colon)
+  const sectionRegex =
+    /^(?:(#{1,3})\s+(.+)|\*{0,2}\[([A-Z][^\]]{1,80})\]\*{0,2}\s*:?\s*|\*\*([A-Z][A-Z\s\d]+(?:\s*\([^)]+\))?)\s*:\*\*\s*)/gm;
 
   const parts: { index: number; title: string }[] = [];
   let m: RegExpExecArray | null;
   while ((m = sectionRegex.exec(cleanedText)) !== null) {
-    const title = (m[2] || m[3] || '').trim();
+    const title = (m[2] || m[3] || m[4] || '').trim();
     if (title && !DENYLIST_TITLES.test(title)) {
       parts.push({ index: m.index, title });
     }
@@ -183,7 +189,10 @@ function parseIntoSections(text: string): { title: string | null; body: string }
     const end = i + 1 < parts.length ? parts[i + 1].index : cleanedText.length;
     const segment = cleanedText.slice(start, end);
     const body = segment
-      .replace(/^(?:#{1,3}\s+.+|\*{0,2}\[[A-Z][^\]]{1,80}\]\*{0,2}\s*:?\s*)/, '')
+      .replace(
+        /^(?:#{1,3}\s+.+|\*{0,2}\[[A-Z][^\]]{1,80}\]\*{0,2}\s*:?\s*|\*\*[A-Z][A-Z\s\d]+(?:\s*\([^)]+\))?\s*:\*\*\s*)/,
+        ''
+      )
       .trim();
     sections.push({ title: stripMarkdown(parts[i].title), body: stripMarkdown(body) });
   }

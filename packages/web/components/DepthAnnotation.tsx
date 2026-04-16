@@ -110,7 +110,10 @@ export function DepthText({
     for (const ann of annotations) {
       if (!ann.term) continue;
       const escaped = ann.term.replace(/[.*+?${}()|[\]\\]/g, '\\$&');
-      const wordBoundaryRegex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      // Lookahead/lookbehind treating hyphen, apostrophe, underscore as word-internal
+      const before = "(?<![\\w\\-\\'])";
+      const after = "(?![\\w\\-\\'])";
+      const wordBoundaryRegex = new RegExp(`${before}${escaped}${after}`, 'gi');
       const m = wordBoundaryRegex.exec(text);
       if (m) {
         matches.push({ start: m.index, end: m.index + m[0].length, ann });
