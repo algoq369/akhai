@@ -297,20 +297,33 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
   {
     type: 'detail',
     patterns: [
-      // Role + Name: 'president Jean-Claude Trichet', 'CEO Sam Altman'
-      /\b(?:president|chairman|director|minister|chancellor|governor|CEO|CTO|CFO|founder|secretary|ambassador|commissioner|professor|admiral|general|commander|prince|king|queen)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})/gi,
-      // Name + Role: 'Jean-Claude Trichet, former ECB president'
-      /([A-Z][a-z]+(?:[-\s][A-Z][a-z]+){1,3}),?\s+(?:former|current|then|acting|ex-)?\s*(?:president|chairman|director|minister|CEO|CTO|CFO|founder|secretary|governor|head)\b/gi,
-      // Possessive name pattern: 'Van Rompuy's EU presidency', 'Trichet's tenure'
-      /([A-Z][a-z]+(?:[-\s][A-Z][a-z]+){0,2})'s\s+(?:EU|UN|NATO|IMF|WEF|ECB|WHO|presidency|tenure|leadership|administration|reign|era)\b/gi,
-      // 'chaired by Name', 'led by Name', 'attended by Name'
-      /(?:chaired|led|headed|founded|created|attended|joined|appointed)\s+(?:by|previously\s+by)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})/gi,
+      // 1. Role + Name: 'president Jean-Claude Trichet', 'Prince Bernhard'
+      /\b(?:president|chairman|chair|director|minister|chancellor|governor|CEO|CTO|CFO|founder|secretary|ambassador|commissioner|professor|admiral|general|commander|prince|king|queen|leader|head)\s+([A-Z][\w\u00C0-\u024F]+(?:[-\s][A-Z][\w\u00C0-\u024F]+){0,3})/gi,
+
+      // 2. Name + Role: 'Jean-Claude Trichet, former ECB president'
+      /([A-Z][\w\u00C0-\u024F]+(?:[-\s][A-Z][\w\u00C0-\u024F]+){1,3}),?\s+(?:former|current|then|acting|ex-|the)?\s*(?:president|chairman|chair|director|minister|CEO|CTO|CFO|founder|secretary|governor|head|leader)\b/gi,
+
+      // 3. Passive: 'chaired by Paul Volcker', 'founded 1954 by David Rockefeller'
+      /(?:chaired|led|headed|founded|created|attended|joined|appointed|established|organized|run)\s+(?:(?:in\s+)?\d{4}\s+)?(?:by|previously\s+by)\s+([A-Z][\w\u00C0-\u024F-]+(?:[,\s]+(?:and\s+)?[A-Z][\w\u00C0-\u024F-]+){1,5})/gi,
+
+      // 4. List after colon/label: 'Key figures: Henry Kissinger, Eric Schmidt'
+      /(?:figures?|members?|attendees?|participants?|leaders?|invitees?|people|names?)(?:\s+include)?[:]\s*([A-Z][\w\u00C0-\u024F]+(?:[-\s][A-Z][\w\u00C0-\u024F]+)(?:[,]\s*(?:and\s+)?[A-Z][\w\u00C0-\u024F]+(?:[-\s][A-Z][\w\u00C0-\u024F]+))*)/gi,
+
+      // 5. Possessive name: "Van Rompuy's EU presidency", "Kissinger's influence"
+      /([A-Z][\w\u00C0-\u024F]+(?:[-\s][A-Z][\w\u00C0-\u024F]+){0,2})'s\s+(?:EU|UN|NATO|IMF|WEF|ECB|WHO|G\d+|presidency|tenure|leadership|administration|influence|role|vision|era|legacy|approach|strategy|policy|agenda)\b/gi,
+
+      // 6. Name + verb (standalone context): 'Kissinger attended', 'Rockefeller founded'
+      /\b([A-Z][\w\u00C0-\u024F]{2,15}(?:\s+[A-Z][\w\u00C0-\u024F]{2,15}){0,2})\s+(?:attended|founded|chaired|led|organized|proposed|argued|warned|predicted|advocated|negotiated|brokered|shaped|influenced|transformed)\b/gi,
     ],
     extractor: (match, context) => {
       const fullMatch = match[0];
       // Extract the actual name (first capture group or derive from match)
-      const name = (match[1] || '').trim();
-      if (!name || name.length < 4) return null;
+      const rawName = (match[1] || '').trim();
+
+      // If match contains multiple names (from list patterns), take first name only
+      const names = rawName.split(/,\s*(?:and\s+)?/).filter((n) => /^[A-Z]/.test(n));
+      const primaryName = names[0] || rawName;
+      if (!primaryName || primaryName.length < 4) return null;
 
       // Extract surrounding role context (±100 chars around the match)
       const matchPos = context.indexOf(fullMatch);
@@ -320,7 +333,7 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
 
       // Build biographical hint from context
       const roleMatch = fullMatch.match(
-        /(?:president|chairman|director|minister|chancellor|governor|CEO|CTO|CFO|founder|secretary|ambassador|commissioner|professor|head|leader)/i
+        /(?:president|chairman|chair|director|minister|chancellor|governor|CEO|CTO|CFO|founder|secretary|ambassador|commissioner|professor|head|leader|prince|king|queen)/i
       );
       const role = roleMatch ? roleMatch[0] : 'notable figure';
 
@@ -338,13 +351,13 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
           : timeMatch[1]
         : '';
 
-      const content = `${name} — ${role}${org ? ' of ' + org : ''}${period ? ' (' + period + ')' : ''}. Mentioned in context of ${surrounding.substring(0, 80).trim()}…`;
+      const content = `${primaryName} — ${role}${org ? ' of ' + org : ''}${period ? ' (' + period + ')' : ''}. Mentioned in context of ${surrounding.substring(0, 80).trim()}…`;
 
       return {
         content,
         confidence: 0.9,
         expandable: true,
-        expandQuery: `Who is ${name}? Biography, career, and significance`,
+        expandQuery: `Who is ${primaryName}? Biography, career, and significance`,
       };
     },
   },
