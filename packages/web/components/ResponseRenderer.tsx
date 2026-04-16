@@ -140,7 +140,18 @@ function stripMarkdown(text: string): string {
   );
 }
 
+const DENYLIST_TITLES = /^(RELATED|NEXT|FINAL ANSWER|SUGGESTED|FOLLOW[\s-]?UP)$/i;
+
 function parseIntoSections(text: string): { title: string | null; body: string }[] {
+  // Strip footer metadata tags before section detection
+  const cleanedText = text
+    .replace(
+      /^\s*\*{0,2}\[(?:RELATED|NEXT|FINAL ANSWER|SUGGESTED|FOLLOW[\s-]?UP)\]\*{0,2}\s*:?[^\n]*$/gim,
+      ''
+    )
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
   const sections: { title: string | null; body: string }[] = [];
 
   // Matches: '## Header' OR '**[TAG]**' OR '[TAG]' OR '[TAG]:' — where TAG starts with uppercase
@@ -149,26 +160,28 @@ function parseIntoSections(text: string): { title: string | null; body: string }
 
   const parts: { index: number; title: string }[] = [];
   let m: RegExpExecArray | null;
-  while ((m = sectionRegex.exec(text)) !== null) {
+  while ((m = sectionRegex.exec(cleanedText)) !== null) {
     const title = (m[2] || m[3] || '').trim();
-    if (title) parts.push({ index: m.index, title });
+    if (title && !DENYLIST_TITLES.test(title)) {
+      parts.push({ index: m.index, title });
+    }
   }
 
   if (parts.length === 0) {
-    return [{ title: null, body: stripMarkdown(text) }];
+    return [{ title: null, body: stripMarkdown(cleanedText) }];
   }
 
   // Content before first marker (if any)
   if (parts[0].index > 0) {
-    const preface = text.slice(0, parts[0].index).trim();
+    const preface = cleanedText.slice(0, parts[0].index).trim();
     if (preface) sections.push({ title: null, body: stripMarkdown(preface) });
   }
 
   // Process each section
   for (let i = 0; i < parts.length; i++) {
     const start = parts[i].index;
-    const end = i + 1 < parts.length ? parts[i + 1].index : text.length;
-    const segment = text.slice(start, end);
+    const end = i + 1 < parts.length ? parts[i + 1].index : cleanedText.length;
+    const segment = cleanedText.slice(start, end);
     const body = segment
       .replace(/^(?:#{1,3}\s+.+|\*{0,2}\[[A-Z][^\]]{1,80}\]\*{0,2}\s*:?\s*)/, '')
       .trim();
