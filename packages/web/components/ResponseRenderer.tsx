@@ -402,10 +402,17 @@ export default function ResponseRenderer({
         return (
           <div key={idx} className={idx > 0 ? 'mt-5' : ''}>
             {section.title && (
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="text-[12px]" style={{ color: layerInfo.color }}>
+              <div className="flex items-baseline gap-1.5 mb-2 flex-wrap">
+                <span className="text-[13px]" style={{ color: layerInfo.color }}>
                   {layerInfo.sigil}
                 </span>
+                <span
+                  className="text-[10px] font-medium uppercase tracking-[0.08em] opacity-75"
+                  style={{ color: layerInfo.color }}
+                >
+                  {layerInfo.layer}
+                </span>
+                <span className="text-zinc-300 dark:text-zinc-600 text-[10px]">·</span>
                 <span
                   className="text-[12px] font-medium uppercase tracking-wide"
                   style={{ color: layerInfo.color }}
