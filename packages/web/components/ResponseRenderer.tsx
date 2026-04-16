@@ -311,7 +311,17 @@ function splitEntityParagraphs(
 
 // ============ TABLE COMPONENT ============
 
-function MarkdownTable({ data }: { data: TableData }) {
+function MarkdownTable({
+  data,
+  annotations,
+  depthConfig,
+  onExpand,
+}: {
+  data: TableData;
+  annotations?: any[];
+  depthConfig?: DepthConfig;
+  onExpand?: (q: string) => void;
+}) {
   return (
     <div className="my-4 overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
       <table className="w-full text-sm border-collapse">
@@ -335,7 +345,17 @@ function MarkdownTable({ data }: { data: TableData }) {
             >
               {row.map((cell, cIdx) => (
                 <td key={cIdx} className="px-3 py-2 text-zinc-700 dark:text-zinc-300 align-top">
-                  {stripMarkdown(cell)}
+                  {annotations && annotations.length > 0 ? (
+                    <DepthText
+                      text={stripMarkdown(cell)}
+                      annotations={annotations}
+                      config={depthConfig || { ...DEFAULT_DEPTH_CONFIG, enabled: true }}
+                      className=""
+                      onExpand={onExpand}
+                    />
+                  ) : (
+                    stripMarkdown(cell)
+                  )}
                 </td>
               ))}
             </tr>
@@ -411,7 +431,16 @@ export default function ResponseRenderer({
               const tableMatch = para.match(/^__TABLE_(\d+)__$/);
               if (tableMatch) {
                 const tableData = tables[parseInt(tableMatch[1])];
-                if (tableData) return <MarkdownTable key={pIdx} data={tableData} />;
+                if (tableData)
+                  return (
+                    <MarkdownTable
+                      key={pIdx}
+                      data={tableData}
+                      annotations={annotations}
+                      depthConfig={depthConfig}
+                      onExpand={onExpand}
+                    />
+                  );
               }
               return (
                 <div

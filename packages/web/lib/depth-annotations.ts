@@ -77,14 +77,11 @@ export function detectAnnotations(
     types: config.annotationTypes,
   });
 
-  if (!config.enabled) {
-    console.log('[detectAnnotations] DISABLED - returning empty');
-    return [];
-  }
+  // Depth annotations are always generated — the toggle only controls visibility
+  // (no early return — detection runs for every call)
 
   const annotations: DepthAnnotation[] = [];
-  const maxAnnotations =
-    config.density === 'minimal' ? 5 : config.density === 'standard' ? 15 : 40;
+  const maxAnnotations = config.density === 'minimal' ? 5 : config.density === 'standard' ? 15 : 40;
 
   console.log(
     '[detectAnnotations] Max annotations:',

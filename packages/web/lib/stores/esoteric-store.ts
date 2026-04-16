@@ -29,7 +29,7 @@ export const useEsotericStore = create<EsotericState>()((set) => ({
   mode: 'secular',
   analysis: null,
   isLoading: false,
-  isEnabled: false,
+  isEnabled: true,
   setMode: (mode) => set({ mode }),
   setAnalysis: (analysis) => set({ analysis }),
   setLoading: (loading) => set({ isLoading: loading }),
