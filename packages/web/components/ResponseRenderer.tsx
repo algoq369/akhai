@@ -127,8 +127,10 @@ function stripMarkdown(text: string): string {
       .replace(/\*([^*\n]+?)\*/g, '$1')
       .replace(/`(.+?)`/g, '$1')
       .replace(/^\s*[-*]\s+/gm, '  \u2022 ')
-      // Strip all [ALL_CAPS_TAG]: patterns at line start (used by self-consistency and other methodologies)
-      .replace(/^\s*\[([A-Z][A-Z\s\d]+)\]\s*:?\s*/gm, '')
+      // Strip bold-wrapped section markers: **[TAG]** → nothing
+      .replace(/^\s*\*\*\[[A-Z][^\]]{1,80}\]\*\*\s*:?\s*/gm, '')
+      // Strip plain bracketed section markers at line start: [TAG] or [TAG]:
+      .replace(/^\s*\[[A-Z][^\]]{1,80}\]\s*:?\s*/gm, '')
       // Strip inline tags
       .replace(/\[FINAL ANSWER\]:?\s*/gi, '')
       .replace(/\[RELATED\]:?[^\n]*/gi, '')
@@ -141,8 +143,9 @@ function stripMarkdown(text: string): string {
 function parseIntoSections(text: string): { title: string | null; body: string }[] {
   const sections: { title: string | null; body: string }[] = [];
 
-  // Combined regex: matches either '## Header' OR '[TAG]:' OR '[TAG N]:' at line start
-  const sectionRegex = /^(?:(#{1,3})\s+(.+)|\[([A-Z][A-Z\s\d]+)\]\s*:?\s*)/gm;
+  // Matches: '## Header' OR '**[TAG]**' OR '[TAG]' OR '[TAG]:' — where TAG starts with uppercase
+  // Captures: (1) md marker, (2) md title, (3) bracket title
+  const sectionRegex = /^(?:(#{1,3})\s+(.+)|\*{0,2}\[([A-Z][^\]]{1,80})\]\*{0,2}\s*:?\s*)/gm;
 
   const parts: { index: number; title: string }[] = [];
   let m: RegExpExecArray | null;
@@ -166,7 +169,9 @@ function parseIntoSections(text: string): { title: string | null; body: string }
     const start = parts[i].index;
     const end = i + 1 < parts.length ? parts[i + 1].index : text.length;
     const segment = text.slice(start, end);
-    const body = segment.replace(/^(?:#{1,3}\s+.+|\[[A-Z][A-Z\s\d]+\]\s*:?\s*)/, '').trim();
+    const body = segment
+      .replace(/^(?:#{1,3}\s+.+|\*{0,2}\[[A-Z][^\]]{1,80}\]\*{0,2}\s*:?\s*)/, '')
+      .trim();
     sections.push({ title: stripMarkdown(parts[i].title), body: stripMarkdown(body) });
   }
 

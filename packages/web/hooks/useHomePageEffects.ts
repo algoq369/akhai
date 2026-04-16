@@ -105,7 +105,7 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
   useEffect(() => {
     if (prevDensityRef.current !== depthConfig.density) {
       prevDensityRef.current = depthConfig.density;
-      if (!depthConfig.enabled) return;
+      // Annotations are always processed
       const newAnnotations: Record<string, any[]> = {};
       messages
         .filter((m) => m.role === 'assistant' && m.content)
