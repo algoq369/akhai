@@ -205,14 +205,51 @@ function splitEntityParagraphs(
 ): { title: string | null; body: string }[] {
   const result: { title: string | null; body: string }[] = [];
   const entityPattern = /^([A-Z][\w\s'\.&]{2,60}?(?:\s*\([^)]+\))?)\s+[—–-]\s+/;
+  // Bold-wrapped label on its own line: **Tier 1 — Existential & Civilizational**
+  const boldHeaderPattern = /^\*\*([A-Z][^*\n]{3,80})\*\*\s*$/;
 
   for (const section of sections) {
-    const paragraphs = section.body.split(/\n\n+/).filter((p) => p.trim());
+    // Pre-process: convert bold-header lines into virtual entity paragraphs
+    const body = section.body;
+    const lines = body.split('\n');
+    const virtualParagraphs: string[] = [];
+    let currentPara: string[] = [];
+    let foundBoldHeaders = false;
+
+    for (const line of lines) {
+      const boldMatch = line.match(boldHeaderPattern);
+      if (boldMatch) {
+        foundBoldHeaders = true;
+        if (currentPara.length > 0) {
+          virtualParagraphs.push(currentPara.join('\n').trim());
+          currentPara = [];
+        }
+        const label = boldMatch[1].trim();
+        const dashIdx = label.search(/\s+[—–-]\s+/);
+        const cleanLabel = dashIdx > 0 ? label.substring(0, dashIdx).trim() : label;
+        currentPara.push(cleanLabel + ' \u2014 ');
+      } else if (line.trim() === '') {
+        if (currentPara.length > 0) {
+          virtualParagraphs.push(currentPara.join('\n').trim());
+          currentPara = [];
+        }
+      } else {
+        currentPara.push(line);
+      }
+    }
+    if (currentPara.length > 0) {
+      virtualParagraphs.push(currentPara.join('\n').trim());
+    }
+
+    const hasBoldHeaders = foundBoldHeaders && virtualParagraphs.some((p) => entityPattern.test(p));
+    const paragraphs = hasBoldHeaders
+      ? virtualParagraphs.filter((p) => p.trim())
+      : body.split(/\n\n+/).filter((p) => p.trim());
+
     const entityParas = paragraphs.filter((p) => entityPattern.test(p));
 
     // Allow intro paragraph + 3+ entity paragraphs (60% entity threshold)
     if (entityParas.length >= 3 && entityParas.length / paragraphs.length >= 0.6) {
-      // Keep non-entity intro paragraphs with parent section title
       const introParas = paragraphs.filter((p) => !entityPattern.test(p));
       const entityParasOnly = paragraphs.filter((p) => entityPattern.test(p));
 
