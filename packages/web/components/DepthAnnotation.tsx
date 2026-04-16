@@ -99,48 +99,55 @@ export function DepthText({
   onExpand,
   className = '',
 }: DepthTextProps) {
-  // Position-based sigil insertion — no segment splitting, no indexOf
   const rendered = useMemo(() => {
-    if (!config?.enabled || annotations.length === 0) {
-      return null;
-    }
+    // Always-on: do NOT check config.enabled here
+    if (annotations.length === 0) return null;
 
-    const sortedAnns = [...annotations]
-      .filter((a) => a.position >= 0 && a.position < text.length)
-      .sort((a, b) => a.position - b.position);
+    // Build list of term matches using word-boundary regex (no position trust)
+    type Match = { start: number; end: number; ann: AnnotationType };
+    const matches: Match[] = [];
 
-    const parts: React.ReactNode[] = [];
-    let lastPos = 0;
-
-    for (const ann of sortedAnns) {
-      // Skip overlapping annotations
-      if (ann.position < lastPos) continue;
-
-      if (ann.position > lastPos) {
-        parts.push(<span key={`t-${lastPos}`}>{text.substring(lastPos, ann.position)}</span>);
+    for (const ann of annotations) {
+      if (!ann.term) continue;
+      const escaped = ann.term.replace(/[.*+?${}()|[\]\\]/g, '\\$&');
+      const wordBoundaryRegex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      const m = wordBoundaryRegex.exec(text);
+      if (m) {
+        matches.push({ start: m.index, end: m.index + m[0].length, ann });
       }
-
-      const termEnd = Math.min(ann.position + ann.term.length, text.length);
-      parts.push(
-        <span key={`a-${ann.position}`} className="inline-flex items-baseline gap-0.5">
-          <span className="text-slate-900">{text.substring(ann.position, termEnd)}</span>
-          <DepthSigil content={ann.content} term={ann.term} />
-        </span>
-      );
-      lastPos = termEnd;
     }
 
-    if (lastPos < text.length) {
-      parts.push(<span key="end">{text.substring(lastPos)}</span>);
+    // Sort by position, drop overlaps
+    matches.sort((a, b) => a.start - b.start);
+    const clean: Match[] = [];
+    let lastEnd = 0;
+    for (const m of matches) {
+      if (m.start >= lastEnd) {
+        clean.push(m);
+        lastEnd = m.end;
+      }
     }
 
+    if (clean.length === 0) return null;
+
+    // Render text with sigil AFTER each matched term (not inside)
+    const parts: React.ReactNode[] = [];
+    let cursor = 0;
+    for (const m of clean) {
+      if (m.start > cursor) {
+        parts.push(<span key={`t-${cursor}`}>{text.substring(cursor, m.start)}</span>);
+      }
+      parts.push(<span key={`w-${m.start}`}>{text.substring(m.start, m.end)}</span>);
+      parts.push(<DepthSigil key={`s-${m.start}`} content={m.ann.content} term={m.ann.term} />);
+      cursor = m.end;
+    }
+    if (cursor < text.length) {
+      parts.push(<span key="end">{text.substring(cursor)}</span>);
+    }
     return parts;
-  }, [text, annotations, config]);
+  }, [text, annotations]);
 
-  if (!rendered) {
-    return <span className={className}>{text}</span>;
-  }
-
+  if (!rendered) return <span className={className}>{text}</span>;
   return <span className={`depth-text ${className}`}>{rendered}</span>;
 }
 

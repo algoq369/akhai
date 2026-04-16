@@ -188,7 +188,35 @@ function parseIntoSections(text: string): { title: string | null; body: string }
     sections.push({ title: stripMarkdown(parts[i].title), body: stripMarkdown(body) });
   }
 
-  return sections;
+  return splitEntityParagraphs(sections);
+}
+
+function splitEntityParagraphs(
+  sections: { title: string | null; body: string }[]
+): { title: string | null; body: string }[] {
+  const result: { title: string | null; body: string }[] = [];
+  const entityPattern = /^([A-Z][\w\s'\.&]{2,60}?(?:\s*\([^)]+\))?)\s+[—–-]\s+/;
+
+  for (const section of sections) {
+    const paragraphs = section.body.split(/\n\n+/).filter((p) => p.trim());
+    const entityParas = paragraphs.filter((p) => entityPattern.test(p));
+
+    if (entityParas.length >= 3 && entityParas.length === paragraphs.length) {
+      if (section.title) {
+        result.push({ title: section.title, body: '' });
+      }
+      for (const para of paragraphs) {
+        const match = para.match(entityPattern);
+        const entityTitle = match ? match[1].trim() : null;
+        const entityBody = match ? para.slice(match[0].length).trim() : para;
+        result.push({ title: entityTitle, body: entityBody });
+      }
+    } else {
+      result.push(section);
+    }
+  }
+
+  return result;
 }
 
 // ============ COMPONENT ============

@@ -22,8 +22,8 @@ export function DepthSigil({ content, term }: DepthSigilProps) {
             e.stopPropagation();
             setIsExpanded(!isExpanded);
           }}
-          className="depth-sigil inline-flex items-center justify-center w-3.5 h-3.5 mx-0.5 text-[13px] cursor-pointer transition-all opacity-70 hover:opacity-100 hover:scale-125"
-          style={{ color: layers.color }}
+          className="depth-sigil inline-flex items-center justify-center ml-0.5 cursor-help transition-all opacity-80 hover:opacity-100 hover:scale-125"
+          style={{ color: layers.color, verticalAlign: 'super', fontSize: '11px' }}
           title={`${layers.name} - ${layers.meaning}. Click to ${isExpanded ? 'collapse' : 'expand'}`}
         >
           {layers.shape}
