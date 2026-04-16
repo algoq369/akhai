@@ -11,7 +11,7 @@ interface DepthSigilProps {
 
 export function DepthSigil({ content, term }: DepthSigilProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const layers = getLayerColorForAnnotation(content);
+  const layers = getLayerColorForAnnotation(content, term);
 
   return (
     <span className="inline-flex flex-col items-start">
