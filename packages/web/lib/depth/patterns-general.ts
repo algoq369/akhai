@@ -300,7 +300,6 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
       /(?:founded|established|created|launched)\s+(?:in\s+)?(\d{4})/gi,
       /(?:CEO|founder|CTO|president)\s+(?:is\s+)?([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,
       /(?:headquartered|based)\s+in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi,
-      /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(?:is|are|was|were)\s+(?:a|an|the)\s+/gi,
     ],
     extractor: (match, context) => ({
       content: match[0],
