@@ -285,7 +285,7 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
       }
 
       return {
-        content: insight,
+        content: insight.length > 200 ? insight.substring(0, 197) + '...' : insight,
         confidence: 0.95,
         expandable: true,
         expandQuery: expandQuery || `Detailed analysis of ${text}`,
@@ -357,9 +357,42 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
       /(?:CEO|founder|CTO|president)\s+(?:is\s+)?([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,
       /(?:headquartered|based)\s+in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/gi,
     ],
-    extractor: (match, context) => ({
-      content: match[0],
-      confidence: 0.85,
-    }),
+    extractor: (match, context) => {
+      const text = match[0];
+      // 'founded in 1954' → 'Established 1954 — X years of operation'
+      const yearMatch = text.match(/(\d{4})/);
+      if (yearMatch) {
+        const year = parseInt(yearMatch[1]);
+        const age = new Date().getFullYear() - year;
+        return {
+          content: `Established ${year} — ${age} years of continuous operation. Historical context: founded during ${year < 1950 ? 'post-WWII reconstruction era' : year < 1970 ? 'Cold War / Bretton Woods era' : year < 1990 ? 'late Cold War / deregulation era' : year < 2010 ? 'post-Cold War globalization era' : 'digital transformation era'}.`,
+          confidence: 0.85,
+          expandQuery: `History and founding of this institution since ${year}`,
+        };
+      }
+      // CEO/president + Name → role-based insight
+      const roleNameMatch = text.match(
+        /(?:CEO|founder|CTO|president)\s+(?:is\s+)?([A-Z][a-z]+\s+[A-Z][a-z]+)/i
+      );
+      if (roleNameMatch) {
+        return {
+          content: `${roleNameMatch[1]} — current leadership. Click to explore biography and career.`,
+          confidence: 0.85,
+          expandQuery: `Who is ${roleNameMatch[1]}? Biography and career`,
+        };
+      }
+      // headquartered in X → geographic insight
+      const hqMatch = text.match(
+        /(?:headquartered|based)\s+in\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i
+      );
+      if (hqMatch) {
+        return {
+          content: `Based in ${hqMatch[1]} — geographic positioning suggests ${/London|New York|Geneva|Zurich|Singapore|Hong Kong/i.test(hqMatch[1]) ? 'global financial center proximity' : /Washington|Brussels|Beijing/i.test(hqMatch[1]) ? 'proximity to political power' : /San Francisco|Palo Alto|Seattle/i.test(hqMatch[1]) ? 'Silicon Valley / tech ecosystem' : 'regional focus'}.`,
+          confidence: 0.85,
+          expandQuery: `Why is this organization based in ${hqMatch[1]}?`,
+        };
+      }
+      return { content: text, confidence: 0.7 };
+    },
   },
 ];
