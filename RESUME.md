@@ -1,54 +1,83 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: April 4, 2026 (Day 79/150) — 20:00
+> Last updated: April 16, 2026 (Day 98/150) — 20:30
 
 ## PROJECT STATE
-- **Day 79/150** | Launch: June 4, 2026 | **~90% features complete**
-- **Repo:** `/Users/sheirraza/akhai` | GitHub: `algoq369/akhai`
+- **Day 98/150** | Launch: June 4, 2026 | **~85% features complete**
+- **Commits:** 514 | Repo: `/Users/sheirraza/akhai` | GitHub: `algoq369/akhai`
 - **VPS:** `akhai@82.221.101.3` (FlokiNET Iceland) | **akhai.app** live
 - **Provider:** Claude Opus 4.6 (AKHAI_FREE_MODE=false on both local + VPS)
-- **Standards:** WEBNA_STANDARDS.md adopted — read before every session
-- **WEBNA compliance:** ~72% (was 38% before V2.2 hardening)
+- **Standards:** WEBNA — 5 iron rules enforced every session
 
-## COMPLETED: WEBNA V2.2 Hardening (Days 77-79, ~25 commits)
+## COMPLETED: Classic View + Depth Annotation Enhancement (Day 98, 28 commits)
 
-### Batch 1: Validation + Resilience
-- Zod input validation on /api/query route
-- withRetry wrapper on AI provider calls
-- Rate limiting middleware (10 req/min per IP)
-- Dependency audit + fixes
+### Classic View — ResponseRenderer (commits a81bb00 → 5953812)
+- Created `ResponseRenderer.tsx` (472 lines) — structured text rendering
+- 5-pattern regex: ## headers, [TAG]:, **PATH**, bold-on-line, plain PATH N
+- 11 AI computational layers with colors + sigils (TITLE_LAYER_MAP)
+- Dual-label section titles: `△ ENCODER · CONTENT TITLE` (layer + topic)
+- Cycling colors for PATH 1/2/3, Tier N, Phase N sub-sections
+- Markdown tables → HTML tables with zebra stripes + pivot table support
+- Entity sub-sections (Brand — description format)
+- Strip [RELATED]/[NEXT] footer tags, DENYLIST for false sections
 
-### Batch 2: Code Quality
-- Structured console logging (DEBUG_LOG)
-- 44→0 files over 500 lines (all under limit now)
-- 21 `as any` casts removed with proper types
-- File splits: patterns.ts (1345→4 files), layer-processor, MindMap*, query route, etc.
+### Universal Structuring (commit 442c1c9)
+- Created `lib/prompts/structure-instruction.ts` shared constant
+- Injected into ALL 8 methodology prompts (direct, cod, sc, react, pas, tot, auto)
+- AI now produces ## headers + **Bold — desc** for every methodology
+- Verified: all 6 active methodologies produce 4-6 sub-sections
 
-### Batch 3: Testing + Performance + SEO
-- Playwright E2E tests: 3 specs (query flow, navigation, methodology switch)
-- Dynamic imports for heavy components (CanvasWorkspace, SideChat, etc.)
-- Production readiness doc + rollback strategy in deploy script
-- SEO: OpenGraph + Twitter Card metadata
+### Macro Cadre Refactor (commits 0460a66 → cb8d5ba)
+- Converted from auto-render generic card → click-triggered per-query (Council pattern)
+- Created: `MacroButton.tsx`, `MacroPanel.tsx`, `lib/stores/macro-store.ts`
+- Calls `/api/esoteric/analyze` with current query on click
+- Removed hard relevance gate — always analyzes when user clicks
+- Expanded relevance keywords from 48 → 150 (geopolitical/economic/crypto terms)
+- Fixed duplicate RELEVANCE_KEYWORDS in cycle-engine.ts (re-exports from relevance.ts)
 
-### Batch 4: stdlib + Final
-- stdlib patterns: createTracker, createContext wired into query pipeline
-- AI calls tracked (duration, tokens, cost) per query
-- 25s timeout context on direct-mode AI calls
+### Depth Annotation System Overhaul (commits 2bca5b4 → 83af854, 9 commits)
+- Removed 3 over-matching generic patterns (PRIORITY 1/2/3 in patterns-general.ts)
+- Removed ALL sentence-matching patterns from patterns.ts (REMAINING_PATTERNS)
+- Unified 3 competing sigil systems → single TITLE_LAYER_MAP
+- Added `isValuableAnnotation` relevance gate (rejects content=term, <30 chars, headers)
+- Removed dead code: Hebrew term detection + tag extraction
+- Fixed sigil shapes: domain-specific fallbacks (metrics→◈, tech→▽, brands→□, countries→△)
+- getLayerColorForAnnotation now checks BOTH term + content for layer matching
+- Added person name detection: 6 regex patterns for Role+Name, Name+Role, lists, possessives
+- Enriched fact extractor: year→era context, CEO→bio hint, HQ→geographic insight
+- Capped metric tooltip verbosity to 200 chars
 
-## NEXT: PHASE B — Metadata Persist + Replay (~4h)
-- B6: Persist SSE metadata to database per query
-- B7: Replay metadata timeline when viewing past queries
-- B8: Verify + deploy
+## KEY FILES MODIFIED/CREATED THIS SESSION
+- `components/ResponseRenderer.tsx` (472 lines) — NEW, structured renderer
+- `components/MacroButton.tsx` — NEW, click-triggered macro analysis
+- `components/MacroPanel.tsx` — NEW, per-query macro display
+- `components/DepthSigil.tsx` (60 lines) — passes term to layer detection
+- `lib/stores/macro-store.ts` — NEW, zustand store for macro results
+- `lib/prompts/structure-instruction.ts` — NEW, shared structuring constant
+- `lib/depth-annotations.ts` (326 lines) — relevance gate added
+- `lib/depth/patterns.ts` (16 lines) — sentence patterns removed
+- `lib/depth/patterns-general.ts` (398 lines) — person names + enriched facts
+- `lib/layer-colors.ts` (66 lines) — unified to TITLE_LAYER_MAP + domain fallbacks
+- `lib/esoteric/relevance.ts` (60 lines) — expanded 150 keywords
+- `lib/esoteric/cycle-engine.ts` — re-exports relevance (no duplicate)
+- `app/api/esoteric/analyze/route.ts` — removed hard gate, relevance as hint
 
-## AFTER PHASE B
-- Phase C: Methodology Pipelines (16h) — 7 real AI processes
-- Phase D: God View Phase 2+3 (20h) — 5-agent Council
-- Phase E: Feature Completion (16h) — Grimoire, DDG, refinement
-- Phase G: Pre-Launch (20h) — landing, pricing, legal
+## NEXT PRIORITIES
+1. **Deploy to VPS** — rsync latest 28 commits to akhai.app
+2. **Esoteric Library scaffold** (~4h) — next Master Plan item
+3. **DDG search fix** — depth annotations UI refinements
+4. **Twitter OAuth** — add TWITTER_CLIENT_ID/SECRET to VPS .env.local
+5. **Reown domain confirmation** — dashboard.reown.com
 
 ## KNOWN DEBT
-- 0 files over WEBNA 500-line limit (all split)
-- ~65 `as any` casts remaining (down from 86)
-- 8 high-severity dep vulnerabilities (transitive, waiting upstream)
-- Visual checks A-F need manual Lighthouse audit
-- PWA, search engine, i18n — post-launch
+- 5 files borderline >500 lines (PipelineHistoryPanel 623, useCanvasState 568)
+- Person name false positives: "secretary general", "minister share" — needs blocklist
+- ~65 `as any` casts remaining
+- Depth annotation expandQuery not wired to actual follow-up queries yet
+
+## KEY COMMANDS
+- Dev restart: `lsof -ti:3000 | xargs kill -9; sleep 2; cd packages/web && rm -rf .next .turbo; npm run predev; SKIP_ENV_VALIDATION=1 npx next dev --turbopack -p 3000`
+- Deploy: `~/akhai/deploy/quick-deploy.sh`
+- SSH: `ssh -o StrictHostKeyChecking=no akhai@82.221.101.3`
+- TSC: `npx tsc --noEmit`
+- PM2 env: `pm2 delete akhai && cd ~/app/packages/web && NODE_ENV=production pm2 start "npx next start -p 3000" --name akhai`
