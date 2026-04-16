@@ -21,25 +21,25 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
     extractor: (match) => {
       const tag = match[0].replace(/[\[\]:]/g, '').trim();
       const sigilMap: Record<string, string> = {
-        TECHNICAL: '◊',
-        STRATEGIC: '→',
-        CRITICAL: '△',
-        KEY: '◊',
-        SUMMARY: '○',
-        INSIGHT: '⊕',
-        IMPORTANT: '△',
-        NOTE: '◇',
-        CONSENSUS: '⊕',
-        ANALYSIS: '◊',
-        DRAFT: '→',
-        PERSPECTIVE: '☿',
-        OVERVIEW: '○',
-        RELATED: '☿',
-        NEXT: '→',
-        IMPACT: '⊕',
-        RISK: '△',
-        OPPORTUNITY: '⊕',
-        EXAMPLE: '◇',
+        TECHNICAL: '▽',    // Executor
+        STRATEGIC: '→',    // Reasoning
+        CRITICAL: '◈',     // Discriminator
+        KEY: '◊',          // Meta-Core
+        SUMMARY: '✦',      // Synthesis
+        INSIGHT: '⊕',      // Generative
+        IMPORTANT: '◈',    // Discriminator
+        NOTE: '◊',         // Meta-Core
+        CONSENSUS: '✦',    // Synthesis
+        ANALYSIS: '□',     // Classifier
+        DRAFT: '→',        // Reasoning
+        PERSPECTIVE: '○',  // Expansion
+        OVERVIEW: '○',     // Expansion
+        RELATED: '△',      // Encoder
+        NEXT: '→',         // Reasoning
+        IMPACT: '◈',       // Discriminator
+        RISK: '◈',         // Discriminator
+        OPPORTUNITY: '⊕',  // Generative
+        EXAMPLE: '⊕',      // Generative
       };
       return {
         content: `${sigilMap[tag.toUpperCase()] || '◊'} ${tag}`,

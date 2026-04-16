@@ -6,7 +6,7 @@ import { type DepthConfig, DEFAULT_DEPTH_CONFIG } from '@/lib/depth-annotations'
 
 // ============ LAYER KEYWORD MAP ============
 
-const TITLE_LAYER_MAP: { keywords: string[]; layer: string; color: string; sigil: string }[] = [
+export const TITLE_LAYER_MAP: { keywords: string[]; layer: string; color: string; sigil: string }[] = [
   {
     keywords: ['risk', 'limitation', 'flaw', 'challenge', 'concern', 'critical', 'warning'],
     layer: 'Discriminator',
