@@ -80,10 +80,8 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
       'messages:',
       messages.length
     );
-    if (!depthConfig.enabled) {
-      console.log('[DepthAnnotations] Disabled - toggle is OFF');
-      return;
-    }
+    // Annotations are always processed — depth toggle only controls visibility elsewhere
+    // (No early return)
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.role === 'assistant') {
       if (lastMessage.isStreaming) return;
