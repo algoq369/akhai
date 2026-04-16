@@ -21,12 +21,8 @@ import ViewTabs from '@/components/sections/ViewTabs';
 import GnosticDetails from '@/components/sections/GnosticDetails';
 import CouncilButton from '@/components/CouncilButton';
 import CouncilPanel from '@/components/CouncilPanel';
-import dynamic from 'next/dynamic';
-import { useEsotericStore } from '@/lib/stores/esoteric-store';
-
-const EsotericInline = dynamic(() => import('@/components/esoteric/EsotericInline'), {
-  ssr: false,
-});
+import MacroButton from '@/components/MacroButton';
+import MacroPanel from '@/components/MacroPanel';
 
 /** Generate LayerMini data for every query — adapts to content and evolves with conversation */
 function generateLayerData(
@@ -145,9 +141,6 @@ export default function ChatMessages({
   handleGuardPivot,
   handleGuardContinue,
 }: ChatMessagesProps) {
-  const esotericEnabled = useEsotericStore((s) => s.isEnabled);
-  const toggleEsoteric = useEsotericStore((s) => s.toggleEnabled);
-
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-4">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -335,28 +328,7 @@ export default function ChatMessages({
                       </div>
                     )}
 
-                    {/* Macro-cyclical toggle + Constellation link */}
-                    {message.role === 'assistant' && !message.isStreaming && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <button
-                          onClick={toggleEsoteric}
-                          className={`text-[9px] font-mono transition-colors ${
-                            esotericEnabled
-                              ? 'text-purple-500 hover:text-purple-700'
-                              : 'text-relic-silver/40 hover:text-relic-silver/70'
-                          }`}
-                        >
-                          {esotericEnabled ? '◇ macro on' : '◇ macro'}
-                        </button>
-                        <Link
-                          href="/constellation"
-                          className="text-[9px] font-mono text-purple-400 hover:text-purple-600 transition-colors"
-                          title="Open full Constellation dashboard"
-                        >
-                          → constellation
-                        </Link>
-                      </div>
-                    )}
+                    {/* Removed: old macro toggle — replaced by MacroButton below */}
 
                     {/* Inline Visualize Button */}
                     {(shouldShowLayers(message.content, !!message.gnostic) ||
@@ -386,19 +358,29 @@ export default function ChatMessages({
                       />
                     )}
 
-                    {/* PERSPECTIVE COUNCIL */}
-                    <div className="mt-3 flex items-center gap-2">
-                      <CouncilButton
-                        queryId={message.id}
-                        query={messages[messages.indexOf(message) - 1]?.content || ''}
-                        response={message.content}
-                      />
-                    </div>
+                    {/* COUNCIL + MACRO buttons (both click-triggered) */}
+                    {message.role === 'assistant' && !message.isStreaming && (
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <CouncilButton
+                          queryId={message.id}
+                          query={messages[messages.indexOf(message) - 1]?.content || ''}
+                          response={message.content}
+                        />
+                        <MacroButton
+                          queryId={message.id}
+                          query={messages[messages.indexOf(message) - 1]?.content || ''}
+                          topics={(message.topics || []).map((t) => t.name)}
+                        />
+                        <Link
+                          href="/constellation"
+                          className="text-[10px] font-mono text-purple-500 hover:text-purple-700 underline"
+                        >
+                          → constellation
+                        </Link>
+                      </div>
+                    )}
                     <CouncilPanel queryId={message.id} />
-                    <EsotericInline
-                      query={messages[messages.indexOf(message) - 1]?.content || ''}
-                      messageId={message.id}
-                    />
+                    <MacroPanel queryId={message.id} />
                     {/* INSTINCT MODE BADGE */}
                     {message.instinctMode && (
                       <span className="inline-block mt-2 text-[9px] font-mono text-purple-400 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/40">
