@@ -7,9 +7,11 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
+// Lazy factory — module-scope SDK instantiation reads env before Next.js
+// dev finishes loading .env.local, which silently locks in an empty key.
+function getAnthropicClient(): Anthropic {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+}
 
 // TypeScript interfaces for Living Tree data structures
 export interface LivingTopic {
@@ -30,13 +32,26 @@ export interface LivingTopic {
 export interface TopicEdge {
   source_topic_id: number;
   target_topic_id: number;
-  relationship_type: 'causal' | 'similar' | 'opposite' | 'evolves_to' | 'merges_with' | 'splits_from';
+  relationship_type:
+    | 'causal'
+    | 'similar'
+    | 'opposite'
+    | 'evolves_to'
+    | 'merges_with'
+    | 'splits_from';
   strength: number;
   hermetic_law?: string;
 }
 
 export interface EvolutionEvent {
-  event_type: 'emergence' | 'transformation' | 'merger' | 'split' | 'dissolution' | 'strengthening' | 'weakening';
+  event_type:
+    | 'emergence'
+    | 'transformation'
+    | 'merger'
+    | 'split'
+    | 'dissolution'
+    | 'strengthening'
+    | 'weakening';
   topic_ids: string;
   description: string;
   hermetic_insight: string;
@@ -150,7 +165,7 @@ Return your analysis as a JSON object with this structure:
   const userPrompt = buildAnalysisPrompt(request);
 
   try {
-    const message = await anthropic.messages.create({
+    const message = await getAnthropicClient().messages.create({
       model: 'claude-opus-4-6',
       max_tokens: 4000,
       temperature: 0.7,
@@ -163,8 +178,7 @@ Return your analysis as a JSON object with this structure:
       ],
     });
 
-    const responseText =
-      message.content[0].type === 'text' ? message.content[0].text : '';
+    const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
 
     return parseOpusResponse(responseText, request.conversationId, request.queryId);
   } catch (error) {
@@ -243,15 +257,18 @@ function parseOpusResponse(
     }));
 
     // Convert topic relationships to edges (will need to map names to IDs after DB insertion)
-    const edges: TopicEdge[] = (parsed.topic_relationships || []).map((r: any) => ({
-      source_topic_id: 0, // Placeholder - will be resolved after DB insertion
-      target_topic_id: 0, // Placeholder - will be resolved after DB insertion
-      source_topic_name: r.source_topic_name, // Temporary field for mapping
-      target_topic_name: r.target_topic_name, // Temporary field for mapping
-      relationship_type: r.relationship_type || 'related',
-      strength: r.strength || 0.5,
-      hermetic_law: r.hermetic_law,
-    } as any));
+    const edges: TopicEdge[] = (parsed.topic_relationships || []).map(
+      (r: any) =>
+        ({
+          source_topic_id: 0, // Placeholder - will be resolved after DB insertion
+          target_topic_id: 0, // Placeholder - will be resolved after DB insertion
+          source_topic_name: r.source_topic_name, // Temporary field for mapping
+          target_topic_name: r.target_topic_name, // Temporary field for mapping
+          relationship_type: r.relationship_type || 'related',
+          strength: r.strength || 0.5,
+          hermetic_law: r.hermetic_law,
+        }) as any
+    );
 
     // Evolution events
     const evolutionEvents: EvolutionEvent[] = (parsed.evolution_events || []).map((e: any) => ({
