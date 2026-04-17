@@ -3,6 +3,7 @@
  */
 
 import type { AnnotationType, DepthAnnotation } from '@/lib/depth-annotations';
+import { isLikelyPersonName } from '@/lib/depth/person-name-blocklist';
 
 export interface DetectionPattern {
   type: AnnotationType;
@@ -324,6 +325,11 @@ export const GENERAL_PATTERNS: DetectionPattern[] = [
       const names = rawName.split(/,\s*(?:and\s+)?/).filter((n) => /^[A-Z]/.test(n));
       const primaryName = names[0] || rawName;
       if (!primaryName || primaryName.length < 4) return null;
+
+      // Blocklist gate: reject title phrases ("Secretary General", "Prime Minister")
+      // and institutional names ("Board Directors", "European Commission") that pass
+      // the regex but aren't actual people.
+      if (!isLikelyPersonName(primaryName)) return null;
 
       // Extract surrounding role context (±100 chars around the match)
       const matchPos = context.indexOf(fullMatch);
