@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: April 17, 2026 (Day 99/150) — 11:00
+> Last updated: April 17, 2026 (Day 99/150) — 10:21 UTC
 
 ## PROJECT STATE
 - **Day 99/150** | Launch: June 4, 2026 (48 days) | **~85% features complete**
@@ -82,7 +82,7 @@
 - Deploy: `~/akhai/deploy/quick-deploy.sh`
 - SSH: `ssh akhai@82.221.101.3`
 - TSC: `cd ~/akhai/packages/web && npx tsc --noEmit`
-- PM2 (VPS): `pm2 delete akhai && cd ~/app/packages/web && AKHAI_FREE_MODE=true NODE_ENV=production pm2 start "npx next start -p 3000" --name akhai`
+- PM2 (VPS): `pm2 delete akhai && cd ~/app/packages/web && NODE_ENV=production pm2 start "npx next start -p 3000" --name akhai`
 - Dev login (local): `/api/auth/dev-login`
 
 ## KEY ARCHITECTURE FILES
