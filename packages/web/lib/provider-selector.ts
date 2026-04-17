@@ -40,8 +40,8 @@ export interface ModelSpec {
  * - Multi-perspective consensus ONLY for GTP (where it adds value)
  * - Simpler configuration and predictable behavior
  */
-// Toggle: set to true for free tier (OpenRouter), false for premium (Anthropic Claude)
-const USE_FREE_TIER = !process.env.ANTHROPIC_API_KEY || process.env.AKHAI_FREE_MODE === 'true';
+// Toggle: falls back to free tier only when no Anthropic credits configured.
+const USE_FREE_TIER = !process.env.ANTHROPIC_API_KEY;
 
 const FREE_PROVIDER: ModelSpec = {
   provider: 'openrouter',
