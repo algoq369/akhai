@@ -462,7 +462,7 @@ export default function ResponseRenderer({
                   {annotations && annotations.length > 0 ? (
                     <DepthText
                       text={para}
-                      annotations={annotations.filter((a) => para.includes(a.term || ''))}
+                      annotations={annotations}
                       config={depthConfig || { ...DEFAULT_DEPTH_CONFIG, enabled: true }}
                       className=""
                       onExpand={onExpand}
