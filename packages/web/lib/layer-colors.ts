@@ -34,25 +34,75 @@ export function getLayerColorForAnnotation(content: string, term?: string): Laye
   }
 
   // Domain-specific term matching (catches terms the abstract TITLE_LAYER_MAP keywords miss)
-  // Metrics/financials → Discriminator (red ◈)
-  if (/\$[\d,]+[KMB]?|\b\d+%|\b\d+x\b|\brevenue\b|\bvaluation\b|\bgrowth\b|\bbillion\b|\bmillion\b/i.test(searchText)) {
-    return { name: 'Discriminator', meaning: 'Critical metric', color: '#EF4444', shape: '◈', annotationType: 'discriminator' };
+  // Metrics/financials → Discriminator (red ⊕)
+  if (
+    /\$[\d,]+[KMB]?|\b\d+%|\b\d+x\b|\brevenue\b|\bvaluation\b|\bgrowth\b|\bbillion\b|\bmillion\b/i.test(
+      searchText
+    )
+  ) {
+    return {
+      name: 'Discriminator',
+      meaning: 'Critical metric',
+      color: '#EF4444',
+      shape: '⊕',
+      annotationType: 'discriminator',
+    };
   }
   // Technology/implementation → Executor (purple ▽)
-  if (/\bblockchain\b|\bprotocol\b|\bAPI\b|\bSDK\b|\bdeployment\b|\binfrastructure\b|\bpipeline\b|\btraining\b|\binference\b|\bmodel\b/i.test(searchText)) {
-    return { name: 'Executor', meaning: 'Implementation', color: '#9333EA', shape: '▽', annotationType: 'executor' };
+  if (
+    /\bblockchain\b|\bprotocol\b|\bAPI\b|\bSDK\b|\bdeployment\b|\binfrastructure\b|\bpipeline\b|\btraining\b|\binference\b|\bmodel\b/i.test(
+      searchText
+    )
+  ) {
+    return {
+      name: 'Executor',
+      meaning: 'Implementation',
+      color: '#9333EA',
+      shape: '▽',
+      annotationType: 'executor',
+    };
   }
-  // Paradigm-level concepts → Meta-Core (deep purple ◊)
-  if (/\bAGI\b|\bsingularity\b|\bconsciousness\b|\bparadigm\b|\btranshumanism\b|\brevolution/i.test(searchText)) {
-    return { name: 'Meta-Core', meaning: 'Paradigm shift', color: '#7C3AED', shape: '◊', annotationType: 'meta-core' };
+  // Paradigm-level concepts → Meta-Core (deep purple ◇)
+  if (
+    /\bAGI\b|\bsingularity\b|\bconsciousness\b|\bparadigm\b|\btranshumanism\b|\brevolution/i.test(
+      searchText
+    )
+  ) {
+    return {
+      name: 'Meta-Core',
+      meaning: 'Paradigm shift',
+      color: '#7C3AED',
+      shape: '◇',
+      annotationType: 'meta-core',
+    };
   }
   // Brands/orgs → Classifier (orange □)
-  if (/\bOpenAI\b|\bAnthropic\b|\bGoogle\b|\bDeepMind\b|\bMeta\b|\bMicrosoft\b|\bApple\b|\bTesla\b|\bxAI\b|\bMistral\b/i.test(searchText)) {
-    return { name: 'Classifier', meaning: 'Entity classification', color: '#F97316', shape: '□', annotationType: 'classifier' };
+  if (
+    /\bOpenAI\b|\bAnthropic\b|\bGoogle\b|\bDeepMind\b|\bMeta\b|\bMicrosoft\b|\bApple\b|\bTesla\b|\bxAI\b|\bMistral\b/i.test(
+      searchText
+    )
+  ) {
+    return {
+      name: 'Classifier',
+      meaning: 'Entity classification',
+      color: '#F97316',
+      shape: '□',
+      annotationType: 'classifier',
+    };
   }
   // Countries/regions → Encoder (indigo △)
-  if (/\bIndia\b|\bChina\b|\bUSA\b|\bEurope\b|\bAfrica\b|\bJapan\b|\bRussia\b|\bUK\b|\bGermany\b|\bFrance\b|\bBrazil\b/i.test(searchText)) {
-    return { name: 'Encoder', meaning: 'Geopolitical pattern', color: '#6366F1', shape: '△', annotationType: 'encoder' };
+  if (
+    /\bIndia\b|\bChina\b|\bUSA\b|\bEurope\b|\bAfrica\b|\bJapan\b|\bRussia\b|\bUK\b|\bGermany\b|\bFrance\b|\bBrazil\b/i.test(
+      searchText
+    )
+  ) {
+    return {
+      name: 'Encoder',
+      meaning: 'Geopolitical pattern',
+      color: '#6366F1',
+      shape: '△',
+      annotationType: 'encoder',
+    };
   }
 
   // Default: Embedding (raw-data)
@@ -60,7 +110,7 @@ export function getLayerColorForAnnotation(content: string, term?: string): Laye
     name: 'Embedding',
     meaning: 'Embedding',
     color: '#F59E0B',
-    shape: '●',
+    shape: '○',
     annotationType: 'raw-data',
   };
 }

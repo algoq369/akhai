@@ -6,18 +6,23 @@ import { type DepthConfig, DEFAULT_DEPTH_CONFIG } from '@/lib/depth-annotations'
 
 // ============ LAYER KEYWORD MAP ============
 
-export const TITLE_LAYER_MAP: { keywords: string[]; layer: string; color: string; sigil: string }[] = [
+export const TITLE_LAYER_MAP: {
+  keywords: string[];
+  layer: string;
+  color: string;
+  sigil: string;
+}[] = [
   {
     keywords: ['risk', 'limitation', 'flaw', 'challenge', 'concern', 'critical', 'warning'],
     layer: 'Discriminator',
     color: '#EF4444',
-    sigil: '◈',
+    sigil: '⊕',
   },
   {
     keywords: ['principle', 'foundation', 'fundamental', 'first', 'core', 'reasoning'],
     layer: 'Reasoning',
     color: '#6B7280',
-    sigil: '→',
+    sigil: '⬡',
   },
   {
     keywords: ['pattern', 'structure', 'deep', 'encode', 'framework', 'architecture'],
@@ -35,7 +40,7 @@ export const TITLE_LAYER_MAP: { keywords: string[]; layer: string; color: string
     keywords: ['creative', 'imagine', 'brainstorm', 'innovate', 'idea', 'novel'],
     layer: 'Generative',
     color: '#22C55E',
-    sigil: '⊕',
+    sigil: '⬢',
   },
   {
     keywords: [
@@ -49,7 +54,7 @@ export const TITLE_LAYER_MAP: { keywords: string[]; layer: string; color: string
     ],
     layer: 'Attention',
     color: '#EAB308',
-    sigil: '☉',
+    sigil: '⊙',
   },
   {
     keywords: ['compare', 'classify', 'logic', 'evaluate', 'analysis', 'assess', 'examine'],
@@ -67,13 +72,13 @@ export const TITLE_LAYER_MAP: { keywords: string[]; layer: string; color: string
     keywords: ['fact', 'data', 'define', 'basic', 'what is', 'overview', 'introduction'],
     layer: 'Embedding',
     color: '#F59E0B',
-    sigil: '●',
+    sigil: '⊘',
   },
   {
     keywords: ['meta', 'conscious', 'aware', 'self', 'knowledge', 'epistemic'],
     layer: 'Meta-Core',
     color: '#7C3AED',
-    sigil: '◊',
+    sigil: '◇',
   },
   {
     keywords: ['insight', 'emerge', 'hidden', 'connect', 'epiphany', 'revelation'],
@@ -87,7 +92,7 @@ export const TITLE_LAYER_MAP: { keywords: string[]; layer: string; color: string
 const CYCLING_LAYERS = [
   { layer: 'Encoder', color: '#6366F1', sigil: '△' },
   { layer: 'Expansion', color: '#3B82F6', sigil: '○' },
-  { layer: 'Generative', color: '#22C55E', sigil: '⊕' },
+  { layer: 'Generative', color: '#22C55E', sigil: '⬢' },
   { layer: 'Executor', color: '#9333EA', sigil: '▽' },
   { layer: 'Classifier', color: '#F97316', sigil: '□' },
 ];
@@ -395,7 +400,7 @@ export default function ResponseRenderer({
           ? detectLayerFromTitle(section.title, idx)
           : dominantLayer
             ? detectLayerFromTitle(dominantLayer, idx)
-            : { layer: 'Embedding', color: '#F59E0B', sigil: '●' };
+            : { layer: 'Embedding', color: '#F59E0B', sigil: '⊘' };
 
         const paragraphs = section.body.split(/\n\n+/).filter((p) => p.trim());
 
