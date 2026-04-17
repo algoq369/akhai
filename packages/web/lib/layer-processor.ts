@@ -120,7 +120,7 @@ async function processWeightedMode(
   const startTime = Date.now();
   const response = await callProvider(provider, {
     messages,
-    model: 'claude-opus-4-6',
+    model: 'claude-opus-4-7',
     maxTokens: 4096,
     temperature: 0.7,
   });
@@ -191,7 +191,7 @@ async function processParallelMode(
     const startTime = Date.now();
     const response = await callProvider(provider, {
       messages,
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-4-7',
       maxTokens: 1024,
       temperature: 0.7,
     });
@@ -332,7 +332,7 @@ Weight each perspective by its percentage. Resolve any conflicts by favoring hig
 
   const response = await callProvider(provider, {
     messages: [{ role: 'user' as const, content: synthesisPrompt }],
-    model: 'claude-opus-4-6',
+    model: 'claude-opus-4-7',
     maxTokens: 2048,
     temperature: 0.7,
   });

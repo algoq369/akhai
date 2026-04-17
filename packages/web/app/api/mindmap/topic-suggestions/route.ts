@@ -90,7 +90,7 @@ Generate suggestions that help explore this topic more deeply.`;
 
     // Call Claude Opus 4.6
     const message = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-4-7',
       max_tokens: 4096,
       system: systemPrompt,
       messages: [

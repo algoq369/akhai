@@ -48,7 +48,7 @@ const FREE_PROVIDER: ModelSpec = {
 
 const PREMIUM_PROVIDER: ModelSpec = {
   provider: 'anthropic',
-  model: 'claude-opus-4-6',
+  model: 'claude-opus-4-7',
   reasoning: 'Premium Claude Opus 4.6 for all queries',
 };
 
@@ -74,7 +74,7 @@ export function getProviderForMethodology(
   if (legendMode) {
     return {
       provider: 'anthropic',
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-4-7',
       reasoning: 'Legend Mode: Premium R&D with Claude Opus 4.6',
     };
   }

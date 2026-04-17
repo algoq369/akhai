@@ -204,7 +204,7 @@ export default function SettingsTab({
             </span>
             <div className="flex gap-3">
               {[
-                { id: 'claude-opus-4-6', label: 'opus 4.6', cost: '$0.075/q' },
+                { id: 'claude-opus-4-7', label: 'opus 4.7', cost: '$0.075/q' },
                 { id: 'claude-haiku-4-5-20251001', label: 'haiku', cost: '$0.007/q' },
               ].map((model) => (
                 <span
@@ -218,14 +218,14 @@ export default function SettingsTab({
                   className="text-[9px] cursor-pointer transition-colors group"
                   style={{
                     color:
-                      (settings.modelConfig?.motherBase || 'claude-opus-4-6') === model.id
+                      (settings.modelConfig?.motherBase || 'claude-opus-4-7') === model.id
                         ? document.documentElement.classList.contains('dark')
                           ? '#ffffff'
                           : '#18181b'
                         : '#94a3b8',
                   }}
                 >
-                  {(settings.modelConfig?.motherBase || 'claude-opus-4-6') === model.id ? '●' : '○'}{' '}
+                  {(settings.modelConfig?.motherBase || 'claude-opus-4-7') === model.id ? '●' : '○'}{' '}
                   {model.label}
                   <span className="text-relic-silver/50 ml-1">{model.cost}</span>
                 </span>

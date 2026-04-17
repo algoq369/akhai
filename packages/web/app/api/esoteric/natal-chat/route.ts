@@ -54,7 +54,7 @@ ${tone}`;
     try {
       const result = await callProvider('anthropic', {
         messages,
-        model: 'claude-opus-4-6',
+        model: 'claude-opus-4-7',
         maxTokens: 500,
         temperature: 0.7,
       });
