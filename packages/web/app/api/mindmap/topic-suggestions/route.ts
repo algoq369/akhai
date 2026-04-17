@@ -92,7 +92,6 @@ Generate suggestions that help explore this topic more deeply.`;
     const message = await anthropic.messages.create({
       model: 'claude-opus-4-6',
       max_tokens: 4096,
-      temperature: 0.7,
       system: systemPrompt,
       messages: [
         {

@@ -95,7 +95,6 @@ async function callAnthropic(
     body: JSON.stringify({
       model: request.model,
       max_tokens: request.maxTokens || 4096,
-      temperature: request.temperature || 0.7,
       system: systemPrompt,
       messages: messages.map((m) => ({
         role: m.role === 'system' ? 'user' : m.role,
