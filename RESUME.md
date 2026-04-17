@@ -1,83 +1,98 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: April 16, 2026 (Day 98/150) — 20:30
+> Last updated: April 17, 2026 (Day 99/150) — 11:00
 
 ## PROJECT STATE
-- **Day 98/150** | Launch: June 4, 2026 | **~85% features complete**
-- **Commits:** 514 | Repo: `/Users/sheirraza/akhai` | GitHub: `algoq369/akhai`
-- **VPS:** `akhai@82.221.101.3` (FlokiNET Iceland) | **akhai.app** live
-- **Provider:** Claude Opus 4.6 (AKHAI_FREE_MODE=false on both local + VPS)
+- **Day 99/150** | Launch: June 4, 2026 (48 days) | **~85% features complete**
+- **Commits:** 517 | Repo: `/Users/sheirraza/akhai` | GitHub: `algoq369/akhai`
+- **VPS:** `akhai@82.221.101.3` (FlokiNET Iceland) | **akhai.app** live + healthy
+- **Provider:** Claude Opus 4.6 primary | OpenRouter Llama 3.3 70B free tier
 - **Standards:** WEBNA — 5 iron rules enforced every session
+- **Master Plan:** `docs/plans/AKHAI_MASTER_PLAN_V5.md` (V5.4)
 
-## COMPLETED: Classic View + Depth Annotation Enhancement (Day 98, 28 commits)
+## LAST SESSION — Day 98-99 (Apr 16-17, 30 commits)
 
-### Classic View — ResponseRenderer (commits a81bb00 → 5953812)
-- Created `ResponseRenderer.tsx` (472 lines) — structured text rendering
-- 5-pattern regex: ## headers, [TAG]:, **PATH**, bold-on-line, plain PATH N
-- 11 AI computational layers with colors + sigils (TITLE_LAYER_MAP)
-- Dual-label section titles: `△ ENCODER · CONTENT TITLE` (layer + topic)
-- Cycling colors for PATH 1/2/3, Tier N, Phase N sub-sections
-- Markdown tables → HTML tables with zebra stripes + pivot table support
-- Entity sub-sections (Brand — description format)
-- Strip [RELATED]/[NEXT] footer tags, DENYLIST for false sections
+### Classic View (12 commits)
+- `ResponseRenderer.tsx` (472 lines) — structured text rendering
+- 5-pattern section regex: ##, [TAG]:, **PATH**, bold-on-line, plain PATH N
+- 11 AI computational layers with `TITLE_LAYER_MAP` (colors + sigils)
+- Dual-label titles: `△ ENCODER · CONTENT TITLE` (commit 5953812)
+- Markdown tables → HTML tables with pivot support (commit 559b501)
+- Universal structuring instruction for ALL 8 methodologies (commit 442c1c9)
 
-### Universal Structuring (commit 442c1c9)
-- Created `lib/prompts/structure-instruction.ts` shared constant
-- Injected into ALL 8 methodology prompts (direct, cod, sc, react, pas, tot, auto)
-- AI now produces ## headers + **Bold — desc** for every methodology
-- Verified: all 6 active methodologies produce 4-6 sub-sections
+### Macro Cadre Refactor (5 commits)
+- Click-triggered per-query analysis (Council pattern, commit 0460a66)
+- `MacroButton.tsx` + `MacroPanel.tsx` + `lib/stores/macro-store.ts`
+- Removed hard relevance gate — always analyzes on click (commit cb8d5ba)
+- Expanded keywords 48 → 150 (commit 52782b9)
+- Fixed duplicate RELEVANCE_KEYWORDS in cycle-engine.ts (commit ee36af9)
 
-### Macro Cadre Refactor (commits 0460a66 → cb8d5ba)
-- Converted from auto-render generic card → click-triggered per-query (Council pattern)
-- Created: `MacroButton.tsx`, `MacroPanel.tsx`, `lib/stores/macro-store.ts`
-- Calls `/api/esoteric/analyze` with current query on click
-- Removed hard relevance gate — always analyzes when user clicks
-- Expanded relevance keywords from 48 → 150 (geopolitical/economic/crypto terms)
-- Fixed duplicate RELEVANCE_KEYWORDS in cycle-engine.ts (re-exports from relevance.ts)
+### Depth Annotation Overhaul (11 commits)
+- Removed generic over-matching patterns (PRIORITY 1/2/3, commit 2bca5b4)
+- Removed ALL sentence-matching patterns from patterns.ts (commit e02eb8a)
+- Unified 3 competing sigil systems → single TITLE_LAYER_MAP (commit 0bf7437)
+- `isValuableAnnotation` relevance gate (commit 560d8bc)
+- Removed dead code: Hebrew detection + tag extraction (commit 48a15c7)
+- Fixed sigil shapes: domain-specific fallbacks (commit ecb1362)
+- Person name detection: 6 regex patterns with Unicode (commit 83af854)
+- Enriched fact extractor: year→era, CEO→bio, HQ→geo (commit 0483380)
+- Capped metric tooltip to 200 chars
 
-### Depth Annotation System Overhaul (commits 2bca5b4 → 83af854, 9 commits)
-- Removed 3 over-matching generic patterns (PRIORITY 1/2/3 in patterns-general.ts)
-- Removed ALL sentence-matching patterns from patterns.ts (REMAINING_PATTERNS)
-- Unified 3 competing sigil systems → single TITLE_LAYER_MAP
-- Added `isValuableAnnotation` relevance gate (rejects content=term, <30 chars, headers)
-- Removed dead code: Hebrew term detection + tag extraction
-- Fixed sigil shapes: domain-specific fallbacks (metrics→◈, tech→▽, brands→□, countries→△)
-- getLayerColorForAnnotation now checks BOTH term + content for layer matching
-- Added person name detection: 6 regex patterns for Role+Name, Name+Role, lists, possessives
-- Enriched fact extractor: year→era context, CEO→bio hint, HQ→geographic insight
-- Capped metric tooltip verbosity to 200 chars
+### Security & Deploy
+- Deployed all 30 commits to VPS akhai.app
+- Redacted leaked API keys from 5 tracked files (commit a58281b)
+- Rotated OpenRouter API key on local + VPS
+- GitHub push completed (517 commits on remote)
 
-## KEY FILES MODIFIED/CREATED THIS SESSION
-- `components/ResponseRenderer.tsx` (472 lines) — NEW, structured renderer
-- `components/MacroButton.tsx` — NEW, click-triggered macro analysis
-- `components/MacroPanel.tsx` — NEW, per-query macro display
-- `components/DepthSigil.tsx` (60 lines) — passes term to layer detection
-- `lib/stores/macro-store.ts` — NEW, zustand store for macro results
-- `lib/prompts/structure-instruction.ts` — NEW, shared structuring constant
-- `lib/depth-annotations.ts` (326 lines) — relevance gate added
-- `lib/depth/patterns.ts` (16 lines) — sentence patterns removed
-- `lib/depth/patterns-general.ts` (398 lines) — person names + enriched facts
-- `lib/layer-colors.ts` (66 lines) — unified to TITLE_LAYER_MAP + domain fallbacks
-- `lib/esoteric/relevance.ts` (60 lines) — expanded 150 keywords
-- `lib/esoteric/cycle-engine.ts` — re-exports relevance (no duplicate)
-- `app/api/esoteric/analyze/route.ts` — removed hard gate, relevance as hint
+## VPS PRODUCTION STATUS (verified Apr 17)
+- Health: ✅ ok | DB: connected | Keys: both verified
+- Direct query: ✅ working | Council: ✅ 4 agents + synthesis
+- Macro analyze: ✅ relevant=true, synthesis generated
+- All 11 pages: ✅ 200 OK | Finance/News: ✅ data flowing
+- Auth: email ✅, GitHub ✅, wallet ✅, Twitter ⚠️ needs creds
 
-## NEXT PRIORITIES
-1. **Deploy to VPS** — rsync latest 28 commits to akhai.app
-2. **Esoteric Library scaffold** (~4h) — next Master Plan item
-3. **DDG search fix** — depth annotations UI refinements
-4. **Twitter OAuth** — add TWITTER_CLIENT_ID/SECRET to VPS .env.local
-5. **Reown domain confirmation** — dashboard.reown.com
+## NEXT PRIORITIES (pick up here)
+### P0 — Immediate
+1. Live visual test on akhai.app — Classic View + depth annotations + macro + council render
+2. Metadata SSE render — verify layer calibration on VPS
+3. Live refinement buttons test (refine/enhance/correct/instruct)
 
-## KNOWN DEBT
-- 5 files borderline >500 lines (PipelineHistoryPanel 623, useCanvasState 568)
-- Person name false positives: "secretary general", "minister share" — needs blocklist
-- ~65 `as any` casts remaining
-- Depth annotation expandQuery not wired to actual follow-up queries yet
+### P1 — This Week
+4. Depth annotation: person name blocklist (false positives: secretary general, etc.)
+5. Depth annotation: wire expandQuery to follow-up queries on sigil click
+6. Canvas refinement — visual test on VPS
+7. DDG search fix (pre-session debt)
+8. Esoteric Library scaffold (~4h)
+
+### P2 — Pre-Launch Polish
+9. Split 5 files >500 lines
+10. History API fix (returns dict not list)
+11. Twitter OAuth + Reown domain
+12. Landing page + SEO + PWA
+
+## KNOWN BUGS
+- Person name false positives: "secretary general", "minister share" (patterns-general.ts)
+- 5 files >500 lines: PipelineHistoryPanel 623, useCanvasState 568, content-classifier 555, CanvasNodeContent 538, ChatMessages 509
+- simple-query/route.ts 598 lines (needs split)
+- DDG search broken (pre-session debt)
+- Depth annotation expandQuery not wired to actual follow-up queries
 
 ## KEY COMMANDS
-- Dev restart: `lsof -ti:3000 | xargs kill -9; sleep 2; cd packages/web && rm -rf .next .turbo; npm run predev; SKIP_ENV_VALIDATION=1 npx next dev --turbopack -p 3000`
+- Dev restart: `lsof -ti:3000 | xargs kill -9; sleep 2; cd ~/akhai/packages/web && rm -rf .next .turbo; npm run predev; SKIP_ENV_VALIDATION=1 npx next dev --turbopack -p 3000`
 - Deploy: `~/akhai/deploy/quick-deploy.sh`
-- SSH: `ssh -o StrictHostKeyChecking=no akhai@82.221.101.3`
-- TSC: `npx tsc --noEmit`
-- PM2 env: `pm2 delete akhai && cd ~/app/packages/web && NODE_ENV=production pm2 start "npx next start -p 3000" --name akhai`
+- SSH: `ssh akhai@82.221.101.3`
+- TSC: `cd ~/akhai/packages/web && npx tsc --noEmit`
+- PM2 (VPS): `pm2 delete akhai && cd ~/app/packages/web && AKHAI_FREE_MODE=true NODE_ENV=production pm2 start "npx next start -p 3000" --name akhai`
+- Dev login (local): `/api/auth/dev-login`
+
+## KEY ARCHITECTURE FILES
+- `components/ResponseRenderer.tsx` (472) — Classic View structured renderer + TITLE_LAYER_MAP (exported)
+- `components/sections/ChatMessages.tsx` (509) — wires ResponseRenderer + MacroButton + CouncilButton
+- `components/DepthSigil.tsx` (60) — clickable layer sigil, calls getLayerColorForAnnotation(content, term)
+- `lib/depth-annotations.ts` (326) — detectAnnotations + isValuableAnnotation gate
+- `lib/depth/patterns-general.ts` (411) — person names + facts + metrics
+- `lib/layer-colors.ts` (66) — getLayerColorForAnnotation using TITLE_LAYER_MAP + domain fallbacks
+- `lib/prompts/structure-instruction.ts` — UNIVERSAL_STRUCTURE_INSTRUCTION
+- `lib/query-handler.ts` — METHODOLOGY_INSTRUCTIONS + direct mode prompt
+- `lib/esoteric/relevance.ts` (60) — 150 keywords, single source of truth
+- `app/api/esoteric/analyze/route.ts` — macro analysis, no hard gate
