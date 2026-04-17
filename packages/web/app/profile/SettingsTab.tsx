@@ -205,7 +205,7 @@ export default function SettingsTab({
             <div className="flex gap-3">
               {[
                 { id: 'claude-opus-4-6', label: 'opus 4.6', cost: '$0.075/q' },
-                { id: 'claude-3-5-haiku-20241022', label: 'haiku', cost: '$0.007/q' },
+                { id: 'claude-haiku-4-5-20251001', label: 'haiku', cost: '$0.007/q' },
               ].map((model) => (
                 <span
                   key={model.id}

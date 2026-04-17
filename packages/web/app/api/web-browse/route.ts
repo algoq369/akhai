@@ -172,7 +172,7 @@ async function analyzeGitHub(url: URL, userQuery?: string) {
           content: prompt,
         },
       ],
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       maxTokens: 2000,
     });
 
@@ -221,7 +221,7 @@ async function analyzeYouTube(url: URL, userQuery?: string) {
         content: prompt,
       },
     ],
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5-20251001',
     maxTokens: 2000,
   });
 
@@ -301,7 +301,7 @@ async function analyzeWebpage(url: URL, userQuery?: string) {
           content: prompt,
         },
       ],
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5-20251001',
       maxTokens: 2000,
     });
 
