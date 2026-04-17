@@ -1,6 +1,6 @@
 /**
  * Side Canal Service
- * 
+ *
  * Autonomous context tracking: topic extraction, synopsis generation, suggestions
  */
 
@@ -10,23 +10,23 @@ import { extractKeywords } from './side-canal-keywords';
 export { extractKeywords } from './side-canal-keywords';
 export { getKeywordLayersContext } from './side-canal-keywords';
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const FREE_MODE = process.env.AKHAI_FREE_MODE === 'true';
-
 /**
  * Call LLM with OpenRouter free tier fallback when Anthropic is unavailable.
  * Returns the text content from the response, or null on failure.
  */
 async function callLLM(prompt: string, maxTokens: number): Promise<string | null> {
-  // Use Anthropic if credits available and not in free mode
-  if (ANTHROPIC_API_KEY && !FREE_MODE) {
+  // Read env lazily — module-scope reads race with Next.js dev env loading.
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+
+  // Use Anthropic if credits available
+  if (anthropicKey) {
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
+          'x-api-key': anthropicKey,
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
@@ -53,7 +53,7 @@ async function callLLM(prompt: string, maxTokens: number): Promise<string | null
   }
 
   // OpenRouter free tier fallback
-  if (!OPENROUTER_API_KEY) {
+  if (!openrouterKey) {
     console.warn('No OPENROUTER_API_KEY configured, cannot fall back');
     return null;
   }
@@ -62,7 +62,7 @@ async function callLLM(prompt: string, maxTokens: number): Promise<string | null
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${openrouterKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -121,7 +121,7 @@ export async function extractTopics(
   userId: string | null,
   legendMode: boolean = false
 ): Promise<Topic[]> {
-  if (!ANTHROPIC_API_KEY && !OPENROUTER_API_KEY) {
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) {
     console.warn('No API keys configured, skipping topic extraction');
     return [];
   }
@@ -129,7 +129,7 @@ export async function extractTopics(
   try {
     // Step 1: Keyword extraction (simple noun extraction)
     const keywords = extractKeywords(query + ' ' + response);
-    
+
     // Step 2: AI-powered topic identification using Claude Haiku
     const topicPrompt = `Extract 3-5 SPECIFIC topics from this conversation.
 
@@ -152,7 +152,7 @@ Example: [{"name": "Quantum Computing RSA Threat", "description": "How quantum a
       console.error('Failed to extract topics: no LLM response');
       return [];
     }
-    
+
     // Parse JSON from response
     let topics: Array<{ name: string; description?: string; category?: string }> = [];
     try {
@@ -169,11 +169,15 @@ Example: [{"name": "Quantum Computing RSA Threat", "description": "How quantum a
     const storedTopics: Topic[] = [];
     for (const topicData of topics) {
       const topicId = randomBytes(8).toString('hex');
-      
+
       // Check if topic already exists for this user
-      const existing = db.prepare(`
+      const existing = db
+        .prepare(
+          `
         SELECT * FROM topics WHERE name = ? AND (user_id = ?)
-      `).get(topicData.name, userId) as Topic | undefined;
+      `
+        )
+        .get(topicData.name, userId) as Topic | undefined;
 
       if (existing) {
         storedTopics.push(existing);
@@ -181,10 +185,12 @@ Example: [{"name": "Quantum Computing RSA Threat", "description": "How quantum a
       }
 
       // Create new topic
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO topics (id, name, description, category, user_id)
         VALUES (?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         topicId,
         topicData.name,
         topicData.description || null,
@@ -211,29 +217,38 @@ export async function generateSynopsis(
   queryIds: string[],
   userId: string | null
 ): Promise<string | null> {
-  if ((!ANTHROPIC_API_KEY && !OPENROUTER_API_KEY) || queryIds.length === 0) {
+  if (
+    (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) ||
+    queryIds.length === 0
+  ) {
     return null;
   }
 
   try {
     // Get queries from database
-    const queries = db.prepare(`
+    const queries = db
+      .prepare(
+        `
       SELECT q.query, q.result
       FROM queries q
       JOIN query_topics qt ON q.id = qt.query_id
       WHERE qt.topic_id = ? AND (q.user_id = ? OR q.user_id IS NULL)
       LIMIT 10
-    `).all(topicId, userId) as Array<{ query: string; result: string | null }>;
+    `
+      )
+      .all(topicId, userId) as Array<{ query: string; result: string | null }>;
 
     if (queries.length === 0) {
       return null;
     }
 
     // Build context from queries
-    const context = queries.map((q, i) => {
-      const result = q.result ? JSON.parse(q.result) : null;
-      return `Q${i + 1}: ${q.query}\nA${i + 1}: ${result?.finalAnswer || 'No answer'}`;
-    }).join('\n\n');
+    const context = queries
+      .map((q, i) => {
+        const result = q.result ? JSON.parse(q.result) : null;
+        return `Q${i + 1}: ${q.query}\nA${i + 1}: ${result?.finalAnswer || 'No answer'}`;
+      })
+      .join('\n\n');
 
     const synopsisPrompt = `Generate a concise synopsis (2-3 sentences) summarizing the key insights from these related queries:
 
@@ -246,16 +261,12 @@ Synopsis:`;
     // Store synopsis
     if (synopsis) {
       const synopsisId = randomBytes(8).toString('hex');
-      db.prepare(`
+      db.prepare(
+        `
         INSERT OR REPLACE INTO synopses (id, topic_id, content, query_ids, user_id)
         VALUES (?, ?, ?, ?, ?)
-      `).run(
-        synopsisId,
-        topicId,
-        synopsis,
-        JSON.stringify(queryIds),
-        userId
-      );
+      `
+      ).run(synopsisId, topicId, synopsis, JSON.stringify(queryIds), userId);
     }
 
     return synopsis;
@@ -268,10 +279,7 @@ Synopsis:`;
 /**
  * Get suggestions for related topics based on current conversation topics
  */
-export function getSuggestions(
-  currentTopics: string[],
-  userId: string | null
-): Suggestion[] {
+export function getSuggestions(currentTopics: string[], userId: string | null): Suggestion[] {
   if (currentTopics.length === 0) {
     return [];
   }
@@ -279,7 +287,9 @@ export function getSuggestions(
   try {
     // Find topics related to current topics via relationships
     const placeholders = currentTopics.map(() => '?').join(',');
-    const related = db.prepare(`
+    const related = db
+      .prepare(
+        `
       SELECT DISTINCT t.id, t.name, tr.strength, tr.relationship_type
       FROM topics t
       JOIN topic_relationships tr ON t.id = tr.topic_to
@@ -288,14 +298,16 @@ export function getSuggestions(
         AND (t.user_id = ? OR t.user_id IS NULL)
       ORDER BY tr.strength DESC
       LIMIT 5
-    `).all(...currentTopics, ...currentTopics, userId) as Array<{
+    `
+      )
+      .all(...currentTopics, ...currentTopics, userId) as Array<{
       id: string;
       name: string;
       strength: number;
       relationship_type: string;
     }>;
 
-    return related.map(r => ({
+    return related.map((r) => ({
       topicId: r.id,
       topicName: r.name,
       reason: `Related to your current topics (${r.relationship_type})`,
@@ -310,10 +322,7 @@ export function getSuggestions(
 /**
  * Get context for a query based on related synopses
  */
-export function getContextForQuery(
-  query: string,
-  userId: string | null
-): string | null {
+export function getContextForQuery(query: string, userId: string | null): string | null {
   try {
     // Find topics that match query keywords
     const keywords = extractKeywords(query);
@@ -323,31 +332,39 @@ export function getContextForQuery(
 
     // Find topics matching keywords
     const placeholders = keywords.map(() => 'name LIKE ?').join(' OR ');
-    const matchingTopics = db.prepare(`
+    const matchingTopics = db
+      .prepare(
+        `
       SELECT id FROM topics
       WHERE (${placeholders})
         AND (user_id = ?)
       LIMIT 3
-    `).all(...keywords.map(k => `%${k}%`), userId) as Array<{ id: string }>;
+    `
+      )
+      .all(...keywords.map((k) => `%${k}%`), userId) as Array<{ id: string }>;
 
     if (matchingTopics.length === 0) {
       return null;
     }
 
     // Get synopses for matching topics
-    const topicIds = matchingTopics.map(t => t.id);
+    const topicIds = matchingTopics.map((t) => t.id);
     const synopsisPlaceholders = topicIds.map(() => '?').join(',');
-    const synopses = db.prepare(`
+    const synopses = db
+      .prepare(
+        `
       SELECT content FROM synopses
       WHERE topic_id IN (${synopsisPlaceholders})
         AND (user_id = ?)
-    `).all(...topicIds, userId) as Array<{ content: string }>;
+    `
+      )
+      .all(...topicIds, userId) as Array<{ content: string }>;
 
     if (synopses.length === 0) {
       return null;
     }
 
-    return synopses.map(s => s.content).join('\n\n');
+    return synopses.map((s) => s.content).join('\n\n');
   } catch (error) {
     console.error('Context retrieval error:', error);
     return null;
@@ -364,10 +381,12 @@ export function linkQueryToTopics(
 ): void {
   try {
     for (const topicId of topicIds) {
-      db.prepare(`
+      db.prepare(
+        `
         INSERT OR IGNORE INTO query_topics (query_id, topic_id, relevance)
         VALUES (?, ?, ?)
-      `).run(queryId, topicId, relevance);
+      `
+      ).run(queryId, topicId, relevance);
     }
   } catch (error) {
     console.error('Link query to topics error:', error);
@@ -377,10 +396,7 @@ export function linkQueryToTopics(
 /**
  * Update topic relationships based on co-occurrence
  */
-export function updateTopicRelationships(
-  topicIds: string[],
-  userId: string | null
-): void {
+export function updateTopicRelationships(topicIds: string[], userId: string | null): void {
   try {
     // For each pair of topics, create/update relationship
     for (let i = 0; i < topicIds.length; i++) {
@@ -389,24 +405,32 @@ export function updateTopicRelationships(
         const topicTo = topicIds[j];
 
         // Check if relationship exists
-        const existing = db.prepare(`
+        const existing = db
+          .prepare(
+            `
           SELECT * FROM topic_relationships
           WHERE topic_from = ? AND topic_to = ? AND (user_id = ?)
-        `).get(topicFrom, topicTo, userId);
+        `
+          )
+          .get(topicFrom, topicTo, userId);
 
         if (existing) {
           // Update strength
-          db.prepare(`
+          db.prepare(
+            `
             UPDATE topic_relationships
             SET strength = strength + 0.1, user_id = ?
             WHERE topic_from = ? AND topic_to = ?
-          `).run(userId, topicFrom, topicTo);
+          `
+          ).run(userId, topicFrom, topicTo);
         } else {
           // Create new relationship
-          db.prepare(`
+          db.prepare(
+            `
             INSERT INTO topic_relationships (topic_from, topic_to, relationship_type, strength, user_id)
             VALUES (?, ?, 'related', 1.0, ?)
-          `).run(topicFrom, topicTo, userId);
+          `
+          ).run(topicFrom, topicTo, userId);
         }
       }
     }
@@ -414,4 +438,3 @@ export function updateTopicRelationships(
     console.error('Update topic relationships error:', error);
   }
 }
-
