@@ -40,9 +40,6 @@ export interface ModelSpec {
  * - Multi-perspective consensus ONLY for GTP (where it adds value)
  * - Simpler configuration and predictable behavior
  */
-// Toggle: falls back to free tier only when no Anthropic credits configured.
-const USE_FREE_TIER = !process.env.ANTHROPIC_API_KEY;
-
 const FREE_PROVIDER: ModelSpec = {
   provider: 'openrouter',
   model: 'meta-llama/llama-3.3-70b-instruct:free',
@@ -55,23 +52,12 @@ const PREMIUM_PROVIDER: ModelSpec = {
   reasoning: 'Premium Claude Opus 4.6 for all queries',
 };
 
-const DEFAULT_PROVIDER = USE_FREE_TIER ? FREE_PROVIDER : PREMIUM_PROVIDER;
-
-export const METHODOLOGY_PROVIDER_MAP: Record<CoreMethodology, ModelSpec> = {
-  direct: DEFAULT_PROVIDER,
-  cod: DEFAULT_PROVIDER,
-  sc: DEFAULT_PROVIDER,
-  react: DEFAULT_PROVIDER,
-  pas: DEFAULT_PROVIDER,
-  tot: {
-    provider: DEFAULT_PROVIDER.provider,
-    model: DEFAULT_PROVIDER.model,
-    reasoning: USE_FREE_TIER
-      ? 'Free tier: Multi-methodology via Llama 3.3 70B'
-      : 'Multi-AI consensus: Anthropic + DeepSeek + Mistral + xAI advisors',
-  },
-  auto: DEFAULT_PROVIDER,
-};
+// Evaluated lazily at call time: Next.js dev server loads env *after* some
+// module imports complete, so reading process.env at module scope locks us
+// into the free tier for the life of the process.
+function getDefaultProvider(): ModelSpec {
+  return process.env.ANTHROPIC_API_KEY ? PREMIUM_PROVIDER : FREE_PROVIDER;
+}
 
 /**
  * Get provider configuration for a methodology
@@ -93,7 +79,19 @@ export function getProviderForMethodology(
     };
   }
 
-  return METHODOLOGY_PROVIDER_MAP[methodology];
+  const defaultProvider = getDefaultProvider();
+
+  if (methodology === 'tot') {
+    return {
+      provider: defaultProvider.provider,
+      model: defaultProvider.model,
+      reasoning: process.env.ANTHROPIC_API_KEY
+        ? 'Multi-AI consensus: Anthropic + DeepSeek + Mistral + xAI advisors'
+        : 'Free tier: Multi-methodology via Llama 3.3 70B',
+    };
+  }
+
+  return defaultProvider;
 }
 
 /**
