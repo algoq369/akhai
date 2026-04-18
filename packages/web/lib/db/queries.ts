@@ -19,6 +19,7 @@ export function updateQuery(
     tokens_used?: number;
     cost?: number;
     gnostic_metadata?: string | null;
+    raw_thinking?: string | null;
   },
   userId: string | null
 ) {

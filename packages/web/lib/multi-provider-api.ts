@@ -19,10 +19,12 @@ export interface CompletionRequest {
   maxTokens?: number;
   temperature?: number;
   systemPrompt?: string;
+  extendedThinking?: boolean;
 }
 
 export interface CompletionResponse {
   content: string;
+  rawThinking?: string;
   usage: {
     inputTokens: number;
     outputTokens: number;
@@ -85,6 +87,25 @@ async function callAnthropic(
   const systemPrompt =
     request.systemPrompt || request.messages.find((m) => m.role === 'system')?.content;
 
+  // Build request body — extended thinking requires NO temperature/top_p/top_k
+  const body: Record<string, any> = {
+    model: request.model,
+    max_tokens: request.maxTokens || 4096,
+    system: systemPrompt,
+    messages: messages.map((m) => ({
+      role: m.role === 'system' ? 'user' : m.role,
+      content: m.content,
+    })),
+  };
+
+  if (request.extendedThinking) {
+    body.thinking = { type: 'enabled', budget_tokens: 10000 };
+    // Anthropic 400s if temperature/top_p/top_k present with extended thinking
+    delete body.temperature;
+    delete body.top_p;
+    delete body.top_k;
+  }
+
   const response = await fetch(config.baseUrl, {
     method: 'POST',
     headers: {
@@ -92,15 +113,7 @@ async function callAnthropic(
       'x-api-key': config.apiKey,
       'anthropic-version': config.versionHeader!,
     },
-    body: JSON.stringify({
-      model: request.model,
-      max_tokens: request.maxTokens || 4096,
-      system: systemPrompt,
-      messages: messages.map((m) => ({
-        role: m.role === 'system' ? 'user' : m.role,
-        content: m.content,
-      })),
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -116,8 +129,23 @@ async function callAnthropic(
   const pricing = getProviderPricing('anthropic');
   const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000;
 
+  // Extract thinking + text content blocks
+  let textContent = '';
+  let rawThinking: string | undefined;
+  if (Array.isArray(data.content)) {
+    for (const block of data.content) {
+      if (block.type === 'thinking') {
+        rawThinking = block.thinking || '';
+      } else if (block.type === 'text') {
+        textContent = block.text || '';
+      }
+    }
+  }
+  if (!textContent) textContent = data.content?.[0]?.text || '';
+
   return {
-    content: data.content[0]?.text || '',
+    content: textContent,
+    rawThinking,
     usage: {
       inputTokens,
       outputTokens,

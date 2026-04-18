@@ -156,6 +156,23 @@ export function migrateCreateConversationSyntheses() {
 }
 
 /**
+ * Migration: Add raw_thinking column to queries table for extended thinking storage
+ */
+export function migrateAddRawThinkingColumn() {
+  try {
+    const tableInfo = db.prepare('PRAGMA table_info(queries)').all() as Array<{ name: string }>;
+    const columnNames = tableInfo.map((col) => col.name);
+
+    if (!columnNames.includes('raw_thinking')) {
+      db.exec('ALTER TABLE queries ADD COLUMN raw_thinking TEXT DEFAULT NULL');
+      console.log('✅ Added raw_thinking column to queries table');
+    }
+  } catch (error) {
+    console.error('[Migration Error] Failed to add raw_thinking column:', error);
+  }
+}
+
+/**
  * Run all migrations. Called from database.ts on module load.
  */
 export function runMigrations() {
@@ -166,6 +183,7 @@ export function runMigrations() {
     migrateAddAnnotationsColumns();
     migrateAddCognitiveSignatureColumns();
     migrateCreateConversationSyntheses();
+    migrateAddRawThinkingColumn();
   } catch (error) {
     console.error('[Migration Failed]', error);
   }

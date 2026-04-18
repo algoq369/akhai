@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
       liveRefinements,
       grimoireContext,
       queryId: clientQueryId,
+      extendedThinking,
     } = parsed.data;
     // Merge instinctMode flag into instinctConfig.enabled
     const instinctConfig = rawInstinctConfig
@@ -339,6 +340,8 @@ export async function POST(request: NextRequest) {
             model: usedModel,
             maxTokens: 4096,
             temperature: 0.7,
+            extendedThinking:
+              extendedThinking && selectedProvider === 'anthropic' ? true : undefined,
           }),
         {
           maxAttempts: 3,
@@ -439,6 +442,7 @@ export async function POST(request: NextRequest) {
     });
 
     const content = apiResponse!.content;
+    const rawThinking = apiResponse!.rawThinking || null;
     const inputTokens = apiResponse!.usage.inputTokens;
     const outputTokens = apiResponse!.usage.outputTokens;
     const tokens = apiResponse!.usage.totalTokens;
@@ -447,6 +451,50 @@ export async function POST(request: NextRequest) {
 
     logger.query.apiResponse(selectedProvider.toUpperCase(), tokens, latency);
     log('INFO', 'API', `Response received: ${tokens} tokens, ${latency}ms, $${cost.toFixed(6)}`);
+
+    // ========== EXTENDED THINKING SSE ==========
+    if (rawThinking) {
+      log('INFO', 'THINKING', `Extended thinking: ${rawThinking.length} chars`);
+      // Emit thinking as chunked SSE events for client-side live streaming
+      const CHUNK_SIZE = 120;
+      for (let i = 0; i < rawThinking.length; i += CHUNK_SIZE) {
+        const chunk = rawThinking.slice(i, i + CHUNK_SIZE);
+        emitAndPersist(queryId, {
+          id: `${queryId}-thinking-${i}`,
+          queryId,
+          stage: 'reasoning',
+          timestamp: Date.now() - startTime,
+          data: chunk,
+          details: {
+            narrative: chunk,
+            reasoning: {
+              intent: 'extended_thinking',
+              approach: 'opus',
+              reflectionMode: 'thinking',
+              ascentLevel: 0,
+              providerReason: '',
+            },
+          },
+        });
+      }
+      // Emit thinking complete marker
+      emitAndPersist(queryId, {
+        id: `${queryId}-thinking-complete`,
+        queryId,
+        stage: 'reasoning',
+        timestamp: Date.now() - startTime,
+        data: '__thinking_complete__',
+        details: {
+          reasoning: {
+            intent: 'thinking_complete',
+            approach: 'opus',
+            reflectionMode: 'thinking',
+            ascentLevel: 0,
+            providerReason: '',
+          },
+        },
+      });
+    }
 
     // ========== GROUNDING GUARD ==========
     const guardResult = await runGroundingGuard(content, query);
@@ -493,6 +541,7 @@ export async function POST(request: NextRequest) {
         result: JSON.stringify({ finalAnswer: content }),
         tokens_used: tokens,
         cost: cost,
+        raw_thinking: rawThinking,
       },
       userId
     );
