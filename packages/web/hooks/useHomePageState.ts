@@ -96,6 +96,11 @@ export function useHomePageState() {
   const [refinementCounts, setRefinementCounts] = useState<Record<string, number>>({});
   const pendingRefinementCount = useRef(0);
 
+  // ─── Cognitive Signatures ────────────────────────────────
+  const [messageCognitiveSignatures, setMessageCognitiveSignatures] = useState<Record<string, any>>(
+    {}
+  );
+
   // ─── View Mode (classic / mini-canvas / canvas) ──────────
   const [viewMode, setViewMode] = useState<'classic' | 'mini-canvas' | 'canvas'>('classic');
   const isCanvasMode = viewMode === 'canvas';
@@ -213,6 +218,8 @@ export function useHomePageState() {
     setCurrentLang,
     setLegendMode,
     messagesEndRef,
+    messageCognitiveSignatures,
+    setMessageCognitiveSignatures,
   });
 
   // ═══════════════ Prop bundles (delegated) ═════════════════
@@ -229,6 +236,7 @@ export function useHomePageState() {
     depthConfig,
     setDepthConfig,
     messageAnnotations,
+    messageCognitiveSignatures,
     mindmapVisibility,
     setMindmapVisibility,
     gnosticVisibility,
@@ -405,6 +413,10 @@ export function useHomePageState() {
     refinementCounts,
     setRefinementCounts,
     pendingRefinementCount,
+
+    // Cognitive Signatures
+    messageCognitiveSignatures,
+    setMessageCognitiveSignatures,
 
     // View Mode
     viewMode,

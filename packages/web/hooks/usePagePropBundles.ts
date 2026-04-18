@@ -19,6 +19,7 @@ export function buildPagePropBundles(opts: {
   depthConfig: any;
   setDepthConfig: any;
   messageAnnotations: any;
+  messageCognitiveSignatures: any;
   mindmapVisibility: any;
   setMindmapVisibility: any;
   gnosticVisibility: any;
@@ -91,6 +92,7 @@ export function buildPagePropBundles(opts: {
     depthConfig: s.depthConfig,
     setDepthConfig: s.setDepthConfig,
     messageAnnotations: s.messageAnnotations,
+    messageCognitiveSignatures: s.messageCognitiveSignatures,
     mindmapVisibility: s.mindmapVisibility,
     setMindmapVisibility: s.setMindmapVisibility,
     gnosticVisibility: s.gnosticVisibility,

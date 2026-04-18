@@ -23,6 +23,7 @@ import CouncilButton from '@/components/CouncilButton';
 import CouncilPanel from '@/components/CouncilPanel';
 import MacroButton from '@/components/MacroButton';
 import MacroPanel from '@/components/MacroPanel';
+import InlineDialogue from '@/components/cognitive/InlineDialogue';
 
 /** Generate LayerMini data for every query — adapts to content and evolves with conversation */
 function generateLayerData(
@@ -97,6 +98,7 @@ interface ChatMessagesProps {
   depthConfig: DepthConfig;
   setDepthConfig: (config: DepthConfig) => void;
   messageAnnotations: Record<string, any[]>;
+  messageCognitiveSignatures: Record<string, any>;
   mindmapVisibility: Record<string, boolean>;
   setMindmapVisibility: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   gnosticVisibility: Record<string, boolean>;
@@ -124,6 +126,7 @@ export default function ChatMessages({
   depthConfig,
   setDepthConfig,
   messageAnnotations,
+  messageCognitiveSignatures,
   mindmapVisibility,
   setMindmapVisibility,
   gnosticVisibility,
@@ -251,6 +254,14 @@ export default function ChatMessages({
                       onOpenMindMap={() => setShowMindMap(true)}
                       onDeepDive={(query) => setDeepDiveQuery(query)}
                     />
+
+                    {/* Cognitive Signature — inline dialogue above response */}
+                    {message.role === 'assistant' && !message.isStreaming && (
+                      <InlineDialogue
+                        signature={messageCognitiveSignatures[message.id] || null}
+                        isLoading={!messageCognitiveSignatures[message.id]}
+                      />
+                    )}
 
                     {/* TEXT - Always shown after visualizations (skip if streaming with no content) */}
                     {message.isStreaming && !message.content ? (

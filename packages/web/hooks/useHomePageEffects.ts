@@ -36,6 +36,9 @@ export interface HomePageEffectsInput {
   setLegendMode: React.Dispatch<React.SetStateAction<boolean>>;
   // Scroll
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  // Cognitive signatures
+  messageCognitiveSignatures: Record<string, any>;
+  setMessageCognitiveSignatures: React.Dispatch<React.SetStateAction<Record<string, any>>>;
 }
 
 export function useHomePageEffects(input: HomePageEffectsInput) {
@@ -64,6 +67,8 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
     setCurrentLang,
     setLegendMode,
     messagesEndRef,
+    messageCognitiveSignatures,
+    setMessageCognitiveSignatures,
   } = input;
 
   // Log depth config on mount
@@ -105,6 +110,41 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
       .finally(() => fetchingRef.current.delete(msgId));
   }, [messages]);
 
+  // Fetch cognitive signature when assistant message completes
+  const cogFetchingRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || lastMessage.role !== 'assistant') return;
+    if (lastMessage.isStreaming) return;
+    if (messageCognitiveSignatures[lastMessage.id] !== undefined) return;
+    if (!lastMessage.content || lastMessage.content.length < 50) return;
+    if (cogFetchingRef.current.has(lastMessage.id)) return;
+
+    cogFetchingRef.current.add(lastMessage.id);
+    const msgId = lastMessage.id;
+    const queryId = (lastMessage as any).queryId || msgId;
+    const priorUser = messages[messages.length - 2];
+    const query = priorUser?.role === 'user' ? priorUser.content : '';
+    const sessionHistory = messages.slice(0, -2).map((m) => ({ role: m.role, content: m.content }));
+
+    fetch('/api/cognitive-signature', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ queryId, query, response: lastMessage.content, sessionHistory }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        console.log(
+          `[Cognitive] ${data.source}: ${data.inline_dialogue?.length || 0} lenses for ${msgId}`
+        );
+        setMessageCognitiveSignatures((prev) => ({ ...prev, [msgId]: data }));
+      })
+      .catch(() => {
+        setMessageCognitiveSignatures((prev) => ({ ...prev, [msgId]: null }));
+      })
+      .finally(() => cogFetchingRef.current.delete(msgId));
+  }, [messages]);
+
   // Re-fetch annotations for all messages when density changes (bust any local filter)
   const prevDensityRef = useRef(depthConfig.density);
   useEffect(() => {
@@ -115,7 +155,9 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
     const cleared: Record<string, any[]> = {};
     messages
       .filter((m) => m.role === 'assistant' && m.content && m.content.length >= 50)
-      .forEach((m) => { cleared[m.id] = undefined as any; });
+      .forEach((m) => {
+        cleared[m.id] = undefined as any;
+      });
     setMessageAnnotations(cleared);
   }, [depthConfig.density]);
 
