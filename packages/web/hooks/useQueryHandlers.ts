@@ -46,6 +46,7 @@ export interface UseQueryHandlersState {
   getPageContext: () => string | undefined;
   resetDepthAnnotations: () => void;
   inputRef: React.RefObject<HTMLInputElement | null>;
+  setMessageRawThinking?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }
 
 export function useQueryHandlers(state: UseQueryHandlersState) {
@@ -73,6 +74,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
     getPageContext,
     resetDepthAnnotations,
     inputRef,
+    setMessageRawThinking,
   } = state;
 
   // Instinct Mode Settings (read from store inside handlers)
@@ -320,6 +322,26 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
           try {
             const thought = JSON.parse(ev.data) as ThoughtEvent;
             thought.messageId = assistantMsgId;
+            // Intercept extended thinking events → accumulate into rawThinking buffer
+            if (
+              thought.stage === 'reasoning' &&
+              thought.details?.reasoning?.intent === 'extended_thinking' &&
+              setMessageRawThinking
+            ) {
+              setMessageRawThinking((prev) => ({
+                ...prev,
+                [assistantMsgId]: (prev[assistantMsgId] || '') + (thought.data || ''),
+              }));
+              return; // Don't push raw thinking chunks to pipeline metadata
+            }
+            if (
+              thought.stage === 'reasoning' &&
+              thought.details?.reasoning?.intent === 'thinking_complete' &&
+              setMessageRawThinking
+            ) {
+              // Mark thinking as complete — no further appends needed
+              return;
+            }
             useSideCanalStore.getState().pushMetadata(thought);
             if (thought.stage === 'complete' || thought.stage === 'error') {
               evtSource?.close();

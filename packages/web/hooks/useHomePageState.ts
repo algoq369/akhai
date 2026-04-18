@@ -101,6 +101,9 @@ export function useHomePageState() {
     {}
   );
 
+  // ─── Extended Thinking (raw thinking stream per message) ─
+  const [messageRawThinking, setMessageRawThinking] = useState<Record<string, string>>({});
+
   // ─── View Mode (classic / mini-canvas / canvas) ──────────
   const [viewMode, setViewMode] = useState<'classic' | 'mini-canvas' | 'canvas'>('classic');
   const isCanvasMode = viewMode === 'canvas';
@@ -190,6 +193,7 @@ export function useHomePageState() {
     extractAndStoreTopics,
     getPageContext,
     resetDepthAnnotations,
+    setMessageRawThinking,
   });
 
   // ═══════════════ Effects (delegated to useHomePageEffects) ═
@@ -237,6 +241,7 @@ export function useHomePageState() {
     setDepthConfig,
     messageAnnotations,
     messageCognitiveSignatures,
+    messageRawThinking,
     mindmapVisibility,
     setMindmapVisibility,
     gnosticVisibility,
@@ -417,6 +422,10 @@ export function useHomePageState() {
     // Cognitive Signatures
     messageCognitiveSignatures,
     setMessageCognitiveSignatures,
+
+    // Extended Thinking
+    messageRawThinking,
+    setMessageRawThinking,
 
     // View Mode
     viewMode,

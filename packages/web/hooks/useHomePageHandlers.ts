@@ -59,6 +59,7 @@ export interface HomePageStateForHandlers {
   extractAndStoreTopics: (query: string, response: string, messageId: string) => Promise<any>;
   getPageContext: () => string | undefined;
   resetDepthAnnotations: () => void;
+  setMessageRawThinking?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }
 
 export function useHomePageHandlers(state: HomePageStateForHandlers) {
