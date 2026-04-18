@@ -27,6 +27,7 @@ export const QuerySchema = z.object({
   liveRefinements: z.array(z.object({ type: z.string(), text: z.string() })).optional(),
   grimoireContext: z.any().optional(),
   queryId: z.string().optional(),
+  extendedThinking: z.boolean().optional(),
 });
 
 /** Emit thought to SSE AND persist to DB for history replay */

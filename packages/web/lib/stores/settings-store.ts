@@ -68,6 +68,7 @@ export interface Settings {
   instinctConfig: InstinctModeConfig;
   privacy: PrivacySettings;
   account: AccountInfo;
+  extendedThinking: boolean;
 }
 
 interface SettingsStore {
@@ -82,6 +83,7 @@ interface SettingsStore {
   updateFeatures: (field: keyof FeatureSettings, value: any) => void;
   setInstinctMode: (enabled: boolean) => void;
   setInstinctConfig: (config: Partial<InstinctModeConfig>) => void;
+  setExtendedThinking: (enabled: boolean) => void;
   updatePrivacy: (field: keyof PrivacySettings, value: boolean) => void;
   clearAllData: () => void;
   saveSettings: () => Promise<void>;
@@ -146,6 +148,7 @@ const defaultSettings: Settings = {
     queriesUsedToday: 0,
     tokensUsed: 0,
   },
+  extendedThinking: false,
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -248,6 +251,15 @@ export const useSettingsStore = create<SettingsStore>()(
         }));
       },
 
+      setExtendedThinking: (enabled) => {
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            extendedThinking: enabled,
+          },
+        }));
+      },
+
       updatePrivacy: (field, value) => {
         set((state) => ({
           settings: {
@@ -325,6 +337,8 @@ export const useSettingsStore = create<SettingsStore>()(
             ...persistedState?.settings?.features,
           },
           instinctMode: persistedState?.settings?.instinctMode ?? defaultSettings.instinctMode,
+          extendedThinking:
+            persistedState?.settings?.extendedThinking ?? defaultSettings.extendedThinking,
           instinctConfig: {
             ...defaultSettings.instinctConfig,
             ...persistedState?.settings?.instinctConfig,

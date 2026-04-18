@@ -371,6 +371,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
           attachments: processedFiles.length > 0 ? processedFiles : undefined,
           fileUrls: currentFileUrls.length > 0 ? currentFileUrls : undefined,
           queryId: frontendQueryId,
+          extendedThinking: settingsState.settings.extendedThinking || undefined,
         }),
       });
 

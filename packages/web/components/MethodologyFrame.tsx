@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ExtendedThinkingOrb from '@/components/ExtendedThinkingOrb';
 
 interface MethodologyFrameProps {
   currentMethodology: string;
@@ -209,6 +210,10 @@ export default function MethodologyFrame({
             )}
           </AnimatePresence>
         </div>
+
+        {/* Extended Thinking divider + orb */}
+        <div className="h-3 w-px bg-relic-mist dark:bg-slate-600 mx-1" />
+        <ExtendedThinkingOrb />
       </div>
 
       {/* Selected methodology — single compact row */}
@@ -221,7 +226,9 @@ export default function MethodologyFrame({
             exit={{ opacity: 0 }}
             className="mt-1 flex items-center justify-center gap-2 text-[7px] font-mono"
           >
-            <span style={{ color: currentMethod.color }}>{currentMethod.symbol} {currentMethod.fullName}</span>
+            <span style={{ color: currentMethod.color }}>
+              {currentMethod.symbol} {currentMethod.fullName}
+            </span>
             <span className="text-slate-300 dark:text-slate-600">·</span>
             <span className="text-slate-400">{currentMethod.tokens} tok</span>
             <span className="text-slate-300 dark:text-slate-600">·</span>
