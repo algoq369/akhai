@@ -24,7 +24,7 @@ npm rebuild better-sqlite3 2>/dev/null || true
 echo "⚡ Building locally..."
 cd "$LOCAL_WEB"
 rm -rf .next
-AKHAI_FREE_MODE=true npx next build
+npx next build
 
 echo ""
 echo "💾 Backing up current build on VPS..."
