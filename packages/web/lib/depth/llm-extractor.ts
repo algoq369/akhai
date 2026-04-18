@@ -28,7 +28,7 @@ async function callAnthropic(
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set');
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25000);
+  const timeout = setTimeout(() => controller.abort(), 40000);
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -40,7 +40,7 @@ async function callAnthropic(
       },
       body: JSON.stringify({
         model,
-        max_tokens: 2000,
+        max_tokens: 4096,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       }),
@@ -61,16 +61,68 @@ async function callAnthropic(
 
 function parseAnnotations(raw: string): LLMAnnotation[] {
   // Strip markdown fences if model included them despite instructions
-  const cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
-  const parsed = JSON.parse(cleaned);
-  if (!Array.isArray(parsed)) throw new Error('Response is not an array');
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*/m, '')
+    .replace(/\s*```\s*$/m, '')
+    .trim();
 
-  return parsed.filter(
+  // Try strict parse first
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) return filterValid(parsed);
+  } catch {
+    // Fall through to salvage mode
+  }
+
+  // Salvage: output got truncated mid-object (hit max_tokens).
+  // Walk forward, extract every complete {…} at depth 1, stop when the next one is incomplete.
+  const out: any[] = [];
+  let depth = 0;
+  let start = -1;
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < cleaned.length; i++) {
+    const c = cleaned[i];
+    if (esc) {
+      esc = false;
+      continue;
+    }
+    if (c === '\\') {
+      esc = true;
+      continue;
+    }
+    if (c === '"') {
+      inStr = !inStr;
+      continue;
+    }
+    if (inStr) continue;
+    if (c === '{') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (c === '}') {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        try {
+          out.push(JSON.parse(cleaned.slice(start, i + 1)));
+        } catch {
+          /* skip malformed */
+        }
+        start = -1;
+      }
+    }
+  }
+  if (out.length === 0) throw new Error('No salvageable annotations');
+  console.warn(`[DepthExtract] Salvaged ${out.length} annotations from truncated JSON`);
+  return filterValid(out);
+}
+
+function filterValid(arr: any[]): LLMAnnotation[] {
+  return arr.filter(
     (a: any) =>
-      typeof a.term === 'string' &&
+      typeof a?.term === 'string' &&
       a.term.length >= 2 &&
-      typeof a.layer === 'string' &&
-      typeof a.insight === 'string' &&
+      typeof a?.layer === 'string' &&
+      typeof a?.insight === 'string' &&
       a.insight.length >= 10
   );
 }
