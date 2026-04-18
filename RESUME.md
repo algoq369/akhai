@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-04-18 10:15 UTC (Day 100/150)
+> Last updated: 2026-04-18 23:20 UTC (Day 100/150)
 
 ## PROJECT STATE
 - **Day 100/150** | Launch: June 4, 2026 (47 days) | **~87% features complete**
@@ -10,7 +10,17 @@
 - **Standards:** WEBNA — 5 iron rules enforced every session
 - **Master Plan:** `docs/plans/AKHAI_MASTER_PLAN_V5.md` (V5.4)
 
-## LAST SESSION — Day 100 (Apr 18, 6 commits) — LLM-powered depth annotations
+## LAST SESSION — Day 100 (Apr 18 evening, 5 commits) — D+C Extended Thinking + Live Lens Streaming
+- **Architecture D+C**: Opus 4.7 extended_thinking with 10K budget_tokens → raw thinking SSE streams LIVE into InlineDialogue → Haiku restructures into 12-lens signature post-completion. User toggles between raw view (flowing tokens) and lens view (structured lenses).
+- **ExtendedThinkingOrb** (deb1a84) — per-session toggle inline with methodology selector. Settings store persisted via Zustand. Plumbed through handleSubmit → simple-query Zod schema.
+- **Anthropic API wire** (47062c7) — callAnthropic handles thinking blocks, strips temperature when extended thinking enabled. raw_thinking column added to queries table. Chunked SSE emission for live client display.
+- **Client-side reception** (5120d5b) — SSE handler in useQueryHandlers intercepts thinking_delta events, accumulates into messageRawThinking state. Plumbed through usePagePropBundles → ChatMessages.
+- **InlineDialogue D+C** (30bbe4d) — Extracted into 3 components: InlineDialogue (116 LOC orchestrator), RawThinkingView (89 LOC live stream + cursor), LensView (101 LOC). Cross-fade 200ms toggle '◊ raw | ✦ lens'. Raw default, user controls after lens arrives.
+- **Haiku restructure** (a0f5f80) — buildRestructurePrompt instructs Haiku to derive lens entries from actual Opus thinking passages. restructureThinkingIntoLenses in llm-extractor. cognitive-signature API auto-selects restructure path when rawThinking present.
+- **Cost model**: opt-in per-session, user controls latency/depth trade-off. Extended thinking adds ~$0.05-0.25/query (Opus 10K thinking @ $25/MTok).
+- **WEBNA compliant**: all files under ceilings (InlineDialogue 116/220, extractor 239/250, prompts 138/180, MethodologyFrame 280/300).
+
+## PREVIOUS SESSION — Day 100 (Apr 18 morning, 6 commits) — LLM-powered depth annotations
 - **Pre-filter bug fix** (81dbc82) — removed brittle `para.includes(term)` check in ResponseRenderer that silently dropped annotations after markdown stripping
 - **DB migration** (8cb0f8c) — added `annotations TEXT` + `annotations_version INTEGER` columns to `queries` table for per-queryId caching
 - **LLM extractor module** (18a3d3d) — new `lib/depth/llm-extractor.ts` (104 lines) + `lib/depth/prompts.ts` (49 lines). Haiku 4.5 primary → Sonnet 4.6 fallback → caller handles regex. Module-scope env reads avoided (lazy getter pattern)
@@ -50,7 +60,7 @@
 12. Consider dev-mode free-tier toggle (explicit, not default) to reduce Opus burn during development
 
 ## KNOWN BUGS
-- 5 files >500 lines: PipelineHistoryPanel 623, useCanvasState 568, content-classifier 555, CanvasNodeContent 538, ChatMessages 509
+- 4 files >500 lines: useCanvasState 568, content-classifier 555, CanvasNodeContent 538, ChatMessages 524 (PipelineHistoryPanel fixed to 467)
 - simple-query/route.ts 598 lines (needs split)
 - DDG search broken (pre-session debt)
 
@@ -66,7 +76,7 @@
 
 ## KEY ARCHITECTURE FILES
 - `components/ResponseRenderer.tsx` (484) — Classic View structured renderer + TITLE_LAYER_MAP (exported)
-- `components/sections/ChatMessages.tsx` (509) — wires ResponseRenderer + MacroButton + CouncilButton
+- `components/sections/ChatMessages.tsx` (524) — wires ResponseRenderer + InlineDialogue + MacroButton + CouncilButton
 - `components/DepthSigil.tsx` (79) — clickable 14px colored sigil, dotted underline on term, 11px expanded insight
 - `lib/depth/llm-extractor.ts` (127) — Haiku 4.5 → Sonnet 4.6 extraction with JSON salvage parser
 - `lib/depth/prompts.ts` (49) — system prompt for layer-aware entity extraction
