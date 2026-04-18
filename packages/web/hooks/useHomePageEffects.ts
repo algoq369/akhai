@@ -42,7 +42,7 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
   const {
     depthConfig,
     messages,
-    processText,
+    // processText — replaced by /api/depth-extract LLM pipeline
     messageAnnotations,
     setMessageAnnotations,
     pendingRefinementCount,
@@ -72,50 +72,52 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
     console.log('[DepthAnnotations] LocalStorage:', localStorage.getItem('akhai-depth-config'));
   }, []);
 
-  // Process depth annotations when new assistant messages arrive
+  // Fetch LLM-powered depth annotations when new assistant messages arrive
+  const fetchingRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    console.log(
-      '[DepthAnnotations] Effect triggered - config.enabled:',
-      depthConfig.enabled,
-      'messages:',
-      messages.length
-    );
-    // Annotations are always processed — depth toggle only controls visibility elsewhere
-    // (No early return)
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === 'assistant') {
-      if (lastMessage.isStreaming) return;
-      const existing = messageAnnotations[lastMessage.id];
-      if (existing && existing.length > 0) return;
-      if (!lastMessage.content || lastMessage.content.length < 50) return;
-      console.log('[DepthAnnotations] Processing message:', lastMessage.content.slice(0, 100));
-      const annotations = processText(lastMessage.content);
-      console.log('[DepthAnnotations] Detected annotations:', annotations.length, annotations);
-      if (annotations.length > 0) {
-        setMessageAnnotations((prev) => ({ ...prev, [lastMessage.id]: annotations }));
-      } else {
-        console.log('[DepthAnnotations] No annotations detected - text may not match patterns');
-        setMessageAnnotations((prev) => ({ ...prev, [lastMessage.id]: [] }));
-      }
-    }
-  }, [messages, depthConfig.enabled, processText]);
+    if (!lastMessage || lastMessage.role !== 'assistant') return;
+    if (lastMessage.isStreaming) return;
+    if (messageAnnotations[lastMessage.id] !== undefined) return;
+    if (!lastMessage.content || lastMessage.content.length < 50) return;
+    if (fetchingRef.current.has(lastMessage.id)) return;
 
-  // Re-process all annotations when density changes
+    fetchingRef.current.add(lastMessage.id);
+    const msgId = lastMessage.id;
+    const queryId = (lastMessage as any).queryId || msgId;
+    const priorUser = messages[messages.length - 2];
+    const query = priorUser?.role === 'user' ? priorUser.content : '';
+
+    fetch('/api/depth-extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ queryId, response: lastMessage.content, query }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const anns = data.annotations || [];
+        console.log(`[DepthAnnotations] ${data.source}: ${anns.length} annotations for ${msgId}`);
+        setMessageAnnotations((prev) => ({ ...prev, [msgId]: anns }));
+      })
+      .catch(() => {
+        setMessageAnnotations((prev) => ({ ...prev, [msgId]: [] }));
+      })
+      .finally(() => fetchingRef.current.delete(msgId));
+  }, [messages]);
+
+  // Re-fetch annotations for all messages when density changes (bust any local filter)
   const prevDensityRef = useRef(depthConfig.density);
   useEffect(() => {
-    if (prevDensityRef.current !== depthConfig.density) {
-      prevDensityRef.current = depthConfig.density;
-      // Annotations are always processed
-      const newAnnotations: Record<string, any[]> = {};
-      messages
-        .filter((m) => m.role === 'assistant' && m.content)
-        .forEach((m) => {
-          const anns = processText(m.content);
-          newAnnotations[m.id] = anns;
-        });
-      setMessageAnnotations(newAnnotations);
-    }
-  }, [depthConfig.density, depthConfig.enabled, messages, processText]);
+    if (prevDensityRef.current === depthConfig.density) return;
+    prevDensityRef.current = depthConfig.density;
+    // LLM annotations are density-independent (all returned, UI decides visibility)
+    // Just re-trigger by clearing and letting the per-message effect re-fetch from cache
+    const cleared: Record<string, any[]> = {};
+    messages
+      .filter((m) => m.role === 'assistant' && m.content && m.content.length >= 50)
+      .forEach((m) => { cleared[m.id] = undefined as any; });
+    setMessageAnnotations(cleared);
+  }, [depthConfig.density]);
 
   // Apply pending refinement count to new assistant messages
   useEffect(() => {
