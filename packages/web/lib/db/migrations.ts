@@ -95,17 +95,36 @@ export function migrateAddTopicsColumns() {
 }
 
 /**
+ * Migration: Add annotations + annotations_version columns to queries table
+ */
+export function migrateAddAnnotationsColumns() {
+  try {
+    const tableInfo = db.prepare('PRAGMA table_info(queries)').all() as Array<{ name: string }>;
+    const columnNames = tableInfo.map((col) => col.name);
+
+    if (!columnNames.includes('annotations')) {
+      db.exec('ALTER TABLE queries ADD COLUMN annotations TEXT DEFAULT NULL');
+      console.log('✅ Added annotations column to queries table');
+    }
+    if (!columnNames.includes('annotations_version')) {
+      db.exec('ALTER TABLE queries ADD COLUMN annotations_version INTEGER DEFAULT 0');
+      console.log('✅ Added annotations_version column to queries table');
+    }
+  } catch (error) {
+    console.error('[Migration Error] Failed to add annotations columns:', error);
+  }
+}
+
+/**
  * Run all migrations. Called from database.ts on module load.
  */
 export function runMigrations() {
   try {
-    // console.log('[DEBUG] Running migrations on module load');
     migrateAddUserIdColumns();
     migrateAddProcessingMode();
     migrateAddTopicsColumns();
-    // console.log('[DEBUG] Migrations completed successfully');
+    migrateAddAnnotationsColumns();
   } catch (error) {
     console.error('[Migration Failed]', error);
-    // Don't throw - allow app to start but log the error
   }
 }
