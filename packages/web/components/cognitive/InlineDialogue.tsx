@@ -1,111 +1,113 @@
 'use client';
 
 /**
- * InlineDialogue — AkhAI's lens-structured internal reflection under each query.
- * Collapsed: 3-line mixed preview. Expanded: all lens entries.
+ * InlineDialogue — orchestrates raw thinking view + lens view.
+ *
+ * CASE A: No rawThinking (extended thinking OFF) → lens-only, no toggle.
+ * CASE B: rawThinking present, lenses empty → raw view only, no toggle.
+ * CASE C: Both raw AND lens → selected viewMode + pill toggle.
  */
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LENS_MAP } from '@/lib/cognitive/lenses';
 import type { CognitiveSignature } from '@/lib/cognitive/llm-extractor';
+import RawThinkingView from './RawThinkingView';
+import LensView from './LensView';
 
 interface InlineDialogueProps {
   signature: CognitiveSignature | null;
   isLoading: boolean;
+  rawThinking?: string;
+  isThinkingStreaming?: boolean;
 }
 
-export default function InlineDialogue({ signature, isLoading }: InlineDialogueProps) {
-  const [expanded, setExpanded] = useState(false);
+export default function InlineDialogue({
+  signature,
+  isLoading,
+  rawThinking,
+  isThinkingStreaming = false,
+}: InlineDialogueProps) {
+  const [viewMode, setViewMode] = useState<'raw' | 'lens'>('raw');
 
-  // Loading state — subtle pulsing placeholder
-  if (isLoading || !signature) {
-    return (
-      <div className="my-2 pl-3 border-l-2 border-indigo-500/20">
-        <div className="flex items-center gap-1.5 text-[9px] font-mono text-indigo-400/40 animate-pulse">
-          <span>◇</span>
-          <span className="uppercase tracking-wider">reflecting...</span>
+  const hasRaw = !!rawThinking && rawThinking.length > 0;
+  const hasLens = !!signature && signature.inline_dialogue.length > 0;
+
+  // CASE A: No raw thinking — lens-only path (original behavior)
+  if (!hasRaw) {
+    if (isLoading || !signature) {
+      return (
+        <div className="my-2 pl-3 border-l-2 border-indigo-500/20">
+          <div className="flex items-center gap-1.5 text-[9px] font-mono text-indigo-400/40 animate-pulse">
+            <span>◇</span>
+            <span className="uppercase tracking-wider">reflecting...</span>
+          </div>
         </div>
+      );
+    }
+    if (!hasLens) return null;
+    return (
+      <div className="my-2 pl-3 border-l-2 border-indigo-500/30">
+        <LensView signature={signature} />
       </div>
     );
   }
 
-  const entries = signature.inline_dialogue;
-  if (entries.length === 0) return null;
-
-  const previewEntries = entries.slice(0, 3);
-  const remaining = entries.length - 3;
+  // CASE B: Raw thinking present, still streaming or no lenses yet
+  // CASE C: Both raw AND lens available — show toggle
+  const showToggle = hasRaw && hasLens;
 
   return (
     <div className="my-2 pl-3 border-l-2 border-indigo-500/30">
-      {/* Collapsed preview — click to expand */}
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="w-full text-left group"
-      >
-        {!expanded && (
-          <div className="space-y-0.5">
-            {previewEntries.map((entry, i) => {
-              const lens = LENS_MAP.get(entry.lens_id);
-              if (!lens) return null;
-              const preview = entry.text.split(' ').slice(0, 12).join(' ');
-              return (
-                <div key={i} className="flex items-start gap-1.5 text-[9px] leading-snug">
-                  <span style={{ color: lens.color }} className="shrink-0 mt-px">
-                    {lens.sigil}
-                  </span>
-                  <span className="text-relic-slate/50 dark:text-relic-silver/40 line-clamp-1">
-                    {preview}...
-                  </span>
-                </div>
-              );
-            })}
-            {remaining > 0 && (
-              <div className="text-[8px] text-indigo-400/40 font-mono pl-4">
-                ▸ {remaining} more thoughts
-              </div>
-            )}
-          </div>
-        )}
-      </button>
-
-      {/* Expanded — full lens entries */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {/* View mode toggle — only when both views available */}
+      {showToggle && (
+        <div className="flex items-center gap-0.5 mb-1.5">
+          <button
+            type="button"
+            onClick={() => setViewMode('raw')}
+            className={`px-2 py-0.5 rounded-full text-[8px] font-mono transition-colors ${
+              viewMode === 'raw'
+                ? 'bg-indigo-500/15 text-indigo-400'
+                : 'text-relic-silver/30 hover:text-relic-silver/50'
+            }`}
           >
-            <button type="button" onClick={() => setExpanded(false)} className="w-full text-left">
-              <div className="space-y-2 py-1">
-                {entries.map((entry, i) => {
-                  const lens = LENS_MAP.get(entry.lens_id);
-                  if (!lens) return null;
-                  return (
-                    <div key={i} className="flex items-start gap-2">
-                      <span style={{ color: lens.color }} className="shrink-0 mt-0.5 text-[11px]">
-                        {lens.sigil}
-                      </span>
-                      <div className="min-w-0">
-                        <span
-                          className="text-[7px] uppercase tracking-[0.15em] font-serif"
-                          style={{ color: lens.color }}
-                        >
-                          {lens.name}
-                        </span>
-                        <p className="text-[9px] leading-relaxed text-relic-slate/70 dark:text-relic-silver/50 mt-0.5">
-                          {entry.text}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </button>
+            ◊ raw
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('lens')}
+            className={`px-2 py-0.5 rounded-full text-[8px] font-mono transition-colors ${
+              viewMode === 'lens'
+                ? 'bg-indigo-500/15 text-indigo-400'
+                : 'text-relic-silver/30 hover:text-relic-silver/50'
+            }`}
+          >
+            ✦ lens
+          </button>
+        </div>
+      )}
+
+      {/* Content area with cross-fade */}
+      <AnimatePresence mode="wait">
+        {(viewMode === 'raw' || !hasLens) && (
+          <motion.div
+            key="raw"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <RawThinkingView rawThinking={rawThinking!} isStreaming={isThinkingStreaming} />
+          </motion.div>
+        )}
+        {viewMode === 'lens' && hasLens && (
+          <motion.div
+            key="lens"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <LensView signature={signature!} />
           </motion.div>
         )}
       </AnimatePresence>

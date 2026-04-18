@@ -99,6 +99,7 @@ interface ChatMessagesProps {
   setDepthConfig: (config: DepthConfig) => void;
   messageAnnotations: Record<string, any[]>;
   messageCognitiveSignatures: Record<string, any>;
+  messageRawThinking?: Record<string, string>;
   mindmapVisibility: Record<string, boolean>;
   setMindmapVisibility: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   gnosticVisibility: Record<string, boolean>;
@@ -127,6 +128,7 @@ export default function ChatMessages({
   setDepthConfig,
   messageAnnotations,
   messageCognitiveSignatures,
+  messageRawThinking,
   mindmapVisibility,
   setMindmapVisibility,
   gnosticVisibility,
@@ -256,10 +258,12 @@ export default function ChatMessages({
                     />
 
                     {/* Cognitive Signature — inline dialogue above response */}
-                    {message.role === 'assistant' && !message.isStreaming && (
+                    {message.role === 'assistant' && (
                       <InlineDialogue
                         signature={messageCognitiveSignatures[message.id] || null}
-                        isLoading={!messageCognitiveSignatures[message.id]}
+                        isLoading={!message.isStreaming && !messageCognitiveSignatures[message.id]}
+                        rawThinking={messageRawThinking?.[message.id]}
+                        isThinkingStreaming={!!message.isStreaming}
                       />
                     )}
 
