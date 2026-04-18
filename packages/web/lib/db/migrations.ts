@@ -116,6 +116,46 @@ export function migrateAddAnnotationsColumns() {
 }
 
 /**
+ * Migration: Add cognitive_signature columns to queries table
+ */
+export function migrateAddCognitiveSignatureColumns() {
+  try {
+    const tableInfo = db.prepare('PRAGMA table_info(queries)').all() as Array<{ name: string }>;
+    const columnNames = tableInfo.map((col) => col.name);
+
+    if (!columnNames.includes('cognitive_signature')) {
+      db.exec('ALTER TABLE queries ADD COLUMN cognitive_signature TEXT DEFAULT NULL');
+      console.log('✅ Added cognitive_signature column to queries table');
+    }
+    if (!columnNames.includes('cognitive_signature_version')) {
+      db.exec('ALTER TABLE queries ADD COLUMN cognitive_signature_version INTEGER DEFAULT 0');
+      console.log('✅ Added cognitive_signature_version column to queries table');
+    }
+  } catch (error) {
+    console.error('[Migration Error] Failed to add cognitive_signature columns:', error);
+  }
+}
+
+/**
+ * Migration: Create conversation_syntheses table for living conversation story
+ */
+export function migrateCreateConversationSyntheses() {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS conversation_syntheses (
+        chat_id TEXT PRIMARY KEY,
+        synthesis TEXT NOT NULL,
+        exchanges_hash TEXT NOT NULL,
+        version INTEGER DEFAULT 0,
+        updated_at INTEGER DEFAULT (strftime('%s', 'now'))
+      )
+    `);
+  } catch (error) {
+    console.error('[Migration Error] Failed to create conversation_syntheses table:', error);
+  }
+}
+
+/**
  * Run all migrations. Called from database.ts on module load.
  */
 export function runMigrations() {
@@ -124,6 +164,8 @@ export function runMigrations() {
     migrateAddProcessingMode();
     migrateAddTopicsColumns();
     migrateAddAnnotationsColumns();
+    migrateAddCognitiveSignatureColumns();
+    migrateCreateConversationSyntheses();
   } catch (error) {
     console.error('[Migration Failed]', error);
   }
