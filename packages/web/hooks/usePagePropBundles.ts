@@ -198,6 +198,7 @@ export function buildPagePropBundles(opts: {
     historyPanelOpen: s.historyPanelOpen,
     setHistoryPanelOpen: s.setHistoryPanelOpen,
     messages: s.messages,
+    messageCognitiveSignatures: s.messageCognitiveSignatures,
   } as const;
 
   return { chatMessagesProps, inputSectionProps, overlaysProps };

@@ -10,7 +10,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSideCanalStore } from '@/lib/stores/side-canal-store';
 import { formatDuration } from '@/lib/thought-stream';
-import { generateReasoningNarrative, type NarrativeEntry } from '@/lib/god-view/reasoning-narrator';
+import CognitivePanel from '@/components/cognitive/CognitivePanel';
 
 interface Message {
   id: string;
@@ -21,12 +21,16 @@ interface PipelineHistoryPanelProps {
   isOpen: boolean;
   onToggle: () => void;
   messages: Message[];
+  messageCognitiveSignatures?: Record<string, any>;
+  chatId?: string;
 }
 
 export default function PipelineHistoryPanel({
   isOpen,
   onToggle,
   messages,
+  messageCognitiveSignatures = {},
+  chatId,
 }: PipelineHistoryPanelProps) {
   const messageMetadata = useSideCanalStore((s) => s.messageMetadata);
   const responseMetadata = useSideCanalStore((s) => s.responseMetadata);
@@ -54,8 +58,6 @@ export default function PipelineHistoryPanel({
         const genEv = ev('generating');
         const completeEv = ev('complete');
         const receivedEv = ev('received');
-        const reasoningEv = ev('reasoning');
-        const analysisEv = ev('analysis');
         const d = routingEv?.details || {};
         const ld = layersEv?.details || {};
         const receivedText = receivedEv?.data?.replace('query: ', '').replace(/"/g, '') || '';
@@ -70,117 +72,15 @@ export default function PipelineHistoryPanel({
             activated: v.activated,
             keywords: v.keywords || [],
           }));
-        const activatedLayers = allLayers.filter((l) => l.activated);
 
-        // Extract methodology scores with reasons
         const methScores: any[] = d.methodologyScores || [];
-        const selectedScore = methScores.find(
-          (m: any) => m.methodology === d.methodology?.selected
-        );
 
-        // Build narrative reasoning lines
-        const narrativeLines: string[] = [];
-
-        // 1. Query analysis narrative
-        const qa = d.queryAnalysis as any;
-        if (qa) {
-          const traits: string[] = [];
-          if (qa.isCreative) traits.push('creative');
-          if (qa.isMathematical) traits.push('mathematical');
-          if (qa.requiresTools) traits.push('tool-assisted');
-          if (qa.requiresMultiPerspective) traits.push('multi-perspective');
-          const complexPct = Math.round(qa.complexity * 100);
-          narrativeLines.push(
-            `Detected ${qa.queryType} query (${complexPct}% complexity${traits.length ? ', ' + traits.join(', ') : ''})`
-          );
-          if (qa.keywords?.length) narrativeLines.push(`Key signals: ${qa.keywords.join(', ')}`);
-        } else {
-          // Fallback: generate basic analysis from query text
-          const qt = queryLookup[msgId] || receivedText || '';
-          if (qt.length > 0) {
-            const wordCount = qt.split(/\s+/).length;
-            const isQuestion = qt.includes('?');
-            const isComplex = wordCount > 12;
-            narrativeLines.push(
-              `${isQuestion ? 'Question' : 'Request'} analyzed (${wordCount} words${isComplex ? ', complex query' : ''})`
-            );
-          }
-        }
-
-        // 2. Methodology selection narrative
-        if (selectedScore?.reasons?.length) {
-          narrativeLines.push(
-            `Chose ${d.methodology?.selected?.toUpperCase()} because: ${selectedScore.reasons.join(', ')}`
-          );
-        } else if (d.methodology?.reason) {
-          narrativeLines.push(
-            `Routed to ${d.methodology?.selected?.toUpperCase()}: ${d.methodology.reason}`
-          );
-        }
-
-        // 3. Layer activation narrative
-        if (activatedLayers.length > 0) {
-          const layerNarr = activatedLayers.map((l) => {
-            const kw = l.keywords?.length ? ` (${l.keywords.join(', ')})` : '';
-            return `${l.name}${kw}`;
-          });
-          narrativeLines.push(`Active layers: ${layerNarr.join(' → ')}`);
-        } else if (allLayers.length > 0) {
-          // Fallback: show top weighted layers even without activation data
-          const topLayers = allLayers.slice(0, 3).map((l) => `${l.name} ${Math.round(l.weight)}%`);
-          narrativeLines.push(`Layer weights: ${topLayers.join(', ')}`);
-        }
-
-        // 4. Path activations
-        const paths = (ld.pathActivations || []) as any[];
-        if (paths.length > 0) {
-          narrativeLines.push(
-            `Neural paths: ${paths.map((p: any) => `${p.from}→${p.to}: ${p.description}`).join('; ')}`
-          );
-        }
-
-        // 5. MetaCore intent (new queries)
-        const ri = reasoningEv?.details?.reasoning as any;
-        if (ri?.intent) narrativeLines.push(`Intent: ${ri.intent}`);
-        if (ri?.providerReason) narrativeLines.push(`Model: ${ri.providerReason}`);
-
-        // 6. Analysis insights (new queries)
-        const ai = analysisEv?.details?.analysis as any;
-        if (ai?.purified)
-          narrativeLines.push(`⚡ Response purified: ${ai.antipatternRisk} antipatterns removed`);
-        if (ai?.synthesisInsight) narrativeLines.push(`Synthesis: "${ai.synthesisInsight}"`);
-
-        // 7. Guard narrative (always available)
-        const gv = guardEv?.details?.guard;
-        if (gv) {
-          const risk = Math.round((gv.risk || 0) * 100);
-          if (gv.verdict !== 'pass') {
-            narrativeLines.push(
-              `Guard flagged: ${gv.verdict} (${risk}% risk)${gv.checks?.length ? ' — ' + gv.checks.join(', ') : ''}`
-            );
-          } else if (risk > 10) {
-            narrativeLines.push(`Guard passed with ${risk}% risk detected`);
-          }
-        }
-
-        // 8. Model info fallback
-        if (!ri?.providerReason && genEv?.details?.model) {
-          narrativeLines.push(`Model: ${genEv.details.model} via ${genEv.details.provider}`);
-        }
-
-        // 9. Performance insight
         const dur = completeEv?.details?.duration ?? completeEv?.timestamp;
         const tok = completeEv?.details?.tokens?.total || 0;
-        if (dur && tok) {
-          const tps = Math.round(tok / (dur / 1000));
-          narrativeLines.push(`Performance: ${tps} tokens/sec`);
-        }
         return {
           messageId: msgId,
           queryText: queryLookup[msgId] || receivedText || '',
-          narrativeLines,
-          // Quick summary for collapsed view
-          summary: narrativeLines[0] || d.methodology?.reason || d.methodology?.selected || '—',
+          summary: d.methodology?.reason || d.methodology?.selected || '—',
           // Method scores for comparison
           methScores: methScores.map((m: any) => ({
             method: m.methodology,
@@ -290,30 +190,30 @@ export default function PipelineHistoryPanel({
             </div>
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto">
+              {/* Cognitive Panel — prose-based reflection zones */}
+              {messages.length > 0 && (
+                <CognitivePanel
+                  messages={messages}
+                  messageCognitiveSignatures={messageCognitiveSignatures}
+                  chatId={chatId}
+                />
+              )}
+
+              {/* Pipeline entries — technical trace */}
               {groups.length === 0 ? (
                 <div className="px-4 py-16 text-center text-[9px] text-relic-silver/30">
                   <div className="text-[18px] mb-3 opacity-15">◇</div>no reasoning data yet
                 </div>
               ) : (
-                groups.map((g, i) => {
-                  // Find matching response metadata for this query
-                  const rm = responseMetadata.find(
-                    (r) => r.data?.query && g.queryText?.includes(r.data.query.slice(0, 20))
-                  );
-                  const narrative = rm ? generateReasoningNarrative(rm.data) : [];
-                  return (
-                    <Entry
-                      key={g.messageId}
-                      g={g}
-                      idx={groups.length - i}
-                      open={expandedMsg === g.messageId}
-                      toggle={() =>
-                        setExpandedMsg(expandedMsg === g.messageId ? null : g.messageId)
-                      }
-                      narrative={narrative}
-                    />
-                  );
-                })
+                groups.map((g, i) => (
+                  <Entry
+                    key={g.messageId}
+                    g={g}
+                    idx={groups.length - i}
+                    open={expandedMsg === g.messageId}
+                    toggle={() => setExpandedMsg(expandedMsg === g.messageId ? null : g.messageId)}
+                  />
+                ))
               )}
             </div>
           </motion.div>
@@ -332,13 +232,11 @@ function Entry({
   idx,
   open,
   toggle,
-  narrative = [],
 }: {
   g: any;
   idx: number;
   open: boolean;
   toggle: () => void;
-  narrative?: NarrativeEntry[];
 }) {
   return (
     <div className="border-b border-relic-mist/10 dark:border-relic-slate/10">
@@ -398,60 +296,6 @@ function Entry({
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-2.5">
-              {/* ── AI THINKING NARRATIVE (from reasoning-narrator) ── */}
-              {narrative.length > 0 && (
-                <div className="bg-relic-ghost/30 dark:bg-relic-slate/5 rounded-md px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="text-[9px] text-indigo-400">◊</span>
-                    <span className="text-[7px] uppercase tracking-widest text-indigo-400/70">
-                      AI Thinking
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {narrative.map((entry, i) => (
-                      <p
-                        key={i}
-                        className="text-[9px] leading-relaxed text-relic-slate dark:text-relic-silver/70"
-                      >
-                        <span className="text-relic-silver/40 mr-1">{entry.sigil}</span>
-                        {entry.text}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ── REASONING NARRATIVE (legacy fallback) ── */}
-              {narrative.length === 0 && g.narrativeLines.length > 0 && (
-                <div className="bg-relic-ghost/30 dark:bg-relic-slate/5 rounded-md px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="text-[9px] text-indigo-400">∵</span>
-                    <span className="text-[7px] uppercase tracking-widest text-indigo-400/70">
-                      AI Reasoning
-                    </span>
-                  </div>
-                  <div className="space-y-1.5">
-                    {g.narrativeLines.map((line: string, i: number) => (
-                      <p
-                        key={i}
-                        className={`text-[9px] leading-relaxed ${
-                          line.startsWith('⚡')
-                            ? 'text-amber-500/70'
-                            : line.startsWith('Synthesis')
-                              ? 'text-purple-400/70 italic'
-                              : line.startsWith('Key signals')
-                                ? 'text-cyan-500/50'
-                                : 'text-relic-slate dark:text-relic-silver/70'
-                        }`}
-                      >
-                        {i === 0 ? '' : '· '}
-                        {line}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* ── METHOD COMPARISON ── */}
               {g.methScores.length > 1 && (
                 <div className="bg-relic-ghost/30 dark:bg-relic-slate/5 rounded-md px-3 py-2.5">

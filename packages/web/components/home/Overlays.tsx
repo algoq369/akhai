@@ -1,62 +1,66 @@
-'use client'
+'use client';
 
-import { Suspense } from 'react'
-import TopicsPanel from '@/components/TopicsPanel'
-import MindMap from '@/components/MindMap'
-import AuthModal from '@/components/AuthModal'
-import SuggestionToast from '@/components/SuggestionToast'
-import MethodologyChangePrompt from '@/components/MethodologyChangePrompt'
-import NewsNotification from '@/components/NewsNotification'
-import TreeConfigurationModal from '@/components/TreeConfigurationModal'
-import PipelineHistoryPanel from '@/components/PipelineHistoryPanel'
-import { Message } from '@/lib/chat-store'
+import { Suspense } from 'react';
+import TopicsPanel from '@/components/TopicsPanel';
+import MindMap from '@/components/MindMap';
+import AuthModal from '@/components/AuthModal';
+import SuggestionToast from '@/components/SuggestionToast';
+import MethodologyChangePrompt from '@/components/MethodologyChangePrompt';
+import NewsNotification from '@/components/NewsNotification';
+import TreeConfigurationModal from '@/components/TreeConfigurationModal';
+import PipelineHistoryPanel from '@/components/PipelineHistoryPanel';
+import { Message } from '@/lib/chat-store';
 
 interface OverlaysProps {
   // TopicsPanel (hidden)
-  showTopicsPanel: boolean
-  setShowTopicsPanel: (v: boolean) => void
-  setShowMindMap: (v: boolean) => void
+  showTopicsPanel: boolean;
+  setShowTopicsPanel: (v: boolean) => void;
+  setShowMindMap: (v: boolean) => void;
   // MindMap
-  showMindMap: boolean
-  onCloseMindMap: () => void
-  onSendMindMapQuery: (q: string) => void
-  userId: string | null
-  mindMapInitialView: 'graph' | 'history' | 'report'
+  showMindMap: boolean;
+  onCloseMindMap: () => void;
+  onSendMindMapQuery: (q: string) => void;
+  userId: string | null;
+  mindMapInitialView: 'graph' | 'history' | 'report';
   // Auth
-  showAuthModal: boolean
-  onCloseAuth: () => void
-  onAuthSuccess: () => void
+  showAuthModal: boolean;
+  onCloseAuth: () => void;
+  onAuthSuccess: () => void;
   // Suggestions
-  topicSuggestions: any[]
-  onRemoveSuggestion: (id: string) => void
-  onSuggestionClick: (suggestion: any) => void
+  topicSuggestions: any[];
+  onRemoveSuggestion: (id: string) => void;
+  onSuggestionClick: (suggestion: any) => void;
   // Methodology prompt
-  showMethodologyPrompt: boolean
-  methodologyName: string
-  onContinueInCurrentChat: () => void
-  onStartNewChat: () => void
-  onCancelMethodologyChange: () => void
+  showMethodologyPrompt: boolean;
+  methodologyName: string;
+  onContinueInCurrentChat: () => void;
+  onStartNewChat: () => void;
+  onCancelMethodologyChange: () => void;
   // Tree config
-  showLayerDashboard: boolean
-  onCloseLayerDashboard: () => void
+  showLayerDashboard: boolean;
+  onCloseLayerDashboard: () => void;
   // Continue watcher
-  ContinueParamWatcher: React.ComponentType<{ onContinue: (id: string) => void }>
-  loadConversation: (id: string) => void
-  // Pipeline history (disabled)
-  historyPanelOpen: boolean
-  setHistoryPanelOpen: (v: boolean) => void
-  messages: Message[]
+  ContinueParamWatcher: React.ComponentType<{ onContinue: (id: string) => void }>;
+  loadConversation: (id: string) => void;
+  // Pipeline history
+  historyPanelOpen: boolean;
+  setHistoryPanelOpen: (v: boolean) => void;
+  messages: Message[];
+  messageCognitiveSignatures?: Record<string, any>;
+  chatId?: string;
 }
 
 export default function Overlays(props: OverlaysProps) {
   return (
     <>
       {/* Topics Panel — hidden */}
-      {false && <TopicsPanel
-        isOpen={props.showTopicsPanel}
-        onClose={() => props.setShowTopicsPanel(false)}
-        onOpenMindMap={() => props.setShowMindMap(true)}
-      />}
+      {false && (
+        <TopicsPanel
+          isOpen={props.showTopicsPanel}
+          onClose={() => props.setShowTopicsPanel(false)}
+          onOpenMindMap={() => props.setShowMindMap(true)}
+        />
+      )}
 
       {/* Mind Map */}
       <MindMap
@@ -111,8 +115,10 @@ export default function Overlays(props: OverlaysProps) {
           isOpen={props.historyPanelOpen}
           onToggle={() => props.setHistoryPanelOpen(!props.historyPanelOpen)}
           messages={props.messages}
+          messageCognitiveSignatures={props.messageCognitiveSignatures}
+          chatId={props.chatId}
         />
       )}
     </>
-  )
+  );
 }
