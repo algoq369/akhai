@@ -28,7 +28,7 @@ async function callAnthropic(
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set');
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), 25000);
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
