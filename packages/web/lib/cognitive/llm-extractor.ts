@@ -4,7 +4,7 @@
  * Reuses the proven salvage-parser pattern from lib/depth/llm-extractor.ts.
  */
 
-import { buildExchangePrompt, buildSynthesisPrompt } from './prompts';
+import { buildExchangePrompt, buildRestructurePrompt, buildSynthesisPrompt } from './prompts';
 import { VALID_LENS_IDS } from './lenses';
 
 export const COGNITIVE_PROMPT_VERSION = 1;
@@ -179,6 +179,33 @@ export async function extractCognitiveSignature(input: {
     }
   }
   throw lastError || new Error('All cognitive extractors failed');
+}
+
+/** Restructure raw Opus thinking into lens entries. Haiku -> Sonnet fallback. */
+export async function restructureThinkingIntoLenses(input: {
+  rawThinking: string;
+  query: string;
+  response: string;
+}): Promise<CognitiveSignature> {
+  const { system, user } = buildRestructurePrompt(input);
+  let lastError: Error | null = null;
+
+  for (const model of MODELS) {
+    try {
+      const raw = await callAnthropic(model.id, system, user);
+      const parsed = salvageParse(raw);
+      const sig = validateSignature(parsed);
+      sig.source = `${model.label}-restructure`;
+      console.log(`[Cognitive] Restructure ${model.label}: ${sig.inline_dialogue.length} lenses`);
+      return sig;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(
+        `[Cognitive] Restructure ${model.label} failed: ${lastError.message.slice(0, 120)}`
+      );
+    }
+  }
+  throw lastError || new Error('All restructure extractors failed');
 }
 
 /** Generate conversation synthesis. Haiku -> Sonnet fallback. */

@@ -224,6 +224,7 @@ export function useHomePageState() {
     messagesEndRef,
     messageCognitiveSignatures,
     setMessageCognitiveSignatures,
+    messageRawThinking,
   });
 
   // ═══════════════ Prop bundles (delegated) ═════════════════

@@ -5,7 +5,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
-import { extractCognitiveSignature, COGNITIVE_PROMPT_VERSION } from '@/lib/cognitive/llm-extractor';
+import {
+  extractCognitiveSignature,
+  restructureThinkingIntoLenses,
+  COGNITIVE_PROMPT_VERSION,
+} from '@/lib/cognitive/llm-extractor';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -15,12 +19,13 @@ interface SignatureRequest {
   query: string;
   response: string;
   sessionHistory?: Array<{ role: string; content: string }>;
+  rawThinking?: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: SignatureRequest = await request.json();
-    const { queryId, query, response, sessionHistory = [] } = body;
+    const { queryId, query, response, sessionHistory = [], rawThinking } = body;
 
     if (!queryId || !response) {
       return NextResponse.json({
@@ -46,9 +51,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ...cached, source: 'cache' });
     }
 
-    // 2. LLM extraction
+    // 2. LLM extraction — use restructure path when raw thinking available
     try {
-      const sig = await extractCognitiveSignature({ query, response, sessionHistory });
+      const sig =
+        rawThinking && rawThinking.length > 100
+          ? await restructureThinkingIntoLenses({ rawThinking, query, response })
+          : await extractCognitiveSignature({ query, response, sessionHistory });
 
       // Cache in DB
       db.prepare(

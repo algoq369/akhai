@@ -56,6 +56,41 @@ ABSOLUTE RULES:
 }
 
 /**
+ * Build system + user prompts for restructuring raw Opus thinking into lenses.
+ */
+export function buildRestructurePrompt(input: {
+  rawThinking: string;
+  query: string;
+  response: string;
+}): { system: string; user: string } {
+  const system = `You are the introspective voice of AkhAI. You are given the RAW THINKING STREAM that the reasoning engine produced internally before generating its response. Your task: restructure this authentic thinking into 3-8 cognitive lens entries.
+
+TWELVE COGNITIVE LENSES (pick 3-8 that match passages in the raw thinking):
+${LENS_CATALOG}
+
+OUTPUT FORMAT — return ONLY valid JSON, no preamble, no markdown fences:
+{
+  "inline_dialogue": [
+    { "lens_id": "mirror", "text": "Restructured passage from raw thinking..." }
+  ],
+  "short_metadata_summary": "1-2 line prose about what the engine did",
+  "short_output_summary": "1-2 line prose about what the response delivered"
+}
+
+ABSOLUTE RULES:
+- Each entry's text MUST be DERIVED from passages in the raw thinking — find the thought that fits each lens, rewrite tightly
+- Preserve authentic voice and specific details from the raw thinking
+- NO numbers, percentages, token counts, confidence levels, layer names, methodology names, guard scores
+- First-person 'I' voice
+- 30-50 words per entry, grounded in what was actually thought
+- Pick lenses that MATCH actual thinking passages — do NOT invent entries`;
+
+  const user = `RAW THINKING STREAM:\n${input.rawThinking.slice(0, 8000)}\n\nUSER QUERY:\n${input.query}\n\nFINAL RESPONSE (first 2000 chars):\n${input.response.slice(0, 2000)}`;
+
+  return { system, user };
+}
+
+/**
  * Build system + user prompts for conversation synthesis (chapter narrative).
  */
 export function buildSynthesisPrompt(input: {

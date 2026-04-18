@@ -39,6 +39,8 @@ export interface HomePageEffectsInput {
   // Cognitive signatures
   messageCognitiveSignatures: Record<string, any>;
   setMessageCognitiveSignatures: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  // Extended thinking
+  messageRawThinking?: Record<string, string>;
 }
 
 export function useHomePageEffects(input: HomePageEffectsInput) {
@@ -69,6 +71,7 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
     messagesEndRef,
     messageCognitiveSignatures,
     setMessageCognitiveSignatures,
+    messageRawThinking,
   } = input;
 
   // Log depth config on mount
@@ -126,11 +129,18 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
     const priorUser = messages[messages.length - 2];
     const query = priorUser?.role === 'user' ? priorUser.content : '';
     const sessionHistory = messages.slice(0, -2).map((m) => ({ role: m.role, content: m.content }));
+    const rawThinking = messageRawThinking?.[msgId];
 
     fetch('/api/cognitive-signature', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ queryId, query, response: lastMessage.content, sessionHistory }),
+      body: JSON.stringify({
+        queryId,
+        query,
+        response: lastMessage.content,
+        sessionHistory,
+        rawThinking,
+      }),
     })
       .then((r) => r.json())
       .then((data) => {
