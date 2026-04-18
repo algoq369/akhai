@@ -18,9 +18,6 @@ import { classifyContent } from '@/lib/mini-canvas/content-classifier';
 const CanvasWorkspace = dynamic(() => import('@/components/canvas/CanvasWorkspace'), {
   ssr: false,
 });
-const LiveRefinementCanal = dynamic(() => import('@/components/LiveRefinementCanal'), {
-  ssr: false,
-});
 const MiniCanvasView = dynamic(() => import('@/components/mini-canvas/MiniCanvasView'), {
   ssr: false,
 });
@@ -158,12 +155,7 @@ function HomePage() {
         {/* Messages Area — only in Classic mode */}
         {s.isExpanded && s.viewMode === 'classic' && <ChatMessages {...s.chatMessagesProps} />}
 
-        <LiveRefinementCanal
-          isVisible={s.isExpanded && s.messages.length > 0}
-          isLoading={s.isLoading}
-        />
-
-        {/* Input Section */}
+        {/* Input Section (contains LiveRefinementCanal directly above the input) */}
         <InputSection {...s.inputSectionProps} />
 
         {!s.isExpanded && <div className="flex-1" />}
