@@ -294,6 +294,7 @@ export function useHomePageState() {
     setHistoryPanelOpen,
     loadConversation,
     checkSession,
+    activeChatId,
     handlers,
   });
 

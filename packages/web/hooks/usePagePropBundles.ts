@@ -78,6 +78,8 @@ export function buildPagePropBundles(opts: {
   setHistoryPanelOpen: any;
   loadConversation: any;
   checkSession: any;
+  // Chat ID
+  activeChatId: string | null;
   // Handlers
   handlers: any;
 }) {
@@ -201,6 +203,7 @@ export function buildPagePropBundles(opts: {
     setHistoryPanelOpen: s.setHistoryPanelOpen,
     messages: s.messages,
     messageCognitiveSignatures: s.messageCognitiveSignatures,
+    chatId: s.activeChatId || 'main',
   } as const;
 
   return { chatMessagesProps, inputSectionProps, overlaysProps };
