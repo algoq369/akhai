@@ -315,6 +315,13 @@ export async function POST(request: NextRequest) {
       systemPrompt = applyFusionToPrompt(systemPrompt, fusionResult, weights);
     }
 
+    // When extended thinking is enabled, prepend a directive that encourages deeper reasoning
+    if (extendedThinking) {
+      systemPrompt =
+        'When reasoning internally, think thoroughly — consider multiple angles, surface your genuine considerations, articulate doubts and trade-offs you are weighing, note what you are rejecting and why. Your internal reasoning should feel like authentic reflection, not summary. Take the time to examine the question from multiple lenses before answering.\n\n' +
+        systemPrompt;
+    }
+
     // Emit: calling (pre-API — no model shown, just progress indicator)
     emitAndPersist(queryId, {
       id: `${queryId}-calling`,
