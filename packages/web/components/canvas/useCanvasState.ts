@@ -38,6 +38,7 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [generating, setGenerating] = useState<string | null>(null);
   const autoGenDone = useRef(false);
+  const initialFitDone = useRef(false);
   const nodesRef = useRef<CanvasNode[]>([]);
   nodesRef.current = nodes;
 
@@ -61,21 +62,26 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
     const newConns: Connection[] = [];
     const topicMap: Record<string, { count: number; nodeId: string; queryIds: string[] }> = {};
 
-    // Layout: queries flow horizontally, topics below each query
+    // Layout: row-wrapping grid of queries with topics below each query
     const Q_START_X = 40;
-    const Q_SPACING_X = 420; // horizontal gap between queries
-    const Q_Y = 40;
-    const TOPIC_OFFSET_Y = 170; // topics start below their query
+    const Q_START_Y = 40;
+    const Q_SPACING_X = 420;
+    const Q_SPACING_Y = 320;
+    const QUERIES_PER_ROW = 3;
+    const TOPIC_OFFSET_Y = 170;
     const TOPIC_SPACING_Y = 52;
 
     queryCards.forEach((card, i) => {
       const qId = `q-${card.id}`;
-      const qX = Q_START_X + i * Q_SPACING_X;
+      const row = Math.floor(i / QUERIES_PER_ROW);
+      const col = i % QUERIES_PER_ROW;
+      const qX = Q_START_X + col * Q_SPACING_X;
+      const qY = Q_START_Y + row * Q_SPACING_Y;
       newNodes.push({
         id: qId,
         type: 'query',
         x: qX,
-        y: Q_Y,
+        y: qY,
         w: 320,
         h: 150,
         data: { ...card, methodology: card.methodology || 'auto', threadIndex: i },
@@ -91,7 +97,7 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
             id: tId,
             type: 'topic',
             x: qX + 30 + (topicIdx % 2) * 140,
-            y: TOPIC_OFFSET_Y + Q_Y + Math.floor(topicIdx / 2) * TOPIC_SPACING_Y,
+            y: TOPIC_OFFSET_Y + qY + Math.floor(topicIdx / 2) * TOPIC_SPACING_Y,
             w: 110,
             h: 44,
             data: { name: topic, count: 1, queryIds: [qId], color: getTopicColor(topic) },
@@ -153,8 +159,8 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
         }
       }
       if (ct > 0) {
-        topicNode.x = sumX / ct + 60 + (Math.random() - 0.5) * 40;
-        topicNode.y = sumY / ct - topicNode.h / 2 + (Math.random() - 0.5) * 30;
+        topicNode.x = sumX / ct + 40;
+        topicNode.y = sumY / ct - topicNode.h / 2;
       }
       // Scale width for multi-referenced topics
       topicNode.w = entry.count >= 3 ? 150 : 130;
@@ -173,11 +179,12 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
         }
       }
     }
-    for (const pairKey of Object.keys(crossPairs)) {
-      const topics = crossPairs[pairKey];
-      if (topics.length < 2) continue;
+    const ranked = Object.entries(crossPairs)
+      .filter(([, topics]) => topics.length >= 2)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 5);
+    for (const [pairKey, topics] of ranked) {
       const [fromId, toId] = pairKey.split('|');
-      // Skip if already connected by thread/branch
       const alreadyThreaded = newConns.some(
         (c) =>
           (c.label === 'thread' || c.label === 'branch') &&
@@ -196,11 +203,12 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
       h: 50,
       data: { preset: activePreset || 'balanced', weights },
     });
+    const maxY = newNodes.reduce((m, n) => Math.max(m, n.y + n.h), 0);
     newNodes.push({
       id: 'stats',
       type: 'stat',
       x: 40,
-      y: 40 + queryCards.length * 170 + 20,
+      y: maxY + 40,
       w: 200,
       h: 60,
       data: {
@@ -212,6 +220,21 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
     setNodes(newNodes);
     setConnections(newConns);
   }, [queryCards, activePreset, weights]);
+
+  // Auto-fit-to-view on initial load
+  useEffect(() => {
+    if (nodes.length === 0) return;
+    if (initialFitDone.current) return;
+    const maxX = nodes.reduce((m, n) => Math.max(m, n.x + n.w), 0);
+    const maxY = nodes.reduce((m, n) => Math.max(m, n.y + n.h), 0);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const fitZoom = Math.min(rect.width / (maxX + 80), rect.height / (maxY + 80), 1);
+    setZoom(Math.max(0.4, fitZoom));
+    setPan({ x: 20, y: 20 });
+    initialFitDone.current = true;
+  }, [nodes]);
 
   // === GENERATE DIAGRAM/CHART FROM SELECTED QUERY ===
   const handleGenerate = async (type: VizType) => {
