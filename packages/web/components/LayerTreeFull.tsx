@@ -77,9 +77,9 @@ export function LayerTreeFull({
   // Scale factor for compact mode
   const scale = compact ? 0.8 : 1;
   const viewBoxMinX = 40 * scale;
-  const viewBoxMinY = 10 * scale;
+  const viewBoxMinY = 0;
   const viewBoxWidth = 420 * scale;
-  const viewBoxHeight = 820 * scale;
+  const viewBoxHeight = 890 * scale;
 
   return (
     <div className={`w-full ${compact ? 'h-[580px]' : 'h-[720px]'} ${className}`}>
