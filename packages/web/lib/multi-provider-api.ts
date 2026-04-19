@@ -20,6 +20,8 @@ export interface CompletionRequest {
   temperature?: number;
   systemPrompt?: string;
   extendedThinking?: boolean;
+  onThinkingDelta?: (chunk: string) => void;
+  onTextDelta?: (chunk: string) => void;
 }
 
 export interface CompletionResponse {
@@ -69,6 +71,76 @@ export async function callProvider(
   }
 }
 
+/** Parse Anthropic SSE stream, invoking callbacks per thinking/text delta. */
+async function parseAnthropicStream(
+  response: Response,
+  request: CompletionRequest,
+  startTime: number
+): Promise<CompletionResponse> {
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let rawThinking = '';
+  let textContent = '';
+  let inputTokens = 0;
+  let outputTokens = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const json = line.slice(6);
+        if (!json || json === '[DONE]') continue;
+        let ev: any;
+        try {
+          ev = JSON.parse(json);
+        } catch {
+          continue;
+        }
+        if (ev.type === 'content_block_delta') {
+          if (ev.delta?.type === 'thinking_delta') {
+            const t = ev.delta.thinking || '';
+            rawThinking += t;
+            request.onThinkingDelta?.(t);
+          } else if (ev.delta?.type === 'text_delta') {
+            const t = ev.delta.text || '';
+            textContent += t;
+            request.onTextDelta?.(t);
+          }
+        } else if (ev.type === 'message_start') {
+          inputTokens = ev.message?.usage?.input_tokens || 0;
+        } else if (ev.type === 'message_delta') {
+          outputTokens = ev.usage?.output_tokens || 0;
+        }
+      }
+    }
+  } catch (err) {
+    // Stream interrupted — return whatever accumulated so far
+    console.warn('[Anthropic] Stream interrupted:', (err as Error).message?.slice(0, 100));
+  }
+
+  if (!textContent && !rawThinking) throw new Error('Anthropic stream produced no content');
+
+  const latencyMs = Date.now() - startTime;
+  const pricing = getProviderPricing('anthropic');
+  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000;
+
+  return {
+    content: textContent,
+    rawThinking: rawThinking || undefined,
+    usage: { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens },
+    model: request.model,
+    provider: 'anthropic',
+    cost,
+    latencyMs,
+  };
+}
+
 /**
  * Call Anthropic API (Claude)
  */
@@ -104,6 +176,7 @@ async function callAnthropic(
     delete body.temperature;
     delete body.top_p;
     delete body.top_k;
+    if (request.onThinkingDelta) body.stream = true;
   }
 
   const response = await fetch(config.baseUrl, {
@@ -119,6 +192,11 @@ async function callAnthropic(
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`Anthropic API error: ${response.status} - ${error}`);
+  }
+
+  // Streaming path: parse SSE events and invoke callbacks live
+  if (request.extendedThinking && request.onThinkingDelta && response.body) {
+    return parseAnthropicStream(response, request, startTime);
   }
 
   const data = await response.json();
