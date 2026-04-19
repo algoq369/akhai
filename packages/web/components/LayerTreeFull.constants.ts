@@ -2,17 +2,17 @@ import { Layer } from '@/lib/layer-registry';
 
 // Tree of Life hierarchical positions (Kabbalistic structure)
 export const treePositions: Record<Layer, { x: number; y: number }> = {
-  [Layer.META_CORE]: { x: 250, y: 60 },
-  [Layer.REASONING]: { x: 380, y: 170 },
-  [Layer.ENCODER]: { x: 120, y: 170 },
-  [Layer.SYNTHESIS]: { x: 250, y: 280 },
-  [Layer.EXPANSION]: { x: 380, y: 390 },
-  [Layer.DISCRIMINATOR]: { x: 120, y: 390 },
-  [Layer.ATTENTION]: { x: 250, y: 500 },
-  [Layer.GENERATIVE]: { x: 380, y: 610 },
-  [Layer.CLASSIFIER]: { x: 120, y: 610 },
-  [Layer.EXECUTOR]: { x: 250, y: 720 },
-  [Layer.EMBEDDING]: { x: 250, y: 830 },
+  [Layer.META_CORE]: { x: 250, y: 50 },
+  [Layer.REASONING]: { x: 430, y: 150 },
+  [Layer.ENCODER]: { x: 70, y: 150 },
+  [Layer.SYNTHESIS]: { x: 250, y: 250 },
+  [Layer.EXPANSION]: { x: 430, y: 350 },
+  [Layer.DISCRIMINATOR]: { x: 70, y: 350 },
+  [Layer.ATTENTION]: { x: 250, y: 450 },
+  [Layer.GENERATIVE]: { x: 430, y: 550 },
+  [Layer.CLASSIFIER]: { x: 70, y: 550 },
+  [Layer.EXECUTOR]: { x: 250, y: 650 },
+  [Layer.EMBEDDING]: { x: 250, y: 780 },
 };
 
 // Connection paths (22 paths of the Tree of Life)

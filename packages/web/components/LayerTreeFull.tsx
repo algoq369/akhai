@@ -76,13 +76,13 @@ export function LayerTreeFull({
 
   // Scale factor for compact mode
   const scale = compact ? 0.8 : 1;
-  const viewBoxMinX = 80 * scale;
-  const viewBoxMinY = 20 * scale;
-  const viewBoxWidth = 340 * scale;
-  const viewBoxHeight = 900 * scale;
+  const viewBoxMinX = 40 * scale;
+  const viewBoxMinY = 10 * scale;
+  const viewBoxWidth = 420 * scale;
+  const viewBoxHeight = 820 * scale;
 
   return (
-    <div className={`w-full ${compact ? 'h-[680px]' : 'h-[880px]'} ${className}`}>
+    <div className={`w-full ${compact ? 'h-[580px]' : 'h-[720px]'} ${className}`}>
       <svg
         viewBox={`${viewBoxMinX} ${viewBoxMinY} ${viewBoxWidth} ${viewBoxHeight}`}
         className="w-full h-full"
