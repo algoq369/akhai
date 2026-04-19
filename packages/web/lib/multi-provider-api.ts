@@ -102,18 +102,20 @@ async function parseAnthropicStream(
         } catch {
           continue;
         }
-        if (ev.type === 'content_block_delta') {
-          if (ev.delta?.type === 'thinking_delta') {
+        if (ev.type === 'message_start') {
+          inputTokens = ev.message?.usage?.input_tokens || 0;
+        } else if (ev.type === 'content_block_delta') {
+          const dt = ev.delta?.type;
+          if (dt === 'thinking_delta') {
             const t = ev.delta.thinking || '';
             rawThinking += t;
             request.onThinkingDelta?.(t);
-          } else if (ev.delta?.type === 'text_delta') {
+          } else if (dt === 'text_delta') {
             const t = ev.delta.text || '';
             textContent += t;
             request.onTextDelta?.(t);
           }
-        } else if (ev.type === 'message_start') {
-          inputTokens = ev.message?.usage?.input_tokens || 0;
+          // signature_delta is a verification hash — skip
         } else if (ev.type === 'message_delta') {
           outputTokens = ev.usage?.output_tokens || 0;
         }
@@ -171,7 +173,10 @@ async function callAnthropic(
   };
 
   if (request.extendedThinking) {
+    // claude-opus-4-7 only supports adaptive (no visible thinking); use opus-4-6 for enabled thinking
+    body.model = 'claude-opus-4-6';
     body.thinking = { type: 'enabled', budget_tokens: 10000 };
+    body.max_tokens = 16000; // must exceed budget_tokens
     // Anthropic 400s if temperature/top_p/top_k present with extended thinking
     delete body.temperature;
     delete body.top_p;
@@ -179,13 +184,14 @@ async function callAnthropic(
     if (request.onThinkingDelta) body.stream = true;
   }
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-api-key': config.apiKey,
+    'anthropic-version': config.versionHeader!,
+  };
   const response = await fetch(config.baseUrl, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': config.apiKey,
-      'anthropic-version': config.versionHeader!,
-    },
+    headers,
     body: JSON.stringify(body),
   });
 
