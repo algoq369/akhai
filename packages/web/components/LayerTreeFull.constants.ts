@@ -1,32 +1,19 @@
-import { Layer } from '@/lib/layer-registry'
+import { Layer } from '@/lib/layer-registry';
 
 // Tree of Life hierarchical positions (Kabbalistic structure)
 export const treePositions: Record<Layer, { x: number; y: number }> = {
-  // Top - Crown
-  [Layer.META_CORE]: { x: 250, y: 80 },
-
-  // Second row - Supernal Triangle
-  [Layer.REASONING]: { x: 380, y: 140 },
-  [Layer.ENCODER]: { x: 120, y: 140 },
-
-  // Hidden - Synthesis (between supernal and lower)
-  [Layer.SYNTHESIS]: { x: 250, y: 180 },
-
-  // Third row - Ethical Triangle
-  [Layer.EXPANSION]: { x: 380, y: 240 },
-  [Layer.DISCRIMINATOR]: { x: 120, y: 240 },
-  [Layer.ATTENTION]: { x: 250, y: 260 },
-
-  // Fourth row - Astral Triangle
-  [Layer.GENERATIVE]: { x: 380, y: 360 },
-  [Layer.CLASSIFIER]: { x: 120, y: 360 },
-
-  // Fifth row - Foundation
-  [Layer.EXECUTOR]: { x: 250, y: 420 },
-
-  // Bottom - Kingdom
-  [Layer.EMBEDDING]: { x: 250, y: 500 },
-}
+  [Layer.META_CORE]: { x: 250, y: 60 },
+  [Layer.REASONING]: { x: 380, y: 170 },
+  [Layer.ENCODER]: { x: 120, y: 170 },
+  [Layer.SYNTHESIS]: { x: 250, y: 280 },
+  [Layer.EXPANSION]: { x: 380, y: 390 },
+  [Layer.DISCRIMINATOR]: { x: 120, y: 390 },
+  [Layer.ATTENTION]: { x: 250, y: 500 },
+  [Layer.GENERATIVE]: { x: 380, y: 610 },
+  [Layer.CLASSIFIER]: { x: 120, y: 610 },
+  [Layer.EXECUTOR]: { x: 250, y: 720 },
+  [Layer.EMBEDDING]: { x: 250, y: 830 },
+};
 
 // Connection paths (22 paths of the Tree of Life)
 export const treePaths: Array<[Layer, Layer]> = [
@@ -61,4 +48,4 @@ export const treePaths: Array<[Layer, Layer]> = [
   [Layer.CLASSIFIER, Layer.EMBEDDING],
   // Final path
   [Layer.EXECUTOR, Layer.EMBEDDING],
-]
+];

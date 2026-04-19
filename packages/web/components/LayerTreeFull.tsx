@@ -76,15 +76,13 @@ export function LayerTreeFull({
 
   // Scale factor for compact mode
   const scale = compact ? 0.8 : 1;
-  // Shrink viewBox to tightly bound actual node positions (x:120-380, y:80-500)
-  // Adding label margins: 40px on sides for text, 60px below for name+role+% labels
   const viewBoxMinX = 80 * scale;
-  const viewBoxMinY = 40 * scale;
+  const viewBoxMinY = 20 * scale;
   const viewBoxWidth = 340 * scale;
-  const viewBoxHeight = 560 * scale;
+  const viewBoxHeight = 900 * scale;
 
   return (
-    <div className={`w-full ${compact ? 'h-[520px]' : 'h-[650px]'} ${className}`}>
+    <div className={`w-full ${compact ? 'h-[680px]' : 'h-[880px]'} ${className}`}>
       <svg
         viewBox={`${viewBoxMinX} ${viewBoxMinY} ${viewBoxWidth} ${viewBoxHeight}`}
         className="w-full h-full"
@@ -428,7 +426,7 @@ export function LayerTreeFull({
                   {/* AI name */}
                   <text
                     x={scaledX}
-                    y={scaledY + radius + 32 * scale}
+                    y={scaledY + radius + 28 * scale}
                     textAnchor="middle"
                     fontSize={14 * scale}
                     fill={isSelected ? '#18181b' : '#64748b'}
@@ -441,7 +439,7 @@ export function LayerTreeFull({
                   {/* AI Computational Layer (bottom) */}
                   <text
                     x={scaledX}
-                    y={scaledY + radius + 48 * scale}
+                    y={scaledY + radius + 40 * scale}
                     textAnchor="middle"
                     fontSize={11 * scale}
                     fill="#a855f7"
@@ -455,7 +453,7 @@ export function LayerTreeFull({
                   {/* Activation percentage (bottom-most) */}
                   <text
                     x={scaledX}
-                    y={scaledY + radius + 64 * scale}
+                    y={scaledY + radius + 52 * scale}
                     textAnchor="middle"
                     fontSize={12 * scale}
                     fill="#64748b"
