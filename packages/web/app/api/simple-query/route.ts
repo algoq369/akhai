@@ -332,6 +332,29 @@ export async function POST(request: NextRequest) {
     log('INFO', 'API', `Calling ${selectedProvider} API with model: ${usedModel}`);
 
     let apiResponse;
+    const thinkingCb =
+      extendedThinking && selectedProvider === 'anthropic'
+        ? (chunk: string) => {
+            emitAndPersist(queryId, {
+              id: `${queryId}-td-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              queryId,
+              stage: 'reasoning',
+              timestamp: Date.now() - startTime,
+              data: chunk,
+              details: {
+                narrative: chunk,
+                reasoning: {
+                  intent: 'extended_thinking',
+                  approach: 'opus',
+                  reflectionMode: 'thinking',
+                  ascentLevel: 0,
+                  providerReason: '',
+                },
+              },
+            });
+          }
+        : undefined;
+
     try {
       apiResponse = await withRetry(
         () =>
@@ -342,6 +365,7 @@ export async function POST(request: NextRequest) {
             temperature: 0.7,
             extendedThinking:
               extendedThinking && selectedProvider === 'anthropic' ? true : undefined,
+            onThinkingDelta: thinkingCb,
           }),
         {
           maxAttempts: 3,
@@ -454,30 +478,8 @@ export async function POST(request: NextRequest) {
 
     // ========== EXTENDED THINKING SSE ==========
     if (rawThinking) {
-      log('INFO', 'THINKING', `Extended thinking: ${rawThinking.length} chars`);
-      // Emit thinking as chunked SSE events for client-side live streaming
-      const CHUNK_SIZE = 120;
-      for (let i = 0; i < rawThinking.length; i += CHUNK_SIZE) {
-        const chunk = rawThinking.slice(i, i + CHUNK_SIZE);
-        emitAndPersist(queryId, {
-          id: `${queryId}-thinking-${i}`,
-          queryId,
-          stage: 'reasoning',
-          timestamp: Date.now() - startTime,
-          data: chunk,
-          details: {
-            narrative: chunk,
-            reasoning: {
-              intent: 'extended_thinking',
-              approach: 'opus',
-              reflectionMode: 'thinking',
-              ascentLevel: 0,
-              providerReason: '',
-            },
-          },
-        });
-      }
-      // Emit thinking complete marker
+      log('INFO', 'THINKING', `Extended thinking: ${rawThinking.length} chars streamed`);
+      // Thinking deltas already emitted live via onThinkingDelta callback — just emit completion marker
       emitAndPersist(queryId, {
         id: `${queryId}-thinking-complete`,
         queryId,
