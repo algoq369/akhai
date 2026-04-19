@@ -60,12 +60,43 @@ export default function CanvasPage() {
         const nodes: VisualNode[] = [];
         const nodeSet = new Set<string>();
 
+        const STOP_WORDS = new Set([
+          'about',
+          'after',
+          'again',
+          'before',
+          'could',
+          'every',
+          'first',
+          'might',
+          'never',
+          'other',
+          'their',
+          'there',
+          'these',
+          'thing',
+          'think',
+          'those',
+          'under',
+          'where',
+          'which',
+          'would',
+          'being',
+          'doing',
+          'going',
+          'having',
+          'should',
+          'through',
+          'between',
+          'because',
+        ]);
         cards.forEach((card, idx) => {
           // Extract key terms from query for nodes
           const terms = card.query
             .toLowerCase()
+            .replace(/[^a-z\s]/g, '')
             .split(/\s+/)
-            .filter((w: string) => w.length > 4)
+            .filter((w: string) => w.length > 4 && !STOP_WORDS.has(w))
             .slice(0, 2);
 
           terms.forEach((term: string) => {
