@@ -48,8 +48,7 @@ export async function POST(request: NextRequest) {
         { role: 'user' as const, content: userContent },
       ],
       model: 'claude-opus-4-7',
-      maxTokens: 300,
-      temperature: 0,
+      maxTokens: 1500,
     };
 
     let result;
@@ -67,7 +66,7 @@ export async function POST(request: NextRequest) {
           ...vizRequest,
           messages: [{ role: 'user' as const, content: `${systemPrompt}\n\n${userContent}` }],
           temperature: 0.3,
-          maxTokens: 500,
+          maxTokens: 1500,
         });
       } else {
         throw err;
@@ -75,13 +74,45 @@ export async function POST(request: NextRequest) {
     }
 
     const text = result.content || '';
+
+    // Strategy 1: strict parse of full matched JSON
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return NextResponse.json({ viz: JSON.parse(jsonMatch[0]) });
+      try {
+        return NextResponse.json({ viz: JSON.parse(jsonMatch[0]) });
+      } catch {
+        // Fall through to salvage
+      }
     }
 
+    // Strategy 2: salvage — walk string, track brace depth, try progressively shorter JSON until one parses
+    if (jsonMatch) {
+      const raw = jsonMatch[0];
+      for (let end = raw.length; end > 50; end -= 10) {
+        const candidate = raw.slice(0, end);
+        const lastBrace = candidate.lastIndexOf('}');
+        if (lastBrace < 0) continue;
+        const truncated = candidate.slice(0, lastBrace + 1);
+        const opens = (truncated.match(/\{/g) || []).length;
+        const closes = (truncated.match(/\}/g) || []).length;
+        const balanced = truncated + '}'.repeat(Math.max(0, opens - closes));
+        const openBr = (balanced.match(/\[/g) || []).length;
+        const closeBr = (balanced.match(/\]/g) || []).length;
+        const fullyBalanced = balanced.replace(/,\s*\}/g, '}').replace(/,\s*\]/g, ']');
+        const withArrays = fullyBalanced + ']'.repeat(Math.max(0, openBr - closeBr));
+        try {
+          const salvaged = JSON.parse(withArrays);
+          console.log('[CanvasViz] Salvaged malformed JSON at end=' + end);
+          return NextResponse.json({ viz: salvaged, salvaged: true });
+        } catch {
+          continue;
+        }
+      }
+    }
+
+    console.error('[CanvasViz] Parse failed. Raw text:', text.slice(0, 400));
     return NextResponse.json(
-      { error: 'Failed to parse JSON from response', raw: text },
+      { error: 'Failed to parse JSON from response', raw: text.slice(0, 500) },
       { status: 422 }
     );
   } catch (error: any) {
