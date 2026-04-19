@@ -173,7 +173,8 @@ async function callAnthropic(
   };
 
   if (request.extendedThinking) {
-    // claude-opus-4-7 only supports adaptive (no visible thinking); use opus-4-6 for enabled thinking
+    // Opus 4.7 adaptive thinking does not emit visible thinking_delta events (verified Apr 2026).
+    // Use Opus 4.6 with enabled thinking for streamable extended thinking content.
     body.model = 'claude-opus-4-6';
     body.thinking = { type: 'enabled', budget_tokens: 10000 };
     body.max_tokens = 16000; // must exceed budget_tokens
