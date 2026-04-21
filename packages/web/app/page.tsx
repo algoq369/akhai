@@ -27,6 +27,39 @@ const SideMiniChat = dynamic(() => import('@/components/SideMiniChat'), { ssr: f
  * Helper component to watch URL parameters
  * Separated to enable proper Suspense boundary for Next.js 15
  */
+/**
+ * Reconcile persisted stage IDs against current queryCards list:
+ * drop orphans, top up to 5, persist cleaned version. Mirrors /canvas/page.tsx.
+ */
+async function reconcileStage(cards: { id: string }[]): Promise<string[]> {
+  if (cards.length === 0) return [];
+  const validIds = new Set(cards.map((c) => c.id));
+  const res = await fetch('/api/canvas-stage');
+  const data = await res.json();
+  const raw: string[] = Array.isArray(data.stageIds)
+    ? data.stageIds.filter((id: unknown): id is string => typeof id === 'string')
+    : [];
+  let cleaned = raw.filter((id) => validIds.has(id));
+  if (cleaned.length < 5) {
+    const fillCount = 5 - cleaned.length;
+    const existingSet = new Set(cleaned);
+    const fillers = cards
+      .filter((c) => !existingSet.has(c.id))
+      .slice(0, fillCount)
+      .map((c) => c.id);
+    cleaned = [...cleaned, ...fillers];
+  }
+  const changed = cleaned.length !== raw.length || cleaned.some((id, i) => id !== raw[i]);
+  if (changed) {
+    fetch('/api/canvas-stage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageIds: cleaned }),
+    }).catch(() => {});
+  }
+  return cleaned;
+}
+
 function ContinueParamWatcher({ onContinue }: { onContinue: (id: string) => void }) {
   const searchParams = useSearchParams();
   const continueParam = searchParams?.get('continue');
@@ -50,23 +83,11 @@ function HomePage() {
 
   useEffect(() => {
     if (!s.isCanvasMode) return;
-    fetch('/api/canvas-stage')
-      .then((r) => r.json())
-      .then((data) => {
-        let ids: string[] = Array.isArray(data.stageIds)
-          ? data.stageIds.filter((id: unknown): id is string => typeof id === 'string')
-          : [];
-        if (ids.length === 0 && queryCards.length > 0) {
-          ids = queryCards.slice(0, 5).map((c) => c.id);
-          fetch('/api/canvas-stage', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ stageIds: ids }),
-          }).catch(() => {});
-        }
-        setStageIds(ids);
-      })
+    reconcileStage(queryCards)
+      .then(setStageIds)
       .catch(() => {});
+    // Deliberately deps on count only — content churn is rare and reconcile is safe to skip then.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.isCanvasMode, queryCards.length]);
 
   const onToggleStage = useCallback(

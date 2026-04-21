@@ -18,6 +18,41 @@ import SideMiniChat from '@/components/SideMiniChat';
 import type { Message } from '@/lib/chat-store';
 // ArrowLeftIcon inline to avoid heroicons sizing issues
 
+/**
+ * Reconcile persisted stage IDs against the current queryCards list:
+ * - drop orphans (IDs not in current queries — deleted, DB swap, stale session)
+ * - top up to 5 from most recent unstaged cards if short
+ * - persist the cleaned list back to DB so orphans don't reappear
+ */
+async function reconcileStage(cards: QueryCard[]): Promise<string[]> {
+  if (cards.length === 0) return [];
+  const validIds = new Set(cards.map((c) => c.id));
+  const res = await fetch('/api/canvas-stage');
+  const data = await res.json();
+  const raw: string[] = Array.isArray(data.stageIds)
+    ? data.stageIds.filter((id: unknown): id is string => typeof id === 'string')
+    : [];
+  let cleaned = raw.filter((id) => validIds.has(id));
+  if (cleaned.length < 5) {
+    const fillCount = 5 - cleaned.length;
+    const existingSet = new Set(cleaned);
+    const fillers = cards
+      .filter((c) => !existingSet.has(c.id))
+      .slice(0, fillCount)
+      .map((c) => c.id);
+    cleaned = [...cleaned, ...fillers];
+  }
+  const changed = cleaned.length !== raw.length || cleaned.some((id, i) => id !== raw[i]);
+  if (changed) {
+    fetch('/api/canvas-stage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageIds: cleaned }),
+    }).catch(() => {});
+  }
+  return cleaned;
+}
+
 export default function CanvasPage() {
   const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
@@ -58,25 +93,12 @@ export default function CanvasPage() {
 
         setQueryCards(cards);
 
-        // Fetch persisted canvas stage. Default to 3 most recent on first visit.
+        // Reconcile persisted stage: drop orphan IDs, top up to 5 from most recent, persist cleaned.
         try {
-          const stageRes = await fetch('/api/canvas-stage');
-          const stageData = await stageRes.json();
-          let initialStageIds: string[] = Array.isArray(stageData.stageIds)
-            ? stageData.stageIds.filter((id: unknown): id is string => typeof id === 'string')
-            : [];
-          if (initialStageIds.length === 0 && cards.length > 0) {
-            initialStageIds = cards.slice(0, 5).map((c) => c.id);
-            // Fire-and-forget persist. Ignore failures — stage just won't persist on this visit.
-            fetch('/api/canvas-stage', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ stageIds: initialStageIds }),
-            }).catch(() => {});
-          }
-          setStageIds(initialStageIds);
+          const cleaned = await reconcileStage(cards);
+          setStageIds(cleaned);
         } catch (stageErr) {
-          console.error('Failed to fetch canvas stage:', stageErr);
+          console.error('Failed to reconcile canvas stage:', stageErr);
         }
 
         // Generate visual nodes from query topics
