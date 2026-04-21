@@ -71,7 +71,7 @@ export default function CanvasPage() {
             ? stageData.stageIds.filter((id: unknown): id is string => typeof id === 'string')
             : [];
           if (initialStageIds.length === 0 && cards.length > 0) {
-            initialStageIds = cards.slice(0, 3).map((c) => c.id);
+            initialStageIds = cards.slice(0, 5).map((c) => c.id);
             // Fire-and-forget persist. Ignore failures — stage just won't persist on this visit.
             fetch('/api/canvas-stage', {
               method: 'POST',
@@ -188,7 +188,7 @@ export default function CanvasPage() {
       let next: string[];
       if (isOnStage) {
         next = stageIds.filter((id) => id !== queryId);
-      } else if (stageIds.length < 3) {
+      } else if (stageIds.length < 5) {
         next = [...stageIds, queryId];
       } else {
         // Stage full — bump the oldest staged query (by timestamp).
@@ -265,7 +265,7 @@ export default function CanvasPage() {
         setStageIds((prev) => {
           if (prev.includes(newCard.id)) return prev;
           let next: string[];
-          if (prev.length < 3) {
+          if (prev.length < 5) {
             next = [...prev, newCard.id];
           } else {
             // Bump the oldest staged card. prev is insertion order from fetch, so prev[0] is oldest-known.

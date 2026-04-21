@@ -83,9 +83,16 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
       } else if (stageCount === 2) {
         slotWidth = 440;
         gap = 100;
-      } else {
+      } else if (stageCount === 3) {
         slotWidth = 380;
         gap = 72;
+      } else if (stageCount === 4) {
+        slotWidth = 320;
+        gap = 56;
+      } else {
+        // stageCount >= 5
+        slotWidth = 280;
+        gap = 48;
       }
       const totalWidth = stageCount * slotWidth + Math.max(0, stageCount - 1) * gap;
       const startX = VIEWPORT_CENTER_X - totalWidth / 2;

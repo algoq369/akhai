@@ -1,11 +1,11 @@
 /**
- * Canvas stage persistence — tracks which queries (max 3) are staged on the canvas per user.
+ * Canvas stage persistence — tracks which queries (max 5) are staged on the canvas per user.
  * Backing table: user_canvas_stage (see schema.ts).
  */
 
 import { getDatabase } from '../database';
 
-const MAX_STAGE = 3;
+const MAX_STAGE = 5;
 
 export function getStageIds(userId: string): string[] {
   const db = getDatabase();

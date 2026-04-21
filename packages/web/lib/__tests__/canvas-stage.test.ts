@@ -47,14 +47,14 @@ describe('canvas-stage helpers', () => {
   });
 
   it('toggleStageId bumps oldest when stage is full', () => {
-    // q1 is oldest by the sort-asc order; adding q4 should bump q1.
-    setStageIds('u-1', ['q1', 'q2', 'q3']);
-    const next = toggleStageId('u-1', 'q4', ['q1', 'q2', 'q3', 'q4']);
-    expect(next).toEqual(['q2', 'q3', 'q4']);
+    // q1 is oldest by the sort-asc order; adding q6 should bump q1 since stage caps at 5.
+    setStageIds('u-1', ['q1', 'q2', 'q3', 'q4', 'q5']);
+    const next = toggleStageId('u-1', 'q6', ['q1', 'q2', 'q3', 'q4', 'q5', 'q6']);
+    expect(next).toEqual(['q2', 'q3', 'q4', 'q5', 'q6']);
   });
 
-  it('setStageIds clamps to 3 entries', () => {
-    setStageIds('u-1', ['q1', 'q2', 'q3', 'q4', 'q5']);
-    expect(getStageIds('u-1')).toEqual(['q1', 'q2', 'q3']);
+  it('setStageIds clamps to 5 entries', () => {
+    setStageIds('u-1', ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7']);
+    expect(getStageIds('u-1')).toEqual(['q1', 'q2', 'q3', 'q4', 'q5']);
   });
 });

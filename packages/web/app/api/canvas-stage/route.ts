@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const stageIds = Array.isArray(body.stageIds)
-      ? body.stageIds.filter((id: unknown): id is string => typeof id === 'string').slice(0, 3)
+      ? body.stageIds.filter((id: unknown): id is string => typeof id === 'string').slice(0, 5)
       : [];
     setStageIds(user.id, stageIds);
     return NextResponse.json({ stageIds, ok: true });
