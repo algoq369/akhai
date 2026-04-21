@@ -186,7 +186,8 @@ export default function CanvasShelf({
         {sorted.map((card) => {
           const onStage = stageIds.includes(card.id);
           const badge = badgeFor(card.methodology);
-          const title = card.query.length > 40 ? card.query.slice(0, 40) + '…' : card.query;
+          // CSS line-clamp handles visual truncation; allow up to 80 chars so 2 lines fill naturally.
+          const title = card.query.length > 80 ? card.query.slice(0, 80) + '…' : card.query;
           return (
             <button
               key={card.id}
@@ -194,9 +195,9 @@ export default function CanvasShelf({
               title={expanded ? undefined : card.query}
               style={{
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 width: '100%',
-                padding: expanded ? '4px 6px' : '4px 0',
+                padding: expanded ? '6px 6px' : '6px 0',
                 background: 'transparent',
                 border: 'none',
                 borderLeft: onStage ? `2px solid ${P.accent}` : '2px solid transparent',
@@ -223,6 +224,8 @@ export default function CanvasShelf({
                   background: onStage ? P.accent : 'transparent',
                   border: onStage ? `1px solid ${P.accent}` : `1px solid ${P.emptyDotBorder}`,
                   display: 'inline-block',
+                  // Nudge down so dot aligns with the first line of a wrapped title.
+                  marginTop: expanded ? 3 : 0,
                 }}
               />
               {expanded && (
@@ -233,8 +236,11 @@ export default function CanvasShelf({
                       fontSize: 10,
                       color: onStage ? P.onStageFg : P.dimFg,
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      wordBreak: 'break-word',
+                      lineHeight: 1.25,
                       minWidth: 0,
                     }}
                   >
