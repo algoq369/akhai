@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { QueryCard } from './QueryCardsPanel';
 import type { VisualNode, VisualEdge } from './VisualsPanel';
 import type { AIInsight } from './AILayersPanel';
@@ -56,11 +56,20 @@ export default function CanvasWorkspace({
   // Stage mode: only render the staged subset in chronological order (oldest left, newest right).
   // Grid mode (no stageIds prop): render all queryCards in the row-wrapping grid (legacy behavior).
   const stageMode = Array.isArray(stageIds);
-  const stagedCards = stageMode
-    ? queryCards
-        .filter((c) => stageIds!.includes(c.id))
-        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
-    : queryCards;
+  // Memo keys: sorted stage IDs + queryCards id list. When both are unchanged,
+  // useMemo returns the same array reference — critical so useCanvasState's layout
+  // useEffect (dep: queryCards) doesn't re-run on every parent render, which would
+  // trip React's max-update-depth guard.
+  const stageKey = stageMode ? (stageIds ?? []).slice().sort().join('|') : '';
+  const queryCardsKey = queryCards.map((c) => c.id).join('|');
+  const stagedCards = useMemo(() => {
+    if (!stageMode) return queryCards;
+    const ids = stageIds ?? [];
+    return queryCards
+      .filter((c) => ids.includes(c.id))
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stageMode, stageKey, queryCardsKey]);
   const cs = useCanvasState(stagedCards, stageMode ? 'stage' : 'grid');
   const [hoveredConn, setHoveredConn] = useState<{ x: number; y: number; topics: string[] } | null>(
     null
