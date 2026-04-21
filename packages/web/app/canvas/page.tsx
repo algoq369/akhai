@@ -423,6 +423,7 @@ export default function CanvasPage() {
             top: typeof window !== 'undefined' ? window.innerHeight - 380 : 400,
           }}
           onSendQuery={handleSendQuery}
+          hideSynopsis
         />
         {isLoading && queryCards.length === 0 && (
           <div

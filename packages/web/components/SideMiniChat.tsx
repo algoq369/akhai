@@ -19,6 +19,8 @@ interface SideMiniChatProps {
   onPromoteToMain?: (query: string, response: string) => void; // NEW: Bidirectional sync
   draggable?: boolean; // When true (canvas mode), allows drag-to-move
   defaultPosition?: { left: number; top: number }; // Starting position when draggable
+  /** When true, suppress the synthetic summary + LINKS sections — assumes CanvasSynthesisDrawer owns that content. */
+  hideSynopsis?: boolean;
 }
 
 /**
@@ -39,6 +41,7 @@ export default function SideMiniChat({
   onPromoteToMain,
   draggable = false,
   defaultPosition,
+  hideSynopsis = false,
 }: SideMiniChatProps) {
   const [inputText, setInputText] = useState('');
   const [miniChatMessages, setMiniChatMessages] = useState<{ query: string; response: string }[]>(
@@ -217,16 +220,16 @@ ${conversationId ? `View: ${window.location.origin}?continue=${conversationId}` 
               </div>
             </div>
           )}
-          {/* Synthetic summary */}
-          {syntheticSummary.summary && (
+          {/* Synthetic summary (hidden when CanvasSynthesisDrawer owns synopsis content) */}
+          {!hideSynopsis && syntheticSummary.summary && (
             <div className="pb-1 border-b border-relic-mist/10">
               <div className="text-[7px] text-relic-slate/80 font-mono leading-snug">
                 {syntheticSummary.summary}
               </div>
             </div>
           )}
-          {/* Links */}
-          {insights.filter((i) => i.type === 'link').length > 0 && (
+          {/* Links (hidden when CanvasSynthesisDrawer owns synopsis content) */}
+          {!hideSynopsis && insights.filter((i) => i.type === 'link').length > 0 && (
             <div className="pb-1">
               <div className="text-[6px] text-relic-silver/40 font-mono uppercase tracking-wider mb-0.5">
                 links
@@ -337,8 +340,8 @@ ${conversationId ? `View: ${window.location.origin}?continue=${conversationId}` 
           </div>
         )}
 
-        {/* 3-line Synthetic Explanation */}
-        {syntheticSummary.summary && (
+        {/* 3-line Synthetic Explanation (hidden when CanvasSynthesisDrawer owns synopsis content) */}
+        {!hideSynopsis && syntheticSummary.summary && (
           <div className="mb-3 pb-2 border-b border-relic-mist/10 dark:border-relic-slate/20">
             <div className="text-[8px] text-relic-slate/50 dark:text-relic-ghost/70 font-mono leading-relaxed whitespace-pre-line">
               {syntheticSummary.summary}
@@ -346,8 +349,8 @@ ${conversationId ? `View: ${window.location.origin}?continue=${conversationId}` 
           </div>
         )}
 
-        {/* Compact Links - Raw list */}
-        {insights.filter((i) => i.type === 'link').length > 0 && (
+        {/* Compact Links — Raw list (hidden when CanvasSynthesisDrawer owns synopsis content) */}
+        {!hideSynopsis && insights.filter((i) => i.type === 'link').length > 0 && (
           <div className="mb-2">
             <div className="space-y-0.5">
               {insights
