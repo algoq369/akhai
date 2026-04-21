@@ -440,8 +440,10 @@ export default function CanvasPage() {
           messages={miniChatMessages}
           draggable={true}
           defaultPosition={{
-            left: typeof window !== 'undefined' ? window.innerWidth - 340 : 1000,
-            top: typeof window !== 'undefined' ? window.innerHeight - 380 : 400,
+            // Sit 8px to the LEFT of the Q button (48px wide at right:24 bottom:32),
+            // bottom-aligned with it. Panel is 200×260 by default.
+            left: typeof window !== 'undefined' ? window.innerWidth - 280 : 1000,
+            top: typeof window !== 'undefined' ? window.innerHeight - 292 : 400,
           }}
           onSendQuery={handleSendQuery}
         />
