@@ -115,6 +115,7 @@ export default function CanvasWorkspace({
         setShowThreads={cs.setShowThreads}
         showCrossLinks={cs.showCrossLinks}
         setShowCrossLinks={cs.setShowCrossLinks}
+        onResetLayout={cs.clearManualPositions}
       />
 
       {/* Canvas area */}

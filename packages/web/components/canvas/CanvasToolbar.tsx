@@ -34,6 +34,8 @@ interface CanvasToolbarProps {
   setShowThreads?: (v: boolean) => void;
   showCrossLinks?: boolean;
   setShowCrossLinks?: (v: boolean) => void;
+  /** Optional: clear manual-drag overrides so cards return to their slot positions. */
+  onResetLayout?: () => void;
 }
 
 const TOOLS = [
@@ -78,6 +80,7 @@ export function CanvasToolbar({
   setShowThreads,
   showCrossLinks = true,
   setShowCrossLinks,
+  onResetLayout,
 }: CanvasToolbarProps) {
   const hasQueries = nodes.filter((n) => n.type === 'query').length > 0;
 
@@ -324,7 +327,9 @@ export function CanvasToolbar({
         onClick={() => {
           setZoom(0.9);
           setPan({ x: 0, y: 0 });
+          onResetLayout?.();
         }}
+        title="Reset zoom, pan, and dragged card positions"
         style={{
           fontSize: 9,
           padding: '3px 7px',

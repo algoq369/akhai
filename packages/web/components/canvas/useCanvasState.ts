@@ -44,6 +44,11 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
   const nodesRef = useRef<CanvasNode[]>([]);
   nodesRef.current = nodes;
 
+  // Manual drag overrides per nodeId. Survives queryCards/stage toggles so dragged positions persist.
+  const [manualPositions, setManualPositions] = useState<Record<string, { x: number; y: number }>>(
+    {}
+  );
+
   // Pencil drawing state
   const [strokes, setStrokes] = useState<DrawStroke[]>([]);
   const [currentStroke, setCurrentStroke] = useState<DrawPoint[] | null>(null);
@@ -263,9 +268,17 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
         connections: newConns.length,
       },
     });
+    // Apply manual drag overrides so user-dragged positions survive layout recomputation.
+    for (const node of newNodes) {
+      const manual = manualPositions[node.id];
+      if (manual) {
+        node.x = manual.x;
+        node.y = manual.y;
+      }
+    }
     setNodes(newNodes);
     setConnections(newConns);
-  }, [queryCards, activePreset, weights, layout]);
+  }, [queryCards, activePreset, weights, layout, manualPositions]);
 
   // Auto-fit-to-view on initial load
   useEffect(() => {
@@ -466,11 +479,11 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
         setPan({ x: e.clientX - panStart.current.x, y: e.clientY - panStart.current.y });
       if (dragging && canvasRef.current) {
         const pos = getCanvasPos(e);
-        setNodes((prev) =>
-          prev.map((n) =>
-            n.id === dragging.id ? { ...n, x: pos.x - dragging.ox, y: pos.y - dragging.oy } : n
-          )
-        );
+        const nx = pos.x - dragging.ox;
+        const ny = pos.y - dragging.oy;
+        setNodes((prev) => prev.map((n) => (n.id === dragging.id ? { ...n, x: nx, y: ny } : n)));
+        // Persist so layout recomputation doesn't revert the drag.
+        setManualPositions((prev) => ({ ...prev, [dragging.id]: { x: nx, y: ny } }));
       }
       if (connecting)
         setConnecting((prev) => (prev ? { ...prev, mx: e.clientX, my: e.clientY } : null));
@@ -633,5 +646,6 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
     clearHighlights,
     showCrossLinks,
     setShowCrossLinks,
+    clearManualPositions: () => setManualPositions({}),
   };
 }
