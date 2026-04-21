@@ -440,4 +440,12 @@ export const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_hermetic_analysis_conversation ON hermetic_analysis(conversation_id);
   CREATE INDEX IF NOT EXISTS idx_tree_configs_user ON tree_configurations(user_id);
   CREATE INDEX IF NOT EXISTS idx_tree_configs_active ON tree_configurations(is_active);
+
+  -- Canvas stage: which queries (max 3) are on the canvas stage per user
+  CREATE TABLE IF NOT EXISTS user_canvas_stage (
+    user_id TEXT PRIMARY KEY,
+    stage_ids TEXT NOT NULL DEFAULT '[]',
+    updated_at INTEGER DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `;
