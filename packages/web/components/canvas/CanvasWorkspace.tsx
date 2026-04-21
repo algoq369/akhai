@@ -14,11 +14,6 @@ import CanvasShelf, {
   SHELF_EXPANDED_WIDTH,
   readShelfExpandedFromStorage,
 } from './CanvasShelf';
-import CanvasSynthesisDrawer, {
-  SYNTHESIS_COLLAPSED_WIDTH,
-  SYNTHESIS_EXPANDED_WIDTH,
-  readSynthesisDrawerOpenFromStorage,
-} from './CanvasSynthesisDrawer';
 
 interface CanvasWorkspaceProps {
   queryCards: QueryCard[];
@@ -37,7 +32,7 @@ interface CanvasWorkspaceProps {
   stageIds?: string[];
   /** Toggle a query's stage membership. Called from CanvasShelf. */
   onToggleStage?: (queryId: string) => void;
-  /** When true, shelf + synthesis drawer render in dark palette. */
+  /** When true, shelf renders in dark palette. */
   darkMode?: boolean;
 }
 
@@ -51,7 +46,6 @@ export default function CanvasWorkspace({
   onNodeSelect,
   onInsightSelect,
   onSwitchToClassic,
-  querySynthesis,
   stageIds,
   onToggleStage,
   darkMode = false,
@@ -69,24 +63,12 @@ export default function CanvasWorkspace({
     null
   );
 
-  // Side-panel hydration: localStorage → state after mount.
+  // Shelf hydration: localStorage → state after mount.
   const [shelfExpanded, setShelfExpanded] = useState(true);
-  const [synthesisOpen, setSynthesisOpen] = useState(true);
   useEffect(() => {
     setShelfExpanded(readShelfExpandedFromStorage());
-    setSynthesisOpen(readSynthesisDrawerOpenFromStorage());
   }, []);
   const shelfWidth = shelfExpanded ? SHELF_EXPANDED_WIDTH : SHELF_COLLAPSED_WIDTH;
-  const synthesisWidth = synthesisOpen ? SYNTHESIS_EXPANDED_WIDTH : SYNTHESIS_COLLAPSED_WIDTH;
-  const synthesisTopics = cs.nodes
-    .filter((n) => n.type === 'topic')
-    .map((n) => ({ name: String(n.data?.name ?? ''), count: Number(n.data?.count ?? 1) }));
-  const statsData = cs.nodes.find((n) => n.id === 'stats')?.data;
-  const synthesisStats = {
-    queryCount: Number(statsData?.queries ?? 0),
-    topicCount: Number(statsData?.topics ?? 0),
-    connectionCount: Number(statsData?.connections ?? 0),
-  };
 
   return (
     <div
@@ -98,8 +80,7 @@ export default function CanvasWorkspace({
         fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
         background: '#fafbfc',
         paddingLeft: shelfWidth,
-        paddingRight: synthesisWidth,
-        transition: 'padding-left 200ms ease, padding-right 200ms ease',
+        transition: 'padding-left 200ms ease',
       }}
     >
       <CanvasShelf
@@ -492,14 +473,6 @@ export default function CanvasWorkspace({
         </span>
         <span style={{ fontSize: 7, color: '#cbd5e1', marginLeft: 'auto' }}>akhai canvas</span>
       </div>
-      <CanvasSynthesisDrawer
-        synthesis={querySynthesis}
-        topics={synthesisTopics}
-        stats={synthesisStats}
-        open={synthesisOpen}
-        onToggleOpen={() => setSynthesisOpen((v) => !v)}
-        darkMode={darkMode}
-      />
     </div>
   );
 }

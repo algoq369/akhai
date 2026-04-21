@@ -11,7 +11,6 @@ import AILayersPanel from './AILayersPanel';
 import TreesPanel from './TreesPanel';
 import CanvasWorkspace from './CanvasWorkspace';
 import CanvasShelf from './CanvasShelf';
-import CanvasSynthesisDrawer from './CanvasSynthesisDrawer';
 
 export { DraggablePanel };
 
@@ -30,5 +29,4 @@ export { TreesPanel };
 
 export { CanvasWorkspace };
 export { CanvasShelf };
-export { CanvasSynthesisDrawer };
 export default CanvasWorkspace;

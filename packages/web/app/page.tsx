@@ -276,7 +276,6 @@ function HomePage() {
         conversationId={s.currentConversationId}
         onSendQuery={(queryText) => s.handleMiniChatSendQuery(queryText)}
         onPromoteToMain={(query, response) => s.handlePromoteToMain(query, response)}
-        hideSynopsis={s.isCanvasMode}
       />
     </div>
   );
