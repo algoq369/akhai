@@ -159,7 +159,7 @@ export function LayerTreeFull({
 
                 {/* Flowing light particle 1 */}
                 {isActive && (
-                  <circle r={4 * scale} fill={strokeColor} opacity="0.9">
+                  <circle r={(scale ?? 1) * 4} fill={strokeColor} opacity="0.9">
                     <animateMotion
                       dur="3s"
                       repeatCount="indefinite"
@@ -177,7 +177,7 @@ export function LayerTreeFull({
 
                 {/* Flowing light particle 2 */}
                 {isActive && (
-                  <circle r={3 * scale} fill={strokeColor} opacity="0.7">
+                  <circle r={(scale ?? 1) * 3} fill={strokeColor} opacity="0.7">
                     <animateMotion
                       dur="3s"
                       repeatCount="indefinite"
