@@ -32,6 +32,8 @@ interface CanvasWorkspaceProps {
   stageIds?: string[];
   /** Toggle a query's stage membership. Called from CanvasShelf. */
   onToggleStage?: (queryId: string) => void;
+  /** Reset stage to default (most recent 5 queries). Called from shelf header. */
+  onResetStage?: () => void;
   /** When true, shelf renders in dark palette. */
   darkMode?: boolean;
 }
@@ -48,6 +50,7 @@ export default function CanvasWorkspace({
   onSwitchToClassic,
   stageIds,
   onToggleStage,
+  onResetStage,
   darkMode = false,
 }: CanvasWorkspaceProps) {
   // Stage mode: only render the staged subset in chronological order (oldest left, newest right).
@@ -90,6 +93,7 @@ export default function CanvasWorkspace({
         expanded={shelfExpanded}
         onToggleExpanded={() => setShelfExpanded((v) => !v)}
         darkMode={darkMode}
+        onResetStage={onResetStage}
       />
       {/* Toolbar */}
       <CanvasToolbar

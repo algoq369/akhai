@@ -23,6 +23,8 @@ interface CanvasShelfProps {
   expanded: boolean;
   onToggleExpanded: () => void;
   darkMode?: boolean;
+  /** Reset stage to default (most recent 5 queries). */
+  onResetStage?: () => void;
 }
 
 /** Semantic color tokens resolved once per render from the active theme. */
@@ -65,6 +67,7 @@ export default function CanvasShelf({
   expanded,
   onToggleExpanded,
   darkMode = false,
+  onResetStage,
 }: CanvasShelfProps) {
   // Persist expansion preference
   useEffect(() => {
@@ -118,8 +121,27 @@ export default function CanvasShelf({
               fontWeight: 600,
             }}
           >
-            QUERIES
+            ON STAGE ({stageIds.length}/5)
           </span>
+        )}
+        {expanded && stageIds.length > 0 && onResetStage && (
+          <button
+            onClick={onResetStage}
+            title="Reset stage to most recent 5"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: P.dimFg,
+              cursor: 'pointer',
+              padding: '2px 4px',
+              fontSize: 9,
+              lineHeight: 1,
+              marginLeft: 'auto',
+              marginRight: 2,
+            }}
+          >
+            reset
+          </button>
         )}
         <button
           onClick={onToggleExpanded}

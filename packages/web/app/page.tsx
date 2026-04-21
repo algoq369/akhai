@@ -90,6 +90,17 @@ function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.isCanvasMode, queryCards.length]);
 
+  // Reset stage to most recent 5 queries and persist.
+  const onResetStage = useCallback(() => {
+    const defaultIds = queryCards.slice(0, 5).map((c) => c.id);
+    setStageIds(defaultIds);
+    fetch('/api/canvas-stage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageIds: defaultIds }),
+    }).catch(() => {});
+  }, [queryCards]);
+
   const onToggleStage = useCallback(
     (queryId: string) => {
       const isOn = stageIds.includes(queryId);
@@ -170,6 +181,7 @@ function HomePage() {
             visualEdges={s.visualEdges}
             stageIds={stageIds}
             onToggleStage={onToggleStage}
+            onResetStage={onResetStage}
             darkMode={s.darkMode}
             onQuerySelect={(id) => {
               s.setViewMode('classic');

@@ -198,6 +198,17 @@ export default function CanvasPage() {
     // Show node details, highlight related queries
   }, []);
 
+  // Reset the stage to the 5 most recent queries and persist.
+  const onResetStage = useCallback(() => {
+    const defaultIds = queryCards.slice(0, 5).map((c) => c.id);
+    setStageIds(defaultIds);
+    fetch('/api/canvas-stage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stageIds: defaultIds }),
+    }).catch(() => {});
+  }, [queryCards]);
+
   // Toggle a query's stage membership. Optimistic local update + fire-and-forget persist.
   const onToggleStage = useCallback(
     (queryId: string) => {
@@ -413,6 +424,7 @@ export default function CanvasPage() {
             visualEdges={visualEdges}
             stageIds={stageIds}
             onToggleStage={onToggleStage}
+            onResetStage={onResetStage}
             darkMode={darkMode}
             onQuerySelect={handleQuerySelect}
             onNodeSelect={handleNodeSelect}
