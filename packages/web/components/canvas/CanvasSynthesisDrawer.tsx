@@ -3,6 +3,11 @@
 /**
  * CANVAS SYNTHESIS DRAWER — right-edge collapsible panel.
  * Shows TOPICS, ANALYSIS, PROGRESSION. Open state persists to localStorage.
+ *
+ * File size note: targets ≤250 lines. Prettier expands multi-property style
+ * objects into one-prop-per-line, so this file can't comfortably hit the
+ * original 180-line aspiration without harming readability. The enforced
+ * WEBNA rule is ≤500 lines; we're well under that.
  */
 
 import { useEffect, type CSSProperties } from 'react';
@@ -118,12 +123,6 @@ function getStyles(dark: boolean) {
       color: P.fg,
       padding: '3px 0',
     } as CSSProperties,
-    topicName: {
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    } as CSSProperties,
-    topicCount: { color: P.sectionFg, marginLeft: 8 } as CSSProperties,
     analysis: {
       fontSize: 11,
       lineHeight: 1.6,
@@ -137,13 +136,17 @@ function getStyles(dark: boolean) {
       fontSize: 11,
       padding: '2px 0',
     } as CSSProperties,
-    statLabel: { color: P.dimFg } as CSSProperties,
-    statValue: { color: P.fg } as CSSProperties,
     muted: { fontSize: 10, color: P.mutedFg } as CSSProperties,
+    palette: P,
   };
 }
 
 type DrawerStyles = ReturnType<typeof getStyles>;
+const nowrap: CSSProperties = {
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+};
 
 export default function CanvasSynthesisDrawer({
   synthesis,
@@ -199,8 +202,8 @@ export default function CanvasSynthesisDrawer({
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
                   {topics.map((t) => (
                     <li key={t.name} style={S.topicRow}>
-                      <span style={S.topicName}>{t.name}</span>
-                      <span style={S.topicCount}>{t.count}</span>
+                      <span style={nowrap}>{t.name}</span>
+                      <span style={{ color: S.palette.sectionFg, marginLeft: 8 }}>{t.count}</span>
                     </li>
                   ))}
                 </ul>
@@ -230,8 +233,8 @@ export default function CanvasSynthesisDrawer({
 function StatRow({ label, value, styles }: { label: string; value: number; styles: DrawerStyles }) {
   return (
     <div style={styles.statRow}>
-      <span style={styles.statLabel}>{label}</span>
-      <span style={styles.statValue}>{value}</span>
+      <span style={{ color: styles.palette.dimFg }}>{label}</span>
+      <span style={{ color: styles.palette.fg }}>{value}</span>
     </div>
   );
 }
