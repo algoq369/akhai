@@ -180,9 +180,9 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
       }
     }
     const ranked = Object.entries(crossPairs)
-      .filter(([, topics]) => topics.length >= 2)
+      .filter(([, topics]) => topics.length >= 3)
       .sort((a, b) => b[1].length - a[1].length)
-      .slice(0, 5);
+      .slice(0, 3);
     for (const [pairKey, topics] of ranked) {
       const [fromId, toId] = pairKey.split('|');
       const alreadyThreaded = newConns.some(
