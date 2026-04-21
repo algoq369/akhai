@@ -355,7 +355,7 @@ export function LayerTreeFull({
               <circle
                 cx={scaledX}
                 cy={scaledY}
-                r={radius * 0.6}
+                r={(radius ?? 20) * 0.6}
                 fill={color}
                 opacity={0.2 + activation * 0.5}
                 filter="blur(3px)"
@@ -366,10 +366,10 @@ export function LayerTreeFull({
               <motion.circle
                 cx={scaledX}
                 cy={scaledY}
-                r={radius * 0.2}
+                r={(radius ?? 20) * 0.2}
                 fill={color}
                 opacity={0.9}
-                filter={`drop-shadow(0 0 ${4 * scale}px ${color})`}
+                filter={`drop-shadow(0 0 ${4 * (scale ?? 1)}px ${color})`}
                 animate={{
                   scale: [1, 1.3, 1],
                   opacity: [0.9, 1, 0.9],
@@ -389,9 +389,9 @@ export function LayerTreeFull({
                   transition={{ delay: 0.3, type: 'spring' }}
                 >
                   <circle
-                    cx={scaledX + radius - 5 * scale}
-                    cy={scaledY - radius + 5 * scale}
-                    r={8 * scale}
+                    cx={scaledX + radius - 5 * (scale ?? 1)}
+                    cy={scaledY - radius + 5 * (scale ?? 1)}
+                    r={8 * (scale ?? 1)}
                     fill="#10b981"
                   />
                   <text
@@ -410,9 +410,9 @@ export function LayerTreeFull({
 
               {isDeveloping && (
                 <motion.circle
-                  cx={scaledX + radius - 5 * scale}
-                  cy={scaledY - radius + 5 * scale}
-                  r={6 * scale}
+                  cx={scaledX + radius - 5 * (scale ?? 1)}
+                  cy={scaledY - radius + 5 * (scale ?? 1)}
+                  r={6 * (scale ?? 1)}
                   fill="#f59e0b"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
