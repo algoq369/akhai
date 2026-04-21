@@ -12,8 +12,8 @@
 import { useEffect } from 'react';
 import type { QueryCard } from './QueryCardsPanel';
 
-export const SHELF_EXPANDED_WIDTH = 192;
-export const SHELF_COLLAPSED_WIDTH = 40;
+export const SHELF_EXPANDED_WIDTH = 160;
+export const SHELF_COLLAPSED_WIDTH = 32;
 const STORAGE_KEY = 'akhai-canvas-shelf-expanded';
 
 interface CanvasShelfProps {
@@ -174,7 +174,7 @@ export default function CanvasShelf({
                 display: 'flex',
                 alignItems: 'center',
                 width: '100%',
-                padding: expanded ? '6px 8px 6px 8px' : '6px 0',
+                padding: expanded ? '4px 6px' : '4px 0',
                 background: 'transparent',
                 border: 'none',
                 borderLeft: onStage ? `2px solid ${P.accent}` : '2px solid transparent',
@@ -182,7 +182,7 @@ export default function CanvasShelf({
                 color: 'inherit',
                 fontFamily: 'inherit',
                 textAlign: 'left',
-                gap: 8,
+                gap: 6,
                 justifyContent: expanded ? 'flex-start' : 'center',
               }}
               onMouseEnter={(e) => {
@@ -194,8 +194,8 @@ export default function CanvasShelf({
             >
               <span
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: 7,
+                  height: 7,
                   borderRadius: '50%',
                   flexShrink: 0,
                   background: onStage ? P.accent : 'transparent',
@@ -208,7 +208,7 @@ export default function CanvasShelf({
                   <span
                     style={{
                       flex: 1,
-                      fontSize: 11,
+                      fontSize: 10,
                       color: onStage ? P.onStageFg : P.dimFg,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -220,8 +220,8 @@ export default function CanvasShelf({
                   </span>
                   <span
                     style={{
-                      fontSize: 8,
-                      padding: '2px 5px',
+                      fontSize: 7,
+                      padding: '2px 3px',
                       borderRadius: 3,
                       background: `${badge.color}22`,
                       color: badge.color,
