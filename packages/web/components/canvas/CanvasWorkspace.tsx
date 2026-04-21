@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { QueryCard } from './QueryCardsPanel';
 import type { VisualNode, VisualEdge } from './VisualsPanel';
 import type { AIInsight } from './AILayersPanel';
@@ -9,6 +9,11 @@ import { VIZ_COLORS } from './CanvasHelpers';
 import { CanvasNodeContent, getNodeStyle } from './CanvasNodeContent';
 import { CanvasToolbar } from './CanvasToolbar';
 import { useCanvasState } from './useCanvasState';
+import CanvasShelf, {
+  SHELF_COLLAPSED_WIDTH,
+  SHELF_EXPANDED_WIDTH,
+  readShelfExpandedFromStorage,
+} from './CanvasShelf';
 
 interface CanvasWorkspaceProps {
   queryCards: QueryCard[];
@@ -41,6 +46,19 @@ export default function CanvasWorkspace({
     null
   );
 
+  // Shelf expansion state — hydrate from localStorage after mount to avoid SSR mismatch.
+  const [shelfExpanded, setShelfExpanded] = useState<boolean>(true);
+  useEffect(() => {
+    setShelfExpanded(readShelfExpandedFromStorage());
+  }, []);
+  const shelfWidth = shelfExpanded ? SHELF_EXPANDED_WIDTH : SHELF_COLLAPSED_WIDTH;
+
+  // Placeholder stage state — real wiring arrives in the next commit.
+  const stageIds: string[] = [];
+  const onToggleStage = (_id: string) => {
+    /* no-op for now; wired in Commit 3 */
+  };
+
   // === RENDER ===
   return (
     <div
@@ -51,8 +69,17 @@ export default function CanvasWorkspace({
         flexDirection: 'column',
         fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
         background: '#fafbfc',
+        paddingLeft: shelfWidth,
+        transition: 'padding-left 200ms ease',
       }}
     >
+      <CanvasShelf
+        queryCards={queryCards}
+        stageIds={stageIds}
+        onToggle={onToggleStage}
+        expanded={shelfExpanded}
+        onToggleExpanded={() => setShelfExpanded((v) => !v)}
+      />
       {/* Toolbar */}
       <CanvasToolbar
         tool={cs.tool}
