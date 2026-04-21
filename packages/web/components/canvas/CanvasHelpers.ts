@@ -76,11 +76,13 @@ export const VIZ_COLORS: Record<VizType, string> = {
   radar: '#ec4899',
 };
 export const VIZ_SIZES: Record<VizType, { w: number; h: number }> = {
-  diagram: { w: 380, h: 280 },
-  chart: { w: 300, h: 220 },
+  // diagram/chart/radar shrunk to fit the narrowest stage slot (280px at stageCount=5).
+  // table/timeline stay wide because they're inherently horizontal-data viz types.
+  diagram: { w: 260, h: 220 },
+  chart: { w: 240, h: 180 },
   table: { w: 440, h: 200 },
   timeline: { w: 460, h: 140 },
-  radar: { w: 320, h: 280 },
+  radar: { w: 260, h: 220 },
 };
 
 const CATEGORY_KEYWORDS: Record<string, { keywords: string[]; color: string }> = {

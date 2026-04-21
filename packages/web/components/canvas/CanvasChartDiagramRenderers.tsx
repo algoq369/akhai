@@ -22,9 +22,9 @@ const TOPIC_COLORS = [
 function DiagramRenderer({ data }: { data: any }) {
   if (!data?.nodes)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
-  const cx = 200,
-    cy = 140,
-    radius = 110;
+  const cx = 150,
+    cy = 105,
+    radius = 75;
   const allNodes = data.nodes || [];
   const central = allNodes[0];
   const children = allNodes.slice(1);
@@ -51,7 +51,7 @@ function DiagramRenderer({ data }: { data: any }) {
       >
         {data.title || 'Diagram'}
       </div>
-      <svg width="100%" height="100%" viewBox="0 0 400 300" style={{ flex: 1 }}>
+      <svg width="100%" height="100%" viewBox="0 0 300 220" style={{ flex: 1 }}>
         <defs>
           <filter id="dshadow">
             <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.12" />
@@ -83,20 +83,20 @@ function DiagramRenderer({ data }: { data: any }) {
             <circle
               cx={cx}
               cy={cy}
-              r={30}
+              r={22}
               fill="none"
               stroke={`${central.color || '#6366f1'}30`}
               strokeWidth={1}
             >
-              <animate attributeName="r" values="30;34;30" dur="3s" repeatCount="indefinite" />
+              <animate attributeName="r" values="22;26;22" dur="3s" repeatCount="indefinite" />
               <animate attributeName="opacity" values="1;0.4;1" dur="3s" repeatCount="indefinite" />
             </circle>
             <rect
-              x={cx - 70}
-              y={cy - 24}
-              width={140}
-              height={48}
-              rx={8}
+              x={cx - 55}
+              y={cy - 18}
+              width={110}
+              height={36}
+              rx={6}
               fill={`${central.color || '#6366f1'}15`}
               stroke={`${central.color || '#6366f1'}50`}
               strokeWidth={1.5}
@@ -104,14 +104,14 @@ function DiagramRenderer({ data }: { data: any }) {
             />
             <text
               x={cx}
-              y={cy + 5}
+              y={cy + 4}
               textAnchor="middle"
-              fontSize={11}
+              fontSize={10}
               fontWeight={700}
               fill={central.color || '#6366f1'}
               fontFamily="'JetBrains Mono',monospace"
             >
-              {central.label?.slice(0, 22)}
+              {central.label?.slice(0, 15)}
             </text>
           </g>
         )}
@@ -122,11 +122,11 @@ function DiagramRenderer({ data }: { data: any }) {
           return (
             <g key={n.id}>
               <rect
-                x={pos.x - 52}
-                y={pos.y - 16}
-                width={104}
-                height={32}
-                rx={6}
+                x={pos.x - 40}
+                y={pos.y - 12}
+                width={80}
+                height={24}
+                rx={5}
                 fill={`${c}12`}
                 stroke={`${c}40`}
                 strokeWidth={1}
@@ -134,14 +134,14 @@ function DiagramRenderer({ data }: { data: any }) {
               />
               <text
                 x={pos.x}
-                y={pos.y + 4}
+                y={pos.y + 3}
                 textAnchor="middle"
-                fontSize={9}
+                fontSize={8}
                 fontWeight={500}
                 fill={c}
                 fontFamily="'JetBrains Mono',monospace"
               >
-                {n.label?.slice(0, 18)}
+                {n.label?.slice(0, 13)}
               </text>
             </g>
           );
