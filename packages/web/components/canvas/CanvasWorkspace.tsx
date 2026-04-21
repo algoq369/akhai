@@ -14,6 +14,11 @@ import CanvasShelf, {
   SHELF_EXPANDED_WIDTH,
   readShelfExpandedFromStorage,
 } from './CanvasShelf';
+import CanvasSynthesisDrawer, {
+  SYNTHESIS_COLLAPSED_WIDTH,
+  SYNTHESIS_EXPANDED_WIDTH,
+  readSynthesisDrawerOpenFromStorage,
+} from './CanvasSynthesisDrawer';
 
 interface CanvasWorkspaceProps {
   queryCards: QueryCard[];
@@ -44,6 +49,7 @@ export default function CanvasWorkspace({
   onNodeSelect,
   onInsightSelect,
   onSwitchToClassic,
+  querySynthesis,
   stageIds,
   onToggleStage,
 }: CanvasWorkspaceProps) {
@@ -60,18 +66,25 @@ export default function CanvasWorkspace({
     null
   );
 
-  // Shelf expansion state — hydrate from localStorage after mount to avoid SSR mismatch.
-  const [shelfExpanded, setShelfExpanded] = useState<boolean>(true);
+  // Side-panel hydration: localStorage → state after mount.
+  const [shelfExpanded, setShelfExpanded] = useState(true);
+  const [synthesisOpen, setSynthesisOpen] = useState(true);
   useEffect(() => {
     setShelfExpanded(readShelfExpandedFromStorage());
+    setSynthesisOpen(readSynthesisDrawerOpenFromStorage());
   }, []);
   const shelfWidth = shelfExpanded ? SHELF_EXPANDED_WIDTH : SHELF_COLLAPSED_WIDTH;
+  const synthesisWidth = synthesisOpen ? SYNTHESIS_EXPANDED_WIDTH : SYNTHESIS_COLLAPSED_WIDTH;
+  const synthesisTopics = cs.nodes
+    .filter((n) => n.type === 'topic')
+    .map((n) => ({ name: String(n.data?.name ?? ''), count: Number(n.data?.count ?? 1) }));
+  const statsData = cs.nodes.find((n) => n.id === 'stats')?.data;
+  const synthesisStats = {
+    queryCount: Number(statsData?.queries ?? 0),
+    topicCount: Number(statsData?.topics ?? 0),
+    connectionCount: Number(statsData?.connections ?? 0),
+  };
 
-  // Shelf sees all queries and the current stage membership for the on-stage dot.
-  const shelfStageIds = stageIds ?? [];
-  const shelfOnToggle = onToggleStage ?? (() => {});
-
-  // === RENDER ===
   return (
     <div
       style={{
@@ -82,13 +95,14 @@ export default function CanvasWorkspace({
         fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
         background: '#fafbfc',
         paddingLeft: shelfWidth,
-        transition: 'padding-left 200ms ease',
+        paddingRight: synthesisWidth,
+        transition: 'padding-left 200ms ease, padding-right 200ms ease',
       }}
     >
       <CanvasShelf
         queryCards={queryCards}
-        stageIds={shelfStageIds}
-        onToggle={shelfOnToggle}
+        stageIds={stageIds ?? []}
+        onToggle={onToggleStage ?? (() => {})}
         expanded={shelfExpanded}
         onToggleExpanded={() => setShelfExpanded((v) => !v)}
       />
@@ -474,6 +488,13 @@ export default function CanvasWorkspace({
         </span>
         <span style={{ fontSize: 7, color: '#cbd5e1', marginLeft: 'auto' }}>akhai canvas</span>
       </div>
+      <CanvasSynthesisDrawer
+        synthesis={querySynthesis}
+        topics={synthesisTopics}
+        stats={synthesisStats}
+        open={synthesisOpen}
+        onToggleOpen={() => setSynthesisOpen((v) => !v)}
+      />
     </div>
   );
 }

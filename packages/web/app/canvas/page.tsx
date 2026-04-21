@@ -12,6 +12,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { CanvasWorkspace, QueryCard, VisualNode, VisualEdge } from '@/components/canvas';
+import {
+  SYNTHESIS_COLLAPSED_WIDTH,
+  SYNTHESIS_EXPANDED_WIDTH,
+  readSynthesisDrawerOpenFromStorage,
+} from '@/components/canvas/CanvasSynthesisDrawer';
 import { useLayerStore } from '@/lib/stores/layer-store';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import SideMiniChat from '@/components/SideMiniChat';
@@ -405,7 +410,15 @@ export default function CanvasPage() {
           messages={miniChatMessages}
           draggable={true}
           defaultPosition={{
-            left: typeof window !== 'undefined' ? window.innerWidth - 340 : 1000,
+            left:
+              typeof window !== 'undefined'
+                ? window.innerWidth -
+                  340 -
+                  (readSynthesisDrawerOpenFromStorage()
+                    ? SYNTHESIS_EXPANDED_WIDTH
+                    : SYNTHESIS_COLLAPSED_WIDTH) -
+                  8
+                : 1000,
             top: typeof window !== 'undefined' ? window.innerHeight - 380 : 400,
           }}
           onSendQuery={handleSendQuery}
