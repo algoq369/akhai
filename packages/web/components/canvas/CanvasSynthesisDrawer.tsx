@@ -12,8 +12,8 @@
 
 import { useEffect, type CSSProperties } from 'react';
 
-export const SYNTHESIS_EXPANDED_WIDTH = 320;
-export const SYNTHESIS_COLLAPSED_WIDTH = 40;
+export const SYNTHESIS_EXPANDED_WIDTH = 260;
+export const SYNTHESIS_COLLAPSED_WIDTH = 32;
 const STORAGE_KEY = 'akhai-canvas-synthesis-open';
 
 export interface SynthesisTopic {
@@ -83,9 +83,9 @@ function getStyles(dark: boolean) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '10px 14px',
+      padding: '8px 12px',
       borderBottom: `1px solid ${P.border}`,
-      minHeight: 40,
+      minHeight: 36,
     } as CSSProperties,
     headerLabel: {
       fontSize: 10,
@@ -106,9 +106,9 @@ function getStyles(dark: boolean) {
       flex: 1,
       overflowY: 'auto',
       overflowX: 'hidden',
-      padding: '12px 14px',
+      padding: '10px 12px',
     } as CSSProperties,
-    section: { marginBottom: 20 } as CSSProperties,
+    section: { marginBottom: 16 } as CSSProperties,
     sectionLabel: {
       fontSize: 9,
       letterSpacing: '0.22em',
@@ -119,13 +119,13 @@ function getStyles(dark: boolean) {
     topicRow: {
       display: 'flex',
       justifyContent: 'space-between',
-      fontSize: 11,
+      fontSize: 10,
       color: P.fg,
-      padding: '3px 0',
+      padding: '2px 0',
     } as CSSProperties,
     analysis: {
-      fontSize: 11,
-      lineHeight: 1.6,
+      fontSize: 10,
+      lineHeight: 1.55,
       color: P.fg,
       whiteSpace: 'pre-wrap',
       margin: 0,
@@ -133,7 +133,7 @@ function getStyles(dark: boolean) {
     statRow: {
       display: 'flex',
       justifyContent: 'space-between',
-      fontSize: 11,
+      fontSize: 10,
       padding: '2px 0',
     } as CSSProperties,
     muted: { fontSize: 10, color: P.mutedFg } as CSSProperties,

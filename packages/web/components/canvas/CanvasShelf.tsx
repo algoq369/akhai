@@ -12,8 +12,8 @@
 import { useEffect } from 'react';
 import type { QueryCard } from './QueryCardsPanel';
 
-export const SHELF_EXPANDED_WIDTH = 240;
-export const SHELF_COLLAPSED_WIDTH = 48;
+export const SHELF_EXPANDED_WIDTH = 192;
+export const SHELF_COLLAPSED_WIDTH = 40;
 const STORAGE_KEY = 'akhai-canvas-shelf-expanded';
 
 interface CanvasShelfProps {
@@ -104,7 +104,7 @@ export default function CanvasShelf({
           display: 'flex',
           alignItems: 'center',
           justifyContent: expanded ? 'space-between' : 'center',
-          padding: expanded ? '10px 12px' : '10px 0',
+          padding: expanded ? '8px 10px' : '8px 0',
           borderBottom: `1px solid ${P.border}`,
           minHeight: 40,
         }}
@@ -174,7 +174,7 @@ export default function CanvasShelf({
                 display: 'flex',
                 alignItems: 'center',
                 width: '100%',
-                padding: expanded ? '8px 12px 8px 10px' : '8px 0',
+                padding: expanded ? '6px 8px 6px 8px' : '6px 0',
                 background: 'transparent',
                 border: 'none',
                 borderLeft: onStage ? `2px solid ${P.accent}` : '2px solid transparent',
