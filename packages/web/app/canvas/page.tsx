@@ -82,7 +82,7 @@ export default function CanvasPage() {
         const queries = data.queries || [];
 
         // Convert to QueryCard format
-        const cards: QueryCard[] = queries.slice(0, 10).map((q: any) => ({
+        const cards: QueryCard[] = queries.slice(0, 30).map((q: any) => ({
           id: q.id,
           query: q.query,
           response: q.result ? JSON.parse(q.result)?.finalAnswer || 'No response' : 'Pending...',
