@@ -48,6 +48,13 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
   const [manualPositions, setManualPositions] = useState<Record<string, { x: number; y: number }>>(
     {}
   );
+  // Ref mirror of manualPositions. The layout useEffect reads from this ref so it does NOT re-run
+  // on every mousemove (which would trip React's max-update-depth limit). State is still kept for
+  // hydration and React-lifecycle correctness.
+  const manualPositionsRef = useRef(manualPositions);
+  useEffect(() => {
+    manualPositionsRef.current = manualPositions;
+  }, [manualPositions]);
 
   // Pencil drawing state
   const [strokes, setStrokes] = useState<DrawStroke[]>([]);
@@ -269,8 +276,9 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
       },
     });
     // Apply manual drag overrides so user-dragged positions survive layout recomputation.
+    // Read from ref, NOT state — avoids an infinite render loop with setManualPositions in drag handler.
     for (const node of newNodes) {
-      const manual = manualPositions[node.id];
+      const manual = manualPositionsRef.current[node.id];
       if (manual) {
         node.x = manual.x;
         node.y = manual.y;
@@ -278,7 +286,7 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
     }
     setNodes(newNodes);
     setConnections(newConns);
-  }, [queryCards, activePreset, weights, layout, manualPositions]);
+  }, [queryCards, activePreset, weights, layout]);
 
   // Auto-fit-to-view on initial load
   useEffect(() => {
@@ -483,7 +491,14 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
         const ny = pos.y - dragging.oy;
         setNodes((prev) => prev.map((n) => (n.id === dragging.id ? { ...n, x: nx, y: ny } : n)));
         // Persist so layout recomputation doesn't revert the drag.
-        setManualPositions((prev) => ({ ...prev, [dragging.id]: { x: nx, y: ny } }));
+        // 3px threshold throttles 60fps mousemove updates → ~20fps state churn.
+        setManualPositions((prev) => {
+          const current = prev[dragging.id];
+          if (current && Math.abs(current.x - nx) < 3 && Math.abs(current.y - ny) < 3) {
+            return prev;
+          }
+          return { ...prev, [dragging.id]: { x: nx, y: ny } };
+        });
       }
       if (connecting)
         setConnecting((prev) => (prev ? { ...prev, mx: e.clientX, my: e.clientY } : null));
