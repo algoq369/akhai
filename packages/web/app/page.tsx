@@ -303,7 +303,14 @@ function HomePage() {
       <SideMiniChat
         isVisible={s.messages.length > 0 && s.viewMode !== 'mini-canvas'}
         draggable={s.isCanvasMode}
-        defaultPosition={s.isCanvasMode ? { left: 10, top: 500 } : undefined}
+        defaultPosition={
+          s.isCanvasMode
+            ? {
+                left: typeof window !== 'undefined' ? window.innerWidth - 340 : 1000,
+                top: typeof window !== 'undefined' ? window.innerHeight - 380 : 400,
+              }
+            : undefined
+        }
         messages={s.messages}
         externalQuery={s.deepDiveQuery}
         conversationId={s.currentConversationId}
