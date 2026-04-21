@@ -18,7 +18,9 @@ import {
 } from './CanvasHelpers';
 import type { QueryCard } from './QueryCardsPanel';
 
-export function useCanvasState(queryCards: QueryCard[] = []) {
+export type CanvasLayoutMode = 'stage' | 'grid';
+
+export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayoutMode = 'grid') {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useState<CanvasNode[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -62,27 +64,64 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
     const newConns: Connection[] = [];
     const topicMap: Record<string, { count: number; nodeId: string; queryIds: string[] }> = {};
 
-    // Layout: row-wrapping grid of queries with topics below each query
-    const Q_START_X = 40;
-    const Q_START_Y = 40;
-    const Q_SPACING_X = 420;
-    const Q_SPACING_Y = 320;
-    const QUERIES_PER_ROW = 3;
+    // Layout config: stage (centered 1/2/3 slots) or grid (row-wrapping)
     const TOPIC_OFFSET_Y = 170;
     const TOPIC_SPACING_Y = 52;
 
+    // Precompute per-query layout so topic math can reference the query's slot.
+    const queryLayouts: Array<{ qX: number; qY: number; slotWidth: number }> = [];
+
+    if (layout === 'stage') {
+      const stageCount = queryCards.length;
+      const VIEWPORT_CENTER_X = 800;
+      const STAGE_Y = 40;
+      let slotWidth: number;
+      let gap: number;
+      if (stageCount <= 1) {
+        slotWidth = 560;
+        gap = 0;
+      } else if (stageCount === 2) {
+        slotWidth = 440;
+        gap = 100;
+      } else {
+        slotWidth = 380;
+        gap = 72;
+      }
+      const totalWidth = stageCount * slotWidth + Math.max(0, stageCount - 1) * gap;
+      const startX = VIEWPORT_CENTER_X - totalWidth / 2;
+      queryCards.forEach((_card, i) => {
+        queryLayouts.push({
+          qX: startX + i * (slotWidth + gap),
+          qY: STAGE_Y,
+          slotWidth,
+        });
+      });
+    } else {
+      const Q_START_X = 40;
+      const Q_START_Y = 40;
+      const Q_SPACING_X = 420;
+      const Q_SPACING_Y = 320;
+      const QUERIES_PER_ROW = 3;
+      queryCards.forEach((_card, i) => {
+        const row = Math.floor(i / QUERIES_PER_ROW);
+        const col = i % QUERIES_PER_ROW;
+        queryLayouts.push({
+          qX: Q_START_X + col * Q_SPACING_X,
+          qY: Q_START_Y + row * Q_SPACING_Y,
+          slotWidth: 320,
+        });
+      });
+    }
+
     queryCards.forEach((card, i) => {
       const qId = `q-${card.id}`;
-      const row = Math.floor(i / QUERIES_PER_ROW);
-      const col = i % QUERIES_PER_ROW;
-      const qX = Q_START_X + col * Q_SPACING_X;
-      const qY = Q_START_Y + row * Q_SPACING_Y;
+      const { qX, qY, slotWidth } = queryLayouts[i];
       newNodes.push({
         id: qId,
         type: 'query',
         x: qX,
         y: qY,
-        w: 320,
+        w: slotWidth,
         h: 150,
         data: { ...card, methodology: card.methodology || 'auto', threadIndex: i },
       });
@@ -219,7 +258,7 @@ export function useCanvasState(queryCards: QueryCard[] = []) {
     });
     setNodes(newNodes);
     setConnections(newConns);
-  }, [queryCards, activePreset, weights]);
+  }, [queryCards, activePreset, weights, layout]);
 
   // Auto-fit-to-view on initial load
   useEffect(() => {

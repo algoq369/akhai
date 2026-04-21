@@ -27,6 +27,8 @@ export default function CanvasPage() {
   const [miniChatMessages, setMiniChatMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isQueryLoading, setIsQueryLoading] = useState(false);
+  // Canvas stage: ids of up to 3 queries currently rendered on the stage.
+  const [stageIds, setStageIds] = useState<string[]>([]);
 
   // Load dark mode preference
   useEffect(() => {
@@ -55,6 +57,27 @@ export default function CanvasPage() {
         }));
 
         setQueryCards(cards);
+
+        // Fetch persisted canvas stage. Default to 3 most recent on first visit.
+        try {
+          const stageRes = await fetch('/api/canvas-stage');
+          const stageData = await stageRes.json();
+          let initialStageIds: string[] = Array.isArray(stageData.stageIds)
+            ? stageData.stageIds.filter((id: unknown): id is string => typeof id === 'string')
+            : [];
+          if (initialStageIds.length === 0 && cards.length > 0) {
+            initialStageIds = cards.slice(0, 3).map((c) => c.id);
+            // Fire-and-forget persist. Ignore failures — stage just won't persist on this visit.
+            fetch('/api/canvas-stage', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ stageIds: initialStageIds }),
+            }).catch(() => {});
+          }
+          setStageIds(initialStageIds);
+        } catch (stageErr) {
+          console.error('Failed to fetch canvas stage:', stageErr);
+        }
 
         // Generate visual nodes from query topics
         const nodes: VisualNode[] = [];
@@ -153,6 +176,33 @@ export default function CanvasPage() {
     // Show node details, highlight related queries
   }, []);
 
+  // Toggle a query's stage membership. Optimistic local update + fire-and-forget persist.
+  const onToggleStage = useCallback(
+    (queryId: string) => {
+      const isOnStage = stageIds.includes(queryId);
+      let next: string[];
+      if (isOnStage) {
+        next = stageIds.filter((id) => id !== queryId);
+      } else if (stageIds.length < 3) {
+        next = [...stageIds, queryId];
+      } else {
+        // Stage full — bump the oldest staged query (by timestamp).
+        const staged = queryCards
+          .filter((c) => stageIds.includes(c.id))
+          .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+        const oldest = staged[0]?.id;
+        next = stageIds.filter((id) => id !== oldest).concat([queryId]);
+      }
+      setStageIds(next);
+      fetch('/api/canvas-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stageIds: next }),
+      }).catch(() => {});
+    },
+    [stageIds, queryCards]
+  );
+
   // Handle query submission from mini-chat
   const handleSendQuery = useCallback(
     async (query: string) => {
@@ -206,6 +256,23 @@ export default function CanvasPage() {
           layerNode: 'encoder',
         };
         setQueryCards((prev) => [newCard, ...prev]);
+        // Auto-stage the fresh card as newest slot (right). Bumps oldest if stage is full.
+        setStageIds((prev) => {
+          if (prev.includes(newCard.id)) return prev;
+          let next: string[];
+          if (prev.length < 3) {
+            next = [...prev, newCard.id];
+          } else {
+            // Bump the oldest staged card. prev is insertion order from fetch, so prev[0] is oldest-known.
+            next = prev.slice(1).concat([newCard.id]);
+          }
+          fetch('/api/canvas-stage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stageIds: next }),
+          }).catch(() => {});
+          return next;
+        });
       } catch (error) {
         console.error('Query failed:', error);
         const errorMessage: Message = {
@@ -304,17 +371,17 @@ export default function CanvasPage() {
       <main className="pt-12">
         {!isLoading && queryCards.length === 0 ? (
           <div
-            className="flex flex-col items-center justify-center"
+            className="flex flex-col items-center justify-center text-center px-8"
             style={{ minHeight: 'calc(100vh - 120px)' }}
           >
-            <div className="text-[11px] uppercase tracking-[0.3em] text-relic-silver/50 mb-4">
-              ◇ Canvas
-            </div>
-            <div className="text-sm text-relic-silver max-w-md text-center">
-              Send a query from the chat panel in the corner to start building your canvas.
-            </div>
-            <div className="text-[10px] text-relic-silver/40 mt-4">
-              Each query becomes a card with extracted topics and connections.
+            <div className="text-4xl font-mono mb-4 text-relic-silver">◊</div>
+            <h1 className="text-2xl font-mono mb-3 text-relic-silver">Your research stage</h1>
+            <p className="text-sm text-relic-silver/60 mb-8 max-w-md">
+              Submit a query from the chat panel in the corner. Your queries will land here, and
+              you&apos;ll see how they connect.
+            </p>
+            <div className="text-xs text-relic-silver/40 font-mono animate-pulse">
+              ↘ mini-chat ready
             </div>
           </div>
         ) : (
@@ -322,6 +389,8 @@ export default function CanvasPage() {
             queryCards={queryCards}
             visualNodes={visualNodes}
             visualEdges={visualEdges}
+            stageIds={stageIds}
+            onToggleStage={onToggleStage}
             onQuerySelect={handleQuerySelect}
             onNodeSelect={handleNodeSelect}
             classicContent={

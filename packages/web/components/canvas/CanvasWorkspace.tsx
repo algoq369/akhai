@@ -28,6 +28,10 @@ interface CanvasWorkspaceProps {
   onInsightSelect?: (insightId: string) => void;
   onSwitchToClassic?: () => void;
   classicContent?: React.ReactNode;
+  /** Which queries are currently staged. When provided, canvas renders stage layout with 1-3 slots. */
+  stageIds?: string[];
+  /** Toggle a query's stage membership. Called from CanvasShelf. */
+  onToggleStage?: (queryId: string) => void;
 }
 
 // === MAIN COMPONENT ===
@@ -40,8 +44,18 @@ export default function CanvasWorkspace({
   onNodeSelect,
   onInsightSelect,
   onSwitchToClassic,
+  stageIds,
+  onToggleStage,
 }: CanvasWorkspaceProps) {
-  const cs = useCanvasState(queryCards);
+  // Stage mode: only render the staged subset in chronological order (oldest left, newest right).
+  // Grid mode (no stageIds prop): render all queryCards in the row-wrapping grid (legacy behavior).
+  const stageMode = Array.isArray(stageIds);
+  const stagedCards = stageMode
+    ? queryCards
+        .filter((c) => stageIds!.includes(c.id))
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+    : queryCards;
+  const cs = useCanvasState(stagedCards, stageMode ? 'stage' : 'grid');
   const [hoveredConn, setHoveredConn] = useState<{ x: number; y: number; topics: string[] } | null>(
     null
   );
@@ -53,11 +67,9 @@ export default function CanvasWorkspace({
   }, []);
   const shelfWidth = shelfExpanded ? SHELF_EXPANDED_WIDTH : SHELF_COLLAPSED_WIDTH;
 
-  // Placeholder stage state — real wiring arrives in the next commit.
-  const stageIds: string[] = [];
-  const onToggleStage = (_id: string) => {
-    /* no-op for now; wired in Commit 3 */
-  };
+  // Shelf sees all queries and the current stage membership for the on-stage dot.
+  const shelfStageIds = stageIds ?? [];
+  const shelfOnToggle = onToggleStage ?? (() => {});
 
   // === RENDER ===
   return (
@@ -75,8 +87,8 @@ export default function CanvasWorkspace({
     >
       <CanvasShelf
         queryCards={queryCards}
-        stageIds={stageIds}
-        onToggle={onToggleStage}
+        stageIds={shelfStageIds}
+        onToggle={shelfOnToggle}
         expanded={shelfExpanded}
         onToggleExpanded={() => setShelfExpanded((v) => !v)}
       />
