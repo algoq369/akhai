@@ -127,7 +127,7 @@ export default function CanvasShelf({
         {expanded && stageIds.length > 0 && onResetStage && (
           <button
             onClick={onResetStage}
-            title="Reset stage to most recent 5"
+            title="Reset dragged card positions + clear stage (restore most recent 5)"
             style={{
               background: 'transparent',
               border: 'none',

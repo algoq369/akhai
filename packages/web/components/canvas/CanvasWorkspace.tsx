@@ -102,7 +102,16 @@ export default function CanvasWorkspace({
         expanded={shelfExpanded}
         onToggleExpanded={() => setShelfExpanded((v) => !v)}
         darkMode={darkMode}
-        onResetStage={onResetStage}
+        onResetStage={
+          onResetStage
+            ? () => {
+                // Shelf reset also clears any user-dragged positions so the
+                // "reset" action has a single unified meaning: return to defaults.
+                cs.clearManualPositions();
+                onResetStage();
+              }
+            : undefined
+        }
       />
       {/* Toolbar */}
       <CanvasToolbar
