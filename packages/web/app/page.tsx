@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useCallback, useMemo } from 'react';
+import { Suspense, useEffect, useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useHomePageState } from '@/hooks/useHomePageState';
@@ -43,6 +43,55 @@ function ContinueParamWatcher({ onContinue }: { onContinue: (id: string) => void
 
 function HomePage() {
   const s = useHomePageState();
+
+  // Canvas stage state — same wiring as /canvas page. Up to 5 staged queries.
+  const [stageIds, setStageIds] = useState<string[]>([]);
+  const queryCards = s.queryCards;
+
+  useEffect(() => {
+    if (!s.isCanvasMode) return;
+    fetch('/api/canvas-stage')
+      .then((r) => r.json())
+      .then((data) => {
+        let ids: string[] = Array.isArray(data.stageIds)
+          ? data.stageIds.filter((id: unknown): id is string => typeof id === 'string')
+          : [];
+        if (ids.length === 0 && queryCards.length > 0) {
+          ids = queryCards.slice(0, 5).map((c) => c.id);
+          fetch('/api/canvas-stage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stageIds: ids }),
+          }).catch(() => {});
+        }
+        setStageIds(ids);
+      })
+      .catch(() => {});
+  }, [s.isCanvasMode, queryCards.length]);
+
+  const onToggleStage = useCallback(
+    (queryId: string) => {
+      const isOn = stageIds.includes(queryId);
+      let next: string[];
+      if (isOn) {
+        next = stageIds.filter((id) => id !== queryId);
+      } else if (stageIds.length < 5) {
+        next = [...stageIds, queryId];
+      } else {
+        const staged = queryCards
+          .filter((c) => stageIds.includes(c.id))
+          .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+        next = stageIds.filter((id) => id !== staged[0]?.id).concat([queryId]);
+      }
+      setStageIds(next);
+      fetch('/api/canvas-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stageIds: next }),
+      }).catch(() => {});
+    },
+    [stageIds, queryCards]
+  );
 
   // Client-side fallback: if miniCanvas is missing from the message, compute it from response text
   const miniCanvasData = useMemo(() => {
@@ -98,6 +147,9 @@ function HomePage() {
             queryCards={s.queryCards}
             visualNodes={s.visualNodes}
             visualEdges={s.visualEdges}
+            stageIds={stageIds}
+            onToggleStage={onToggleStage}
+            darkMode={s.darkMode}
             onQuerySelect={(id) => {
               s.setViewMode('classic');
               requestAnimationFrame(() => {
