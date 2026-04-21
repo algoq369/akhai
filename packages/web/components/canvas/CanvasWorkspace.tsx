@@ -37,6 +37,8 @@ interface CanvasWorkspaceProps {
   stageIds?: string[];
   /** Toggle a query's stage membership. Called from CanvasShelf. */
   onToggleStage?: (queryId: string) => void;
+  /** When true, shelf + synthesis drawer render in dark palette. */
+  darkMode?: boolean;
 }
 
 // === MAIN COMPONENT ===
@@ -52,6 +54,7 @@ export default function CanvasWorkspace({
   querySynthesis,
   stageIds,
   onToggleStage,
+  darkMode = false,
 }: CanvasWorkspaceProps) {
   // Stage mode: only render the staged subset in chronological order (oldest left, newest right).
   // Grid mode (no stageIds prop): render all queryCards in the row-wrapping grid (legacy behavior).
@@ -105,6 +108,7 @@ export default function CanvasWorkspace({
         onToggle={onToggleStage ?? (() => {})}
         expanded={shelfExpanded}
         onToggleExpanded={() => setShelfExpanded((v) => !v)}
+        darkMode={darkMode}
       />
       {/* Toolbar */}
       <CanvasToolbar
@@ -494,6 +498,7 @@ export default function CanvasWorkspace({
         stats={synthesisStats}
         open={synthesisOpen}
         onToggleOpen={() => setSynthesisOpen((v) => !v)}
+        darkMode={darkMode}
       />
     </div>
   );

@@ -22,6 +22,22 @@ interface CanvasShelfProps {
   onToggle: (id: string) => void;
   expanded: boolean;
   onToggleExpanded: () => void;
+  darkMode?: boolean;
+}
+
+/** Semantic color tokens resolved once per render from the active theme. */
+function getPalette(dark: boolean) {
+  return {
+    bg: dark ? '#0c0d10' : '#ffffff',
+    fg: dark ? '#cbd5e1' : '#334155',
+    dimFg: dark ? '#94a3b8' : '#64748b',
+    mutedFg: dark ? '#475569' : '#94a3b8',
+    border: dark ? 'rgba(148,163,184,0.12)' : 'rgba(148,163,184,0.3)',
+    rowHover: dark ? 'rgba(203,213,225,0.05)' : 'rgba(148,163,184,0.08)',
+    emptyDotBorder: dark ? '#475569' : '#cbd5e1',
+    onStageFg: dark ? '#e2e8f0' : '#1e293b',
+    accent: '#818cf8',
+  };
 }
 
 // Map methodology → short 3-4 char badge label + color.
@@ -48,6 +64,7 @@ export default function CanvasShelf({
   onToggle,
   expanded,
   onToggleExpanded,
+  darkMode = false,
 }: CanvasShelfProps) {
   // Persist expansion preference
   useEffect(() => {
@@ -58,6 +75,7 @@ export default function CanvasShelf({
     }
   }, [expanded]);
 
+  const P = getPalette(darkMode);
   const sorted = [...queryCards].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   const width = expanded ? SHELF_EXPANDED_WIDTH : SHELF_COLLAPSED_WIDTH;
 
@@ -70,10 +88,10 @@ export default function CanvasShelf({
         top: 64,
         bottom: 0,
         width,
-        transition: 'width 200ms ease',
-        background: '#0c0d10',
-        color: '#cbd5e1',
-        borderRight: '1px solid rgba(148,163,184,0.12)',
+        transition: 'width 200ms ease, background 200ms ease, color 200ms ease',
+        background: P.bg,
+        color: P.fg,
+        borderRight: `1px solid ${P.border}`,
         zIndex: 40,
         fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
         display: 'flex',
@@ -87,7 +105,7 @@ export default function CanvasShelf({
           alignItems: 'center',
           justifyContent: expanded ? 'space-between' : 'center',
           padding: expanded ? '10px 12px' : '10px 0',
-          borderBottom: '1px solid rgba(148,163,184,0.12)',
+          borderBottom: `1px solid ${P.border}`,
           minHeight: 40,
         }}
       >
@@ -96,7 +114,7 @@ export default function CanvasShelf({
             style={{
               fontSize: 9,
               letterSpacing: '0.22em',
-              color: '#94a3b8',
+              color: P.dimFg,
               fontWeight: 600,
             }}
           >
@@ -110,7 +128,7 @@ export default function CanvasShelf({
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#94a3b8',
+            color: P.dimFg,
             cursor: 'pointer',
             padding: 4,
             fontSize: 12,
@@ -135,7 +153,7 @@ export default function CanvasShelf({
             style={{
               padding: '16px 12px',
               fontSize: 10,
-              color: '#475569',
+              color: P.mutedFg,
               textAlign: 'center',
               lineHeight: 1.5,
             }}
@@ -159,7 +177,7 @@ export default function CanvasShelf({
                 padding: expanded ? '8px 12px 8px 10px' : '8px 0',
                 background: 'transparent',
                 border: 'none',
-                borderLeft: onStage ? '2px solid #818cf8' : '2px solid transparent',
+                borderLeft: onStage ? `2px solid ${P.accent}` : '2px solid transparent',
                 cursor: 'pointer',
                 color: 'inherit',
                 fontFamily: 'inherit',
@@ -168,7 +186,7 @@ export default function CanvasShelf({
                 justifyContent: expanded ? 'flex-start' : 'center',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(203,213,225,0.05)';
+                (e.currentTarget as HTMLButtonElement).style.background = P.rowHover;
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
@@ -180,8 +198,8 @@ export default function CanvasShelf({
                   height: 10,
                   borderRadius: '50%',
                   flexShrink: 0,
-                  background: onStage ? '#818cf8' : 'transparent',
-                  border: onStage ? '1px solid #818cf8' : '1px solid #475569',
+                  background: onStage ? P.accent : 'transparent',
+                  border: onStage ? `1px solid ${P.accent}` : `1px solid ${P.emptyDotBorder}`,
                   display: 'inline-block',
                 }}
               />
@@ -191,7 +209,7 @@ export default function CanvasShelf({
                     style={{
                       flex: 1,
                       fontSize: 11,
-                      color: onStage ? '#e2e8f0' : '#94a3b8',
+                      color: onStage ? P.onStageFg : P.dimFg,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',

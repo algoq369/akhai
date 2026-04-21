@@ -396,6 +396,7 @@ export default function CanvasPage() {
             visualEdges={visualEdges}
             stageIds={stageIds}
             onToggleStage={onToggleStage}
+            darkMode={darkMode}
             onQuerySelect={handleQuerySelect}
             onNodeSelect={handleNodeSelect}
             classicContent={

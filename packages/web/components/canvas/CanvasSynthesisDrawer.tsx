@@ -28,101 +28,122 @@ interface CanvasSynthesisDrawerProps {
   stats: SynthesisStats;
   open: boolean;
   onToggleOpen: () => void;
+  darkMode?: boolean;
 }
 
-// Styles grouped at top to keep JSX compact.
-const S = {
-  aside: (w: number): CSSProperties => ({
-    position: 'fixed',
-    right: 0,
-    top: 64,
-    bottom: 0,
-    width: w,
-    transition: 'width 200ms ease',
-    background: '#0c0d10',
-    color: '#cbd5e1',
-    borderLeft: '1px solid rgba(148,163,184,0.12)',
-    zIndex: 40,
-    fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
-    display: 'flex',
-    flexDirection: 'column',
-  }),
-  collapsedBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    padding: '12px 0',
-    fontSize: 10,
-    lineHeight: 1.4,
-    writingMode: 'vertical-rl',
-    textOrientation: 'mixed',
-    letterSpacing: '0.22em',
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  } as CSSProperties,
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '10px 14px',
-    borderBottom: '1px solid rgba(148,163,184,0.12)',
-    minHeight: 40,
-  } as CSSProperties,
-  headerLabel: {
-    fontSize: 10,
-    letterSpacing: '0.22em',
-    color: '#94a3b8',
-    fontWeight: 600,
-  } as CSSProperties,
-  chevron: {
-    background: 'transparent',
-    border: 'none',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    padding: 4,
-    fontSize: 12,
-    lineHeight: 1,
-  } as CSSProperties,
-  body: { flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 14px' } as CSSProperties,
-  section: { marginBottom: 20 } as CSSProperties,
-  sectionLabel: {
-    fontSize: 9,
-    letterSpacing: '0.22em',
-    color: '#64748b',
-    fontWeight: 600,
-    marginBottom: 8,
-  } as CSSProperties,
-  topicRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: 11,
-    color: '#cbd5e1',
-    padding: '3px 0',
-  } as CSSProperties,
-  topicName: {
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  } as CSSProperties,
-  analysis: {
-    fontSize: 11,
-    lineHeight: 1.6,
-    color: '#cbd5e1',
-    whiteSpace: 'pre-wrap',
-    margin: 0,
-  } as CSSProperties,
-  statRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: 11,
-    padding: '2px 0',
-  } as CSSProperties,
-  muted: { fontSize: 10, color: '#475569' } as CSSProperties,
-};
+/** Build all inline styles, palette baked in per theme. */
+function getStyles(dark: boolean) {
+  const P = {
+    bg: dark ? '#0c0d10' : '#ffffff',
+    fg: dark ? '#cbd5e1' : '#334155',
+    dimFg: dark ? '#94a3b8' : '#64748b',
+    sectionFg: dark ? '#64748b' : '#94a3b8',
+    mutedFg: dark ? '#475569' : '#94a3b8',
+    border: dark ? 'rgba(148,163,184,0.12)' : 'rgba(148,163,184,0.3)',
+  };
+  return {
+    aside: (w: number): CSSProperties => ({
+      position: 'fixed',
+      right: 0,
+      top: 64,
+      bottom: 0,
+      width: w,
+      transition: 'width 200ms ease, background 200ms ease, color 200ms ease',
+      background: P.bg,
+      color: P.fg,
+      borderLeft: `1px solid ${P.border}`,
+      zIndex: 40,
+      fontFamily: "'JetBrains Mono','SF Mono',ui-monospace,monospace",
+      display: 'flex',
+      flexDirection: 'column',
+    }),
+    collapsedBtn: {
+      background: 'transparent',
+      border: 'none',
+      color: P.dimFg,
+      cursor: 'pointer',
+      padding: '12px 0',
+      fontSize: 10,
+      lineHeight: 1.4,
+      writingMode: 'vertical-rl',
+      textOrientation: 'mixed',
+      letterSpacing: '0.22em',
+      flex: 1,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+    } as CSSProperties,
+    header: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '10px 14px',
+      borderBottom: `1px solid ${P.border}`,
+      minHeight: 40,
+    } as CSSProperties,
+    headerLabel: {
+      fontSize: 10,
+      letterSpacing: '0.22em',
+      color: P.dimFg,
+      fontWeight: 600,
+    } as CSSProperties,
+    chevron: {
+      background: 'transparent',
+      border: 'none',
+      color: P.dimFg,
+      cursor: 'pointer',
+      padding: 4,
+      fontSize: 12,
+      lineHeight: 1,
+    } as CSSProperties,
+    body: {
+      flex: 1,
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      padding: '12px 14px',
+    } as CSSProperties,
+    section: { marginBottom: 20 } as CSSProperties,
+    sectionLabel: {
+      fontSize: 9,
+      letterSpacing: '0.22em',
+      color: P.sectionFg,
+      fontWeight: 600,
+      marginBottom: 8,
+    } as CSSProperties,
+    topicRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontSize: 11,
+      color: P.fg,
+      padding: '3px 0',
+    } as CSSProperties,
+    topicName: {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    } as CSSProperties,
+    topicCount: { color: P.sectionFg, marginLeft: 8 } as CSSProperties,
+    analysis: {
+      fontSize: 11,
+      lineHeight: 1.6,
+      color: P.fg,
+      whiteSpace: 'pre-wrap',
+      margin: 0,
+    } as CSSProperties,
+    statRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      fontSize: 11,
+      padding: '2px 0',
+    } as CSSProperties,
+    statLabel: { color: P.dimFg } as CSSProperties,
+    statValue: { color: P.fg } as CSSProperties,
+    muted: { fontSize: 10, color: P.mutedFg } as CSSProperties,
+  };
+}
+
+type DrawerStyles = ReturnType<typeof getStyles>;
 
 export default function CanvasSynthesisDrawer({
   synthesis,
@@ -130,6 +151,7 @@ export default function CanvasSynthesisDrawer({
   stats,
   open,
   onToggleOpen,
+  darkMode = false,
 }: CanvasSynthesisDrawerProps) {
   useEffect(() => {
     try {
@@ -139,6 +161,7 @@ export default function CanvasSynthesisDrawer({
     }
   }, [open]);
 
+  const S = getStyles(darkMode);
   const width = open ? SYNTHESIS_EXPANDED_WIDTH : SYNTHESIS_COLLAPSED_WIDTH;
 
   return (
@@ -177,7 +200,7 @@ export default function CanvasSynthesisDrawer({
                   {topics.map((t) => (
                     <li key={t.name} style={S.topicRow}>
                       <span style={S.topicName}>{t.name}</span>
-                      <span style={{ color: '#64748b', marginLeft: 8 }}>{t.count}</span>
+                      <span style={S.topicCount}>{t.count}</span>
                     </li>
                   ))}
                 </ul>
@@ -193,9 +216,9 @@ export default function CanvasSynthesisDrawer({
             </div>
             <div style={S.section}>
               <div style={S.sectionLabel}>PROGRESSION</div>
-              <StatRow label="queries" value={stats.queryCount} />
-              <StatRow label="topics" value={stats.topicCount} />
-              <StatRow label="connections" value={stats.connectionCount} />
+              <StatRow label="queries" value={stats.queryCount} styles={S} />
+              <StatRow label="topics" value={stats.topicCount} styles={S} />
+              <StatRow label="connections" value={stats.connectionCount} styles={S} />
             </div>
           </div>
         </>
@@ -204,11 +227,11 @@ export default function CanvasSynthesisDrawer({
   );
 }
 
-function StatRow({ label, value }: { label: string; value: number }) {
+function StatRow({ label, value, styles }: { label: string; value: number; styles: DrawerStyles }) {
   return (
-    <div style={S.statRow}>
-      <span style={{ color: '#94a3b8' }}>{label}</span>
-      <span style={{ color: '#cbd5e1' }}>{value}</span>
+    <div style={styles.statRow}>
+      <span style={styles.statLabel}>{label}</span>
+      <span style={styles.statValue}>{value}</span>
     </div>
   );
 }
