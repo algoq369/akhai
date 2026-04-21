@@ -314,13 +314,15 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
       const newId = `${type}-${Date.now()}`;
       const size = VIZ_SIZES[type];
       setNodes((prev) => {
+        // Stack viz nodes BELOW the source card (not to the right) so they never
+        // collide with neighboring stage slots. Each new viz drops 260px further down.
         const existingViz = prev.filter((n) => VIZ_TYPES.includes(n.type as VizType));
         const yOffset = existingViz.length * 260;
         const newNode: CanvasNode = {
           id: newId,
           type,
-          x: selNode.x + selNode.w + 40,
-          y: selNode.y + yOffset,
+          x: selNode.x,
+          y: selNode.y + selNode.h + 24 + yOffset,
           w: size.w,
           h: size.h,
           data: vizData,
@@ -333,73 +335,16 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
     setGenerating(null);
   };
 
-  // === AUTO-GENERATE DIAGRAM + CHART ON CANVAS LOAD ===
+  // === AUTO-GENERATE DISABLED ===
+  // Previously auto-fired diagram+chart on canvas load. Removed because:
+  //  (a) The absolute-positioned viz nodes collided with stage slots on re-layout
+  //      (new query arrival, shelf toggle).
+  //  (b) It burned Anthropic credits on every mount even if the user never wanted viz.
+  // Users trigger viz explicitly via the toolbar buttons; handleGenerate stacks them
+  // below the source card where they're safe from layout recomputation.
   useEffect(() => {
     if (autoGenDone.current) return;
-    const currentNodes = nodesRef.current;
-    const queryNodes = currentNodes.filter((n) => n.type === 'query');
-    if (queryNodes.length === 0) return;
-    const hasDiagram = currentNodes.some((n) => n.type === 'diagram');
-    const hasChart = currentNodes.some((n) => n.type === 'chart');
-    if (hasDiagram && hasChart) return;
     autoGenDone.current = true;
-
-    const latest = queryNodes[queryNodes.length - 1];
-    const resp = latest.data.response || '';
-    const isError = resp.startsWith('Sorry') || resp.startsWith('Error') || resp.length < 80;
-    if (isError && queryNodes.length === 1) return;
-    const targetQuery = isError
-      ? queryNodes.find((n) => !(n.data.response || '').startsWith('Sorry')) || latest
-      : latest;
-    const genViz = async () => {
-      if (!hasDiagram) {
-        const diagData = await generateVisualization(
-          targetQuery.data.query,
-          targetQuery.data.response,
-          'diagram'
-        );
-        if (diagData) {
-          const dId = `diagram-auto-${Date.now()}`;
-          setNodes((prev) => [
-            ...prev,
-            {
-              id: dId,
-              type: 'diagram',
-              x: targetQuery.x + targetQuery.w + 40,
-              y: targetQuery.y,
-              w: 380,
-              h: 280,
-              data: diagData,
-            },
-          ]);
-          setConnections((prev) => [...prev, { from: targetQuery.id, to: dId, color: '#8b5cf6' }]);
-        }
-      }
-      if (!hasChart) {
-        const chartData = await generateVisualization(
-          targetQuery.data.query,
-          targetQuery.data.response,
-          'chart'
-        );
-        if (chartData) {
-          const cId = `chart-auto-${Date.now()}`;
-          setNodes((prev) => [
-            ...prev,
-            {
-              id: cId,
-              type: 'chart',
-              x: targetQuery.x + targetQuery.w + 40,
-              y: targetQuery.y + 300,
-              w: 300,
-              h: 220,
-              data: chartData,
-            },
-          ]);
-          setConnections((prev) => [...prev, { from: targetQuery.id, to: cId, color: '#10b981' }]);
-        }
-      }
-    };
-    genViz();
   }, [queryCards.length]);
 
   // === MOUSE HANDLERS ===
