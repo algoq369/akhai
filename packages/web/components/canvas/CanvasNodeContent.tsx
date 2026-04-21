@@ -201,10 +201,16 @@ export function CanvasNodeContent({
             }}
           />
           <span
+            title={node.data.name}
             style={{
               fontSize: node.data.count >= 3 ? 12 : node.data.count === 2 ? 11 : 10,
-              fontWeight: node.data.count >= 3 ? 600 : 600,
+              fontWeight: 600,
               color: node.data.color,
+              // Reserve ~28px for dot (7-9) + gap (5) + optional ×N badge (~14).
+              maxWidth: node.w - 28,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
             {node.data.name}

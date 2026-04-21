@@ -154,9 +154,9 @@ export function useCanvasState(queryCards: QueryCard[] = [], layout: CanvasLayou
           newNodes.push({
             id: tId,
             type: 'topic',
-            x: qX + 30 + (topicIdx % 2) * 140,
+            x: qX + 10 + (topicIdx % 2) * 140,
             y: TOPIC_OFFSET_Y + qY + Math.floor(topicIdx / 2) * TOPIC_SPACING_Y,
-            w: 110,
+            w: 130,
             h: 44,
             data: { name: topic, count: 1, queryIds: [qId], color: getTopicColor(topic) },
           });
