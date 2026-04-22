@@ -30,8 +30,8 @@ const COLUMN_ORDER: Record<ColumnSide, Layer[]> = {
   right: [Layer.REASONING, Layer.EXPANSION, Layer.GENERATIVE],
 };
 
-// Extra height an expanded block claims beyond its collapsed footprint.
-const EXPANDED_OVERFLOW = 200;
+// Collapsed block footprint used as the baseline for push-down math.
+const COLLAPSED_HEIGHT = 72;
 
 interface ParagraphTreeProps {
   sections: Array<{ title: string | null; body: string }>;
@@ -43,6 +43,7 @@ const PADDING = 40;
 export default function ParagraphTree({ sections }: ParagraphTreeProps) {
   const bins = useMemo(() => binSectionsByLayer(sections), [sections]);
   const [expandedLayers, setExpandedLayers] = useState<Set<number>>(new Set());
+  const [blockHeights, setBlockHeights] = useState<Record<number, number>>({});
 
   const toggleLayer = useCallback((layer: number) => {
     setExpandedLayers((prev) => {
@@ -50,6 +51,13 @@ export default function ParagraphTree({ sections }: ParagraphTreeProps) {
       if (next.has(layer)) next.delete(layer);
       else next.add(layer);
       return next;
+    });
+  }, []);
+
+  const handleHeightChange = useCallback((layer: number, height: number) => {
+    setBlockHeights((prev) => {
+      if (prev[layer] === height) return prev;
+      return { ...prev, [layer]: height };
     });
   }, []);
 
@@ -61,12 +69,14 @@ export default function ParagraphTree({ sections }: ParagraphTreeProps) {
       for (const layer of layers) {
         offsets[layer] = cumulativeOffset;
         if (expandedLayers.has(layer)) {
-          cumulativeOffset += EXPANDED_OVERFLOW;
+          const measuredHeight = blockHeights[layer] ?? 300;
+          const overflow = Math.max(0, measuredHeight - COLLAPSED_HEIGHT);
+          cumulativeOffset += overflow;
         }
       }
     }
     return offsets;
-  }, [expandedLayers]);
+  }, [expandedLayers, blockHeights]);
 
   const allLayers = Object.values(Layer).filter((v) => typeof v === 'number') as Layer[];
   const maxBaseY = Math.max(...allLayers.map((l) => TREE_POSITIONS[l]?.y ?? 0));
@@ -106,6 +116,7 @@ export default function ParagraphTree({ sections }: ParagraphTreeProps) {
               column={column}
               expanded={isExpanded}
               onToggle={() => toggleLayer(layer)}
+              onHeightChange={(h) => handleHeightChange(layer, h)}
             />
           );
         }

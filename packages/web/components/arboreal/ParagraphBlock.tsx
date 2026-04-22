@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import type { ArborealSection } from '@/lib/arboreal/bin-sections';
 
 interface ParagraphBlockProps {
@@ -10,6 +11,7 @@ interface ParagraphBlockProps {
   column: 'left' | 'center' | 'right';
   expanded: boolean;
   onToggle: () => void;
+  onHeightChange?: (height: number) => void;
 }
 
 const COLLAPSED_W = 150;
@@ -23,7 +25,21 @@ export default function ParagraphBlock({
   column,
   expanded,
   onToggle,
+  onHeightChange,
 }: ParagraphBlockProps) {
+  const blockRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!onHeightChange || !blockRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        onHeightChange(entry.contentRect.height);
+      }
+    });
+    observer.observe(blockRef.current);
+    return () => observer.disconnect();
+  }, [onHeightChange]);
+
   if (sections.length === 0) return null;
 
   const primary = sections[0];
@@ -32,23 +48,20 @@ export default function ParagraphBlock({
 
   const w = expanded ? EXPANDED_W : COLLAPSED_W;
 
-  // Expand direction anchors the edge closest to the tree's center column.
   let left: number;
   if (!expanded) {
     left = x - COLLAPSED_W / 2;
   } else if (column === 'left') {
-    // Anchor right edge where the collapsed right edge was; grow leftward.
     left = x + COLLAPSED_W / 2 - EXPANDED_W;
   } else if (column === 'right') {
-    // Anchor left edge where the collapsed left edge was; grow rightward.
     left = x - COLLAPSED_W / 2;
   } else {
-    // Center column expands equally to both sides.
     left = x - EXPANDED_W / 2;
   }
 
   return (
     <div
+      ref={blockRef}
       className="absolute rounded-md border cursor-pointer"
       style={{
         left,
