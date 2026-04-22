@@ -1,6 +1,6 @@
 'use client';
 
-export type ViewMode = 'classic' | 'mini-canvas' | 'canvas';
+export type ViewMode = 'classic' | 'mini-canvas' | 'canvas' | 'arboreal';
 
 export interface ChatHeaderProps {
   viewMode: ViewMode;
@@ -46,6 +46,12 @@ export default function ChatHeader({
               className={`text-[9px] uppercase tracking-wider transition-colors ${viewMode === 'canvas' ? 'text-purple-600 dark:text-purple-400 font-medium' : 'text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost'}`}
             >
               ◇ canvas
+            </button>
+            <button
+              onClick={() => onSetViewMode('arboreal')}
+              className={`text-[9px] uppercase tracking-wider transition-colors ${viewMode === 'arboreal' ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost'}`}
+            >
+              ◇ arboreal
             </button>
             <span className="text-[10px] text-relic-silver dark:text-relic-silver/70">
               {methodology}

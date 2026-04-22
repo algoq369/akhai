@@ -105,7 +105,9 @@ export function useHomePageState() {
   const [messageRawThinking, setMessageRawThinking] = useState<Record<string, string>>({});
 
   // ─── View Mode (classic / mini-canvas / canvas) ──────────
-  const [viewMode, setViewMode] = useState<'classic' | 'mini-canvas' | 'canvas'>('classic');
+  const [viewMode, setViewMode] = useState<'classic' | 'mini-canvas' | 'canvas' | 'arboreal'>(
+    'classic'
+  );
   const isCanvasMode = viewMode === 'canvas';
 
   // ─── Refs ────────────────────────────────────────────────

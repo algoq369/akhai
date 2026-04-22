@@ -21,6 +21,9 @@ const CanvasWorkspace = dynamic(() => import('@/components/canvas/CanvasWorkspac
 const MiniCanvasView = dynamic(() => import('@/components/mini-canvas/MiniCanvasView'), {
   ssr: false,
 });
+const ArborealView = dynamic(() => import('@/components/arboreal/ArborealView'), {
+  ssr: false,
+});
 const SideChat = dynamic(() => import('@/components/SideChat'), { ssr: false });
 const SideMiniChat = dynamic(() => import('@/components/SideMiniChat'), { ssr: false });
 /**
@@ -235,6 +238,11 @@ function HomePage() {
             )}
             <MiniCanvasView data={miniCanvasData} isLoading={s.isLoading} />
           </>
+        )}
+
+        {/* Arboreal — tree-layout view */}
+        {s.isExpanded && s.viewMode === 'arboreal' && (
+          <ArborealView messages={s.messages} isLoading={s.isLoading} />
         )}
 
         {/* Messages Area — only in Classic mode */}
