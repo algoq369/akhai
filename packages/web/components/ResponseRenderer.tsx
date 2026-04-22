@@ -99,7 +99,7 @@ const CYCLING_LAYERS = [
 
 // ============ HELPERS ============
 
-function detectLayerFromTitle(
+export function detectLayerFromTitle(
   title: string,
   sectionIdx: number = 0
 ): { layer: string; color: string; sigil: string } {
@@ -185,7 +185,7 @@ function extractTables(text: string): { text: string; tables: TableData[] } {
 
 const DENYLIST_TITLES = /^(RELATED|NEXT|FINAL ANSWER|SUGGESTED|FOLLOW[\s-]?UP)$/i;
 
-function parseIntoSections(text: string): { title: string | null; body: string }[] {
+export function parseIntoSections(text: string): { title: string | null; body: string }[] {
   // Strip footer metadata tags before section detection
   const cleanedText = text
     .replace(

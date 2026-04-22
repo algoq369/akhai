@@ -19,7 +19,10 @@
  * @module ArborealView
  */
 
+import { useMemo } from 'react';
 import type { Message } from '@/lib/chat-store';
+import ParagraphTree from './ParagraphTree';
+import { parseIntoSections } from '@/components/ResponseRenderer';
 
 export interface ArborealViewProps {
   messages: Message[];
@@ -29,6 +32,11 @@ export interface ArborealViewProps {
 export default function ArborealView({ messages, isLoading }: ArborealViewProps) {
   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+
+  const sections = useMemo(() => {
+    if (!lastAssistant?.content) return [];
+    return parseIntoSections(lastAssistant.content);
+  }, [lastAssistant?.content]);
 
   if (!lastAssistant && !isLoading) {
     return (
@@ -55,8 +63,14 @@ export default function ArborealView({ messages, isLoading }: ArborealViewProps)
       <div className="h-40 flex items-center justify-center text-[9px] uppercase tracking-widest text-relic-silver/40 font-mono border border-dashed border-relic-mist/20 rounded">
         neural tree (compact GodViewTree) — slot
       </div>
-      <div className="h-96 flex items-center justify-center text-[9px] uppercase tracking-widest text-relic-silver/40 font-mono border border-dashed border-emerald-500/30 rounded">
-        ◇ paragraph tree — NEW · sefirot-positioned colored blocks · commit 2
+      <div className="py-4">
+        {sections.length > 0 ? (
+          <ParagraphTree sections={sections} />
+        ) : (
+          <div className="h-40 flex items-center justify-center text-[9px] uppercase tracking-widest text-relic-silver/40 font-mono border border-dashed border-emerald-500/30 rounded">
+            no sections detected in response
+          </div>
+        )}
       </div>
       <div className="h-24 flex items-center justify-center text-[9px] uppercase tracking-widest text-relic-silver/40 font-mono border border-dashed border-relic-mist/20 rounded">
         5-line synthesis footer — commit 6
