@@ -75,9 +75,18 @@ export default function ParagraphBlock({
           color: primary.color,
         }}
       >
-        <span className="text-[10px] font-mono tracking-wider flex items-center gap-1">
-          <span className="text-[11px]">{primary.sigil}</span>
-          <span className="uppercase">{layerName}</span>
+        <span
+          className="text-[10px] font-mono tracking-wide leading-snug"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: expanded ? 'unset' : 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          <span className="text-[11px]">{primary.sigil}</span>{' '}
+          <span style={{ textTransform: 'capitalize' }}>{layerName.toLowerCase()}</span>
+          {primary.title && <span>·{primary.title}</span>}
         </span>
         <div className="flex items-center gap-2">
           {additionalCount > 0 && (
@@ -86,16 +95,6 @@ export default function ParagraphBlock({
           <span className="text-[10px] font-mono opacity-50">{expanded ? '▴' : '▾'}</span>
         </div>
       </div>
-
-      {/* Title */}
-      {primary.title && (
-        <div
-          className={`px-2 pt-1 text-[10px] font-medium leading-tight ${expanded ? '' : 'line-clamp-1'}`}
-          style={{ color: primary.color }}
-        >
-          {primary.title}
-        </div>
-      )}
 
       {/* Body */}
       {!expanded ? (
@@ -111,7 +110,7 @@ export default function ParagraphBlock({
                   className="text-[10px] font-medium mt-2 pt-2 border-t"
                   style={{ color: section.color, borderColor: `${section.color}33` }}
                 >
-                  {section.sigil} {section.title}
+                  {section.sigil} {layerName.toLowerCase()}·{section.title}
                 </div>
               )}
               <div className="text-[10px] leading-relaxed text-relic-slate dark:text-relic-ghost whitespace-pre-line">
