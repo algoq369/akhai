@@ -448,4 +448,21 @@ export const SCHEMA_SQL = `
     updated_at INTEGER DEFAULT (strftime('%s', 'now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  -- Arboreal threads: per-block chat persistence (one thread per user per query per layer)
+  CREATE TABLE IF NOT EXISTS arboreal_threads (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    query_id TEXT NOT NULL,
+    layer INTEGER NOT NULL,
+    section_index INTEGER DEFAULT 0,
+    messages TEXT NOT NULL DEFAULT '[]',
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    updated_at INTEGER DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (query_id) REFERENCES queries(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_arboreal_threads_lookup
+    ON arboreal_threads(user_id, query_id, layer);
 `;

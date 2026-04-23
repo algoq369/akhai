@@ -156,6 +156,32 @@ export function migrateCreateConversationSyntheses() {
 }
 
 /**
+ * Migration: Create arboreal_threads table for per-block chat persistence
+ */
+export function migrateCreateArborealThreads() {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS arboreal_threads (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        query_id TEXT NOT NULL,
+        layer INTEGER NOT NULL,
+        section_index INTEGER DEFAULT 0,
+        messages TEXT NOT NULL DEFAULT '[]',
+        created_at INTEGER DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER DEFAULT (strftime('%s', 'now')),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (query_id) REFERENCES queries(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_arboreal_threads_lookup
+        ON arboreal_threads(user_id, query_id, layer);
+    `);
+  } catch (error) {
+    console.error('[Migration Error] Failed to create arboreal_threads table:', error);
+  }
+}
+
+/**
  * Migration: Add raw_thinking column to queries table for extended thinking storage
  */
 export function migrateAddRawThinkingColumn() {
@@ -184,6 +210,7 @@ export function runMigrations() {
     migrateAddCognitiveSignatureColumns();
     migrateCreateConversationSyntheses();
     migrateAddRawThinkingColumn();
+    migrateCreateArborealThreads();
   } catch (error) {
     console.error('[Migration Failed]', error);
   }
