@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import type { ArborealSection } from '@/lib/arboreal/bin-sections';
 
 interface ParagraphBlockProps {
@@ -11,7 +10,6 @@ interface ParagraphBlockProps {
   column: 'left' | 'center' | 'right';
   expanded: boolean;
   onToggle: () => void;
-  onHeightChange?: (height: number) => void;
 }
 
 const COLLAPSED_W = 150;
@@ -26,21 +24,7 @@ export default function ParagraphBlock({
   column,
   expanded,
   onToggle,
-  onHeightChange,
 }: ParagraphBlockProps) {
-  const blockRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!onHeightChange || !blockRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        onHeightChange(entry.contentRect.height);
-      }
-    });
-    observer.observe(blockRef.current);
-    return () => observer.disconnect();
-  }, [onHeightChange]);
-
   if (sections.length === 0) return null;
 
   const primary = sections[0];
@@ -63,7 +47,7 @@ export default function ParagraphBlock({
 
   return (
     <div
-      ref={blockRef}
+      data-arboreal-layer={String(primary.layer)}
       className="absolute rounded-md border cursor-pointer"
       style={{
         left,
@@ -78,7 +62,7 @@ export default function ParagraphBlock({
         zIndex: expanded ? 20 : 1,
         boxShadow: expanded ? `0 4px 20px ${primary.color}22` : 'none',
         transition:
-          'left 200ms ease-out, width 200ms ease-out, top 200ms ease-out, min-height 200ms ease-out, border-color 150ms, box-shadow 150ms',
+          'left 200ms ease-out, width 200ms ease-out, top 200ms ease-out, border-color 150ms, box-shadow 150ms',
       }}
       onClick={onToggle}
     >
