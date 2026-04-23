@@ -22,18 +22,12 @@ export interface ArborealThread {
   updatedAt: number;
 }
 
-interface ThreadRow {
-  id: string;
-  user_id: string;
-  query_id: string;
-  layer: number;
-  section_index: number;
-  messages: string;
-  created_at: number;
-  updated_at: number;
-}
+type ThreadRow = Omit<ArborealThread, 'messages'> & { messages: string };
 
-function rowToThread(row: ThreadRow): ArborealThread {
+const SELECT_COLS =
+  'id, user_id AS userId, query_id AS queryId, layer, section_index AS sectionIndex, messages, created_at AS createdAt, updated_at AS updatedAt';
+
+function parseRow(row: ThreadRow): ArborealThread {
   let messages: ArborealMessage[] = [];
   try {
     const parsed = JSON.parse(row.messages);
@@ -41,36 +35,25 @@ function rowToThread(row: ThreadRow): ArborealThread {
   } catch {
     messages = [];
   }
-  return {
-    id: row.id,
-    userId: row.user_id,
-    queryId: row.query_id,
-    layer: row.layer,
-    sectionIndex: row.section_index,
-    messages,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
+  return { ...row, messages };
 }
-
-const COLS = 'id, user_id, query_id, layer, section_index, messages, created_at, updated_at';
 
 export function getThread(userId: string, queryId: string, layer: number): ArborealThread | null {
   const row = getDatabase()
     .prepare(
-      `SELECT ${COLS} FROM arboreal_threads WHERE user_id = ? AND query_id = ? AND layer = ?`
+      `SELECT ${SELECT_COLS} FROM arboreal_threads WHERE user_id = ? AND query_id = ? AND layer = ?`
     )
     .get(userId, queryId, layer) as ThreadRow | undefined;
-  return row ? rowToThread(row) : null;
+  return row ? parseRow(row) : null;
 }
 
 export function listThreadsForQuery(userId: string, queryId: string): ArborealThread[] {
   const rows = getDatabase()
     .prepare(
-      `SELECT ${COLS} FROM arboreal_threads WHERE user_id = ? AND query_id = ? ORDER BY layer ASC`
+      `SELECT ${SELECT_COLS} FROM arboreal_threads WHERE user_id = ? AND query_id = ? ORDER BY layer ASC`
     )
     .all(userId, queryId) as ThreadRow[];
-  return rows.map(rowToThread);
+  return rows.map(parseRow);
 }
 
 export function appendMessage(
@@ -84,22 +67,25 @@ export function appendMessage(
   const messages = existing ? [...existing.messages, message] : [message];
   const db = getDatabase();
   const now = Math.floor(Date.now() / 1000);
+  const msgJson = JSON.stringify(messages);
 
   if (existing) {
     db.prepare(
       `UPDATE arboreal_threads SET messages = ?, section_index = ?, updated_at = ? WHERE id = ?`
-    ).run(JSON.stringify(messages), sectionIndex, now, existing.id);
+    ).run(msgJson, sectionIndex, now, existing.id);
     return { ...existing, messages, sectionIndex, updatedAt: now };
   }
 
   const id = 'at-' + now + '-' + Math.random().toString(36).slice(2, 10);
-  db.prepare(`INSERT INTO arboreal_threads (${COLS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+  const insertCols =
+    'id, user_id, query_id, layer, section_index, messages, created_at, updated_at';
+  db.prepare(`INSERT INTO arboreal_threads (${insertCols}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
     id,
     userId,
     queryId,
     layer,
     sectionIndex,
-    JSON.stringify(messages),
+    msgJson,
     now,
     now
   );
