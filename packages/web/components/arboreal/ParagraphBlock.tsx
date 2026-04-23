@@ -15,7 +15,8 @@ interface ParagraphBlockProps {
 }
 
 const COLLAPSED_W = 150;
-const EXPANDED_W = 280;
+const EXPANDED_W_SIDE = 280;
+const EXPANDED_W_CENTER = 200;
 
 export default function ParagraphBlock({
   sections,
@@ -46,17 +47,18 @@ export default function ParagraphBlock({
   const additionalCount = sections.length - 1;
   const collapsedPreview = primary.body.split(/\n+/).slice(0, 3).join(' ').slice(0, 140);
 
-  const w = expanded ? EXPANDED_W : COLLAPSED_W;
+  const expandedW = column === 'center' ? EXPANDED_W_CENTER : EXPANDED_W_SIDE;
+  const w = expanded ? expandedW : COLLAPSED_W;
 
   let left: number;
   if (!expanded) {
     left = x - COLLAPSED_W / 2;
   } else if (column === 'left') {
-    left = x + COLLAPSED_W / 2 - EXPANDED_W;
+    left = x + COLLAPSED_W / 2 - expandedW;
   } else if (column === 'right') {
     left = x - COLLAPSED_W / 2;
   } else {
-    left = x - EXPANDED_W / 2;
+    left = x - expandedW / 2;
   }
 
   return (

@@ -70,7 +70,7 @@ export default function ParagraphTree({ sections }: ParagraphTreeProps) {
         offsets[layer] = cumulativeOffset;
         if (expandedLayers.has(layer)) {
           const measuredHeight = blockHeights[layer] ?? 300;
-          const overflow = Math.max(0, measuredHeight - COLLAPSED_HEIGHT);
+          const overflow = Math.max(0, measuredHeight - COLLAPSED_HEIGHT + 16);
           cumulativeOffset += overflow;
         }
       }
