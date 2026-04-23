@@ -1,7 +1,46 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { ArborealSection } from '@/lib/arboreal/bin-sections';
 import BlockChat from './BlockChat';
+
+const SIGIL_COLORS: Record<string, string> = {
+  '◇': '#7C3AED',
+  '△': '#6366F1',
+  '⊕': '#EF4444',
+  '○': '#3B82F6',
+  '⬢': '#22C55E',
+  '▽': '#9333EA',
+  '□': '#F97316',
+  '⊘': '#F59E0B',
+  '⊙': '#EAB308',
+  '✦': '#06B6D4',
+  '⬡': '#6B7280',
+};
+
+function renderWithSigils(text: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  const regex = /([◇△⊕○⬢▽□⊘⊙✦⬡])/g;
+  let last = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) {
+      parts.push(<span key={`t${last}`}>{text.slice(last, match.index)}</span>);
+    }
+    const sigil = match[1];
+    parts.push(
+      <span
+        key={`s${match.index}`}
+        style={{ color: SIGIL_COLORS[sigil] ?? '#71717a', fontWeight: 500 }}
+      >
+        {sigil}
+      </span>
+    );
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push(<span key={`t${last}`}>{text.slice(last)}</span>);
+  return parts;
+}
 
 interface ParagraphBlockProps {
   sections: ArborealSection[];
@@ -113,7 +152,7 @@ export default function ParagraphBlock({
       {/* Body */}
       {!expanded ? (
         <div className="px-2 py-1 text-[9px] leading-snug text-relic-slate dark:text-relic-ghost line-clamp-3">
-          {collapsedPreview}
+          {renderWithSigils(collapsedPreview)}
         </div>
       ) : (
         <div className="px-3 py-2 space-y-3" onClick={(e) => e.stopPropagation()}>
@@ -128,7 +167,7 @@ export default function ParagraphBlock({
                 </div>
               )}
               <div className="text-[10px] leading-relaxed text-relic-slate dark:text-relic-ghost whitespace-pre-line">
-                {section.body}
+                {renderWithSigils(section.body)}
               </div>
             </div>
           ))}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromSession } from '@/lib/auth';
+import { getOrCreateAnonymousUser } from '@/lib/db/auth';
 import { callProvider } from '@/lib/multi-provider-api';
 import { appendMessage, getThread, listThreadsForQuery } from '@/lib/db/arboreal-threads';
 import { buildBlockChatContext } from '@/lib/arboreal/build-context';
@@ -27,7 +28,7 @@ function parseBody(body: unknown) {
 function resolveUserId(request: NextRequest): string {
   const token = request.cookies.get('session_token')?.value;
   const user = token ? getUserFromSession(token) : null;
-  return user?.id || 'anonymous';
+  return user?.id || getOrCreateAnonymousUser().id;
 }
 
 export async function POST(request: NextRequest) {

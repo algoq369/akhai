@@ -459,8 +459,7 @@ export const SCHEMA_SQL = `
     messages TEXT NOT NULL DEFAULT '[]',
     created_at INTEGER DEFAULT (strftime('%s', 'now')),
     updated_at INTEGER DEFAULT (strftime('%s', 'now')),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (query_id) REFERENCES queries(id)
+    FOREIGN KEY (user_id) REFERENCES users(id)
   );
 
   CREATE INDEX IF NOT EXISTS idx_arboreal_threads_lookup

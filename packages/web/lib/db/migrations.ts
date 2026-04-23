@@ -170,14 +170,43 @@ export function migrateCreateArborealThreads() {
         messages TEXT NOT NULL DEFAULT '[]',
         created_at INTEGER DEFAULT (strftime('%s', 'now')),
         updated_at INTEGER DEFAULT (strftime('%s', 'now')),
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (query_id) REFERENCES queries(id)
+        FOREIGN KEY (user_id) REFERENCES users(id)
       );
       CREATE INDEX IF NOT EXISTS idx_arboreal_threads_lookup
         ON arboreal_threads(user_id, query_id, layer);
     `);
   } catch (error) {
     console.error('[Migration Error] Failed to create arboreal_threads table:', error);
+  }
+}
+
+/**
+ * Migration: Drop FK on query_id from arboreal_threads.
+ * query_id is a lookup key (may be a message id), not a row in queries.
+ * SQLite can't ALTER to drop FK — must recreate the table.
+ */
+export function migrateDropArborealQueryFk() {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS arboreal_threads_new (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        query_id TEXT NOT NULL,
+        layer INTEGER NOT NULL,
+        section_index INTEGER DEFAULT 0,
+        messages TEXT NOT NULL DEFAULT '[]',
+        created_at INTEGER DEFAULT (strftime('%s', 'now')),
+        updated_at INTEGER DEFAULT (strftime('%s', 'now')),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+      INSERT OR IGNORE INTO arboreal_threads_new SELECT * FROM arboreal_threads;
+      DROP TABLE IF EXISTS arboreal_threads;
+      ALTER TABLE arboreal_threads_new RENAME TO arboreal_threads;
+      CREATE INDEX IF NOT EXISTS idx_arboreal_threads_lookup
+        ON arboreal_threads(user_id, query_id, layer);
+    `);
+  } catch (error) {
+    console.warn('[Migration Warn] migrateDropArborealQueryFk:', error);
   }
 }
 
@@ -211,6 +240,7 @@ export function runMigrations() {
     migrateCreateConversationSyntheses();
     migrateAddRawThinkingColumn();
     migrateCreateArborealThreads();
+    migrateDropArborealQueryFk();
   } catch (error) {
     console.error('[Migration Failed]', error);
   }

@@ -122,7 +122,7 @@ export default function BlockChat({
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="ask about this..."
           disabled={loading}
-          className="flex-1 px-2 py-1 text-[10px] bg-transparent border rounded font-mono text-relic-ghost placeholder:text-relic-silver/30 focus:outline-none"
+          className="flex-1 px-2 py-1 text-[10px] bg-relic-void/80 dark:bg-relic-void/80 border rounded font-mono text-relic-ghost placeholder:text-relic-silver/30 focus:outline-none focus:border-relic-silver/40"
           style={{ borderColor: `${color}44` }}
         />
         <button
