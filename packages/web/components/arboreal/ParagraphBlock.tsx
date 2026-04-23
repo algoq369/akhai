@@ -1,6 +1,7 @@
 'use client';
 
 import type { ArborealSection } from '@/lib/arboreal/bin-sections';
+import BlockChat from './BlockChat';
 
 interface ParagraphBlockProps {
   sections: ArborealSection[];
@@ -10,6 +11,10 @@ interface ParagraphBlockProps {
   column: 'left' | 'center' | 'right';
   expanded: boolean;
   onToggle: () => void;
+  queryId: string;
+  query: string;
+  siblingTitles: string[];
+  threadMessageCount?: number;
 }
 
 const COLLAPSED_W = 150;
@@ -24,6 +29,10 @@ export default function ParagraphBlock({
   column,
   expanded,
   onToggle,
+  queryId,
+  query,
+  siblingTitles,
+  threadMessageCount,
 }: ParagraphBlockProps) {
   if (sections.length === 0) return null;
 
@@ -92,6 +101,11 @@ export default function ParagraphBlock({
           {additionalCount > 0 && (
             <span className="text-[9px] font-mono opacity-70">+{additionalCount}</span>
           )}
+          {!expanded && threadMessageCount && threadMessageCount > 0 ? (
+            <span className="text-[8px] font-mono opacity-60" style={{ color: primary.color }}>
+              ×{threadMessageCount}
+            </span>
+          ) : null}
           <span className="text-[10px] font-mono opacity-50">{expanded ? '▴' : '▾'}</span>
         </div>
       </div>
@@ -118,6 +132,17 @@ export default function ParagraphBlock({
               </div>
             </div>
           ))}
+          <BlockChat
+            queryId={queryId}
+            query={query}
+            layer={primary.layer}
+            sectionIndex={primary.originalIndex}
+            paragraphTitle={primary.title}
+            paragraphBody={primary.body}
+            paragraphSigil={primary.sigil}
+            siblingTitles={siblingTitles}
+            color={primary.color}
+          />
         </div>
       )}
     </div>

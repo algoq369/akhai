@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Layer, LAYER_METADATA } from '@/lib/layer-metadata';
 import { TREE_POSITIONS } from '@/components/god-view/GodViewTree';
 import { binSectionsByLayer, LAYER_VISUAL } from '@/lib/arboreal/bin-sections';
@@ -33,6 +33,8 @@ const COLLAPSED_HEIGHT = 72;
 
 interface ParagraphTreeProps {
   sections: Array<{ title: string | null; body: string }>;
+  queryId: string;
+  query: string;
 }
 
 const SCALE = 1.2;
@@ -47,11 +49,30 @@ function collectHeights(root: HTMLDivElement, layers: Set<number>): Record<numbe
   return heights;
 }
 
-export default function ParagraphTree({ sections }: ParagraphTreeProps) {
+export default function ParagraphTree({ sections, queryId, query }: ParagraphTreeProps) {
   const bins = useMemo(() => binSectionsByLayer(sections), [sections]);
   const [expandedLayers, setExpandedLayers] = useState<Set<number>>(new Set());
   const [measuredHeights, setMeasuredHeights] = useState<Record<number, number>>({});
+  const [threadCounts, setThreadCounts] = useState<Record<number, number>>({});
   const treeRef = useRef<HTMLDivElement>(null);
+
+  const siblingTitles = useMemo<string[]>(
+    () => [...bins.values()].flatMap((ls) => ls.flatMap((s) => (s.title ? [s.title] : []))),
+    [bins]
+  );
+
+  useEffect(() => {
+    if (!queryId) return;
+    fetch(`/api/arboreal-chat?queryId=${encodeURIComponent(queryId)}&listAll=true`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { threads?: Array<{ layer: number; messageCount: number }> } | null) => {
+        if (!d?.threads) return;
+        const counts: Record<number, number> = {};
+        for (const t of d.threads) counts[t.layer] = t.messageCount;
+        setThreadCounts(counts);
+      })
+      .catch(() => {});
+  }, [queryId]);
 
   const toggleLayer = useCallback((layer: number) => {
     setExpandedLayers((prev) => {
@@ -131,6 +152,10 @@ export default function ParagraphTree({ sections }: ParagraphTreeProps) {
               column={column}
               expanded={isExpanded}
               onToggle={() => toggleLayer(layer)}
+              queryId={queryId}
+              query={query}
+              siblingTitles={siblingTitles}
+              threadMessageCount={threadCounts[layer] ?? 0}
             />
           );
         }

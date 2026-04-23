@@ -242,7 +242,11 @@ function HomePage() {
 
         {/* Arboreal — tree-layout view */}
         {s.isExpanded && s.viewMode === 'arboreal' && (
-          <ArborealView messages={s.messages} isLoading={s.isLoading} />
+          <ArborealView
+            messages={s.messages}
+            isLoading={s.isLoading}
+            queryId={s.messages.filter((m) => m.role === 'user').pop()?.id ?? ''}
+          />
         )}
 
         {/* Messages Area — only in Classic mode */}

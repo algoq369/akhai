@@ -27,11 +27,13 @@ import { parseIntoSections } from '@/components/ResponseRenderer';
 export interface ArborealViewProps {
   messages: Message[];
   isLoading: boolean;
+  queryId?: string;
 }
 
-export default function ArborealView({ messages, isLoading }: ArborealViewProps) {
+export default function ArborealView({ messages, isLoading, queryId }: ArborealViewProps) {
   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+  const resolvedQueryId = queryId ?? lastUser?.id ?? '';
 
   const sections = useMemo(() => {
     if (!lastAssistant?.content) return [];
@@ -65,7 +67,11 @@ export default function ArborealView({ messages, isLoading }: ArborealViewProps)
       </div>
       <div className="py-4">
         {sections.length > 0 ? (
-          <ParagraphTree sections={sections} />
+          <ParagraphTree
+            sections={sections}
+            queryId={resolvedQueryId}
+            query={lastUser?.content ?? ''}
+          />
         ) : (
           <div className="h-40 flex items-center justify-center text-[9px] uppercase tracking-widest text-relic-silver/40 font-mono border border-dashed border-emerald-500/30 rounded">
             no sections detected in response
