@@ -1,23 +1,11 @@
 'use client';
 
-/**
- * ARBOREAL VIEW
- *
- * Tree-layout view of the response. Same text as classic view, re-dispatched
- * visually into colored paragraph blocks positioned at Sefirot tree coordinates.
- *
- * Stack (top to bottom):
- *   1. Query bar
- *   2. Paragraph tree (colored blocks at Sefirot positions)
- *   3. 5-line synthesis footer
- *
- * @module ArborealView
- */
-
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { Message } from '@/lib/chat-store';
 import ParagraphTree from './ParagraphTree';
-import SynthesisFooter from './SynthesisFooter';
+import CouncilButton from '@/components/CouncilButton';
+import CouncilPanel from '@/components/CouncilPanel';
+import { useCouncilStore } from '@/lib/stores/council-store';
 import { parseIntoSections } from '@/components/ResponseRenderer';
 
 export interface ArborealViewProps {
@@ -35,6 +23,52 @@ export default function ArborealView({ messages, isLoading, queryId }: ArborealV
     if (!lastAssistant?.content) return [];
     return parseIntoSections(lastAssistant.content);
   }, [lastAssistant?.content]);
+
+  const { results, isLoading: councilLoading } = useCouncilStore();
+  const hasCouncilResult = results.some((r) => r.queryId === resolvedQueryId);
+
+  // Auto-trigger council when arboreal view loads with a substantial response.
+  useEffect(() => {
+    if (!lastAssistant?.content || !lastUser?.content || !resolvedQueryId) return;
+    if (lastAssistant.content.split(/\s+/).length < 100) return;
+    if (hasCouncilResult || councilLoading) return;
+
+    const query = lastUser.content;
+    const response = lastAssistant.content;
+    const timer = setTimeout(async () => {
+      const store = useCouncilStore.getState();
+      if (store.isLoading || store.results.some((r) => r.queryId === resolvedQueryId)) return;
+      store.setLoading(true, resolvedQueryId);
+      try {
+        const res = await fetch('/api/god-view/council', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, response: response.slice(0, 4000) }),
+        });
+        if (!res.ok) throw new Error(`Council: ${res.status}`);
+        const data = await res.json();
+        store.addResult({
+          queryId: resolvedQueryId,
+          query,
+          perspectives: data.perspectives,
+          synthesis: data.synthesis,
+          totalCost: data.totalCost,
+          timestamp: Date.now(),
+        });
+      } catch (err) {
+        console.error('[arboreal-council]', err);
+        useCouncilStore.getState().setLoading(false);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [
+    lastAssistant?.content,
+    lastUser?.content,
+    resolvedQueryId,
+    hasCouncilResult,
+    councilLoading,
+  ]);
 
   if (!lastAssistant && !isLoading) {
     return (
@@ -68,8 +102,15 @@ export default function ArborealView({ messages, isLoading, queryId }: ArborealV
           </div>
         )}
       </div>
-      {lastAssistant?.content && (
-        <SynthesisFooter responseText={lastAssistant.content} query={lastUser?.content ?? ''} />
+      {lastAssistant && !isLoading && (
+        <div className="max-w-3xl mx-auto px-4 py-2">
+          <CouncilButton
+            queryId={resolvedQueryId}
+            query={lastUser?.content ?? ''}
+            response={lastAssistant.content}
+          />
+          <CouncilPanel queryId={resolvedQueryId} />
+        </div>
       )}
     </div>
   );
