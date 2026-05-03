@@ -68,7 +68,9 @@ export default function ArborealView({ messages, isLoading, queryId }: ArborealV
           </div>
         )}
       </div>
-      {lastAssistant?.content && <SynthesisFooter responseText={lastAssistant.content} />}
+      {lastAssistant?.content && (
+        <SynthesisFooter responseText={lastAssistant.content} query={lastUser?.content ?? ''} />
+      )}
     </div>
   );
 }
