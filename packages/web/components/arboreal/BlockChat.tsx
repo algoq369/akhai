@@ -9,8 +9,7 @@ const ASSISTANT_CLS = 'text-relic-slate dark:text-relic-ghost/80';
 interface BlockChatMessage {
   role: 'user' | 'assistant';
   content: string;
-  isError?: boolean;
-  retryQuestion?: string;
+  retry?: string;
 }
 
 interface BlockChatProps {
@@ -85,7 +84,7 @@ export default function BlockChat({
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: '(connection error)', isError: true, retryQuestion: userMsg },
+        { role: 'assistant', content: '(connection error)', retry: userMsg },
       ]);
     }
     setLoading(false);
@@ -100,7 +99,7 @@ export default function BlockChat({
       <div ref={scrollRef} className="max-h-40 overflow-y-auto space-y-2 mb-2">
         {messages.length === 0 && !loading && (
           <div className="text-[9px] font-mono text-relic-slate/40 dark:text-relic-silver/50 py-1">
-            chat about this paragraph — scoped to this layer only
+            scoped chat — ask about this paragraph
           </div>
         )}
         {messages.map((msg, i) => (
@@ -109,16 +108,17 @@ export default function BlockChat({
               {msg.role === 'user' ? '→' : '←'}
             </span>
             <span className={msg.role === 'user' ? USER_CLS : ASSISTANT_CLS}>{msg.content}</span>
-            {msg.isError && (
+            {msg.retry && (
               <button
-                onClick={() => {
-                  setMessages((prev) => prev.filter((_, idx) => idx !== i));
-                  setInput(msg.retryQuestion ?? '');
-                }}
                 className="ml-2 text-[9px] font-mono underline opacity-60 hover:opacity-100"
                 style={{ color }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMessages((prev) => prev.filter((_, idx) => idx !== i));
+                  setTimeout(() => setInput(msg.retry!), 50);
+                }}
               >
-                retry
+                ↻ retry
               </button>
             )}
           </div>

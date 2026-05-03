@@ -4,7 +4,7 @@
   "description": "AkhAI Web Interface - Next.js 15 app with minimalist UI and GTP Flash visualization",
   "private": true,
   "scripts": {
-    "predev": "cd ../../node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && rm -rf build && npx node-gyp rebuild --release 2>/dev/null || true",
+    "predev": "cd ../../node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3 && rm -rf build && npx node-gyp rebuild --release 2>/dev/null || true; NODE_VER=$(node -e \"console.log(process.versions.modules)\"); BINDING_DIR=lib/binding/node-v${NODE_VER}-$(uname -s | tr A-Z a-z)-$(uname -m); mkdir -p $BINDING_DIR 2>/dev/null; cp build/Release/better_sqlite3.node $BINDING_DIR/ 2>/dev/null || true",
     "dev": "npm run predev && rm -rf .next .turbo && NODE_ENV=development next dev --turbopack -p 3000",
     "build": "npm run predev && rm -rf .next && next build",
     "start": "next start -p 3000",
