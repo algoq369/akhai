@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AkhAI · Paragraph Tree Canvas · Prototype v1</title>
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111113;
+    --surface-2: #18181b;
+    --border: rgba(255,255,255,0.08);
+    --border-2: rgba(255,255,255,0.14);
+    --text: #e4e4e7;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --mono: 'JetBrains Mono','SF Mono',ui-monospace,monospace;
+    --sans: -apple-system,BlinkMacSystemFont,'Inter',sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; padding: 24px; min-height: 100vh; }
+  h1 { font-size: 13px; font-weight: 500; letter-spacing: 0.24em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+  .subtitle { font-size: 12px; color: var(--text-dim); margin-bottom: 24px; font-family: var(--mono); }
+  .container { max-width: 1400px; margin: 0 auto; }
+  .header-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .mode-tabs { display: flex; gap: 2px; background: var(--surface-2); padding: 3px; border-radius: 8px; }
+  .mode-btn { font-size: 11px; padding: 6px 14px; border: none; background: transparent; color: var(--text-muted); border-radius: 6px; cursor: pointer; font-family: var(--mono); letter-spacing: 0.02em; transition: all 0.15s; }
+  .mode-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 0 0 0.5px var(--border-2); }
+  .mode-btn:hover:not(.active) { color: var(--text); }
+  .query-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px 8px 0 0; font-family: var(--mono); font-size: 11px; }
+  .query-bar .label { color: var(--text-dim); }
+  .query-bar .text { color: var(--text); font-weight: 500; }
+  .query-bar .meta { margin-left: auto; color: var(--text-dim); font-size: 10px; }
+  #stage { position: relative; height: 620px; background: var(--surface); border: 0.5px solid var(--border); border-top: none; overflow: hidden; }
+  .legend { display: flex; gap: 16px; margin-top: 0; font-family: var(--mono); font-size: 10px; color: var(--text-dim); flex-wrap: wrap; padding: 10px 14px; background: var(--surface); border: 0.5px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 6px; }
+  #sidechat { display: none; margin-top: 16px; background: var(--surface); border: 0.5px solid var(--border-2); border-radius: 12px; overflow: hidden; }
+  .sc-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 0.5px solid var(--border); background: var(--surface-2); }
+  .sc-head-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  #sc-sigil { font-family: var(--mono); font-size: 16px; }
+  #sc-label { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #sc-layer { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-family: var(--mono); letter-spacing: 0.04em; }
+  #sc-close { font-size: 11px; padding: 4px 12px; background: transparent; border: 0.5px solid var(--border-2); color: var(--text-muted); border-radius: 6px; cursor: pointer; font-family: var(--mono); }
+  #sc-close:hover { color: var(--text); background: var(--surface); }
+  .sc-path { padding: 6px 16px; background: var(--surface-2); font-family: var(--mono); font-size: 10px; color: var(--text-dim); border-bottom: 0.5px solid var(--border); letter-spacing: 0.02em; }
+  #sc-context { padding: 12px 16px; background: rgba(124,58,237,0.04); font-size: 13px; color: var(--text-muted); line-height: 1.6; border-bottom: 0.5px solid var(--border); font-style: italic; }
+  #sc-messages { padding: 12px 16px; font-size: 13px; line-height: 1.6; min-height: 80px; max-height: 300px; overflow-y: auto; }
+  .sc-msg { margin: 8px 0; display: flex; gap: 10px; }
+  .sc-role { font-family: var(--mono); font-size: 10px; color: var(--text-dim); flex-shrink: 0; min-width: 40px; padding-top: 2px; }
+  .sc-text { flex: 1; color: var(--text); }
+  .sc-empty { color: var(--text-dim); font-size: 11px; font-family: var(--mono); }
+  .sc-suggestions { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 10px; }
+  .sg { font-size: 10px; padding: 4px 10px; border-radius: 4px; border: 0.5px solid var(--border); background: transparent; cursor: pointer; color: var(--text-muted); font-family: var(--mono); transition: all 0.15s; }
+  .sg:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
+  .sg.primary { color: #a78bfa; border-color: rgba(167,139,250,0.3); }
+  .sg.primary:hover { background: rgba(167,139,250,0.08); }
+  .sc-input-row { display: flex; gap: 8px; padding: 12px 16px; border-top: 0.5px solid var(--border); }
+  #sc-input { flex: 1; padding: 8px 12px; background: var(--surface-2); border: 0.5px solid var(--border); color: var(--text); border-radius: 6px; font-family: var(--sans); font-size: 13px; }
+  #sc-input:focus { outline: none; border-color: var(--border-2); }
+  #sc-send { padding: 6px 14px; background: transparent; border: 0.5px solid var(--border-2); color: var(--text); border-radius: 6px; cursor: pointer; font-size: 11px; font-family: var(--mono); }
+  #sc-send:hover { background: var(--surface-2); }
+  .tree-node { position: absolute; border-radius: 10px; padding: 8px 10px; cursor: pointer; transition: opacity 0.2s, transform 0.15s, box-shadow 0.15s; }
+  .tree-node:hover { transform: scale(1.02); }
+  .notes { margin-top: 32px; padding: 16px 20px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .notes h3 { font-size: 11px; letter-spacing: 0.2em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px; font-weight: 500; }
+  .notes ul { margin-left: 18px; margin-bottom: 10px; }
+  .notes li { margin: 6px 0; }
+  .notes code { font-family: var(--mono); background: var(--surface-2); padding: 1px 6px; border-radius: 3px; font-size: 11px; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>◇ akhai · paragraph tree canvas</h1>
+  <div class="subtitle">prototype v1 · three layout candidates · click any node to try the scoped chat</div>
+
+  <div class="header-bar">
+    <div style="font-family: var(--mono); font-size: 11px; color: var(--text-muted); letter-spacing: 0.04em;">each paragraph becomes a clickable node · opens its own scoped chat thread</div>
+    <div class="mode-tabs">
+      <button class="mode-btn active" data-mode="sefirot">option a · sefirot tree</button>
+      <button class="mode-btn" data-mode="radial">option b · radial bloom</button>
+      <button class="mode-btn" data-mode="horizontal">option c · horizontal flow</button>
+    </div>
+  </div>
+
+  <div class="query-bar">
+    <span class="label">query:</span>
+    <span class="text">"why does compounding turn small gains into exponential research output"</span>
+    <span class="meta">12 paragraphs · 4 tiers · 11 edges</span>
+  </div>
+
+  <div id="stage">
+    <svg id="edges" width="100%" height="100%" viewBox="0 0 1300 620" preserveAspectRatio="xMidYMid meet" style="position: absolute; inset: 0; pointer-events: none;"></svg>
+    <div id="nodes" style="position: absolute; inset: 0;"></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:#7C3AED"></span>◇ meta-core · query root</span>
+    <span><span class="dot" style="background:#06B6D4"></span>✦ synthesis · thesis</span>
+    <span><span class="dot" style="background:#6366F1"></span>△ encoder · support</span>
+    <span><span class="dot" style="background:#EF4444"></span>⊕ discriminator · counter</span>
+    <span><span class="dot" style="background:#F59E0B"></span>⊘ embedding · example</span>
+    <span style="margin-left:auto;">click any node → scoped chat · ×N = reply count</span>
+  </div>
+
+  <div id="sidechat">
+    <div class="sc-head">
+      <div class="sc-head-left">
+        <span id="sc-sigil">◇</span>
+        <span id="sc-label">paragraph chat</span>
+        <span id="sc-layer">Meta-Core</span>
+      </div>
+      <button id="sc-close">close</button>
+    </div>
+    <div class="sc-path" id="sc-path">root › trunk › branch</div>
+    <div id="sc-context"></div>
+    <div id="sc-messages"></div>
+    <div class="sc-suggestions">
+      <button class="sg" data-q="explain deeper">explain deeper</button>
+      <button class="sg" data-q="give example">give example</button>
+      <button class="sg" data-q="counter-argument">counter-argument</button>
+      <button class="sg primary" data-q="fractalize">fractalize this →</button>
+      <button class="sg primary" data-q="promote">promote to main ↑</button>
+    </div>
+    <div class="sc-input-row">
+      <input id="sc-input" type="text" placeholder="continue this thread…" />
+      <button id="sc-send">send ↗</button>
+    </div>
+  </div>
+
+  <div class="notes">
+    <h3>design notes · how this maps to akhai's existing code</h3>
+    <ul>
+      <li><code>TITLE_LAYER_MAP</code> in <code>components/ResponseRenderer.tsx</code> already maps response keywords to sefirot layers + colors + sigils — reuse it for auto-layer-detection per paragraph</li>
+      <li><code>GodViewTree.tsx</code> (498 lines) already renders the 11-layer tree with <code>onNodeClick</code> callback — fork its SVG math for the tier-based positioning</li>
+      <li>scoped chat reuses <code>SideMiniChat</code> with a new <code>contextScope</code> prop carrying the path from root to selected node</li>
+      <li>"promote to main ↑" calls existing <code>promoteToMain</code> handler — the side-thread becomes a new query card on the parent canvas</li>
+      <li>"fractalize →" triggers a new claude call with the paragraph as the seed, decomposes its sub-tree inline beneath the node</li>
+      <li>×N badge on nodes tracks chat count per paragraph, persisted per user in sqlite (new table: <code>paragraph_threads</code>)</li>
+      <li>decomposition happens at generation time: prompt claude to return a structured json with paragraphs + parent refs + layer tags, instead of freeform prose</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const NODES = [
+  { id:'root', tier:0, label:'the question', sigil:'◇', layer:'Meta-Core', color:'#7C3AED', fill:'#2D1B4E', text:'why does compounding turn small gains into exponential research output', parent:null },
+  { id:'t1',   tier:1, label:'the mechanism', sigil:'✦', layer:'Synthesis', color:'#06B6D4', fill:'#0E3A42', text:'Compounding means each cycle\'s output becomes the next cycle\'s input. A 1% daily improvement is 37x over a year.', parent:'root' },
+  { id:'t2',   tier:1, label:'why it feels slow', sigil:'✦', layer:'Synthesis', color:'#06B6D4', fill:'#0E3A42', text:'Early gains look trivial. The curve stays flat for months before the exponential kicks in.', parent:'root' },
+  { id:'t3',   tier:1, label:'what breaks it', sigil:'⊕', layer:'Discriminator', color:'#EF4444', fill:'#3E1515', text:'Interruptions reset the base. Compounding requires unbroken cycles.', parent:'root' },
+  { id:'b11',  tier:2, label:'feedback loops', sigil:'△', layer:'Encoder', color:'#6366F1', fill:'#1E1E4A', text:'Each insight enables the next question. Research tools built today speed tomorrow\'s literature review.', parent:'t1' },
+  { id:'b12',  tier:2, label:'the 1% math', sigil:'△', layer:'Encoder', color:'#6366F1', fill:'#1E1E4A', text:'1.01^365 = 37.78. 0.99^365 = 0.026. Gap between positive and negative habits is ~1400x/year.', parent:'t1' },
+  { id:'b21',  tier:2, label:'the flat zone', sigil:'△', layer:'Encoder', color:'#6366F1', fill:'#1E1E4A', text:'For 3–6 months, compounding looks linear. Most quit here thinking the method is broken.', parent:'t2' },
+  { id:'b31',  tier:2, label:'context resets', sigil:'⊕', layer:'Discriminator', color:'#EF4444', fill:'#3E1515', text:'Switching fields, losing notes — each reset restarts the counter.', parent:'t3' },
+  { id:'l1',   tier:3, label:'github', sigil:'⊘', layer:'Embedding', color:'#F59E0B', fill:'#3E2A0A', text:'Daily-commit repos outperform weekly ones 30x over 2 years.', parent:'b11' },
+  { id:'l2',   tier:3, label:'feynman', sigil:'⊘', layer:'Embedding', color:'#F59E0B', fill:'#3E2A0A', text:'Feynman\'s notebooks: 24 volumes, 40 years, all cross-referenced.', parent:'b12' },
+  { id:'l3',   tier:3, label:'darwin', sigil:'⊘', layer:'Embedding', color:'#F59E0B', fill:'#3E2A0A', text:'Darwin spent 23 years compounding observations before Origin.', parent:'b21' },
+  { id:'l4',   tier:3, label:'kahneman', sigil:'⊘', layer:'Embedding', color:'#F59E0B', fill:'#3E2A0A', text:'"Switching tasks cost me 3 years of cognitive psychology."', parent:'b31' },
+];
+
+const PATHS = {};
+NODES.forEach(n => { PATHS[n.id] = n.parent ? [...PATHS[n.parent], n.id] : [n.id]; });
+
+let mode = 'sefirot';
+let selected = null;
+const chats = {};
+
+function sefirotPos(n){
+  if (n.tier === 0) return { x: 650, y: 55 };
+  const tierY = { 1: 195, 2: 360, 3: 520 };
+  if (n.tier === 1) {
+    const idx = NODES.filter(x=>x.tier===1).indexOf(n);
+    const cols = [260, 650, 1040];
+    return { x: cols[idx], y: tierY[1] };
+  }
+  const parent = NODES.find(x=>x.id===n.parent);
+  const pp = sefirotPos(parent);
+  const siblings = NODES.filter(x=>x.parent===n.parent);
+  const idx = siblings.indexOf(n);
+  const total = siblings.length;
+  if (total === 1) return { x: pp.x, y: tierY[n.tier] };
+  const spread = (total - 1) * 180;
+  return { x: pp.x - spread/2 + idx * (spread/(total-1)), y: tierY[n.tier] };
+}
+
+function radialPos(n){
+  const cx = 650, cy = 310;
+  if (n.tier === 0) return { x: cx, y: cy };
+  const siblings = NODES.filter(x=>x.tier===n.tier);
+  const idx = siblings.indexOf(n);
+  const total = siblings.length;
+  const radii = { 1: 140, 2: 250, 3: 360 };
+  const r = radii[n.tier];
+  const start = -Math.PI/2;
+  const angle = start + (idx / total) * Math.PI * 2;
+  return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
+}
+
+function horizontalPos(n){
+  const cols = { 0: 100, 1: 400, 2: 760, 3: 1120 };
+  if (n.tier === 0) return { x: cols[0], y: 310 };
+  const siblings = NODES.filter(x=>x.tier===n.tier);
+  const idx = siblings.indexOf(n);
+  const total = siblings.length;
+  const spacing = 520 / Math.max(total, 1);
+  return { x: cols[n.tier], y: 60 + (idx + 0.5) * spacing };
+}
+
+const posFn = () => ({ sefirot: sefirotPos, radial: radialPos, horizontal: horizontalPos })[mode];
+
+const nodesEl = document.getElementById('nodes');
+const edgesEl = document.getElementById('edges');
+
+function render(){
+  nodesEl.innerHTML = '';
+  edgesEl.innerHTML = '';
+  const pos = posFn();
+
+  NODES.forEach(n => {
+    if (!n.parent) return;
+    const p = pos(n);
+    const pp = pos(NODES.find(x=>x.id===n.parent));
+    const onPath = selected && PATHS[selected].includes(n.id) && PATHS[selected].includes(n.parent);
+    let d;
+    if (mode === 'radial') {
+      d = `M ${pp.x} ${pp.y} L ${p.x} ${p.y}`;
+    } else {
+      const mx = (p.x + pp.x)/2, my = (p.y + pp.y)/2;
+      const offset = mode === 'horizontal' ? 0 : 24;
+      d = `M ${pp.x} ${pp.y} Q ${mx} ${my + offset} ${p.x} ${p.y}`;
+    }
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', n.color);
+    path.setAttribute('stroke-width', onPath ? 2.2 : 1);
+    path.setAttribute('stroke-opacity', selected ? (onPath ? 0.85 : 0.08) : 0.35);
+    path.setAttribute('stroke-linecap', 'round');
+    edgesEl.appendChild(path);
+  });
+
+  NODES.forEach(n => {
+    const p = pos(n);
+    const dim = selected && !PATHS[selected].includes(n.id);
+    const isSel = selected === n.id;
+    const hasChat = !!chats[n.id] && chats[n.id].length > 0;
+    const w = n.tier === 0 ? 200 : 170;
+    const h = n.tier === 0 ? 76 : 70;
+    const div = document.createElement('div');
+    div.className = 'tree-node' + (isSel ? ' selected' : '');
+    div.style.cssText = `left:${p.x - w/2}px;top:${p.y - h/2}px;width:${w}px;height:${h}px;background:${n.fill};border:${isSel ? 2 : 1}px solid ${n.color};opacity:${dim ? 0.2 : 1};${isSel ? 'box-shadow: 0 0 0 3px '+n.color+'44;' : ''}`;
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+          <span style="font-family:var(--mono);font-size:12px;color:${n.color};flex-shrink:0;">${n.sigil}</span>
+          <span style="font-size:11px;font-weight:500;color:${n.color};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.label}</span>
+        </div>
+        ${hasChat ? `<span style="font-size:9px;color:${n.color};font-family:var(--mono);flex-shrink:0;opacity:0.9;">×${chats[n.id].length}</span>` : ''}
+      </div>
+      <div style="font-size:10px;line-height:1.35;color:${n.color};opacity:0.75;overflow:hidden;display:-webkit-box;-webkit-line-clamp:${h>72?3:2};-webkit-box-orient:vertical;">${n.text}</div>
+    `;
+    div.addEventListener('click', () => selectNode(n.id));
+    nodesEl.appendChild(div);
+  });
+}
+
+function selectNode(id){
+  selected = id;
+  const n = NODES.find(x=>x.id===id);
+  render();
+  const sc = document.getElementById('sidechat');
+  sc.style.display = 'block';
+  const sig = document.getElementById('sc-sigil');
+  sig.textContent = n.sigil;
+  sig.style.color = n.color;
+  document.getElementById('sc-label').textContent = n.label;
+  const pill = document.getElementById('sc-layer');
+  pill.textContent = n.layer;
+  pill.style.background = n.fill;
+  pill.style.color = n.color;
+  pill.style.border = '0.5px solid ' + n.color + '55';
+  document.getElementById('sc-path').textContent = PATHS[id].map(p => NODES.find(x=>x.id===p).label).join('  ›  ');
+  document.getElementById('sc-context').textContent = '"' + n.text + '"';
+  renderMessages();
+  setTimeout(()=>sc.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+}
+
+function renderMessages(){
+  const msgsEl = document.getElementById('sc-messages');
+  const prior = chats[selected] || [];
+  if (!prior.length){
+    msgsEl.innerHTML = '<div class="sc-empty">—— new thread —— scoped to this paragraph only. ask anything. parent thesis + this paragraph are in context. siblings and unrelated subtrees are not.</div>';
+    return;
+  }
+  msgsEl.innerHTML = prior.map(m =>
+    `<div class="sc-msg"><div class="sc-role">${m.role==='user'?'→ you':'← akh'}</div><div class="sc-text">${m.text}</div></div>`
+  ).join('');
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+function sendChat(text){
+  if (!selected) return;
+  if (!chats[selected]) chats[selected] = [];
+  chats[selected].push({ role:'user', text });
+  const n = NODES.find(x=>x.id===selected);
+  const path = PATHS[selected].map(p=>NODES.find(x=>x.id===p).label).join(' › ');
+  let reply;
+  if (text === 'fractalize') {
+    reply = `Decomposing "${n.label}" into its own sub-tree. 3 new child nodes would appear beneath this one. The new branches inherit the lineage [${path}] as their prior context. (In the real app: triggers /api/paragraph-tree with this paragraph as seed.)`;
+  } else if (text === 'promote') {
+    reply = `Graduating this paragraph to the main canvas as a new query card. The side-thread history (${chats[selected].length-1} prior messages) becomes the new card's initial response. You can continue from there on the parent canvas.`;
+  } else {
+    reply = `Scoped reply for "${n.label}". Claude receives: [${path}] + your question — not the whole tree. Keeps context tight, token cost low. This thread persists per-paragraph in sqlite.`;
+  }
+  chats[selected].push({ role:'akh', text: reply });
+  render();
+  renderMessages();
+}
+
+document.getElementById('sc-close').addEventListener('click', () => {
+  selected = null;
+  document.getElementById('sidechat').style.display = 'none';
+  render();
+});
+document.getElementById('sc-send').addEventListener('click', () => {
+  const i = document.getElementById('sc-input');
+  if (i.value.trim()){ sendChat(i.value.trim()); i.value=''; }
+});
+document.getElementById('sc-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.value.trim()){ sendChat(e.target.value.trim()); e.target.value=''; }
+});
+document.querySelectorAll('.sg').forEach(b => b.addEventListener('click', () => sendChat(b.dataset.q)));
+
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    mode = b.dataset.mode;
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
