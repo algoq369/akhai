@@ -24,17 +24,9 @@ interface BlockChatProps {
   color: string;
 }
 
-export default function BlockChat({
-  queryId,
-  query,
-  layer,
-  sectionIndex,
-  paragraphTitle,
-  paragraphBody,
-  paragraphSigil,
-  siblingTitles,
-  color,
-}: BlockChatProps) {
+export default function BlockChat(props: BlockChatProps) {
+  const { queryId, query, layer, sectionIndex, color } = props;
+  const { paragraphTitle, paragraphBody, paragraphSigil, siblingTitles } = props;
   const [messages, setMessages] = useState<BlockChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
