@@ -2,9 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+const ARROW_CLS = 'font-mono text-relic-slate/50 dark:text-relic-silver/50 flex-shrink-0 pt-0.5';
+const USER_CLS = 'text-relic-void dark:text-relic-ghost';
+const ASSISTANT_CLS = 'text-relic-slate dark:text-relic-ghost/80';
+
 interface BlockChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  isError?: boolean;
+  retryQuestion?: string;
 }
 
 interface BlockChatProps {
@@ -77,7 +83,10 @@ export default function BlockChat({
       const reply = data.content ?? (data.error ? `(error: ${data.error})` : null);
       if (reply) setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: '(error — try again)' }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: '(connection error)', isError: true, retryQuestion: userMsg },
+      ]);
     }
     setLoading(false);
   };
@@ -96,21 +105,22 @@ export default function BlockChat({
         )}
         {messages.map((msg, i) => (
           <div key={i} className="flex gap-2 text-[10px]">
-            <span
-              className="font-mono text-relic-slate/50 dark:text-relic-silver/50 flex-shrink-0 pt-0.5"
-              style={{ minWidth: 28 }}
-            >
+            <span className={ARROW_CLS} style={{ minWidth: 28 }}>
               {msg.role === 'user' ? '→' : '←'}
             </span>
-            <span
-              className={
-                msg.role === 'assistant'
-                  ? 'text-relic-slate dark:text-relic-ghost/80'
-                  : 'text-relic-void dark:text-relic-ghost'
-              }
-            >
-              {msg.content}
-            </span>
+            <span className={msg.role === 'user' ? USER_CLS : ASSISTANT_CLS}>{msg.content}</span>
+            {msg.isError && (
+              <button
+                onClick={() => {
+                  setMessages((prev) => prev.filter((_, idx) => idx !== i));
+                  setInput(msg.retryQuestion ?? '');
+                }}
+                className="ml-2 text-[9px] font-mono underline opacity-60 hover:opacity-100"
+                style={{ color }}
+              >
+                retry
+              </button>
+            )}
           </div>
         ))}
         {loading && (
