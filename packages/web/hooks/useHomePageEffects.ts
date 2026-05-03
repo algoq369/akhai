@@ -80,38 +80,43 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
     console.log('[DepthAnnotations] LocalStorage:', localStorage.getItem('akhai-depth-config'));
   }, []);
 
-  // Fetch LLM-powered depth annotations when new assistant messages arrive
+  // Fetch LLM-powered depth annotations for any assistant message that lacks them.
+  // Processes one at a time (break after first); re-runs when annotations map changes.
   const fetchingRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (!lastMessage || lastMessage.role !== 'assistant') return;
-    if (lastMessage.isStreaming) return;
-    if (messageAnnotations[lastMessage.id] !== undefined) return;
-    if (!lastMessage.content || lastMessage.content.length < 50) return;
-    if (fetchingRef.current.has(lastMessage.id)) return;
+    for (const msg of messages) {
+      if (msg.role !== 'assistant') continue;
+      if (msg.isStreaming) continue;
+      if (messageAnnotations[msg.id] !== undefined) continue;
+      if (!msg.content || msg.content.length < 50) continue;
+      if (fetchingRef.current.has(msg.id)) continue;
 
-    fetchingRef.current.add(lastMessage.id);
-    const msgId = lastMessage.id;
-    const queryId = (lastMessage as any).queryId || msgId;
-    const priorUser = messages[messages.length - 2];
-    const query = priorUser?.role === 'user' ? priorUser.content : '';
+      fetchingRef.current.add(msg.id);
+      const msgId = msg.id;
+      const queryId = (msg as any).queryId || msgId;
+      const msgIdx = messages.indexOf(msg);
+      const priorUser = msgIdx > 0 ? messages[msgIdx - 1] : null;
+      const query = priorUser?.role === 'user' ? priorUser.content : '';
 
-    fetch('/api/depth-extract', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ queryId, response: lastMessage.content, query }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        const anns = data.annotations || [];
-        console.log(`[DepthAnnotations] ${data.source}: ${anns.length} annotations for ${msgId}`);
-        setMessageAnnotations((prev) => ({ ...prev, [msgId]: anns }));
+      fetch('/api/depth-extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queryId, response: msg.content, query }),
       })
-      .catch(() => {
-        setMessageAnnotations((prev) => ({ ...prev, [msgId]: [] }));
-      })
-      .finally(() => fetchingRef.current.delete(msgId));
-  }, [messages]);
+        .then((r) => r.json())
+        .then((data) => {
+          const anns = data.annotations || [];
+          console.log(`[DepthAnnotations] ${data.source}: ${anns.length} annotations for ${msgId}`);
+          setMessageAnnotations((prev) => ({ ...prev, [msgId]: anns }));
+        })
+        .catch(() => {
+          setMessageAnnotations((prev) => ({ ...prev, [msgId]: [] }));
+        })
+        .finally(() => fetchingRef.current.delete(msgId));
+
+      break;
+    }
+  }, [messages, messageAnnotations]);
 
   // Fetch cognitive signature when assistant message completes
   const cogFetchingRef = useRef<Set<string>>(new Set());
