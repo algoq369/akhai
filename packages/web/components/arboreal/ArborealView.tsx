@@ -7,14 +7,9 @@
  * visually into colored paragraph blocks positioned at Sefirot tree coordinates.
  *
  * Stack (top to bottom):
- *   1. Query metadata bar          (shared with classic)
- *   2. AI layers + mindmap panels  (shared with classic)
- *   3. Neural tree (compact)       (embedded GodViewTree)
- *   4. Paragraph tree              (NEW — commits 2-3)
- *   5. 5-line synthesis footer     (NEW — commit 6)
- *   6. Per-block chat              (NEW — commit 5)
- *
- * This commit is the empty shell only. Subsequent commits fill each slot.
+ *   1. Query bar
+ *   2. Paragraph tree (colored blocks at Sefirot positions)
+ *   3. 5-line synthesis footer
  *
  * @module ArborealView
  */
@@ -22,6 +17,7 @@
 import { useMemo } from 'react';
 import type { Message } from '@/lib/chat-store';
 import ParagraphTree from './ParagraphTree';
+import SynthesisFooter from './SynthesisFooter';
 import { parseIntoSections } from '@/components/ResponseRenderer';
 
 export interface ArborealViewProps {
@@ -59,12 +55,6 @@ export default function ArborealView({ messages, isLoading, queryId }: ArborealV
           </p>
         </div>
       )}
-      <div className="h-12 flex items-center justify-center text-[9px] uppercase tracking-widest text-relic-silver/40 font-mono border border-dashed border-relic-mist/20 rounded">
-        ai layers · mindmap · council — panels slot
-      </div>
-      <div className="h-40 flex items-center justify-center text-[9px] uppercase tracking-widest text-relic-silver/40 font-mono border border-dashed border-relic-mist/20 rounded">
-        neural tree (compact GodViewTree) — slot
-      </div>
       <div className="py-4">
         {sections.length > 0 ? (
           <ParagraphTree
@@ -78,9 +68,7 @@ export default function ArborealView({ messages, isLoading, queryId }: ArborealV
           </div>
         )}
       </div>
-      <div className="h-24 flex items-center justify-center text-[9px] uppercase tracking-widest text-relic-silver/40 font-mono border border-dashed border-relic-mist/20 rounded">
-        5-line synthesis footer — commit 6
-      </div>
+      {lastAssistant?.content && <SynthesisFooter responseText={lastAssistant.content} />}
     </div>
   );
 }
