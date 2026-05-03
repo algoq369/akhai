@@ -17,8 +17,8 @@ export default function GhostBlock({ layerName, sigil, color, x, y }: GhostBlock
         top: y - 20,
         width: 120,
         height: 40,
-        borderColor: `${color}33`,
-        color: `${color}55`,
+        borderColor: `${color}44`,
+        color: `${color}88`,
         transition: 'top 200ms ease-out',
       }}
     >
