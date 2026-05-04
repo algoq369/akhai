@@ -179,13 +179,13 @@ export function computeForceLayout(
 
   const cx = 500,
     cy = 400;
-  const initRadius = Math.min(300, 80 + n * 2);
+  const initRadius = Math.min(500, 120 + n * 3);
 
   hubs.forEach((hub, i) => {
     const angle = (i / hubs.length) * Math.PI * 2;
     positions[hub.id] = {
-      x: cx + Math.cos(angle) * initRadius * 0.4,
-      y: cy + Math.sin(angle) * initRadius * 0.4,
+      x: cx + Math.cos(angle) * initRadius * 0.6,
+      y: cy + Math.sin(angle) * initRadius * 0.6,
     };
   });
 
@@ -200,11 +200,11 @@ export function computeForceLayout(
     };
   });
 
-  const iterations = 120;
-  const repulsionStrength = 800;
-  const attractionStrength = 0.015;
-  const centeringStrength = 0.002;
-  const damping = 0.92;
+  const iterations = 150;
+  const repulsionStrength = 3500;
+  const attractionStrength = 0.004;
+  const centeringStrength = 0.001;
+  const damping = 0.9;
 
   const vel: Record<string, { vx: number; vy: number }> = {};
   sorted.forEach((nd) => {
@@ -223,7 +223,7 @@ export function computeForceLayout(
         let dx = pa.x - pb.x,
           dy = pa.y - pb.y;
         let dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (dist < 20) dist = 20;
+        if (dist < 45) dist = 45;
         const force = (repulsionStrength * temp) / (dist * dist);
         const fx = (dx / dist) * force;
         const fy = (dy / dist) * force;
