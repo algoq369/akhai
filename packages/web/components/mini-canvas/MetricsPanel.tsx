@@ -131,7 +131,7 @@ export default function MetricsPanel({ metrics, charts }: MetricsPanelProps) {
                 key={row.id}
                 className="hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30 transition-colors"
               >
-                <td className="px-1.5 py-0.5 text-zinc-800 dark:text-relic-ghost max-w-[140px] truncate">
+                <td className="px-1.5 py-0.5 text-zinc-800 dark:text-relic-ghost text-[10px] leading-relaxed">
                   {row.metric}
                 </td>
                 <td

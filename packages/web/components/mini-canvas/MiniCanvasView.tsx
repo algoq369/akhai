@@ -67,14 +67,14 @@ export default function MiniCanvasView({ data, isLoading }: MiniCanvasViewProps)
         <div className="flex flex-col gap-2">
           <div className="border-t-2 border-t-emerald-400 bg-white dark:bg-relic-void/60 rounded-lg shadow-sm border border-relic-mist/40 dark:border-relic-slate/20 overflow-hidden">
             <PanelHeader icon="◈" title="Metrics" count={data.metrics.length} />
-            <div className="max-h-[200px] overflow-auto">
+            <div className="max-h-[350px] overflow-auto">
               <MetricsPanel metrics={data.metrics} charts={data.charts} />
             </div>
           </div>
 
           <div className="border-t-2 border-t-purple-400 bg-white dark:bg-relic-void/60 rounded-lg shadow-sm border border-relic-mist/40 dark:border-relic-slate/20 overflow-hidden">
             <PanelHeader icon="◆" title="Correlation" count={data.correlations.length} />
-            <div className="max-h-[150px] overflow-auto">
+            <div className="max-h-[300px] overflow-auto">
               <CorrelationPanel
                 correlations={data.correlations}
                 facts={data.facts}
