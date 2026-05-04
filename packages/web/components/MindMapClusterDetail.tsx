@@ -220,7 +220,7 @@ export default function MindMapClusterDetail({
                 const qc = node.queryCount || 0;
                 const conns = connectionCounts[node.id] || 0;
                 const importance = conns + Math.min(qc || 1, 8);
-                const nodeRadius = Math.max(8, Math.min(28, 8 + importance * 2));
+                const nodeRadius = Math.max(10, Math.min(35, 10 + importance * 2.5));
                 const isImportant = importance >= 2 || hubIds.has(node.id);
                 const isHov = hoveredNode === node.id;
                 const isConnected = connectedIds ? connectedIds.has(node.id) : false;
@@ -259,12 +259,12 @@ export default function MindMapClusterDetail({
                     )}
                     {(isImportant || isHov) && (
                       <text
-                        y={nodeRadius + 14}
+                        y={nodeRadius + 16}
                         textAnchor="middle"
-                        fill={isHov ? cc.text : '#e2e8f0'}
-                        fontSize={isImportant ? 13 : 11}
+                        fill={isHov ? cc.text : '#f1f5f9'}
+                        fontSize={isImportant ? 16 : 13}
                         fontWeight={isImportant ? 600 : 400}
-                        opacity={isHov ? 1 : 0.9}
+                        opacity={1}
                       >
                         {isHov ? node.name : labelText}
                       </text>

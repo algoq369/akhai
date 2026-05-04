@@ -201,7 +201,7 @@ export function computeForceLayout(
   });
 
   const iterations = 150;
-  const repulsionStrength = 5000;
+  const repulsionStrength = 8000;
   const attractionStrength = 0.004;
   const centeringStrength = 0.001;
   const damping = 0.9;
@@ -223,7 +223,7 @@ export function computeForceLayout(
         let dx = pa.x - pb.x,
           dy = pa.y - pb.y;
         let dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (dist < 60) dist = 60;
+        if (dist < 80) dist = 80;
         const force = (repulsionStrength * temp) / (dist * dist);
         const fx = (dx / dist) * force;
         const fy = (dy / dist) * force;
