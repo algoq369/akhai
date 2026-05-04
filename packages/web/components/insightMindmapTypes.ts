@@ -227,27 +227,16 @@ export function generateQueryInsight(
   return { intent, keywords, layersFocus: layersFocus.slice(0, 2) };
 }
 
-// Generate node-specific context and insight
+// Generate node-specific context and insight — direct pass-through of the source text.
 export function generateNodeInsight(
   text: string,
-  category: string,
-  query: string
+  _category: string,
+  _query: string
 ): { context: string; insight: string } {
-  const textLower = text.toLowerCase();
-  const queryWords = query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((w) => w.length > 3);
-  const matchedWords = queryWords.filter((w) => textLower.includes(w));
-
-  const context =
-    matchedWords.length > 0
-      ? `Connects "${matchedWords.slice(0, 2).join(', ')}" from your query`
-      : `${category.charAt(0).toUpperCase() + category.slice(1)} concept extracted`;
-
-  const insight = text.length > 60 ? text.substring(0, 57) + '...' : text;
-
-  return { context, insight };
+  return {
+    context: text,
+    insight: text.length > 80 ? text.substring(0, 77) + '...' : text,
+  };
 }
 
 function inferLayerMapping(text: string): Layer[] {
@@ -328,19 +317,32 @@ export function extractInsights(content: string, query: string): ConceptNode[] {
     const matchWords = queryWords.filter((w) => w.length > 3 && textLower.includes(w)).length;
     const relevance = Math.min(0.98, 0.6 + (matchWords / Math.max(1, queryWords.length)) * 0.4);
 
+    // Extract paragraph content following this match (until next header/bold/bullet/blank line)
+    const matchPos = content.indexOf(item.text);
+    let paragraphContent = '';
+    if (matchPos >= 0) {
+      const afterMatch = content.slice(matchPos + item.text.length);
+      const nextBreak = afterMatch.search(/\n#{1,3}\s|\n\*\*|\n[-•*]\s|\n\n/);
+      const rawParagraph =
+        nextBreak > 0 ? afterMatch.slice(0, nextBreak) : afterMatch.slice(0, 500);
+      const cleaned = rawParagraph.replace(/[#*]/g, '').replace(/\n/g, ' ').trim();
+      const sentences = cleaned.match(/[^.!?]*[.!?]/g);
+      paragraphContent = sentences ? sentences.slice(0, 3).join(' ').trim() : cleaned.slice(0, 250);
+    }
+
     const { context, insight } = generateNodeInsight(item.text, category, query);
     const layerMapping = mapToLayers(item.text, category);
 
     nodes.push({
       id: `insight-${nodes.length}`,
       label: item.text.length > 32 ? item.text.substring(0, 29) + '...' : item.text,
-      fullText: item.text,
+      fullText: paragraphContent || item.text,
       category,
       confidence,
       relevance,
       connections: [],
-      context,
-      insight,
+      context: paragraphContent ? paragraphContent.slice(0, 120) : context,
+      insight: paragraphContent ? paragraphContent.slice(0, 80) + '...' : insight,
       layerMapping,
     });
   });

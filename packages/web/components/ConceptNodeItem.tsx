@@ -62,11 +62,10 @@ export default function ConceptNodeItem({
           animate={{ opacity: 1, height: 'auto' }}
           className="mt-1.5 pt-1.5 border-t border-slate-200 dark:border-slate-700"
         >
-          <p className="text-[9px] text-slate-600 dark:text-slate-400 leading-relaxed">
+          <p className="text-[10px] text-slate-700 dark:text-slate-300 leading-relaxed">
             {node.fullText}
           </p>
           <div className="mt-1.5 flex items-center gap-1">
-            <span className="text-[8px] text-slate-400">AI Layers:</span>
             {node.layerMapping.map((s) => (
               <span
                 key={s}
