@@ -313,7 +313,7 @@ function HomePage() {
 
       {/* Side Mini Chat — hidden in mini-canvas mode */}
       <SideMiniChat
-        isVisible={s.messages.length > 0 && s.viewMode !== 'mini-canvas'}
+        isVisible={s.messages.length > 0 && s.viewMode !== 'mini-canvas' && !s.showMindMap}
         draggable={s.isCanvasMode}
         defaultPosition={
           s.isCanvasMode

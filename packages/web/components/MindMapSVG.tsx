@@ -167,7 +167,7 @@ export default function MindMapSVG({
                   fill="none"
                   stroke={srcColor}
                   strokeWidth={isActive ? 1.2 : 0.3}
-                  opacity={isActive ? 0.45 : 0.05}
+                  opacity={isActive ? 0.45 : 0.12}
                   strokeLinecap="round"
                 />
                 {isActive && (
@@ -193,7 +193,7 @@ export default function MindMapSVG({
             const queryCount = node.queryCount || 1;
             const importance = conns + Math.min(queryCount, 10);
             const baseRadius = Math.max(4, Math.min(20, 4 + importance * 1.5));
-            const isImportant = importance >= 5;
+            const isImportant = importance >= 2;
             const labelText = node.name.length > 20 ? node.name.slice(0, 17) + '...' : node.name;
 
             return (
@@ -212,7 +212,7 @@ export default function MindMapSVG({
                 <circle r={Math.max(baseRadius + 6, 14)} fill="transparent" />
                 <circle
                   r={baseRadius}
-                  fill={isHov ? color.text : isImportant ? color.text + 'DD' : color.text + '40'}
+                  fill={isHov ? color.text : isImportant ? color.text + 'DD' : color.text + '80'}
                   stroke={isHov ? 'white' : 'none'}
                   strokeWidth={isHov ? 1.5 : 0}
                 />
