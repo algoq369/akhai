@@ -166,5 +166,5 @@ export interface ChatState {
  * Generate unique message ID
  */
 export function generateId(): string {
-  return Math.random().toString(36).substring(2, 12);
+  return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
 }

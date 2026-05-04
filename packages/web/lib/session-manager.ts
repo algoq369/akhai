@@ -7,22 +7,14 @@
  * journey through the Tree of Life across multiple queries and sessions.
  */
 
-'use client'
+'use client';
 
-// Polyfill for crypto.randomUUID (not available over HTTP)
 function generateUUID(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    const v = c === 'x' ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
+  return crypto.randomUUID();
 }
 
-import { useState, useEffect } from 'react'
-import type { AscentState } from './layer-registry'
+import { useState, useEffect } from 'react';
+import type { AscentState } from './layer-registry';
 
 /**
  * getSessionId
@@ -34,20 +26,20 @@ import type { AscentState } from './layer-registry'
  */
 export function getSessionId(): string {
   // Server-side rendering: return placeholder
-  if (typeof window === 'undefined') return 'server'
+  if (typeof window === 'undefined') return 'server';
 
-  let sessionId = localStorage.getItem('akhai_session_id')
+  let sessionId = localStorage.getItem('akhai_session_id');
 
   if (!sessionId) {
     // Generate new UUID
-    sessionId = generateUUID()
-    localStorage.setItem('akhai_session_id', sessionId)
+    sessionId = generateUUID();
+    localStorage.setItem('akhai_session_id', sessionId);
 
     // Also set as cookie for API access
-    document.cookie = `akhai_session_id=${sessionId}; path=/; max-age=31536000; SameSite=Lax`
+    document.cookie = `akhai_session_id=${sessionId}; path=/; max-age=31536000; SameSite=Lax`;
   }
 
-  return sessionId
+  return sessionId;
 }
 
 /**
@@ -58,31 +50,31 @@ export function getSessionId(): string {
  * @returns Session ID and utilities
  */
 export function useSession() {
-  const [sessionId, setSessionId] = useState<string>('')
-  const [isClient, setIsClient] = useState(false)
+  const [sessionId, setSessionId] = useState<string>('');
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true)
-    setSessionId(getSessionId())
-  }, [])
+    setIsClient(true);
+    setSessionId(getSessionId());
+  }, []);
 
   const resetSession = () => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') return;
 
-    const newSessionId = generateUUID()
-    localStorage.setItem('akhai_session_id', newSessionId)
-    document.cookie = `akhai_session_id=${newSessionId}; path=/; max-age=31536000; SameSite=Lax`
-    setSessionId(newSessionId)
+    const newSessionId = generateUUID();
+    localStorage.setItem('akhai_session_id', newSessionId);
+    document.cookie = `akhai_session_id=${newSessionId}; path=/; max-age=31536000; SameSite=Lax`;
+    setSessionId(newSessionId);
 
     // Clear ascent state
-    clearAscentState(sessionId)
-  }
+    clearAscentState(sessionId);
+  };
 
   return {
     sessionId,
     isClient,
     resetSession,
-  }
+  };
 }
 
 /**
@@ -95,13 +87,13 @@ export function useSession() {
  * @param state - Ascent state to save
  */
 export function saveAscentState(sessionId: string, state: AscentState): void {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined') return;
 
   try {
-    const key = `akhai_ascent_${sessionId}`
-    localStorage.setItem(key, JSON.stringify(state))
+    const key = `akhai_ascent_${sessionId}`;
+    localStorage.setItem(key, JSON.stringify(state));
   } catch (error) {
-    console.warn('Failed to save ascent state:', error)
+    console.warn('Failed to save ascent state:', error);
   }
 }
 
@@ -114,28 +106,28 @@ export function saveAscentState(sessionId: string, state: AscentState): void {
  * @returns Ascent state or null if not found
  */
 export function loadAscentState(sessionId: string): AscentState | null {
-  if (typeof window === 'undefined') return null
+  if (typeof window === 'undefined') return null;
 
   try {
-    const key = `akhai_ascent_${sessionId}`
-    const stored = localStorage.getItem(key)
+    const key = `akhai_ascent_${sessionId}`;
+    const stored = localStorage.getItem(key);
 
-    if (!stored) return null
+    if (!stored) return null;
 
-    const parsed = JSON.parse(stored)
+    const parsed = JSON.parse(stored);
 
     // Reconstruct Date objects
     if (parsed.queryEvolution) {
       parsed.queryEvolution = parsed.queryEvolution.map((q: any) => ({
         ...q,
         timestamp: new Date(q.timestamp),
-      }))
+      }));
     }
 
-    return parsed
+    return parsed;
   } catch (error) {
-    console.warn('Failed to load ascent state:', error)
-    return null
+    console.warn('Failed to load ascent state:', error);
+    return null;
   }
 }
 
@@ -148,13 +140,13 @@ export function loadAscentState(sessionId: string): AscentState | null {
  * @param sessionId - Session ID
  */
 export function clearAscentState(sessionId: string): void {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined') return;
 
   try {
-    const key = `akhai_ascent_${sessionId}`
-    localStorage.removeItem(key)
+    const key = `akhai_ascent_${sessionId}`;
+    localStorage.removeItem(key);
   } catch (error) {
-    console.warn('Failed to clear ascent state:', error)
+    console.warn('Failed to clear ascent state:', error);
   }
 }
 
@@ -167,8 +159,8 @@ export function clearAscentState(sessionId: string): void {
  * @returns Array of query evolution entries
  */
 export function getAscentHistory(sessionId: string): any[] {
-  const state = loadAscentState(sessionId)
-  return state?.queryEvolution || []
+  const state = loadAscentState(sessionId);
+  return state?.queryEvolution || [];
 }
 
 /**
@@ -180,7 +172,7 @@ export function getAscentHistory(sessionId: string): any[] {
  * @returns Ascent statistics
  */
 export function getAscentStats(sessionId: string) {
-  const state = loadAscentState(sessionId)
+  const state = loadAscentState(sessionId);
 
   if (!state) {
     return {
@@ -189,7 +181,7 @@ export function getAscentStats(sessionId: string) {
       peakLevel: 1,
       velocity: 0,
       insightsGained: 0,
-    }
+    };
   }
 
   return {
@@ -198,5 +190,5 @@ export function getAscentStats(sessionId: string) {
     peakLevel: state.peakLevel,
     velocity: state.ascentVelocity,
     insightsGained: state.insightsGained.length,
-  }
+  };
 }

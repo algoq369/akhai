@@ -1,28 +1,28 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /**
  * Notification types for AkhAI system
  */
-export type NotificationType = 'ai_news' | 'system' | 'insight' | 'guard_alert'
+export type NotificationType = 'ai_news' | 'system' | 'insight' | 'guard_alert';
 
 /**
  * Notification item structure
  */
 export interface Notification {
-  id: string
-  type: NotificationType
-  title: string
-  message: string
-  timestamp: number
-  read: boolean
-  url?: string
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: number;
+  read: boolean;
+  url?: string;
   metadata?: {
-    category?: string
-    source?: string
-    layerNode?: number
-    guardScore?: number
-  }
+    category?: string;
+    source?: string;
+    layerNode?: number;
+    guardScore?: number;
+  };
 }
 
 /**
@@ -30,34 +30,34 @@ export interface Notification {
  */
 interface NotificationState {
   /** List of notifications */
-  notifications: Notification[]
+  notifications: Notification[];
 
   /** Maximum notifications to keep */
-  maxNotifications: number
+  maxNotifications: number;
 
   /** Add a new notification */
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
 
   /** Mark a notification as read */
-  markAsRead: (id: string) => void
+  markAsRead: (id: string) => void;
 
   /** Mark all notifications as read */
-  markAllAsRead: () => void
+  markAllAsRead: () => void;
 
   /** Remove a notification */
-  removeNotification: (id: string) => void
+  removeNotification: (id: string) => void;
 
   /** Clear all notifications */
-  clearAll: () => void
+  clearAll: () => void;
 
   /** Get unread count */
-  getUnreadCount: () => number
+  getUnreadCount: () => number;
 }
 
 /**
  * Generate unique notification ID
  */
-const generateId = () => `notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+const generateId = () => `notif_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
 /**
  * Notification Store
@@ -75,45 +75,45 @@ export const useNotificationStore = create<NotificationState>()(
             ...notification,
             id: generateId(),
             timestamp: Date.now(),
-            read: false
-          }
+            read: false,
+          };
 
-          const updated = [newNotification, ...state.notifications]
-            .slice(0, state.maxNotifications)
+          const updated = [newNotification, ...state.notifications].slice(
+            0,
+            state.maxNotifications
+          );
 
-          return { notifications: updated }
+          return { notifications: updated };
         }),
 
       markAsRead: (id) =>
         set((state) => ({
-          notifications: state.notifications.map((n) =>
-            n.id === id ? { ...n, read: true } : n
-          )
+          notifications: state.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
         })),
 
       markAllAsRead: () =>
         set((state) => ({
-          notifications: state.notifications.map((n) => ({ ...n, read: true }))
+          notifications: state.notifications.map((n) => ({ ...n, read: true })),
         })),
 
       removeNotification: (id) =>
         set((state) => ({
-          notifications: state.notifications.filter((n) => n.id !== id)
+          notifications: state.notifications.filter((n) => n.id !== id),
         })),
 
       clearAll: () => set({ notifications: [] }),
 
       getUnreadCount: () => {
-        const state = get()
-        return state.notifications.filter((n) => !n.read).length
-      }
+        const state = get();
+        return state.notifications.filter((n) => !n.read).length;
+      },
     }),
     {
       name: 'akhai-notifications',
-      version: 1
+      version: 1,
     }
   )
-)
+);
 
 /**
  * Helper to create system notification
@@ -122,8 +122,8 @@ export function createSystemNotification(title: string, message: string) {
   useNotificationStore.getState().addNotification({
     type: 'system',
     title,
-    message
-  })
+    message,
+  });
 }
 
 /**
@@ -134,8 +134,8 @@ export function createGuardAlert(title: string, message: string, guardScore?: nu
     type: 'guard_alert',
     title,
     message,
-    metadata: { guardScore }
-  })
+    metadata: { guardScore },
+  });
 }
 
 /**
@@ -146,8 +146,8 @@ export function createInsightNotification(title: string, message: string, layerN
     type: 'insight',
     title,
     message,
-    metadata: { layerNode }
-  })
+    metadata: { layerNode },
+  });
 }
 
 /**
@@ -165,6 +165,6 @@ export function createAINewsNotification(
     title,
     message,
     url,
-    metadata: { category, source }
-  })
+    metadata: { category, source },
+  });
 }

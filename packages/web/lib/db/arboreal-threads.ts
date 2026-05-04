@@ -76,7 +76,7 @@ export function appendMessage(
     return { ...existing, messages, sectionIndex, updatedAt: now };
   }
 
-  const id = 'at-' + now + '-' + Math.random().toString(36).slice(2, 10);
+  const id = 'at-' + now + '-' + crypto.randomUUID().slice(0, 8);
   const insertCols =
     'id, user_id, query_id, layer, section_index, messages, created_at, updated_at';
   db.prepare(`INSERT INTO arboreal_threads (${insertCols}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(

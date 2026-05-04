@@ -5,145 +5,140 @@
  * Like Claude Projects - isolated contexts with conversation history
  */
 
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-// Polyfill for crypto.randomUUID (not available over HTTP)
 function generateUUID(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return generateUUID()
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    const v = c === 'x' ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
+  return crypto.randomUUID();
 }
 
 export interface Grimoire {
-  id: string
-  name: string
-  description?: string
-  icon: string
-  color: string
-  instructions?: string
-  userId: string
-  createdAt: number
-  updatedAt: number
-  archived: boolean
+  id: string;
+  name: string;
+  description?: string;
+  icon: string;
+  color: string;
+  instructions?: string;
+  userId: string;
+  createdAt: number;
+  updatedAt: number;
+  archived: boolean;
 }
 
 export interface Memory {
-  id: string
-  grimoireId: string
-  content: string
-  type: 'insight' | 'fact' | 'preference' | 'context'
-  sourceMessageId?: string
-  confidence: number
-  relevanceScore: number // 0-1 score based on recency and access frequency
-  accessCount: number // Number of times this memory was accessed
-  createdAt: number
-  lastAccessed?: number
-  archived?: boolean // Memories inactive for 90+ days get archived
+  id: string;
+  grimoireId: string;
+  content: string;
+  type: 'insight' | 'fact' | 'preference' | 'context';
+  sourceMessageId?: string;
+  confidence: number;
+  relevanceScore: number; // 0-1 score based on recency and access frequency
+  accessCount: number; // Number of times this memory was accessed
+  createdAt: number;
+  lastAccessed?: number;
+  archived?: boolean; // Memories inactive for 90+ days get archived
 }
 
 // 90 days in milliseconds
-const MEMORY_TTL_MS = 90 * 24 * 60 * 60 * 1000
+const MEMORY_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 /**
  * Calculate memory relevance score based on recency and access frequency
  */
 function calculateRelevance(memory: Memory): number {
-  const now = Date.now()
-  const ageMs = now - memory.createdAt
-  const lastAccessMs = memory.lastAccessed ? now - memory.lastAccessed : ageMs
+  const now = Date.now();
+  const ageMs = now - memory.createdAt;
+  const lastAccessMs = memory.lastAccessed ? now - memory.lastAccessed : ageMs;
 
   // Recency factor (0-1): more recent = higher score
   // Decays over 30 days
-  const recencyFactor = Math.max(0, 1 - (lastAccessMs / (30 * 24 * 60 * 60 * 1000)))
+  const recencyFactor = Math.max(0, 1 - lastAccessMs / (30 * 24 * 60 * 60 * 1000));
 
   // Access frequency factor (0-1): more accesses = higher score
   // Caps at 10 accesses
-  const accessFactor = Math.min(1, (memory.accessCount || 0) / 10)
+  const accessFactor = Math.min(1, (memory.accessCount || 0) / 10);
 
   // Confidence contributes to relevance
-  const confidenceFactor = memory.confidence || 0.5
+  const confidenceFactor = memory.confidence || 0.5;
 
   // Weighted combination: 40% recency, 30% access, 30% confidence
-  return (recencyFactor * 0.4) + (accessFactor * 0.3) + (confidenceFactor * 0.3)
+  return recencyFactor * 0.4 + accessFactor * 0.3 + confidenceFactor * 0.3;
 }
 
 /**
  * Check if memory should be archived (inactive for 90+ days)
  */
 function shouldArchive(memory: Memory): boolean {
-  const now = Date.now()
-  const lastActivity = memory.lastAccessed || memory.createdAt
-  return (now - lastActivity) > MEMORY_TTL_MS
+  const now = Date.now();
+  const lastActivity = memory.lastAccessed || memory.createdAt;
+  return now - lastActivity > MEMORY_TTL_MS;
 }
 
 export interface GrimoireFile {
-  id: string
-  grimoireId: string
-  name: string
-  type: string
-  size: number
-  path: string
-  createdAt: number
+  id: string;
+  grimoireId: string;
+  name: string;
+  type: string;
+  size: number;
+  path: string;
+  createdAt: number;
 }
 
 export interface GrimoireLink {
-  id: string
-  grimoireId: string
-  url: string
-  title?: string
-  description?: string
-  createdAt: number
+  id: string;
+  grimoireId: string;
+  url: string;
+  title?: string;
+  description?: string;
+  createdAt: number;
 }
 
 export interface GrimoireConversation {
-  id: string
-  grimoireId: string
-  title?: string
-  createdAt: number
-  updatedAt: number
+  id: string;
+  grimoireId: string;
+  title?: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 interface GrimoireStore {
   // State
-  grimoires: Grimoire[]
-  activeGrimoireId: string | null
-  memories: Record<string, Memory[]> // keyed by grimoireId
-  files: Record<string, GrimoireFile[]> // keyed by grimoireId
-  links: Record<string, GrimoireLink[]> // keyed by grimoireId
+  grimoires: Grimoire[];
+  activeGrimoireId: string | null;
+  memories: Record<string, Memory[]>; // keyed by grimoireId
+  files: Record<string, GrimoireFile[]>; // keyed by grimoireId
+  links: Record<string, GrimoireLink[]>; // keyed by grimoireId
 
   // Grimoire actions
-  createGrimoire: (name: string, description?: string, userId?: string) => Grimoire
-  setActiveGrimoire: (id: string | null) => void
-  updateGrimoire: (id: string, updates: Partial<Grimoire>) => void
-  deleteGrimoire: (id: string) => void
-  getGrimoire: (id: string) => Grimoire | undefined
+  createGrimoire: (name: string, description?: string, userId?: string) => Grimoire;
+  setActiveGrimoire: (id: string | null) => void;
+  updateGrimoire: (id: string, updates: Partial<Grimoire>) => void;
+  deleteGrimoire: (id: string) => void;
+  getGrimoire: (id: string) => Grimoire | undefined;
 
   // Memory actions
-  addMemory: (grimoireId: string, memory: Omit<Memory, 'id' | 'createdAt' | 'relevanceScore' | 'accessCount' | 'archived'>) => void
-  getMemories: (grimoireId: string) => Memory[]
-  getActiveMemories: (grimoireId: string) => Memory[] // Returns non-archived memories sorted by relevance
-  clearMemories: (grimoireId: string) => void
-  updateMemoryAccess: (memoryId: string) => void
-  archiveStaleMemories: () => void // Archive memories inactive for 90+ days
+  addMemory: (
+    grimoireId: string,
+    memory: Omit<Memory, 'id' | 'createdAt' | 'relevanceScore' | 'accessCount' | 'archived'>
+  ) => void;
+  getMemories: (grimoireId: string) => Memory[];
+  getActiveMemories: (grimoireId: string) => Memory[]; // Returns non-archived memories sorted by relevance
+  clearMemories: (grimoireId: string) => void;
+  updateMemoryAccess: (memoryId: string) => void;
+  archiveStaleMemories: () => void; // Archive memories inactive for 90+ days
 
   // File actions
-  addFile: (grimoireId: string, file: Omit<GrimoireFile, 'id' | 'createdAt'>) => void
-  getFiles: (grimoireId: string) => GrimoireFile[]
-  deleteFile: (fileId: string) => void
+  addFile: (grimoireId: string, file: Omit<GrimoireFile, 'id' | 'createdAt'>) => void;
+  getFiles: (grimoireId: string) => GrimoireFile[];
+  deleteFile: (fileId: string) => void;
 
   // Link actions
-  addLink: (grimoireId: string, link: Omit<GrimoireLink, 'id' | 'createdAt'>) => void
-  getLinks: (grimoireId: string) => GrimoireLink[]
-  deleteLink: (linkId: string) => void
+  addLink: (grimoireId: string, link: Omit<GrimoireLink, 'id' | 'createdAt'>) => void;
+  getLinks: (grimoireId: string) => GrimoireLink[];
+  deleteLink: (linkId: string) => void;
 
   // Utility
-  reset: () => void
+  reset: () => void;
 }
 
 export const useGrimoireStore = create<GrimoireStore>()(
@@ -166,41 +161,39 @@ export const useGrimoireStore = create<GrimoireStore>()(
           userId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
-          archived: false
-        }
-        set(state => ({
-          grimoires: [...state.grimoires, grimoire]
-        }))
-        return grimoire
+          archived: false,
+        };
+        set((state) => ({
+          grimoires: [...state.grimoires, grimoire],
+        }));
+        return grimoire;
       },
 
       setActiveGrimoire: (id) => {
-        set({ activeGrimoireId: id })
+        set({ activeGrimoireId: id });
       },
 
       updateGrimoire: (id, updates) => {
-        set(state => ({
-          grimoires: state.grimoires.map(g =>
-            g.id === id
-              ? { ...g, ...updates, updatedAt: Date.now() }
-              : g
-          )
-        }))
+        set((state) => ({
+          grimoires: state.grimoires.map((g) =>
+            g.id === id ? { ...g, ...updates, updatedAt: Date.now() } : g
+          ),
+        }));
       },
 
       deleteGrimoire: (id) => {
-        set(state => ({
-          grimoires: state.grimoires.filter(g => g.id !== id),
+        set((state) => ({
+          grimoires: state.grimoires.filter((g) => g.id !== id),
           activeGrimoireId: state.activeGrimoireId === id ? null : state.activeGrimoireId,
           // Also remove memories for this grimoire
           memories: Object.fromEntries(
             Object.entries(state.memories).filter(([key]) => key !== id)
-          )
-        }))
+          ),
+        }));
       },
 
       getGrimoire: (id) => {
-        return get().grimoires.find(g => g.id === id)
+        return get().grimoires.find((g) => g.id === id);
       },
 
       // Memory actions
@@ -213,68 +206,65 @@ export const useGrimoireStore = create<GrimoireStore>()(
           relevanceScore: memory.confidence || 0.5, // Initial relevance based on confidence
           accessCount: 0,
           archived: false,
-        }
+        };
 
-        set(state => ({
+        set((state) => ({
           memories: {
             ...state.memories,
-            [grimoireId]: [
-              ...(state.memories[grimoireId] || []),
-              newMemory
-            ]
-          }
-        }))
+            [grimoireId]: [...(state.memories[grimoireId] || []), newMemory],
+          },
+        }));
       },
 
       getMemories: (grimoireId) => {
-        return get().memories[grimoireId] || []
+        return get().memories[grimoireId] || [];
       },
 
       getActiveMemories: (grimoireId) => {
-        const memories = get().memories[grimoireId] || []
+        const memories = get().memories[grimoireId] || [];
         return memories
-          .filter(m => !m.archived)
-          .map(m => ({ ...m, relevanceScore: calculateRelevance(m) }))
-          .sort((a, b) => b.relevanceScore - a.relevanceScore)
+          .filter((m) => !m.archived)
+          .map((m) => ({ ...m, relevanceScore: calculateRelevance(m) }))
+          .sort((a, b) => b.relevanceScore - a.relevanceScore);
       },
 
       clearMemories: (grimoireId) => {
-        set(state => ({
+        set((state) => ({
           memories: {
             ...state.memories,
-            [grimoireId]: []
-          }
-        }))
+            [grimoireId]: [],
+          },
+        }));
       },
 
       updateMemoryAccess: (memoryId) => {
-        set(state => ({
+        set((state) => ({
           memories: Object.fromEntries(
             Object.entries(state.memories).map(([gId, mems]) => [
               gId,
-              mems.map(m => {
-                if (m.id !== memoryId) return m
+              mems.map((m) => {
+                if (m.id !== memoryId) return m;
                 const updated = {
                   ...m,
                   lastAccessed: Date.now(),
                   accessCount: (m.accessCount || 0) + 1,
-                }
-                return { ...updated, relevanceScore: calculateRelevance(updated) }
-              })
+                };
+                return { ...updated, relevanceScore: calculateRelevance(updated) };
+              }),
             ])
-          )
-        }))
+          ),
+        }));
       },
 
       archiveStaleMemories: () => {
-        set(state => ({
+        set((state) => ({
           memories: Object.fromEntries(
             Object.entries(state.memories).map(([gId, mems]) => [
               gId,
-              mems.map(m => shouldArchive(m) ? { ...m, archived: true } : m)
+              mems.map((m) => (shouldArchive(m) ? { ...m, archived: true } : m)),
             ])
-          )
-        }))
+          ),
+        }));
       },
 
       // File actions
@@ -283,33 +273,30 @@ export const useGrimoireStore = create<GrimoireStore>()(
           ...file,
           id: generateUUID(),
           grimoireId,
-          createdAt: Date.now()
-        }
+          createdAt: Date.now(),
+        };
 
-        set(state => ({
+        set((state) => ({
           files: {
             ...state.files,
-            [grimoireId]: [
-              ...(state.files[grimoireId] || []),
-              newFile
-            ]
-          }
-        }))
+            [grimoireId]: [...(state.files[grimoireId] || []), newFile],
+          },
+        }));
       },
 
       getFiles: (grimoireId) => {
-        return get().files[grimoireId] || []
+        return get().files[grimoireId] || [];
       },
 
       deleteFile: (fileId) => {
-        set(state => ({
+        set((state) => ({
           files: Object.fromEntries(
             Object.entries(state.files).map(([gId, files]) => [
               gId,
-              files.filter(f => f.id !== fileId)
+              files.filter((f) => f.id !== fileId),
             ])
-          )
-        }))
+          ),
+        }));
       },
 
       // Link actions
@@ -318,33 +305,30 @@ export const useGrimoireStore = create<GrimoireStore>()(
           ...link,
           id: generateUUID(),
           grimoireId,
-          createdAt: Date.now()
-        }
+          createdAt: Date.now(),
+        };
 
-        set(state => ({
+        set((state) => ({
           links: {
             ...state.links,
-            [grimoireId]: [
-              ...(state.links[grimoireId] || []),
-              newLink
-            ]
-          }
-        }))
+            [grimoireId]: [...(state.links[grimoireId] || []), newLink],
+          },
+        }));
       },
 
       getLinks: (grimoireId) => {
-        return get().links[grimoireId] || []
+        return get().links[grimoireId] || [];
       },
 
       deleteLink: (linkId) => {
-        set(state => ({
+        set((state) => ({
           links: Object.fromEntries(
             Object.entries(state.links).map(([gId, links]) => [
               gId,
-              links.filter(l => l.id !== linkId)
+              links.filter((l) => l.id !== linkId),
             ])
-          )
-        }))
+          ),
+        }));
       },
 
       // Utility
@@ -354,9 +338,9 @@ export const useGrimoireStore = create<GrimoireStore>()(
           activeGrimoireId: null,
           memories: {},
           files: {},
-          links: {}
-        })
-      }
+          links: {},
+        });
+      },
     }),
     {
       name: 'akhai-grimoires',
@@ -368,4 +352,4 @@ export const useGrimoireStore = create<GrimoireStore>()(
       }),
     }
   )
-)
+);

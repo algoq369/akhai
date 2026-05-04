@@ -142,7 +142,7 @@ export function generatePertinentLinks(
   // 1. RESEARCH LINKS - For academic/data queries
   if (intent.isResearch || intent.isScientific) {
     links.push({
-      id: `scholar-${Date.now()}-${Math.random()}`,
+      id: `scholar-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://scholar.google.com/scholar?q=${encodedMain}+research+papers`,
       title: `${mainEntity} - Research Papers`,
       source: 'Google Scholar',
@@ -151,7 +151,7 @@ export function generatePertinentLinks(
     });
 
     links.push({
-      id: `arxiv-${Date.now()}-${Math.random()}`,
+      id: `arxiv-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://arxiv.org/search/?query=${encodedMain}&searchtype=all`,
       title: `${mainEntity} - Scientific Papers`,
       source: 'ArXiv',
@@ -174,7 +174,7 @@ export function generatePertinentLinks(
   // 2. IMPLEMENTATION/TUTORIAL LINKS - For how-to queries
   if (intent.isImplementation) {
     links.push({
-      id: `github-${Date.now()}-${Math.random()}`,
+      id: `github-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://github.com/search?q=${encodedMain}&type=repositories`,
       title: `${mainEntity} - GitHub Repositories`,
       source: 'GitHub',
@@ -183,7 +183,7 @@ export function generatePertinentLinks(
     });
 
     links.push({
-      id: `github-docs-${Date.now()}-${Math.random()}`,
+      id: `github-docs-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://github.com/search?q=${encodedMain}+documentation&type=wikis`,
       title: `${mainEntity} - Technical Documentation`,
       source: 'GitHub Docs',
@@ -192,7 +192,7 @@ export function generatePertinentLinks(
     });
 
     links.push({
-      id: `readthedocs-${Date.now()}-${Math.random()}`,
+      id: `readthedocs-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://readthedocs.org/search/?q=${encodedMain}`,
       title: `${mainEntity} - ReadTheDocs`,
       source: 'ReadTheDocs',
@@ -204,7 +204,7 @@ export function generatePertinentLinks(
   // 3. EXPLANATION LINKS - For conceptual understanding
   if (intent.isExplanation) {
     links.push({
-      id: `youtube-${Date.now()}-${Math.random()}`,
+      id: `youtube-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://www.youtube.com/results?search_query=${encodedMain}+explained+tutorial`,
       title: `${mainEntity} Explained - Video Tutorials`,
       source: 'YouTube',
@@ -213,7 +213,7 @@ export function generatePertinentLinks(
     });
 
     links.push({
-      id: `wiki-${Date.now()}-${Math.random()}`,
+      id: `wiki-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://en.wikipedia.org/wiki/${mainEntity.replace(/\s+/g, '_')}`,
       title: `${mainEntity} - Encyclopedia`,
       source: 'Wikipedia',
@@ -225,7 +225,7 @@ export function generatePertinentLinks(
   // 4. SOCIAL & COMMUNITY - Always include diverse sources (Twitter, Reddit, YouTube)
   // Twitter/X - Real-time discussions
   links.push({
-    id: `twitter-${Date.now()}-${Math.random()}`,
+    id: `twitter-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://twitter.com/search?q=${encodedMain}&f=live`,
     title: `${mainEntity} - Live Twitter Discussion`,
     source: 'Twitter/X',
@@ -235,7 +235,7 @@ export function generatePertinentLinks(
 
   // Reddit - Community discussions
   links.push({
-    id: `reddit-${Date.now()}-${Math.random()}`,
+    id: `reddit-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.reddit.com/search/?q=${encodedMain}`,
     title: `${mainEntity} - Reddit Discussions`,
     source: 'Reddit',
@@ -245,7 +245,7 @@ export function generatePertinentLinks(
 
   // YouTube - Video content
   links.push({
-    id: `youtube-general-${Date.now()}-${Math.random()}`,
+    id: `youtube-general-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.youtube.com/results?search_query=${encodedMain}`,
     title: `${mainEntity} - Video Content`,
     source: 'YouTube',
@@ -255,7 +255,7 @@ export function generatePertinentLinks(
 
   // Medium - Articles and blogs
   links.push({
-    id: `medium-${Date.now()}-${Math.random()}`,
+    id: `medium-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://medium.com/search?q=${encodedMain}`,
     title: `${mainEntity} - Medium Articles`,
     source: 'Medium',
@@ -266,7 +266,7 @@ export function generatePertinentLinks(
   // 5. NEWS/CURRENT EVENTS - For latest information
   if (intent.isNews) {
     links.push({
-      id: `news-${Date.now()}-${Math.random()}`,
+      id: `news-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://news.google.com/search?q=${encodedMain}+2025`,
       title: `${mainEntity} - Latest News 2025`,
       source: 'Google News',
@@ -278,7 +278,7 @@ export function generatePertinentLinks(
   // 5. CODE/TECHNICAL RESOURCES - For developers
   if (intent.isCode) {
     links.push({
-      id: `stackof-${Date.now()}-${Math.random()}`,
+      id: `stackof-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://stackoverflow.com/search?q=${encodedMain}`,
       title: `${mainEntity} - Developer Q&A`,
       source: 'Stack Overflow',
@@ -288,7 +288,7 @@ export function generatePertinentLinks(
 
     if (intent.isAI) {
       links.push({
-        id: `pwc-${Date.now()}-${Math.random()}`,
+        id: `pwc-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         url: 'https://paperswithcode.com',
         title: `${mainEntity} - ML Research & Code`,
         source: 'Papers With Code',
@@ -301,7 +301,7 @@ export function generatePertinentLinks(
   // 6. DISCUSSION/COMMUNITY - For opinions and experiences
   if (intent.isDiscussion) {
     links.push({
-      id: `reddit-${Date.now()}-${Math.random()}`,
+      id: `reddit-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://www.reddit.com/search/?q=${encodedMain}`,
       title: `${mainEntity} - Community Discussions`,
       source: 'Reddit',
@@ -315,7 +315,7 @@ export function generatePertinentLinks(
     // Economic data
     if (intent.isEconomic) {
       links.push({
-        id: `worldbank-${Date.now()}-${Math.random()}`,
+        id: `worldbank-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         url: `https://data.worldbank.org/indicator?q=${encodedMain}`,
         title: `${mainEntity} - Economic Data`,
         source: 'World Bank',
@@ -324,7 +324,7 @@ export function generatePertinentLinks(
       });
 
       links.push({
-        id: `fred-${Date.now()}-${Math.random()}`,
+        id: `fred-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         url: `https://fred.stlouisfed.org/search?st=${encodedMain}`,
         title: `${mainEntity} - FRED Data`,
         source: 'Federal Reserve',
@@ -335,7 +335,7 @@ export function generatePertinentLinks(
 
     // General statistics
     links.push({
-      id: `statista-${Date.now()}-${Math.random()}`,
+      id: `statista-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://www.statista.com/search/?q=${encodedMain}`,
       title: `${mainEntity} - Statistics`,
       source: 'Statista',
@@ -344,7 +344,7 @@ export function generatePertinentLinks(
     });
 
     links.push({
-      id: `ourworldindata-${Date.now()}-${Math.random()}`,
+      id: `ourworldindata-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://ourworldindata.org/search?q=${encodedMain}`,
       title: `${mainEntity} - Global Data`,
       source: 'Our World in Data',
@@ -358,7 +358,7 @@ export function generatePertinentLinks(
     // For tech comparisons, use specialized sources
     if (intent.isTech || intent.isAI) {
       links.push({
-        id: `compare-tech-${Date.now()}-${Math.random()}`,
+        id: `compare-tech-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         url: `https://github.com/search?q=${encodedMain}+vs+${encodeURIComponent(secondEntity)}&type=issues`,
         title: `${mainEntity} vs ${secondEntity} - Developer Discussions`,
         source: 'GitHub Issues',
@@ -370,7 +370,7 @@ export function generatePertinentLinks(
     // For academic comparisons, use scholar
     if (intent.isResearch || intent.isScientific) {
       links.push({
-        id: `compare-scholar-${Date.now()}-${Math.random()}`,
+        id: `compare-scholar-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         url: `https://scholar.google.com/scholar?q=${encodedMain}+versus+${encodeURIComponent(secondEntity)}`,
         title: `${mainEntity} vs ${secondEntity} - Research`,
         source: 'Google Scholar',
@@ -390,7 +390,7 @@ export function generatePertinentLinks(
   // Only add if no financial/economic intent (avoid mixing domains)
   if (intent.isClimate && !intent.isEconomic && !intent.isFinance) {
     links.push({
-      id: `ipcc-${Date.now()}-${Math.random()}`,
+      id: `ipcc-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://www.ipcc.ch/reports`,
       title: 'IPCC Climate Reports',
       source: 'UN Climate Panel',
@@ -401,7 +401,7 @@ export function generatePertinentLinks(
 
   if (intent.isHealth && !intent.isEconomic && !intent.isFinance) {
     links.push({
-      id: `who-${Date.now()}-${Math.random()}`,
+      id: `who-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
       url: `https://www.who.int/health-topics/${mainEntity.replace(/\s+/g, '-')}`,
       title: `${mainEntity} - Health Information`,
       source: 'World Health Organization',
@@ -416,7 +416,7 @@ export function generatePertinentLinks(
     // Wikipedia as first fallback (reliable, encyclopedic)
     if (links.length < maxLinks) {
       links.push({
-        id: `wiki-fallback-${Date.now()}-${Math.random()}`,
+        id: `wiki-fallback-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         url: `https://en.wikipedia.org/wiki/Special:Search?search=${encodedMain}`,
         title: `${mainEntity} - Encyclopedia`,
         source: 'Wikipedia',
@@ -428,7 +428,7 @@ export function generatePertinentLinks(
     // Google Scholar as second fallback (academic credibility)
     if (links.length < maxLinks) {
       links.push({
-        id: `scholar-fallback-${Date.now()}-${Math.random()}`,
+        id: `scholar-fallback-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         url: `https://scholar.google.com/scholar?q=${encodedMain}`,
         title: `${mainEntity} - Academic Search`,
         source: 'Google Scholar',

@@ -3,97 +3,97 @@
  * Type-safe event tracking for AkhAI analytics
  */
 
-import { trackEvent } from './posthog'
-import { trackServerEvent } from './posthog-server'
+import { trackEvent } from './posthog';
+import { trackServerEvent } from './posthog-server';
 
 // ============================================
 // EVENT SCHEMAS
 // ============================================
 
 export interface QuerySubmittedEvent {
-  query: string
-  methodology: string
-  methodology_selected: string // Auto-selected or user-chosen
-  methodology_used: string // Actual methodology used
-  tokens: number
-  cost: number
-  latency_ms: number
-  provider: string
-  model: string
-  guard_active: boolean
-  side_canal_enabled: boolean
-  legend_mode: boolean
+  query: string;
+  methodology: string;
+  methodology_selected: string; // Auto-selected or user-chosen
+  methodology_used: string; // Actual methodology used
+  tokens: number;
+  cost: number;
+  latency_ms: number;
+  provider: string;
+  model: string;
+  guard_active: boolean;
+  side_canal_enabled: boolean;
+  legend_mode: boolean;
 }
 
 export interface GuardTriggeredEvent {
-  guard_type: 'hype' | 'echo' | 'drift' | 'factuality'
-  action: 'pending' | 'accepted' | 'refined' | 'pivoted'
-  query: string
-  methodology: string
+  guard_type: 'hype' | 'echo' | 'drift' | 'factuality';
+  action: 'pending' | 'accepted' | 'refined' | 'pivoted';
+  query: string;
+  methodology: string;
   scores: {
-    hype: number
-    echo: number
-    drift: number
-    fact: number
-  }
-  issues: string[]
+    hype: number;
+    echo: number;
+    drift: number;
+    fact: number;
+  };
+  issues: string[];
 }
 
 export interface MethodologySelectedEvent {
-  methodology: string
-  previous_methodology?: string
-  trigger: 'user_click' | 'auto_router' | 'methodology_change'
-  query_length: number
-  complexity: number
+  methodology: string;
+  previous_methodology?: string;
+  trigger: 'user_click' | 'auto_router' | 'methodology_change';
+  query_length: number;
+  complexity: number;
 }
 
 export interface PricingPageViewedEvent {
-  source?: string
-  utm_source?: string
-  utm_medium?: string
-  utm_campaign?: string
+  source?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
 }
 
 export interface CheckoutStartedEvent {
-  plan: 'starter' | 'pro' | 'enterprise'
-  price: number
-  billing_period: 'monthly' | 'annual'
+  plan: 'starter' | 'pro' | 'enterprise';
+  price: number;
+  billing_period: 'monthly' | 'annual';
 }
 
 export interface SubscriptionCreatedEvent {
-  plan: 'starter' | 'pro' | 'enterprise'
-  mrr: number
-  billing_period: 'monthly' | 'annual'
-  user_id: string
+  plan: 'starter' | 'pro' | 'enterprise';
+  mrr: number;
+  billing_period: 'monthly' | 'annual';
+  user_id: string;
 }
 
 export interface SideCanalEvent {
-  action: 'topic_extracted' | 'synopsis_generated' | 'suggestion_clicked' | 'panel_opened'
-  topic_count?: number
-  topic_names?: string[]
-  suggestion_clicked?: string
+  action: 'topic_extracted' | 'synopsis_generated' | 'suggestion_clicked' | 'panel_opened';
+  topic_count?: number;
+  topic_names?: string[];
+  suggestion_clicked?: string;
 }
 
 export interface MindmapEvent {
-  action: 'view_toggled' | 'node_clicked' | 'export_requested'
-  view_mode?: 'layers' | 'insight' | 'mindmap'
-  node_count?: number
-  methodology?: string
+  action: 'view_toggled' | 'node_clicked' | 'export_requested';
+  view_mode?: 'layers' | 'insight' | 'mindmap';
+  node_count?: number;
+  methodology?: string;
 }
 
 export interface CreditsPurchasedEvent {
-  credit_tier: string
-  amount: number
-  user_id: string
-  payment_intent?: string
-  customer_email?: string | null
+  credit_tier: string;
+  amount: number;
+  user_id: string;
+  payment_intent?: string;
+  customer_email?: string | null;
 }
 
 export interface CreditsCheckoutStartedEvent {
-  credit_tier: string
-  price: number
-  tokens: number
-  session_id: string
+  credit_tier: string;
+  price: number;
+  tokens: number;
+  session_id: string;
 }
 
 // ============================================
@@ -114,7 +114,7 @@ export function trackQuerySubmitted(event: QuerySubmittedEvent) {
     guard_active: event.guard_active,
     side_canal_enabled: event.side_canal_enabled,
     legend_mode: event.legend_mode,
-  })
+  });
 }
 
 export function trackGuardTriggered(event: GuardTriggeredEvent) {
@@ -125,7 +125,7 @@ export function trackGuardTriggered(event: GuardTriggeredEvent) {
     methodology: event.methodology,
     scores: event.scores,
     issues_count: event.issues.length,
-  })
+  });
 }
 
 export function trackMethodologySelected(event: MethodologySelectedEvent) {
@@ -135,7 +135,7 @@ export function trackMethodologySelected(event: MethodologySelectedEvent) {
     trigger: event.trigger,
     query_length: event.query_length,
     complexity: event.complexity,
-  })
+  });
 }
 
 export function trackPricingPageViewed(event: PricingPageViewedEvent = {}) {
@@ -144,7 +144,7 @@ export function trackPricingPageViewed(event: PricingPageViewedEvent = {}) {
     utm_source: event.utm_source,
     utm_medium: event.utm_medium,
     utm_campaign: event.utm_campaign,
-  })
+  });
 }
 
 export function trackCheckoutStarted(event: CheckoutStartedEvent) {
@@ -152,7 +152,7 @@ export function trackCheckoutStarted(event: CheckoutStartedEvent) {
     plan: event.plan,
     price: event.price,
     billing_period: event.billing_period,
-  })
+  });
 }
 
 export function trackSubscriptionCreated(event: SubscriptionCreatedEvent) {
@@ -161,7 +161,7 @@ export function trackSubscriptionCreated(event: SubscriptionCreatedEvent) {
     mrr: event.mrr,
     billing_period: event.billing_period,
     user_id: event.user_id,
-  })
+  });
 }
 
 export function trackSideCanalEvent(event: SideCanalEvent) {
@@ -170,7 +170,7 @@ export function trackSideCanalEvent(event: SideCanalEvent) {
     topic_count: event.topic_count,
     topic_names: event.topic_names,
     suggestion_clicked: event.suggestion_clicked,
-  })
+  });
 }
 
 export function trackMindmapEvent(event: MindmapEvent) {
@@ -179,7 +179,7 @@ export function trackMindmapEvent(event: MindmapEvent) {
     view_mode: event.view_mode,
     node_count: event.node_count,
     methodology: event.methodology,
-  })
+  });
 }
 
 // ============================================
@@ -200,7 +200,7 @@ export function trackServerQuerySubmitted(distinctId: string, event: QuerySubmit
     guard_active: event.guard_active,
     side_canal_enabled: event.side_canal_enabled,
     legend_mode: event.legend_mode,
-  })
+  });
 }
 
 export function trackServerGuardTriggered(distinctId: string, event: GuardTriggeredEvent) {
@@ -211,7 +211,7 @@ export function trackServerGuardTriggered(distinctId: string, event: GuardTrigge
     methodology: event.methodology,
     scores: event.scores,
     issues_count: event.issues.length,
-  })
+  });
 }
 
 // ============================================
@@ -225,31 +225,31 @@ export function trackServerGuardTriggered(distinctId: string, event: GuardTrigge
 export function getAnonymousDistinctId(request?: Request): string {
   if (typeof window !== 'undefined') {
     // Client-side: use PostHog's distinct ID
-    return 'client-side'
+    return 'client-side';
   }
 
   // Server-side: generate from IP or use random ID
   if (request) {
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip')
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip');
     if (ip) {
       // Simple hash of IP address
-      return `anon-${hashString(ip)}`
+      return `anon-${hashString(ip)}`;
     }
   }
 
   // Fallback to random ID
-  return `anon-${Math.random().toString(36).substring(2, 12)}`
+  return `anon-${crypto.randomUUID().slice(0, 12)}`;
 }
 
 /**
  * Simple string hash function
  */
 function hashString(str: string): string {
-  let hash = 0
+  let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32bit integer
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
   }
-  return Math.abs(hash).toString(36)
+  return Math.abs(hash).toString(36);
 }

@@ -43,7 +43,7 @@ export function addQuantumLinks(
   mainEntity: string
 ): void {
   links.push({
-    id: `arxiv-quantum-${Date.now()}-${Math.random()}`,
+    id: `arxiv-quantum-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://arxiv.org/search/?query=${encodedMain}&searchtype=all&abstracts=show&order=-announced_date_first&size=50`,
     title: `${mainEntity} - Quantum Physics Papers`,
     source: 'ArXiv Quantum',
@@ -52,7 +52,7 @@ export function addQuantumLinks(
   });
 
   links.push({
-    id: `qutip-${Date.now()}-${Math.random()}`,
+    id: `qutip-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://qutip.org/docs/latest/index.html`,
     title: `Quantum Toolbox - Documentation`,
     source: 'QuTiP',
@@ -61,7 +61,7 @@ export function addQuantumLinks(
   });
 
   links.push({
-    id: `aps-quantum-${Date.now()}-${Math.random()}`,
+    id: `aps-quantum-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://journals.aps.org/prx/`,
     title: `Physical Review X - Quantum Research`,
     source: 'APS Physics',
@@ -73,7 +73,7 @@ export function addQuantumLinks(
 /** UAP/UFO - Government and research sources */
 export function addUAPLinks(links: PertinentLink[]): void {
   links.push({
-    id: `nasa-uap-${Date.now()}-${Math.random()}`,
+    id: `nasa-uap-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://science.nasa.gov/uap/`,
     title: `NASA UAP Independent Study`,
     source: 'NASA',
@@ -82,7 +82,7 @@ export function addUAPLinks(links: PertinentLink[]): void {
   });
 
   links.push({
-    id: `dod-uap-${Date.now()}-${Math.random()}`,
+    id: `dod-uap-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.defense.gov/News/Releases/Release/Article/3249894/dod-announces-establishment-of-all-domain-anomaly-resolution-office/`,
     title: `DoD All-domain Anomaly Resolution Office`,
     source: 'Department of Defense',
@@ -91,7 +91,7 @@ export function addUAPLinks(links: PertinentLink[]): void {
   });
 
   links.push({
-    id: `dni-uap-${Date.now()}-${Math.random()}`,
+    id: `dni-uap-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.dni.gov/index.php/newsroom/reports-publications`,
     title: `DNI UAP Reports`,
     source: 'Director of National Intelligence',
@@ -107,7 +107,7 @@ export function addPatentLinks(
   mainEntity: string
 ): void {
   links.push({
-    id: `patents-google-${Date.now()}-${Math.random()}`,
+    id: `patents-google-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://patents.google.com/?q=${encodedMain}&oq=${encodedMain}`,
     title: `${mainEntity} - Patent Search`,
     source: 'Google Patents',
@@ -116,7 +116,7 @@ export function addPatentLinks(
   });
 
   links.push({
-    id: `uspto-${Date.now()}-${Math.random()}`,
+    id: `uspto-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://ppubs.uspto.gov/pubwebapp/static/pages/ppubsbasic.html`,
     title: `USPTO Patent Database`,
     source: 'USPTO',
@@ -125,7 +125,7 @@ export function addPatentLinks(
   });
 
   links.push({
-    id: `espacenet-${Date.now()}-${Math.random()}`,
+    id: `espacenet-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://worldwide.espacenet.com/?locale=en_EP`,
     title: `Espacenet - Global Patents`,
     source: 'European Patent Office',
@@ -137,7 +137,7 @@ export function addPatentLinks(
 /** Government/DARPA - .gov research sources */
 export function addGovernmentLinks(links: PertinentLink[]): void {
   links.push({
-    id: `darpa-${Date.now()}-${Math.random()}`,
+    id: `darpa-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.darpa.mil/news-events/recent-news`,
     title: `DARPA News & Programs`,
     source: 'DARPA',
@@ -146,7 +146,7 @@ export function addGovernmentLinks(links: PertinentLink[]): void {
   });
 
   links.push({
-    id: `foia-${Date.now()}-${Math.random()}`,
+    id: `foia-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.foia.gov/search.html`,
     title: `FOIA Document Search`,
     source: 'FOIA.gov',
@@ -155,7 +155,7 @@ export function addGovernmentLinks(links: PertinentLink[]): void {
   });
 
   links.push({
-    id: `nist-${Date.now()}-${Math.random()}`,
+    id: `nist-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.nist.gov/publications`,
     title: `NIST Publications`,
     source: 'NIST',
@@ -171,7 +171,7 @@ export function addAerospaceLinks(
   mainEntity: string
 ): void {
   links.push({
-    id: `nasa-ntrs-${Date.now()}-${Math.random()}`,
+    id: `nasa-ntrs-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://ntrs.nasa.gov/search?q=${encodedMain}`,
     title: `${mainEntity} - NASA Research`,
     source: 'NASA NTRS',
@@ -180,7 +180,7 @@ export function addAerospaceLinks(
   });
 
   links.push({
-    id: `nasa-science-${Date.now()}-${Math.random()}`,
+    id: `nasa-science-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://science.nasa.gov/`,
     title: `NASA Science Missions`,
     source: 'NASA',
@@ -189,7 +189,7 @@ export function addAerospaceLinks(
   });
 
   links.push({
-    id: `aiaa-${Date.now()}-${Math.random()}`,
+    id: `aiaa-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://arc.aiaa.org/`,
     title: `AIAA Aerospace Research`,
     source: 'AIAA',
@@ -205,7 +205,7 @@ export function addBiomedicalLinks(
   mainEntity: string
 ): void {
   links.push({
-    id: `pubmed-${Date.now()}-${Math.random()}`,
+    id: `pubmed-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://pubmed.ncbi.nlm.nih.gov/?term=${encodedMain}`,
     title: `${mainEntity} - Medical Research`,
     source: 'PubMed',
@@ -214,7 +214,7 @@ export function addBiomedicalLinks(
   });
 
   links.push({
-    id: `nih-${Date.now()}-${Math.random()}`,
+    id: `nih-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.nih.gov/search-results?search_api_fulltext=${encodedMain}`,
     title: `${mainEntity} - NIH Research`,
     source: 'NIH',
@@ -223,7 +223,7 @@ export function addBiomedicalLinks(
   });
 
   links.push({
-    id: `clinicaltrials-${Date.now()}-${Math.random()}`,
+    id: `clinicaltrials-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://clinicaltrials.gov/search?term=${encodedMain}`,
     title: `${mainEntity} - Clinical Trials`,
     source: 'ClinicalTrials.gov',
@@ -239,7 +239,7 @@ export function addEngineeringLinks(
   mainEntity: string
 ): void {
   links.push({
-    id: `ieee-${Date.now()}-${Math.random()}`,
+    id: `ieee-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://ieeexplore.ieee.org/search/searchresult.jsp?queryText=${encodedMain}`,
     title: `${mainEntity} - IEEE Papers`,
     source: 'IEEE Xplore',
@@ -248,7 +248,7 @@ export function addEngineeringLinks(
   });
 
   links.push({
-    id: `acm-${Date.now()}-${Math.random()}`,
+    id: `acm-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://dl.acm.org/action/doSearch?AllField=${encodedMain}`,
     title: `${mainEntity} - ACM Digital Library`,
     source: 'ACM',
@@ -264,7 +264,7 @@ export function addFinanceLinks(
   mainEntity: string
 ): void {
   links.push({
-    id: `bloomberg-${Date.now()}-${Math.random()}`,
+    id: `bloomberg-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.bloomberg.com/search?query=${encodedMain}`,
     title: `${mainEntity} - Bloomberg Markets`,
     source: 'Bloomberg',
@@ -273,7 +273,7 @@ export function addFinanceLinks(
   });
 
   links.push({
-    id: `ft-${Date.now()}-${Math.random()}`,
+    id: `ft-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.ft.com/search?q=${encodedMain}`,
     title: `${mainEntity} - Financial Times`,
     source: 'Financial Times',
@@ -282,7 +282,7 @@ export function addFinanceLinks(
   });
 
   links.push({
-    id: `fed-${Date.now()}-${Math.random()}`,
+    id: `fed-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.federalreserve.gov/search.htm?q=${encodedMain}`,
     title: `${mainEntity} - Federal Reserve`,
     source: 'Federal Reserve',
@@ -298,7 +298,7 @@ export function addCryptoLinks(
   mainEntity: string
 ): void {
   links.push({
-    id: `cmc-${Date.now()}-${Math.random()}`,
+    id: `cmc-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://coinmarketcap.com/currencies/${encodedMain.toLowerCase()}/`,
     title: `${mainEntity} - Price & Market Data`,
     source: 'CoinMarketCap',
@@ -307,7 +307,7 @@ export function addCryptoLinks(
   });
 
   links.push({
-    id: `crypto-twitter-${Date.now()}-${Math.random()}`,
+    id: `crypto-twitter-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://twitter.com/search?q=%23${encodedMain}%20crypto&f=live`,
     title: `${mainEntity} - Crypto Twitter`,
     source: 'Crypto Twitter',
@@ -316,7 +316,7 @@ export function addCryptoLinks(
   });
 
   links.push({
-    id: `coindesk-${Date.now()}-${Math.random()}`,
+    id: `coindesk-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.coindesk.com/search?q=${encodedMain}`,
     title: `${mainEntity} - Crypto News`,
     source: 'CoinDesk',
@@ -325,7 +325,7 @@ export function addCryptoLinks(
   });
 
   links.push({
-    id: `messari-${Date.now()}-${Math.random()}`,
+    id: `messari-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://messari.io/research`,
     title: `${mainEntity} - Research Reports`,
     source: 'Messari',
@@ -334,7 +334,7 @@ export function addCryptoLinks(
   });
 
   links.push({
-    id: `theblock-${Date.now()}-${Math.random()}`,
+    id: `theblock-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
     url: `https://www.theblock.co/search?query=${encodedMain}`,
     title: `${mainEntity} - Technical Analysis`,
     source: 'The Block',
