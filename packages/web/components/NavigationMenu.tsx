@@ -27,20 +27,9 @@ export default function NavigationMenu({
       isLink: true,
       accent: 'violet',
     },
-    {
-      id: 'intelligence-robot-training',
-      label: 'intelligence & robot',
-      mobileLabel: 'robot',
-      href: '/idea-factory?tab=customize',
-      isLink: true,
-    },
-    {
-      id: 'temple',
-      label: 'temple',
-      mobileLabel: 'temp',
-      href: '/temple',
-      isLink: true,
-    },
+    // Hidden from frontpage — dev tools for later phases
+    // { id: 'intelligence-robot-training', label: 'intelligence & robot', href: '/idea-factory?tab=customize', isLink: true },
+    // { id: 'temple', label: 'temple', href: '/temple', isLink: true },
     { id: 'mindmap', label: 'mindmap', mobileLabel: 'map', onClick: onMindMapClick, isLink: false },
     {
       id: 'pricing',
