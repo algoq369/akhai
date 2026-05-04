@@ -226,7 +226,7 @@ export default function MindMapClusterDetail({
                 const isConnected = connectedIds ? connectedIds.has(node.id) : false;
                 const nodeOpacity = connectedIds ? (isHov ? 1 : isConnected ? 0.6 : 0.15) : 1;
                 const labelText =
-                  node.name.length > 22 ? node.name.slice(0, 19) + '\u2026' : node.name;
+                  node.name.length > 30 ? node.name.slice(0, 27) + '\u2026' : node.name;
                 return (
                   <g
                     key={node.id}
@@ -244,7 +244,7 @@ export default function MindMapClusterDetail({
                     <circle r={Math.max(nodeRadius + 8, 16)} fill="transparent" />
                     <circle
                       r={nodeRadius}
-                      fill={isHov ? cc.text : isImportant ? cc.text + 'CC' : cc.text + '60'}
+                      fill={isHov ? cc.text : isImportant ? cc.text + 'CC' : cc.text + '80'}
                       stroke={isHov ? 'white' : 'none'}
                       strokeWidth={isHov ? 1.5 : 0}
                     />
@@ -259,12 +259,12 @@ export default function MindMapClusterDetail({
                     )}
                     {(isImportant || isHov) && (
                       <text
-                        y={nodeRadius + 11}
+                        y={nodeRadius + 13}
                         textAnchor="middle"
-                        fill={isHov ? cc.text : '#94a3b8'}
-                        fontSize={isImportant ? 9 : 8}
-                        fontWeight={isImportant ? 500 : 400}
-                        opacity={isHov ? 1 : 0.7}
+                        fill={isHov ? cc.text : '#cbd5e1'}
+                        fontSize={isImportant ? 11 : 9}
+                        fontWeight={isImportant ? 600 : 400}
+                        opacity={isHov ? 1 : 0.85}
                       >
                         {isHov ? node.name : labelText}
                       </text>
