@@ -184,8 +184,10 @@ export default function MindMapHistoryView({
 
   // Hover/click handlers for query rows
   const handleQueryMouseEnter = (e: React.MouseEvent, query: QueryHistoryItem) => {
+    e.stopPropagation();
     const x = e.clientX,
       y = e.clientY;
+    setClusterInsight(null);
     hoverTimeout.current = setTimeout(() => setHoveredQuery({ query, x, y }), 150);
   };
   const hoverHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -206,16 +208,23 @@ export default function MindMapHistoryView({
     e.preventDefault();
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
     setHoveredQuery(null);
+    setClusterInsight(null);
     setClickedQuery(
       clickedQuery?.query.id === query.id ? null : { query, x: e.clientX, y: e.clientY }
     );
   };
 
-  const { handleClusterHover, handleClusterHoverLeave } = createClusterHoverHandlers(
+  const rawClusterHover = createClusterHoverHandlers(
     clusterInsightCache,
     clusterHoverTimeout,
     setClusterInsight
   );
+  const handleClusterHover = (e: React.MouseEvent, cluster: TopicCluster) => {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    setHoveredQuery(null);
+    rawClusterHover.handleClusterHover(e, cluster);
+  };
+  const handleClusterHoverLeave = rawClusterHover.handleClusterHoverLeave;
 
   return (
     <div
@@ -268,7 +277,7 @@ export default function MindMapHistoryView({
       />
 
       {/* Hover tooltip — portal to escape overflow:hidden */}
-      {hoveredQuery && (
+      {hoveredQuery && !clickedQuery && !clusterInsight && (
         <HoverTooltip
           hoveredQuery={hoveredQuery}
           hoverHideTimeout={hoverHideTimeout}
@@ -278,7 +287,7 @@ export default function MindMapHistoryView({
       )}
 
       {/* Cluster insight tooltip — portal */}
-      {clusterInsight && (
+      {clusterInsight && !hoveredQuery && !clickedQuery && (
         <ClusterInsightTooltip
           clusterInsight={clusterInsight}
           clusterHoverTimeout={clusterHoverTimeout}
