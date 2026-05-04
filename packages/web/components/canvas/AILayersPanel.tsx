@@ -47,8 +47,6 @@ export interface AIInsight {
 
 export interface AILayersPanelProps {
   insights: AIInsight[];
-  totalDataPoints: number;
-  overallConfidence: number;
   querySynthesis?: string;
   onInsightClick?: (insightId: string) => void;
   selectedInsightId?: string | null;
@@ -165,19 +163,9 @@ function InsightRow({
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <p className="font-mono text-[10px] text-neutral-700 dark:text-neutral-300 leading-snug line-clamp-2">
+        <p className="font-mono text-[10px] text-neutral-700 dark:text-neutral-300 leading-snug">
           {insight.text}
         </p>
-      </div>
-
-      {/* Confidence & Metrics */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="font-mono text-[10px] text-neutral-500 dark:text-neutral-400">
-          {insight.confidence}%
-        </span>
-        <span className="font-mono text-[9px] text-neutral-400 dark:text-neutral-500">
-          {insight.metricsCount} ▸
-        </span>
       </div>
     </motion.div>
   );
@@ -191,8 +179,6 @@ function InsightRow({
 
 export function AILayersPanel({
   insights,
-  totalDataPoints,
-  overallConfidence,
   querySynthesis,
   onInsightClick,
   selectedInsightId,
@@ -287,18 +273,8 @@ export function AILayersPanel({
             insights
           </span>
           <span className="text-neutral-300 dark:text-neutral-600">·</span>
-          <span>
-            <span className="text-neutral-700 dark:text-neutral-300 font-medium">
-              {totalDataPoints}
-            </span>{' '}
-            data points
-          </span>
-          <span className="text-neutral-300 dark:text-neutral-600">·</span>
-          <span>
-            <span className="text-neutral-700 dark:text-neutral-300 font-medium">
-              {overallConfidence}%
-            </span>{' '}
-            confidence
+          <span className="text-neutral-500">
+            {querySynthesis ? 'synthesis available' : 'analyzing...'}
           </span>
         </div>
       </div>
@@ -385,9 +361,7 @@ export function AILayersPanel({
             </div>
           )}
           <div className="flex items-center justify-between">
-            <div className="font-mono text-[8px] text-neutral-400">
-              data: {totalDataPoints} points
-            </div>
+            <div className="font-mono text-[8px] text-neutral-400">{insights.length} insights</div>
             <button className="font-mono text-[9px] text-purple-500 hover:text-purple-600 transition-colors">
               explore ▸
             </button>

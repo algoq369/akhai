@@ -57,8 +57,8 @@ const DATE_PATTERN =
   /\b(\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s*\d{0,4})\b/gi;
 const CAUSAL_PATTERN =
   /\b(because|therefore|consequently|as a result|correlat(?:es?|ion|ed)|inversely|inverse|due to|leads? to|causes?|driven by|while|coupled with|decoupled from|linked to|relationship between|compared to|versus|vs\.?|relative to|tracks?|follows?|mirrors?|diverge[sd]?|converge[sd]?)\b/i;
-const UNIT_PATTERN = /(\d[\d,.]*)\s*(%|percent|\$|€|£|K|M|B|billion|million|thousand|trillion)/i;
-const CURRENCY_FIRST = /(?:\$|€|£)\s*(\d[\d,.]*)\s*(K|M|B|T|billion|million|thousand|trillion)?/gi;
+const UNIT_PATTERN = /(\d[\d,.]*)\s*(%|percent|\$|€|£|billion|million|thousand|trillion|K|M|B)/i;
+const CURRENCY_FIRST = /(?:\$|€|£)\s*(\d[\d,.]*)\s*(billion|million|thousand|trillion|K|M|B|T)?/gi;
 const PERCENT_PATTERN = /(\d[\d,.]*)\s*%/gi;
 
 function generateId(prefix: string, index: number): string {
@@ -173,10 +173,16 @@ function extractFactBoxes(sentences: string[]): FactBoxes {
 }
 
 function extractMetricLabel(sentence: string, matchStr: string): string {
-  let label = stripMarkdown(sentence.replace(matchStr, '')).replace(/^\W+/, '').trim();
-  const bp = label.search(/[,.\-;:]/);
-  label = bp > 5 && bp < 40 ? label.slice(0, bp).trim() : label.slice(0, 40).trim();
-  return label || 'Metric';
+  // Use the full sentence as context — replace value with a space, collapse whitespace.
+  // No early-comma cut: keeps clauses like "library of over 7 million de-identified records" intact.
+  const cleaned = stripMarkdown(sentence.replace(matchStr, ' '))
+    .replace(/^\W+/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (!cleaned) return 'Metric';
+  if (cleaned.length <= 120) return cleaned;
+  const cut = cleaned.lastIndexOf(' ', 120);
+  return (cut > 30 ? cleaned.slice(0, cut) : cleaned.slice(0, 120)).trim();
 }
 
 function inferContext(label: string, value: string): string {
@@ -227,10 +233,10 @@ function cleanMetricName(raw: string): string {
   name = name.replace(/^Next\s*:\s*/i, '');
   // Strip leading list markers
   name = name.replace(/^[-•*]\s+/, '');
-  // Word-boundary truncation
-  if (name.length > 45) {
-    const cut = name.lastIndexOf(' ', 45);
-    name = (cut > 10 ? name.slice(0, cut) : name.slice(0, 45)) + '...';
+  // Word-boundary truncation — generous cap so full sentences survive
+  if (name.length > 140) {
+    const cut = name.lastIndexOf(' ', 140);
+    name = (cut > 10 ? name.slice(0, cut) : name.slice(0, 140)) + '...';
   }
   return name;
 }

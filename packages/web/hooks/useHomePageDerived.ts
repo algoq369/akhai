@@ -53,17 +53,50 @@ export function useHomePageDerived({
     currentTopics,
   } = useSideCanalStore();
 
-  // Side Canal topics → AI insights for canvas
+  // Side Canal topics → AI insights for canvas.
+  // Enriches each topic with the first 1-2 sentences from the latest assistant
+  // response that mention the topic name, so the panel shows real findings
+  // (claims, evidence) rather than just topic labels.
   const topicInsights = useMemo(() => {
     if (!currentTopics || currentTopics.length === 0) return [];
-    return currentTopics.map((t) => ({
-      id: `topic-${t.id}`,
-      text: `${t.name}${t.description ? ' — ' + t.description : ''}`,
-      category: 'insight' as const,
-      confidence: 80,
-      metricsCount: 1,
-    }));
-  }, [currentTopics]);
+
+    const lastAssistant = messages.filter((m) => m.role === 'assistant').pop();
+    const responseText = lastAssistant?.content || '';
+
+    return currentTopics.map((t) => {
+      let keyFinding = t.description || '';
+
+      if (responseText && t.name) {
+        const namePattern = t.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const sectionMatch = responseText.match(
+          new RegExp(namePattern + '[\\s\\S]*?(?:\\.|\\n\\n)', 'i')
+        );
+        if (sectionMatch) {
+          const afterName = responseText.slice(
+            responseText.indexOf(sectionMatch[0]) + t.name.length
+          );
+          const sentences = afterName.match(/[^.!?]*[.!?]/g);
+          if (sentences && sentences.length > 0) {
+            keyFinding = sentences.slice(0, 2).join(' ').trim();
+          }
+        }
+      }
+
+      const text = (t.name + ' ' + keyFinding).toLowerCase();
+      let category: 'strategy' | 'insight' | 'data' | 'action' = 'insight';
+      if (/strateg|plan|approach|framework|phase|roadmap/i.test(text)) category = 'strategy';
+      else if (/\d+%|\$[\d,]+|million|billion|metric/i.test(text)) category = 'data';
+      else if (/implement|deploy|build|launch|execute|develop/i.test(text)) category = 'action';
+
+      return {
+        id: `topic-${t.id}`,
+        text: t.name + (keyFinding ? ' — ' + keyFinding : ''),
+        category,
+        confidence: 85,
+        metricsCount: 0,
+      };
+    });
+  }, [currentTopics, messages]);
 
   // ─── Page Context helper (used by handlers) ──────────────
   const getPageContext = useCallback(() => {

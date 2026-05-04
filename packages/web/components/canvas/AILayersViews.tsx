@@ -229,9 +229,9 @@ export function LayersTreeView({ insights }: { insights: AIInsight[] }) {
               {items.slice(0, 3).map((item) => (
                 <div
                   key={item.id}
-                  className="px-2 py-1 text-[10px] font-mono text-neutral-600 dark:text-neutral-400 truncate hover:bg-neutral-50 dark:hover:bg-relic-slate/10 rounded cursor-pointer"
+                  className="px-2 py-1 text-[10px] font-mono text-neutral-600 dark:text-neutral-400 leading-relaxed hover:bg-neutral-50 dark:hover:bg-relic-slate/10 rounded cursor-pointer"
                 >
-                  {item.text.slice(0, 50)}...
+                  {item.text}
                 </div>
               ))}
               {items.length > 3 && (
