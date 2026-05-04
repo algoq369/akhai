@@ -46,7 +46,6 @@ export default function MindMapClusterDetail({
   } = forceLayoutNodes;
   if (fPos.length === 0) return null;
   const posMap = new Map(fPos.map((p) => [p.id, p]));
-  const topLabelIds = new Set(fNodes.map((n) => n.id));
   const hubIds = new Set(
     fNodes.slice(0, Math.min(Math.max(3, Math.ceil(fNodes.length / 15)), 8)).map((n) => n.id)
   );
@@ -210,8 +209,8 @@ export default function MindMapClusterDetail({
                     x2={pt.x}
                     y2={pt.y}
                     stroke={cc.text}
-                    strokeWidth={isHi ? 2 : 1}
-                    opacity={isHi ? 0.6 : 0.12}
+                    strokeWidth={isHi ? 1.2 : 0.3}
+                    opacity={isHi ? 0.4 : 0.08}
                   />
                 );
               })}
@@ -219,17 +218,15 @@ export default function MindMapClusterDetail({
                 const p = posMap.get(node.id);
                 if (!p) return null;
                 const qc = node.queryCount || 0;
-                const isHub = hubIds.has(node.id);
-                const hubR = fNodes.length < 20 ? 10 : 14;
-                const childR =
-                  fNodes.length < 20 ? 5 : Math.max(6, Math.min(12, 4 + Math.sqrt(qc) * 2));
-                const nr = isHub ? hubR : childR;
+                const conns = connectionCounts[node.id] || 0;
+                const importance = conns + Math.min(qc || 1, 8);
+                const nodeRadius = Math.max(5, Math.min(18, 5 + importance * 1.2));
+                const isImportant = importance >= 2 || hubIds.has(node.id);
                 const isHov = hoveredNode === node.id;
                 const isConnected = connectedIds ? connectedIds.has(node.id) : false;
                 const nodeOpacity = connectedIds ? (isHov ? 1 : isConnected ? 0.6 : 0.15) : 1;
-                const showLabel = topLabelIds.has(node.id) || isHov || isConnected;
                 const labelText =
-                  node.name.length > 24 ? node.name.slice(0, 24) + '\u2026' : node.name;
+                  node.name.length > 22 ? node.name.slice(0, 19) + '\u2026' : node.name;
                 return (
                   <g
                     key={node.id}
@@ -244,27 +241,37 @@ export default function MindMapClusterDetail({
                     }}
                     style={{ cursor: 'pointer' }}
                   >
-                    <circle r={20} fill="transparent" />
+                    <circle r={Math.max(nodeRadius + 8, 16)} fill="transparent" />
                     <circle
-                      r={nr}
-                      fill={isHub ? cc.text + 'D0' : cc.text + '70'}
-                      stroke={isHov ? cc.text : cc.text + '4D'}
-                      strokeWidth={isHub ? 2.5 : isHov ? 2 : 1}
+                      r={nodeRadius}
+                      fill={isHov ? cc.text : isImportant ? cc.text + 'CC' : cc.text + '60'}
+                      stroke={isHov ? 'white' : 'none'}
+                      strokeWidth={isHov ? 1.5 : 0}
                     />
-                    {showLabel && (
+                    {isHov && (
+                      <circle
+                        r={nodeRadius + 4}
+                        fill="none"
+                        stroke={cc.text}
+                        strokeWidth={0.5}
+                        opacity={0.3}
+                      />
+                    )}
+                    {(isImportant || isHov) && (
                       <text
-                        y={nr + 14}
+                        y={nodeRadius + 11}
                         textAnchor="middle"
-                        fill={isHov ? cc.text : isHub ? cc.text : '#94a3b8'}
-                        fontSize={isHub ? 11 : isHov ? 10 : 8}
-                        fontWeight={isHub ? 700 : isHov ? 600 : 400}
+                        fill={isHov ? cc.text : '#94a3b8'}
+                        fontSize={isImportant ? 9 : 8}
+                        fontWeight={isImportant ? 500 : 400}
+                        opacity={isHov ? 1 : 0.7}
                       >
                         {isHov ? node.name : labelText}
                       </text>
                     )}
                     {isHov && (
-                      <text y={-nr - 8} textAnchor="middle" fill="#94a3b8" fontSize={8}>
-                        {qc} queries · {connectionCounts[node.id] || 0} connections
+                      <text y={-nodeRadius - 8} textAnchor="middle" fill="#94a3b8" fontSize={8}>
+                        {qc} queries · {conns} connections
                       </text>
                     )}
                   </g>
