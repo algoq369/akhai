@@ -39,7 +39,7 @@ export default function ChatHeader({
               onClick={() => onSetViewMode('mini-canvas')}
               className={`text-[9px] uppercase tracking-wider transition-colors ${viewMode === 'mini-canvas' ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost'}`}
             >
-              ◈ mini canvas
+              ◈ metrics
             </button>
             <button
               onClick={() => onSetViewMode('canvas')}

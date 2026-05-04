@@ -39,14 +39,11 @@ export function DepthSigil({ content, term }: DepthSigilProps) {
           className="depth-sigil inline-flex items-center justify-center ml-0.5 cursor-help transition-all hover:scale-110 hover:brightness-125"
           style={{
             color: layers.color,
-            fontSize: '10px',
-            fontWeight: 600,
-            backgroundColor: `${layers.color}15`,
-            border: `1px solid ${layers.color}40`,
-            borderRadius: '3px',
-            padding: '0px 3px',
-            lineHeight: '16px',
-            verticalAlign: 'middle',
+            fontSize: '13px',
+            fontWeight: 700,
+            verticalAlign: 'super',
+            textShadow: `0 0 8px ${layers.color}50`,
+            lineHeight: '1',
           }}
           title={`${layers.name} - ${layers.meaning}. Click to ${isExpanded ? 'collapse' : 'expand'}`}
         >

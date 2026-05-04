@@ -46,15 +46,21 @@ export default function ParagraphTree({ sections, queryId, query }: ParagraphTre
   useLayoutEffect(() => {
     if (!treeRef.current) return;
     setMeasuredHeights(collectHeights(treeRef.current, expandedLayers));
-    const timer = setTimeout(() => {
+    const remeasure = () => {
       if (!treeRef.current) return;
       const next = collectHeights(treeRef.current, expandedLayers);
       setMeasuredHeights((prev) => {
         const changed = Object.keys(next).some((k) => prev[Number(k)] !== next[Number(k)]);
         return changed ? next : prev;
       });
-    }, 250);
-    return () => clearTimeout(timer);
+    };
+    // Stage 1 (initial layout) + Stage 2 (post fonts/reflows)
+    const t1 = setTimeout(remeasure, 300);
+    const t2 = setTimeout(remeasure, 600);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [expandedLayers]);
 
   const yOffsets = useMemo(() => {
@@ -64,7 +70,7 @@ export default function ParagraphTree({ sections, queryId, query }: ParagraphTre
       for (const layer of layers) {
         offsets[layer] = cumulativeOffset;
         if (expandedLayers.has(layer)) {
-          const h = measuredHeights[layer] ?? 300;
+          const h = measuredHeights[layer] ?? 400;
           const overflow = Math.max(0, h - COLLAPSED_HEIGHT + 16);
           cumulativeOffset += overflow;
         }
