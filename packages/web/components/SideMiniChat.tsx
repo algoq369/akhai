@@ -364,17 +364,20 @@ ${conversationId ? `View: ${window.location.origin}?continue=${conversationId}` 
                   </button>
                 ))}
             </div>
-            {/* Metacognitive Awareness */}
-            {metacognition && (
+            {/* Intent Summary */}
+            {metacognition && metacognition.reasoning && (
               <div className="mt-2 pt-1.5 border-t border-relic-mist/10 dark:border-relic-slate/20">
-                <div className="flex items-start gap-1.5">
-                  <span className="text-[7px] text-relic-slate/40 dark:text-relic-ghost/50 font-mono">
-                    {Math.round(metacognition.confidence * 100)}%
-                  </span>
-                  <p className="flex-1 text-[7px] text-relic-slate/50 dark:text-relic-ghost/60 italic font-mono leading-snug">
-                    {metacognition.reasoning}
-                  </p>
-                </div>
+                <p className="text-[8px] text-relic-slate/60 dark:text-relic-ghost/50 font-mono leading-relaxed">
+                  {(() => {
+                    const t = metacognition.reasoning
+                      .replace(/^\d+%\s*/, '')
+                      .replace(/^(HIGH|LOW|MODERATE)\s*(CONFIDENCE|UNCERTAINTY)[:\s]*/i, '')
+                      .trim();
+                    const cut = t.search(/\.\s*(MODERATE|HIGH|LOW|APPROACH|UNCERTAINTY)/i);
+                    const s = cut > 0 ? t.slice(0, cut + 1) : t.slice(0, 150);
+                    return s.trim() + (s.length >= 150 ? '...' : '');
+                  })()}
+                </p>
               </div>
             )}
           </div>
