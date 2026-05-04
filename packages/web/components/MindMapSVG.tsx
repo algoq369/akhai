@@ -3,7 +3,7 @@
 import type { RefObject } from 'react';
 import type { Node } from './MindMap';
 import type { ClusterData, LayoutNode, TopicLink } from './MindMapUtils';
-import { getClusterColor, getNodeRadius } from './MindMapUtils';
+import { getClusterColor } from './MindMapUtils';
 
 interface MindMapSVGProps {
   svgRef: RefObject<SVGSVGElement | null>;
@@ -141,7 +141,7 @@ export default function MindMapSVG({
           );
         })}
 
-        {/* Cross-cluster connection lines */}
+        {/* Cross-cluster connection lines — ghost by default, active on hover */}
         <g className="connections" style={{ pointerEvents: 'none' }}>
           {visibleLinks.map((link, idx) => {
             const sourcePos = getPos(link.source);
@@ -149,13 +149,9 @@ export default function MindMapSVG({
             if (!sourcePos || !targetPos) return null;
 
             const sourceNode = filteredNodes.find((n) => n.id === link.source);
-            const isDirect = hoveredNode === link.source || hoveredNode === link.target;
-            const isSecondDeg =
-              !isDirect &&
-              (connectedTopicIds.has(link.source) || connectedTopicIds.has(link.target));
-            if (!isDirect && !isSecondDeg) return null;
-            const midX = (sourcePos.x + targetPos.x) / 2;
-            const midY = (sourcePos.y + targetPos.y) / 2 - 30;
+            const isActive = hoveredNode === link.source || hoveredNode === link.target;
+            const mx = (sourcePos.x + targetPos.x) / 2;
+            const my = (sourcePos.y + targetPos.y) / 2 - 15;
             const srcCatIdx = clusters.findIndex(
               (c) => c.category === (sourceNode?.category || 'other')
             );
@@ -167,13 +163,14 @@ export default function MindMapSVG({
             return (
               <g key={`link-${idx}`}>
                 <path
-                  d={`M ${sourcePos.x} ${sourcePos.y} Q ${midX} ${midY} ${targetPos.x} ${targetPos.y}`}
+                  d={`M ${sourcePos.x} ${sourcePos.y} Q ${mx} ${my} ${targetPos.x} ${targetPos.y}`}
                   fill="none"
-                  stroke={isDirect ? srcColor : '#94a3b8'}
-                  strokeWidth={isDirect ? 3 : 1.5}
-                  opacity={isDirect ? 0.85 : 0.2}
+                  stroke={srcColor}
+                  strokeWidth={isActive ? 1.2 : 0.3}
+                  opacity={isActive ? 0.45 : 0.05}
+                  strokeLinecap="round"
                 />
-                {isDirect && (
+                {isActive && (
                   <>
                     <circle cx={sourcePos.x} cy={sourcePos.y} r={5} fill={srcColor} opacity={0.9} />
                     <circle cx={targetPos.x} cy={targetPos.y} r={5} fill={srcColor} opacity={0.9} />
@@ -184,15 +181,21 @@ export default function MindMapSVG({
           })}
         </g>
 
-        {/* Top 5 nodes per cluster */}
+        {/* Top 5 nodes per cluster — sized by importance, labels for important / hovered */}
         {clusters.map((cluster, cIdx) => {
           const color = getClusterColor(cluster.category, cIdx);
           const top5 = cluster.nodes.slice(0, 5);
           return top5.map((node) => {
             const pos = getPos(node.id);
             if (!pos) return null;
-            const r = getNodeRadius(node.queryCount || 0);
             const isHov = hoveredNode === node.id;
+            const conns = connectionCounts[node.id] || 0;
+            const queryCount = node.queryCount || 1;
+            const importance = conns + Math.min(queryCount, 10);
+            const baseRadius = Math.max(4, Math.min(20, 4 + importance * 1.5));
+            const isImportant = importance >= 5;
+            const labelText = node.name.length > 20 ? node.name.slice(0, 17) + '...' : node.name;
+
             return (
               <g
                 key={node.id}
@@ -206,13 +209,35 @@ export default function MindMapSVG({
                   handleNodeClick(e, node);
                 }}
               >
-                <circle r={20} fill="transparent" />
+                <circle r={Math.max(baseRadius + 6, 14)} fill="transparent" />
                 <circle
-                  r={r}
-                  fill={color.text + '90'}
-                  stroke={isHov ? color.text : color.text + '4D'}
-                  strokeWidth={isHov ? 2 : 1}
+                  r={baseRadius}
+                  fill={isHov ? color.text : isImportant ? color.text + 'DD' : color.text + '40'}
+                  stroke={isHov ? 'white' : 'none'}
+                  strokeWidth={isHov ? 1.5 : 0}
                 />
+                {isHov && (
+                  <circle
+                    r={baseRadius + 5}
+                    fill="none"
+                    stroke={color.text}
+                    strokeWidth={0.5}
+                    opacity={0.3}
+                  />
+                )}
+                {(isImportant || isHov) && (
+                  <text
+                    y={baseRadius + 12}
+                    textAnchor="middle"
+                    fontSize={9}
+                    fill={isHov ? '#1e293b' : '#64748b'}
+                    fontWeight={isImportant ? 500 : 400}
+                    opacity={isHov ? 1 : 0.7}
+                    className="select-none pointer-events-none"
+                  >
+                    {labelText}
+                  </text>
+                )}
               </g>
             );
           });

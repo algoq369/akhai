@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Node } from './MindMap';
 import type { ClusterData, TopicLink } from './MindMapUtils';
 import { getClusterColor } from './MindMapUtils';
@@ -57,6 +57,19 @@ export default function MindMapClusterDetail({
           .flatMap((l) => [l.source, l.target])
       )
     : null;
+
+  const subclusters = useMemo(() => {
+    if (!fNodes?.length) return [];
+    const groups: Record<string, Node[]> = {};
+    for (const n of fNodes) {
+      const k = n.name.split(/[\s,·-]/)[0].toLowerCase();
+      (groups[k.length > 3 ? k : 'other'] ||= []).push(n);
+    }
+    return Object.entries(groups)
+      .map(([k, items]) => ({ name: k[0].toUpperCase() + k.slice(1), count: items.length }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+  }, [fNodes]);
 
   return (
     <div
@@ -140,10 +153,19 @@ export default function MindMapClusterDetail({
             &#x2715;
           </button>
         </div>
+        {subclusters.length > 1 && (
+          <div className="flex flex-wrap gap-2 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
+            {subclusters.slice(0, 6).map((s) => (
+              <span key={s.name} className="rounded bg-slate-100 px-2 py-0.5 text-[10px]">
+                {s.name} {s.count}
+              </span>
+            ))}
+          </div>
+        )}
         <div
           style={{
             width: '100%',
-            height: 'calc(100% - 52px)',
+            height: subclusters.length > 1 ? 'calc(100% - 130px)' : 'calc(100% - 52px)',
             overflow: 'hidden',
             cursor: isDrillPanning ? 'grabbing' : 'grab',
           }}
@@ -173,12 +195,10 @@ export default function MindMapClusterDetail({
         >
           <svg width="100%" height="100%" viewBox={`0 0 ${svgW} ${svgH}`}>
             <g transform={`translate(${drillPan.x}, ${drillPan.y}) scale(${drillZoom})`}>
-              {/* Tree branches: hub -> children (always visible) */}
               {fLinks.map((link, li) => {
                 const ps = posMap.get(link.source),
                   pt = posMap.get(link.target);
                 if (!ps || !pt) return null;
-                // Only draw if one end is a hub
                 const isTreeEdge = hubIds.has(link.source) || hubIds.has(link.target);
                 const isHi = hoveredNode === link.source || hoveredNode === link.target;
                 if (!isTreeEdge && !isHi) return null;
