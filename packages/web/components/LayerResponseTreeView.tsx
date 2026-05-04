@@ -140,20 +140,6 @@ function CompactLayout({
                 </div>
               )}
 
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-mono font-bold">
-                  {Math.round(insight.confidence * 100)}%
-                </span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono font-bold">
-                  {Math.round(insight.impact * 100)}%
-                </span>
-                {insight.dataDensity > 0.3 && (
-                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-600 font-mono">
-                    {Math.round(insight.dataDensity * 100)}% data
-                  </span>
-                )}
-              </div>
-
               <AnimatePresence>
                 {isExpanded && (
                   <motion.div
@@ -167,12 +153,9 @@ function CompactLayout({
                       {insight.fullContent}
                     </p>
 
-                    {/* Extracted Data Metrics - PROMINENT */}
+                    {/* Extracted Data Metrics — actual values only */}
                     {insight.metrics.length > 0 && (
                       <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                        <div className="text-[8px] text-blue-600 font-bold mb-1.5 uppercase tracking-wide">
-                          📊 Extracted Data ({insight.metrics.length})
-                        </div>
                         <div className="flex flex-wrap gap-1.5">
                           {insight.metrics.map((metric, i) => (
                             <span
@@ -185,34 +168,6 @@ function CompactLayout({
                         </div>
                       </div>
                     )}
-
-                    {/* Metrics */}
-                    <div className="flex items-center gap-3 pt-2 flex-wrap">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[8px] text-slate-500">Confidence:</span>
-                        <span className="text-[9px] font-mono text-emerald-600 font-bold">
-                          {Math.round(insight.confidence * 100)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[8px] text-slate-500">Impact:</span>
-                        <span className="text-[9px] font-mono text-blue-600 font-bold">
-                          {Math.round(insight.impact * 100)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[8px] text-slate-500">Data:</span>
-                        <span className="text-[9px] font-mono text-indigo-600 font-bold">
-                          {Math.round(insight.dataDensity * 100)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[8px] text-slate-500">Rank:</span>
-                        <span className="text-[9px] font-mono text-slate-600 font-bold">
-                          #{insight.rank}
-                        </span>
-                      </div>
-                    </div>
 
                     {/* Connected Topics */}
                     {nodeConnections.length > 0 && (

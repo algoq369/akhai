@@ -79,23 +79,12 @@ export default function LayerResponse({
     return 'full' as const;
   }, [insights]);
 
-  const stats = useMemo(() => {
-    const totalMetrics = insights.reduce((sum, ins) => sum + ins.metrics.length, 0);
-    const avgDataDensity = Math.round(
-      (insights.reduce((a, b) => a + b.dataDensity, 0) / insights.length) * 100
-    );
-
-    return {
-      total: insights.length,
-      avgConfidence: Math.round(
-        (insights.reduce((a, b) => a + b.confidence, 0) / insights.length) * 100
-      ),
-      avgImpact: Math.round((insights.reduce((a, b) => a + b.impact, 0) / insights.length) * 100),
-      categories: Object.entries(grouped).filter(([, items]) => items.length > 0).length,
-      totalMetrics,
-      avgDataDensity,
-    };
-  }, [insights, grouped]);
+  const stats = useMemo(
+    () => ({
+      totalMetrics: insights.reduce((sum, ins) => sum + ins.metrics.length, 0),
+    }),
+    [insights]
+  );
 
   if (insights.length < 2) {
     return <FallbackView content={content} intelligence={intelligence} />;
@@ -129,8 +118,7 @@ export default function LayerResponse({
                 })()}
               </h3>
               <p className="text-[10px] text-slate-500 dark:text-relic-ghost/70 font-mono">
-                {insights.length} insights · {stats.totalMetrics} data points ·{' '}
-                {stats.avgDataDensity}% data · {stats.avgConfidence}% confidence
+                {insights.length} insights extracted
               </p>
             </div>
           </div>

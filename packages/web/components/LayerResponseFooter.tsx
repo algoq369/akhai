@@ -13,12 +13,7 @@ interface LayerResponseFooterProps {
   connections: ConnectionData[];
   grouped: Record<string, CoreInsight[]>;
   stats: {
-    total: number;
-    avgConfidence: number;
-    avgImpact: number;
-    categories: number;
     totalMetrics: number;
-    avgDataDensity: number;
   };
   viewMode: 'tree' | 'list';
   query: string;
@@ -109,13 +104,13 @@ export default function LayerResponseFooter({
                 const titles = topDataInsights
                   .map((i) => (i.title.length > 40 ? i.title.substring(0, 37) + '...' : i.title))
                   .join(' • ');
-                return `${stats.totalMetrics} quantitative metrics found — ${stats.avgDataDensity}% data density — Top data: ${titles}`;
+                return `${stats.totalMetrics} quantitative metrics found — Top data: ${titles}`;
               } else {
                 const topInsights = insights
                   .slice(0, 2)
                   .map((i) => (i.title.length > 35 ? i.title.substring(0, 32) + '...' : i.title))
                   .join(' • ');
-                return `${stats.avgConfidence}% confidence synthesis — Key concepts: ${topInsights}`;
+                return `Synthesis — Key concepts: ${topInsights}`;
               }
             })()}
           </p>

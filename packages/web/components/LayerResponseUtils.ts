@@ -142,8 +142,17 @@ export function extractHighLevelInsights(content: string, query: string): CoreIn
     if (seen.has(key)) continue;
     seen.add(key);
 
-    const metrics = extractMetrics(text);
-    const dataDensity = calculateDataDensity(text);
+    // Look ahead for the paragraph following this numbered item (until blank line or 300 chars)
+    const lineEnd = content.indexOf('\n', match.index + match[0].length);
+    const nextLineStart = lineEnd >= 0 ? lineEnd + 1 : content.length;
+    const nextBlank = content.indexOf('\n\n', nextLineStart);
+    const followingText = content
+      .slice(nextLineStart, nextBlank > 0 ? nextBlank : nextLineStart + 300)
+      .trim();
+    const fullContent = followingText || text;
+
+    const metrics = extractMetrics(fullContent);
+    const dataDensity = calculateDataDensity(fullContent);
 
     // Skip if no meaningful data
     if (metrics.length === 0 && dataDensity < 0.15) continue;
@@ -153,7 +162,7 @@ export function extractHighLevelInsights(content: string, query: string): CoreIn
       id: `insight-${rank}`,
       rank,
       title: text.length > 60 ? text.substring(0, 57) + '...' : text,
-      fullContent: text,
+      fullContent: fullContent.length > 300 ? fullContent.substring(0, 297) + '...' : fullContent,
       category: dataDensity > 0.5 ? 'data' : 'action',
       confidence: 0.88 + dataDensity * 0.1,
       impact: 0.82 + dataDensity * 0.15,
@@ -166,15 +175,36 @@ export function extractHighLevelInsights(content: string, query: string): CoreIn
 
   // PRIORITY 2: Extract headers with emphasis on data-rich ones
   const headerPattern = /^#+\s*(.+)$/gm;
+  // First pass: collect all header positions so we know each section's boundary.
+  const headerMatches: { text: string; lineStart: number; bodyStart: number }[] = [];
   while ((match = headerPattern.exec(content)) !== null) {
-    const text = match[1].trim().replace(/[#*]/g, '').trim();
+    headerMatches.push({
+      text: match[1].trim().replace(/[#*]/g, '').trim(),
+      lineStart: match.index,
+      bodyStart: match.index + match[0].length,
+    });
+  }
+  for (let hi = 0; hi < headerMatches.length; hi++) {
+    const hp = headerMatches[hi];
+    const text = hp.text;
     const key = text.toLowerCase().substring(0, 30);
 
     if (text.length < 5 || text.length > 100 || seen.has(key)) continue;
     seen.add(key);
 
-    const metrics = extractMetrics(text);
-    const dataDensity = calculateDataDensity(text);
+    // Body = content between this header line and the next header (or end of text).
+    const bodyEnd =
+      hi + 1 < headerMatches.length ? headerMatches[hi + 1].lineStart : content.length;
+    const bodyContent = content.slice(hp.bodyStart, bodyEnd).trim();
+    const firstSentences = bodyContent
+      .split(/(?<=[.!?])\s+/)
+      .slice(0, 3)
+      .join(' ')
+      .trim();
+    const fullContent = firstSentences || text;
+
+    const metrics = extractMetrics(bodyContent || text);
+    const dataDensity = calculateDataDensity(bodyContent || text);
     const textLower = text.toLowerCase();
 
     // Determine category with data focus
@@ -211,7 +241,7 @@ export function extractHighLevelInsights(content: string, query: string): CoreIn
       id: `insight-${rank}`,
       rank,
       title: text.length > 60 ? text.substring(0, 57) + '...' : text,
-      fullContent: text,
+      fullContent: fullContent.length > 300 ? fullContent.substring(0, 297) + '...' : fullContent,
       category,
       confidence: 0.85 + dataDensity * 0.12,
       impact: 0.78 + dataDensity * 0.18,
