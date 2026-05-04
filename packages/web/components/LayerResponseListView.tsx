@@ -72,21 +72,6 @@ export default function LayerResponseListView({
                     )}
                   </div>
 
-                  {/* Data Density Indicator */}
-                  {insight.dataDensity > 0.3 && (
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden max-w-[100px]">
-                        <div
-                          className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all"
-                          style={{ width: `${insight.dataDensity * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-[8px] text-slate-500 font-mono">
-                        {Math.round(insight.dataDensity * 100)}% data
-                      </span>
-                    </div>
-                  )}
-
                   {/* Expanded - Compact with Actions */}
                   <AnimatePresence>
                     {isExpanded && (
@@ -103,9 +88,6 @@ export default function LayerResponseListView({
                         {/* All Metrics - Expanded View */}
                         {insight.metrics.length > 0 && (
                           <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                            <div className="text-[8px] text-blue-600 dark:text-blue-400 font-semibold mb-1 uppercase tracking-wide">
-                              📊 Key Data Points ({insight.metrics.length})
-                            </div>
                             <div className="flex flex-wrap gap-1">
                               {insight.metrics.map((metric, i) => (
                                 <span
@@ -124,9 +106,6 @@ export default function LayerResponseListView({
                             className={`text-[8px] px-1.5 py-0.5 rounded ${config.badge} capitalize font-semibold`}
                           >
                             {insight.category}
-                          </span>
-                          <span className="text-[8px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-mono">
-                            {Math.round(insight.dataDensity * 100)}% data
                           </span>
                           {/* Actions - Open in new tab */}
                           <button
@@ -154,24 +133,11 @@ export default function LayerResponseListView({
                   </AnimatePresence>
                 </div>
 
-                {/* Metrics - Compact */}
-                <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] font-mono text-emerald-600 font-bold">
-                      {Math.round(insight.confidence * 100)}%
-                    </span>
-                    <span className="text-[9px] font-mono text-blue-600 font-bold">
-                      {Math.round(insight.impact * 100)}%
-                    </span>
-                    <ChevronDownIcon
-                      className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                    />
-                  </div>
-                  {insight.metrics.length > 0 && (
-                    <span className="text-[7px] text-blue-600 font-mono font-semibold">
-                      {insight.metrics.length} metrics
-                    </span>
-                  )}
+                {/* Expand chevron */}
+                <div className="flex-shrink-0">
+                  <ChevronDownIcon
+                    className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                  />
                 </div>
               </div>
             </div>

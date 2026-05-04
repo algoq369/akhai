@@ -231,11 +231,6 @@ export default function InsightMindmap({
                                   <span className="text-[8px] text-slate-400 dark:text-slate-500 font-mono">
                                     {hostname}
                                   </span>
-                                  {link.relevance > 0 && (
-                                    <span className="text-[8px] text-slate-400 dark:text-slate-500">
-                                      {Math.round(link.relevance * 100)}% match
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </div>

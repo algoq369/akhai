@@ -44,13 +44,6 @@ export default function ConceptNodeItem({
         <span className="flex-1 text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate">
           {node.label}
         </span>
-        {/* Extraction Confidence - how reliably this concept was identified */}
-        <span
-          className="text-[8px] text-emerald-600 dark:text-emerald-400 font-medium"
-          title="Extraction Confidence: How reliably this concept was identified from the response (based on formatting: bold text, headers, and bullet points)"
-        >
-          {Math.round(node.confidence * 100)}%
-        </span>
         {/* Connection count */}
         {node.connections.length > 0 && (
           <span
@@ -72,27 +65,6 @@ export default function ConceptNodeItem({
           <p className="text-[9px] text-slate-600 dark:text-slate-400 leading-relaxed">
             {node.fullText}
           </p>
-          {/* Metrics with tooltips */}
-          <div className="mt-2 flex items-center gap-3 text-[8px]">
-            <span
-              className="flex items-center gap-1"
-              title="Extraction Confidence: How reliably this concept was identified from the AI response. Higher scores indicate clearer formatting (bold, headers) in the source."
-            >
-              <span className="text-slate-400">Confidence:</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                {Math.round(node.confidence * 100)}%
-              </span>
-            </span>
-            <span
-              className="flex items-center gap-1"
-              title="Query Relevance: How closely this concept matches keywords from your original question. Higher scores mean stronger topical alignment."
-            >
-              <span className="text-slate-400">Relevance:</span>
-              <span className="text-blue-600 dark:text-blue-400 font-medium">
-                {Math.round(node.relevance * 100)}%
-              </span>
-            </span>
-          </div>
           <div className="mt-1.5 flex items-center gap-1">
             <span className="text-[8px] text-slate-400">AI Layers:</span>
             {node.layerMapping.map((s) => (

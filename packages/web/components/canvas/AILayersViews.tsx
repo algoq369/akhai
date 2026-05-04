@@ -114,9 +114,14 @@ export function MindmapView({ insights }: { insights: AIInsight[] }) {
   // Simple SVG mindmap visualization
   const categories = ['strategy', 'insight', 'data', 'action'];
 
+  const count = categories.length;
+  const cols = Math.ceil(Math.sqrt(count));
+  const cellW = 300 / cols;
+  const cellH = 200 / Math.ceil(count / cols);
+
   return (
     <div className="w-full h-full min-h-[300px] relative overflow-hidden">
-      <svg className="w-full h-full" viewBox="0 0 400 300">
+      <svg className="w-full h-full" viewBox="0 0 400 350">
         {/* Background Grid */}
         <defs>
           <pattern id="ai-grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -126,25 +131,25 @@ export function MindmapView({ insights }: { insights: AIInsight[] }) {
         <rect width="100%" height="100%" fill="url(#ai-grid)" />
 
         {/* Center Node */}
-        <circle cx="200" cy="150" r="24" fill="#a78bfa" opacity="0.9" />
-        <text x="200" y="154" textAnchor="middle" fontSize="8" fill="white" fontFamily="monospace">
+        <circle cx="200" cy="175" r="24" fill="#a78bfa" opacity="0.9" />
+        <text x="200" y="179" textAnchor="middle" fontSize="8" fill="white" fontFamily="monospace">
           AI Layers
         </text>
 
-        {/* Category Nodes */}
+        {/* Category Nodes — grid layout to prevent overlap */}
         {categories.map((cat, idx) => {
-          const angle = (idx * Math.PI * 2) / 4 - Math.PI / 2;
-          const radius = 80;
-          const x = 200 + Math.cos(angle) * radius;
-          const y = 150 + Math.sin(angle) * radius;
-          const count = insights.filter((i) => i.category === cat).length;
+          const row = Math.floor(idx / cols);
+          const col = idx % cols;
+          const x = 50 + col * cellW + cellW / 2;
+          const y = 50 + row * cellH + cellH / 2;
+          const itemCount = insights.filter((i) => i.category === cat).length;
 
           return (
             <g key={cat}>
               {/* Connection Line */}
               <line
                 x1="200"
-                y1="150"
+                y1="175"
                 x2={x}
                 y2={y}
                 stroke="#d1d5db"
@@ -165,7 +170,7 @@ export function MindmapView({ insights }: { insights: AIInsight[] }) {
                         ? '#10b981'
                         : '#a855f7'
                 }
-                opacity={count > 0 ? 0.9 : 0.4}
+                opacity={itemCount > 0 ? 0.9 : 0.4}
               />
               <text
                 x={x}
@@ -185,7 +190,7 @@ export function MindmapView({ insights }: { insights: AIInsight[] }) {
                 fill="white"
                 fontFamily="monospace"
               >
-                {count}
+                {itemCount}
               </text>
             </g>
           );
