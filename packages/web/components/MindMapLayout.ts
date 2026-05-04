@@ -174,52 +174,124 @@ export function computeForceLayout(
   const hubs = sorted.slice(0, hubCount);
   const hubIds = new Set(hubs.map((h) => h.id));
 
-  // Assign remaining nodes to nearest hub
-  const hubChildren: Record<string, Node[]> = {};
-  hubs.forEach((h) => {
-    hubChildren[h.id] = [];
-  });
-  const assigned = new Set(hubIds);
+  // --- Force-directed simulation ---
+  const positions: Record<string, { x: number; y: number }> = {};
 
-  // First pass: assign nodes connected to hubs
+  const cx = 500,
+    cy = 400;
+  const initRadius = Math.min(300, 80 + n * 2);
+
+  hubs.forEach((hub, i) => {
+    const angle = (i / hubs.length) * Math.PI * 2;
+    positions[hub.id] = {
+      x: cx + Math.cos(angle) * initRadius * 0.4,
+      y: cy + Math.sin(angle) * initRadius * 0.4,
+    };
+  });
+
   sorted.forEach((nd) => {
-    if (assigned.has(nd.id)) return;
-    const connectedHubs = (adj[nd.id] || []).filter((id) => hubIds.has(id));
-    if (connectedHubs.length > 0) {
-      hubChildren[connectedHubs[0]].push(nd);
-      assigned.add(nd.id);
+    if (positions[nd.id]) return;
+    const connHubs = (adj[nd.id] || []).filter((id) => hubIds.has(id));
+    const parentHub = connHubs[0] || hubs[0]?.id;
+    const parentPos = positions[parentHub] || { x: cx, y: cy };
+    positions[nd.id] = {
+      x: parentPos.x + (Math.random() - 0.5) * initRadius * 0.8,
+      y: parentPos.y + (Math.random() - 0.5) * initRadius * 0.8,
+    };
+  });
+
+  const iterations = 120;
+  const repulsionStrength = 800;
+  const attractionStrength = 0.015;
+  const centeringStrength = 0.002;
+  const damping = 0.92;
+
+  const vel: Record<string, { vx: number; vy: number }> = {};
+  sorted.forEach((nd) => {
+    vel[nd.id] = { vx: 0, vy: 0 };
+  });
+
+  for (let iter = 0; iter < iterations; iter++) {
+    const temp = 1 - iter / iterations;
+
+    for (let i = 0; i < sorted.length; i++) {
+      for (let j = i + 1; j < sorted.length; j++) {
+        const a = sorted[i].id,
+          b = sorted[j].id;
+        const pa = positions[a],
+          pb = positions[b];
+        let dx = pa.x - pb.x,
+          dy = pa.y - pb.y;
+        let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        if (dist < 20) dist = 20;
+        const force = (repulsionStrength * temp) / (dist * dist);
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+        vel[a].vx += fx;
+        vel[a].vy += fy;
+        vel[b].vx -= fx;
+        vel[b].vy -= fy;
+      }
     }
-  });
-  // Second pass: assign remaining to hub with fewest children
-  sorted.forEach((nd) => {
-    if (assigned.has(nd.id)) return;
-    const minHub = hubs.reduce((a, b) =>
-      hubChildren[a.id].length <= hubChildren[b.id].length ? a : b
-    );
-    hubChildren[minHub.id].push(nd);
-    assigned.add(nd.id);
-  });
 
-  // Position: hubs across top row, children in columns below each hub
-  const colW = n > 50 ? 180 : n > 20 ? 160 : 140;
-  const rowH = n > 30 ? 40 : 35;
-  const padTop = 60,
-    padLeft = 40;
-  const vw = Math.max(900, hubCount * colW + padLeft * 2);
-
-  const pos: { id: string; x: number; y: number }[] = [];
-  hubs.forEach((hub, hi) => {
-    const cx = padLeft + hi * colW + colW / 2;
-    pos.push({ id: hub.id, x: cx, y: padTop });
-
-    const children = hubChildren[hub.id].sort((a, b) => (b.queryCount || 0) - (a.queryCount || 0));
-    children.forEach((child, ci) => {
-      pos.push({ id: child.id, x: cx, y: padTop + (ci + 1) * rowH });
+    intLinks.forEach((link) => {
+      const pa = positions[link.source],
+        pb = positions[link.target];
+      if (!pa || !pb) return;
+      const dx = pb.x - pa.x,
+        dy = pb.y - pa.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const force = dist * attractionStrength * temp;
+      const fx = (dx / dist) * force;
+      const fy = (dy / dist) * force;
+      vel[link.source].vx += fx;
+      vel[link.source].vy += fy;
+      vel[link.target].vx -= fx;
+      vel[link.target].vy -= fy;
     });
+
+    sorted.forEach((nd) => {
+      const p = positions[nd.id];
+      vel[nd.id].vx += (cx - p.x) * centeringStrength;
+      vel[nd.id].vy += (cy - p.y) * centeringStrength;
+    });
+
+    sorted.forEach((nd) => {
+      const v = vel[nd.id],
+        p = positions[nd.id];
+      v.vx *= damping;
+      v.vy *= damping;
+      const maxV = 10 * temp + 1;
+      v.vx = Math.max(-maxV, Math.min(maxV, v.vx));
+      v.vy = Math.max(-maxV, Math.min(maxV, v.vy));
+      p.x += v.vx;
+      p.y += v.vy;
+    });
+  }
+
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  sorted.forEach((nd) => {
+    const p = positions[nd.id];
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
   });
 
-  const maxChildren = Math.max(...Object.values(hubChildren).map((c) => c.length), 0);
-  const vh = padTop + (maxChildren + 2) * rowH;
+  const graphW = maxX - minX || 400;
+  const graphH = maxY - minY || 400;
+  const padding = 80;
+  const vw = Math.max(900, graphW + padding * 2);
+  const vh = Math.max(700, graphH + padding * 2);
+
+  const pos: { id: string; x: number; y: number }[] = sorted.map((nd) => ({
+    id: nd.id,
+    x: padding + ((positions[nd.id].x - minX) / graphW) * (vw - padding * 2),
+    y: padding + ((positions[nd.id].y - minY) / graphH) * (vh - padding * 2),
+  }));
 
   return { positions: pos, links: intLinks, sortedNodes: sorted, vw, vh };
 }
