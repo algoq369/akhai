@@ -15,8 +15,13 @@ export interface LLMAnnotation {
 }
 
 const MODELS = [
-  { id: 'claude-haiku-4-5-20251001', label: 'llm-haiku' },
-  { id: 'claude-sonnet-4-6', label: 'llm-sonnet' },
+  { id: 'claude-haiku-4-5-20251001', label: 'llm-haiku', provider: 'anthropic' as const },
+  { id: 'claude-sonnet-4-6', label: 'llm-sonnet', provider: 'anthropic' as const },
+  {
+    id: 'meta-llama/llama-3.3-70b-instruct',
+    label: 'llm-openrouter',
+    provider: 'openrouter' as const,
+  },
 ] as const;
 
 async function callAnthropic(
@@ -54,6 +59,49 @@ async function callAnthropic(
 
     const data = await res.json();
     return data.content?.[0]?.text || '';
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function callOpenRouter(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY not set');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000);
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://akhai.app',
+        'X-Title': 'AkhAI Depth Extract',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      throw new Error(`OpenRouter ${res.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || '';
   } finally {
     clearTimeout(timeout);
   }
@@ -142,7 +190,8 @@ export async function extractAnnotationsLLM(
 
   for (const model of MODELS) {
     try {
-      const raw = await callAnthropic(model.id, systemPrompt, userPrompt);
+      const caller = model.provider === 'openrouter' ? callOpenRouter : callAnthropic;
+      const raw = await caller(model.id, systemPrompt, userPrompt);
       const annotations = parseAnnotations(raw);
       console.log(`[DepthExtract] ${model.label}: ${annotations.length} annotations extracted`);
       return { annotations, source: model.label };
