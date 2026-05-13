@@ -291,7 +291,7 @@ export default function ChatMessages({
                         {/* Per-message toggle */}
                         <button
                           onClick={() => toggleMsgPipeline(message.id)}
-                          className={`absolute -right-6 top-0 w-4 h-4 flex items-center justify-center text-[8px] font-mono rounded transition-all ${
+                          className={`absolute -right-8 top-0 w-5 h-5 flex items-center justify-center text-[10px] font-mono rounded hover:bg-relic-ghost/30 dark:hover:bg-relic-slate/10 transition-all ${
                             pipelineEnabled && !hiddenPipelines.has(message.id)
                               ? 'text-relic-silver hover:text-relic-slate'
                               : 'text-relic-ghost hover:text-relic-silver'

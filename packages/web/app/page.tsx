@@ -26,6 +26,7 @@ const ArborealView = dynamic(() => import('@/components/arboreal/ArborealView'),
 });
 const SideChat = dynamic(() => import('@/components/SideChat'), { ssr: false });
 const SideMiniChat = dynamic(() => import('@/components/SideMiniChat'), { ssr: false });
+const MetadataSidePanel = dynamic(() => import('@/components/MetadataSidePanel'), { ssr: false });
 /**
  * Helper component to watch URL parameters
  * Separated to enable proper Suspense boundary for Next.js 15
@@ -331,6 +332,9 @@ function HomePage() {
         onSendQuery={(queryText) => s.handleMiniChatSendQuery(queryText)}
         onPromoteToMain={(query, response) => s.handlePromoteToMain(query, response)}
       />
+
+      {/* Engine Metadata Side Panel — fixed position ◊ toggle */}
+      <MetadataSidePanel />
     </div>
   );
 }
