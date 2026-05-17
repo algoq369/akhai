@@ -557,6 +557,26 @@ export async function POST(request: NextRequest) {
     trackUsage(selectedProvider, usedModel, inputTokens, outputTokens, cost);
     logger.query.complete(queryId, latency, cost);
 
+    // ========== EMIT COMPLETE STAGE (enables MetadataStrip summary phase) ==========
+    emitAndPersist(queryId, {
+      id: `${queryId}-complete`,
+      queryId,
+      stage: 'complete',
+      timestamp: Date.now() - startTime,
+      data: `Done · ${selectedMethod.id} · ${formatDuration(latency)}`,
+      details: {
+        methodology: {
+          selected: selectedMethod.id,
+          reason: selectedMethod.reason || 'Engine selection',
+        },
+        model: usedModel,
+        provider: selectedProvider,
+        tokens: { input: inputTokens, output: outputTokens, total: tokens },
+        cost,
+        duration: latency,
+      },
+    });
+
     // ========== MINI CANVAS CLASSIFICATION ==========
     const miniCanvas = classifyContent(content, query);
 
