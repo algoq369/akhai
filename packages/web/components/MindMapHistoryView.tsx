@@ -277,25 +277,8 @@ export default function MindMapHistoryView({
       />
 
       {/* Hover tooltip — portal to escape overflow:hidden */}
-      {hoveredQuery && !clickedQuery && !clusterInsight && (
-        <HoverTooltip
-          hoveredQuery={hoveredQuery}
-          hoverHideTimeout={hoverHideTimeout}
-          setHoveredQuery={() => setHoveredQuery(null)}
-          onContinueToChat={onContinueToChat}
-        />
-      )}
 
       {/* Cluster insight tooltip — portal */}
-      {clusterInsight && !hoveredQuery && !clickedQuery && (
-        <ClusterInsightTooltip
-          clusterInsight={clusterInsight}
-          clusterHoverTimeout={clusterHoverTimeout}
-          setClusterInsight={() => setClusterInsight(null)}
-          filteredClusters={filteredClusters}
-          onContinueToChat={onContinueToChat}
-        />
-      )}
 
       {/* Click popup — portal to escape overflow:hidden */}
       {clickedQuery && (
