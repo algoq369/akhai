@@ -1,41 +1,41 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import MindMapDiagramView from './MindMapDiagramView'
-import MindMapHistoryView from './MindMapHistoryView'
-import MindMapReportView from './MindMapReportView'
-import MindMapMiniChat from './MindMapMiniChat'
-import VisionBoard from './VisionBoard'
-import PredictView from './mindmap/PredictView'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import MindMapDiagramView from './MindMapDiagramView';
+import MindMapHistoryView from './MindMapHistoryView';
+import MindMapReportView from './MindMapReportView';
+import MindMapMiniChat from './MindMapMiniChat';
+import VisionBoard from './VisionBoard';
+import PredictView from './mindmap/PredictView';
 
 export interface Node {
-  id: string
-  name: string
-  description: string | null
-  category: string | null
-  color: string
-  pinned: boolean
-  archived: boolean
-  ai_instructions: string | null
-  queryCount: number
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  color: string;
+  pinned: boolean;
+  archived: boolean;
+  ai_instructions: string | null;
+  queryCount: number;
 }
 
 interface Connection {
-  from: string
-  to: string
-  fromName?: string
-  toName?: string
+  from: string;
+  to: string;
+  fromName?: string;
+  toName?: string;
 }
 
-type ViewMode = 'board' | 'graph' | 'history' | 'report' | 'predict'
+type ViewMode = 'board' | 'graph' | 'history' | 'report' | 'predict';
 
 interface MindMapProps {
-  isOpen: boolean
-  onClose: () => void
-  onSendQuery?: (query: string) => void
-  userId: string | null
-  initialView?: ViewMode
+  isOpen: boolean;
+  onClose: () => void;
+  onSendQuery?: (query: string) => void;
+  userId: string | null;
+  initialView?: ViewMode;
 }
 
 const CATEGORY_COLORS: Record<string, { bg: string; dot: string }> = {
@@ -52,51 +52,63 @@ const CATEGORY_COLORS: Record<string, { bg: string; dot: string }> = {
   health: { bg: '#FDF2F8', dot: '#DB2777' },
   education: { bg: '#F5F3FF', dot: '#7C3AED' },
   other: { bg: '#F8FAFC', dot: '#64748B' },
-}
+};
 
 function getCategoryStyle(category: string | null | undefined) {
-  const cat = category?.toLowerCase() || 'other'
-  return CATEGORY_COLORS[cat] || CATEGORY_COLORS.other
+  const cat = category?.toLowerCase() || 'other';
+  return CATEGORY_COLORS[cat] || CATEGORY_COLORS.other;
 }
 
-export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialView = 'graph' }: MindMapProps) {
-  const [nodes, setNodes] = useState<Node[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>(initialView)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [connections, setConnections] = useState<Connection[]>([])
-  const [topicLinks, setTopicLinks] = useState<{ source: string; target: string; type: string; strength: number }[]>([])
-  const [showConnections, setShowConnections] = useState(false)
-  const [showPinned, setShowPinned] = useState(false)
-  const [categoryFilter, setCategoryFilter] = useState<string>('all')
-  
-  const [selectedGraphNode, setSelectedGraphNode] = useState<{ id: string; name: string; category?: string } | null>(null)
-  const [miniChatOpen, setMiniChatOpen] = useState(false)
-  const [miniChatQuery, setMiniChatQuery] = useState('')
+export default function MindMap({
+  isOpen,
+  onClose,
+  onSendQuery,
+  userId,
+  initialView = 'graph',
+}: MindMapProps) {
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const [topicLinks, setTopicLinks] = useState<
+    { source: string; target: string; type: string; strength: number }[]
+  >([]);
+  const [showConnections, setShowConnections] = useState(false);
+  const [showPinned, setShowPinned] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  const [selectedGraphNode, setSelectedGraphNode] = useState<{
+    id: string;
+    name: string;
+    category?: string;
+  } | null>(null);
+  const [miniChatOpen, setMiniChatOpen] = useState(false);
+  const [miniChatQuery, setMiniChatQuery] = useState('');
 
   useEffect(() => {
-    setViewMode(initialView)
-  }, [initialView])
+    setViewMode(initialView);
+  }, [initialView]);
 
   useEffect(() => {
     if (selectedGraphNode) {
-      setMiniChatQuery(`Tell me more about ${selectedGraphNode.name}`)
+      setMiniChatQuery(`Tell me more about ${selectedGraphNode.name}`);
     }
-  }, [selectedGraphNode])
+  }, [selectedGraphNode]);
 
   const fetchData = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/mindmap/data')
+      const res = await fetch('/api/mindmap/data');
       if (!res.ok) {
-        throw new Error(`Failed to load mind map data (${res.status})`)
+        throw new Error(`Failed to load mind map data (${res.status})`);
       }
-      const data = await res.json()
-      setNodes(data.nodes || [])
-      const rawLinks = data.links || []
-      setTopicLinks(rawLinks)
+      const data = await res.json();
+      setNodes(data.nodes || []);
+      const rawLinks = data.links || [];
+      setTopicLinks(rawLinks);
       const conns = rawLinks.map((c: any) => ({
         from: c.source,
         to: c.target,
@@ -104,91 +116,115 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
         strength: c.strength,
         fromName: data.nodes?.find((n: Node) => n.id === c.source)?.name,
         toName: data.nodes?.find((n: Node) => n.id === c.target)?.name,
-      }))
-      setConnections(conns)
+      }));
+      setConnections(conns);
     } catch (err) {
-      console.error('Failed to fetch:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load mind map data')
+      console.error('Failed to fetch:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load mind map data');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    if (!isOpen) return
-    fetchData()
-  }, [isOpen])
+    if (!isOpen) return;
+    fetchData();
+  }, [isOpen]);
 
   // Stable ref for onClose to avoid useEffect re-triggering on every render
-  const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  // Push history state when modal opens so browser back closes modal instead of navigating away
+  // Track view mode in ref for popstate handler
+  const viewModeRef = useRef(viewMode);
+  viewModeRef.current = viewMode;
+
+  // Navigate tabs with browser history support
+  const switchTab = useCallback((newView: ViewMode) => {
+    setViewMode(newView);
+    window.history.pushState({ mindmapOpen: true, mindmapView: newView }, '', window.location.href);
+  }, []);
+
+  // Push history state when modal opens — browser back navigates tabs, then closes
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
-    window.history.pushState({ mindmapOpen: true }, '', window.location.href)
+    window.history.pushState(
+      { mindmapOpen: true, mindmapView: initialView },
+      '',
+      window.location.href
+    );
 
-    const handlePopState = () => {
-      onCloseRef.current()
-    }
+    const handlePopState = (e: PopStateEvent) => {
+      const state = e.state;
+      if (state?.mindmapOpen && state?.mindmapView) {
+        // Navigate to previous tab within mindmap
+        setViewMode(state.mindmapView);
+      } else {
+        // No mindmap state — close the modal
+        onCloseRef.current();
+      }
+    };
 
-    window.addEventListener('popstate', handlePopState)
+    window.addEventListener('popstate', handlePopState);
 
     return () => {
-      window.removeEventListener('popstate', handlePopState)
-    }
-  }, [isOpen])
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isOpen, initialView]);
 
   const categories = useMemo(() => {
-    const cats = new Map<string, number>()
-    nodes.forEach(n => {
-      const cat = n.category || 'other'
-      cats.set(cat, (cats.get(cat) || 0) + 1)
-    })
-    return Array.from(cats.entries()).sort((a, b) => b[1] - a[1])
-  }, [nodes])
+    const cats = new Map<string, number>();
+    nodes.forEach((n) => {
+      const cat = n.category || 'other';
+      cats.set(cat, (cats.get(cat) || 0) + 1);
+    });
+    return Array.from(cats.entries()).sort((a, b) => b[1] - a[1]);
+  }, [nodes]);
 
   const filteredNodes = useMemo(() => {
-    let result = [...nodes]
+    let result = [...nodes];
 
     if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter(n =>
-        n.name.toLowerCase().includes(q) ||
-        n.description?.toLowerCase().includes(q)
-      )
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (n) => n.name.toLowerCase().includes(q) || n.description?.toLowerCase().includes(q)
+      );
     }
 
     if (categoryFilter !== 'all') {
-      result = result.filter(n => (n.category || 'other').toLowerCase() === categoryFilter.toLowerCase())
+      result = result.filter(
+        (n) => (n.category || 'other').toLowerCase() === categoryFilter.toLowerCase()
+      );
     }
 
     if (showPinned) {
-      result = result.filter(n => n.pinned)
+      result = result.filter((n) => n.pinned);
     }
 
-    return result
-  }, [nodes, searchQuery, categoryFilter, showPinned])
+    return result;
+  }, [nodes, searchQuery, categoryFilter, showPinned]);
 
   const nodeConnections = useMemo(() => {
-    if (!selectedGraphNode) return connections
-    return connections.filter(c => c.from === selectedGraphNode.id || c.to === selectedGraphNode.id)
-  }, [selectedGraphNode, connections])
+    if (!selectedGraphNode) return connections;
+    return connections.filter(
+      (c) => c.from === selectedGraphNode.id || c.to === selectedGraphNode.id
+    );
+  }, [selectedGraphNode, connections]);
 
   const handleSendQuery = (query: string) => {
-    onClose()
-    onSendQuery?.(query)
-  }
+    onClose();
+    onSendQuery?.(query);
+  };
 
   const handleNodeSelect = (node: { id: string; name: string; category?: string } | null) => {
-    setSelectedGraphNode(node)
+    setSelectedGraphNode(node);
     if (node) {
-      setShowConnections(false)
+      setShowConnections(false);
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-40 bg-white" style={{ top: 23, bottom: 24 }}>
@@ -206,7 +242,7 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
             ].map(({ id, label }) => (
               <button
                 key={id}
-                onClick={() => setViewMode(id as ViewMode)}
+                onClick={() => switchTab(id as ViewMode)}
                 className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all ${
                   viewMode === id
                     ? 'bg-white text-slate-900 shadow-sm'
@@ -236,7 +272,9 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
             >
               <option value="all">all ({nodes.length})</option>
               {categories.map(([cat, count]) => (
-                <option key={cat} value={cat}>{cat} ({count})</option>
+                <option key={cat} value={cat}>
+                  {cat} ({count})
+                </option>
               ))}
             </select>
           )}
@@ -245,7 +283,9 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
             <button
               onClick={() => setShowPinned(!showPinned)}
               className={`px-2 py-0.5 rounded-lg text-[9px] font-medium transition-all ${
-                showPinned ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                showPinned
+                  ? 'bg-amber-50 text-amber-600'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
               }`}
             >
               pinned
@@ -253,7 +293,9 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
             <button
               onClick={() => setShowConnections(!showConnections)}
               className={`px-2 py-0.5 rounded-lg text-[9px] font-medium transition-all ${
-                showConnections ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                showConnections
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
               }`}
             >
               connections ({connections.length})
@@ -262,9 +304,17 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
 
           <span className="text-[9px] text-slate-400 ml-auto">{filteredNodes.length} topics</span>
 
-          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600">
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -279,8 +329,18 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <div className="text-center">
-                <svg className="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg
+                  className="w-12 h-12 mx-auto text-slate-300 mb-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
                 <p className="text-sm text-slate-600 mb-1">Failed to load mind map</p>
                 <p className="text-xs text-slate-400">{error}</p>
@@ -290,7 +350,12 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
                 className="px-4 py-2 bg-slate-800 text-white text-xs font-medium rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
                 retry
               </button>
@@ -305,13 +370,19 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
               onNodeSelect={handleNodeSelect}
               onNodeAction={(query) => handleSendQuery(query)}
               onContinueToChat={(query) => {
-                setMiniChatQuery(query)
-                setMiniChatOpen(true)
+                setMiniChatQuery(query);
+                setMiniChatOpen(true);
               }}
               propTopicLinks={topicLinks}
             />
           ) : viewMode === 'history' ? (
-            <MindMapHistoryView onClose={onClose} onContinueToChat={(query) => { setMiniChatQuery(query); setMiniChatOpen(true) }} />
+            <MindMapHistoryView
+              onClose={onClose}
+              onContinueToChat={(query) => {
+                setMiniChatQuery(query);
+                setMiniChatOpen(true);
+              }}
+            />
           ) : viewMode === 'report' ? (
             <MindMapReportView userId={userId} selectedTopics={[]} />
           ) : viewMode === 'predict' ? (
@@ -321,7 +392,15 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
           {/* Mini-chat — visible on all tabs */}
           <div className="absolute bottom-4 left-4 z-50">
             <MindMapMiniChat
-              selectedTopic={selectedGraphNode ? { id: selectedGraphNode.id, label: selectedGraphNode.name, category: selectedGraphNode.category } : null}
+              selectedTopic={
+                selectedGraphNode
+                  ? {
+                      id: selectedGraphNode.id,
+                      label: selectedGraphNode.name,
+                      category: selectedGraphNode.category,
+                    }
+                  : null
+              }
               connectionsCount={connections.length}
               prefillQuery={miniChatQuery}
               isOpen={miniChatOpen}
@@ -342,16 +421,10 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
             >
               <div className="h-full flex flex-col">
                 <div className="flex-none p-3 bg-white border-b border-slate-100">
-                  <span className="text-xs font-semibold text-slate-700">
-                    connections
-                  </span>
-                  <span className="ml-2 text-[9px] text-slate-400">
-                    {nodeConnections.length}
-                  </span>
+                  <span className="text-xs font-semibold text-slate-700">connections</span>
+                  <span className="ml-2 text-[9px] text-slate-400">{nodeConnections.length}</span>
                   {selectedGraphNode && (
-                    <p className="text-[10px] text-slate-500 mt-1">
-                      for: {selectedGraphNode.name}
-                    </p>
+                    <p className="text-[10px] text-slate-500 mt-1">for: {selectedGraphNode.name}</p>
                   )}
                 </div>
 
@@ -360,26 +433,46 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
                     <div className="space-y-2">
                       {nodeConnections.length > 0 ? (
                         nodeConnections.slice(0, 50).map((conn, i) => {
-                          const fromNode = nodes.find(n => n.id === conn.from)
-                          const toNode = nodes.find(n => n.id === conn.to)
+                          const fromNode = nodes.find((n) => n.id === conn.from);
+                          const toNode = nodes.find((n) => n.id === conn.to);
                           return (
                             <div
                               key={i}
                               className="bg-white rounded-lg p-2 border border-slate-100 hover:border-slate-200 cursor-pointer"
                               onClick={() => {
-                                const node = fromNode?.id === selectedGraphNode?.id ? toNode : fromNode
-                                if (node) handleNodeSelect({ id: node.id, name: node.name, category: node.category || undefined })
+                                const node =
+                                  fromNode?.id === selectedGraphNode?.id ? toNode : fromNode;
+                                if (node)
+                                  handleNodeSelect({
+                                    id: node.id,
+                                    name: node.name,
+                                    category: node.category || undefined,
+                                  });
                               }}
                             >
                               <div className="flex items-center gap-2 text-[10px]">
-                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getCategoryStyle(fromNode?.category).dot }} />
-                                <span className="text-slate-700 truncate flex-1">{fromNode?.name || '?'}</span>
+                                <span
+                                  className="w-2 h-2 rounded-full"
+                                  style={{
+                                    backgroundColor: getCategoryStyle(fromNode?.category).dot,
+                                  }}
+                                />
+                                <span className="text-slate-700 truncate flex-1">
+                                  {fromNode?.name || '?'}
+                                </span>
                                 <span className="text-slate-400">-</span>
-                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getCategoryStyle(toNode?.category).dot }} />
-                                <span className="text-slate-700 truncate flex-1">{toNode?.name || '?'}</span>
+                                <span
+                                  className="w-2 h-2 rounded-full"
+                                  style={{
+                                    backgroundColor: getCategoryStyle(toNode?.category).dot,
+                                  }}
+                                />
+                                <span className="text-slate-700 truncate flex-1">
+                                  {toNode?.name || '?'}
+                                </span>
                               </div>
                             </div>
-                          )
+                          );
                         })
                       ) : (
                         <div className="text-center py-8">
@@ -388,7 +481,6 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
                       )}
                     </div>
                   )}
-
                 </div>
               </div>
             </motion.div>
@@ -396,5 +488,5 @@ export default function MindMap({ isOpen, onClose, onSendQuery, userId, initialV
         </AnimatePresence>
       </main>
     </div>
-  )
+  );
 }
