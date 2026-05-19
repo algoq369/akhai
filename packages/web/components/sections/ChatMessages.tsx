@@ -260,6 +260,7 @@ export default function ChatMessages({
                     {/* Cognitive Signature — inline dialogue above response */}
                     {message.role === 'assistant' && (
                       <InlineDialogue
+                        messageId={message.id}
                         signature={messageCognitiveSignatures[message.id] || null}
                         isLoading={!message.isStreaming && !messageCognitiveSignatures[message.id]}
                         rawThinking={messageRawThinking?.[message.id]}
@@ -302,9 +303,11 @@ export default function ChatMessages({
                         >
                           &#9671;
                         </button>
-                        {pipelineEnabled && !hiddenPipelines.has(message.id) && (
-                          <MetadataStrip messageId={message.id} isStreaming={message.isStreaming} />
-                        )}
+                        {pipelineEnabled &&
+                          !hiddenPipelines.has(message.id) &&
+                          message.isStreaming && (
+                            <MetadataStrip messageId={message.id} isStreaming={true} />
+                          )}
                       </div>
                     )}
 

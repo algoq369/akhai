@@ -322,12 +322,6 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
           try {
             const thought = JSON.parse(ev.data) as ThoughtEvent;
             thought.messageId = assistantMsgId;
-            console.log(
-              '[THOUGHT]',
-              thought.stage,
-              thought.messageId,
-              typeof thought.data === 'string' ? thought.data.slice(0, 60) : ''
-            );
             // Intercept extended thinking events → accumulate into rawThinking buffer
             if (
               thought.stage === 'reasoning' &&

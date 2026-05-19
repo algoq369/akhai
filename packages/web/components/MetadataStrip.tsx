@@ -32,6 +32,17 @@ export default function MetadataStrip({ messageId, isStreaming = false }: Metada
 
   const isTerminal = currentMetadata?.stage === 'complete' || currentMetadata?.stage === 'error';
 
+  // Debug: trace phase transitions
+  useEffect(() => {
+    console.log('[MetadataStrip]', messageId.slice(0, 8), {
+      phase,
+      isStreaming,
+      isTerminal,
+      currentStage: currentMetadata?.stage || 'null',
+      timelineLen: messageTimeline.length,
+    });
+  }, [phase, isStreaming, isTerminal, currentMetadata?.stage, messageTimeline.length, messageId]);
+
   useEffect(() => {
     if (!currentMetadata) {
       if (isStreaming) {
