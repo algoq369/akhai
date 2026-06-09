@@ -364,8 +364,8 @@ export async function POST(request: NextRequest) {
 
     try {
       apiResponse = await withRetry(
-        () =>
-          callProvider(selectedProvider, {
+        async () => {
+          const r = await callProvider(selectedProvider, {
             messages: [{ role: 'system', content: systemPrompt }, ...messages],
             model: usedModel,
             maxTokens: 4096,
@@ -373,7 +373,11 @@ export async function POST(request: NextRequest) {
             extendedThinking:
               extendedThinking && selectedProvider === 'anthropic' ? true : undefined,
             onThinkingDelta: thinkingCb,
-          }),
+          });
+          // WEBNA R3: empty/whitespace content is retryable (re-roll same provider)
+          if (!r.content || !r.content.trim()) throw new Error('PROVIDER_NO_CONTENT 529');
+          return r;
+        },
         {
           maxAttempts: 3,
           baseDelay: 1000,
