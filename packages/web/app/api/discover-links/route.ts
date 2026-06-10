@@ -178,7 +178,7 @@ async function searchDuckDuckGo(query: string): Promise<SearchResult[]> {
     for (let i = 0; i < rawLinks.length; i++) {
       const snippet = organicSnippets[i] || '';
       links.push({
-        id: `ddg-${Date.now()}-${Math.random()}`,
+        id: `ddg-${Date.now()}-${crypto.randomUUID()}`,
         url: rawLinks[i].url,
         title: rawLinks[i].title,
         snippet,

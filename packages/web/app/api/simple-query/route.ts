@@ -37,7 +37,7 @@ import { QuerySchema, emitAndPersist } from './schema';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  let queryId: string = Math.random().toString(36).slice(2, 10);
+  let queryId: string = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
 
   try {
     // Rate limiting
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       : undefined;
 
     // Use client-provided queryId if available (enables live SSE), otherwise generate
-    queryId = clientQueryId || Math.random().toString(36).slice(2, 10);
+    queryId = clientQueryId || crypto.randomUUID().replace(/-/g, '').slice(0, 8);
 
     // Emit: query received
     emitAndPersist(queryId, {
@@ -343,7 +343,7 @@ export async function POST(request: NextRequest) {
       extendedThinking && selectedProvider === 'anthropic'
         ? (chunk: string) => {
             emitAndPersist(queryId, {
-              id: `${queryId}-td-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              id: `${queryId}-td-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 5)}`,
               queryId,
               stage: 'reasoning',
               timestamp: Date.now() - startTime,

@@ -206,7 +206,7 @@ function calculateConsensus(responses: AdvisorResponse[]): number {
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  const queryId = Math.random().toString(36).slice(2, 10);
+  const queryId = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
 
   log('INFO', 'GTP_CONSENSUS', `Starting multi-AI consensus: ${queryId}`);
 

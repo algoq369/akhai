@@ -368,7 +368,7 @@ export async function POST(request: NextRequest) {
         seenUrls.add(result.url);
         const relevance = await calculateRelevance(result, query, conversationContext);
         allLinks.push({
-          id: `insight-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `insight-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 9)}`,
           url: result.url,
           title: result.title,
           snippet: result.snippet,
@@ -391,7 +391,7 @@ export async function POST(request: NextRequest) {
         seenUrls.add(result.url);
         const relevance = await calculateRelevance(result, query, conversationContext);
         allLinks.push({
-          id: `minichat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `minichat-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 9)}`,
           url: result.url,
           title: result.title,
           snippet: result.snippet,
