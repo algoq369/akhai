@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash, randomBytes } from 'node:crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +19,10 @@ export async function GET(request: NextRequest) {
     }
 
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'https://akhai.app'}/api/auth/x/callback`;
-    const state = Math.random().toString(36).substring(2, 15);
-    const codeVerifier =
-      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const state = randomBytes(16).toString('base64url');
+    // RFC 7636: 43-char CSPRNG verifier; challenge = BASE64URL(SHA256(verifier))
+    const codeVerifier = randomBytes(32).toString('base64url');
+    const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
 
     // Store state + verifier in cookie for callback
     const params = new URLSearchParams({
@@ -29,8 +31,8 @@ export async function GET(request: NextRequest) {
       redirect_uri: redirectUri,
       scope: 'tweet.read users.read offline.access',
       state,
-      code_challenge: codeVerifier,
-      code_challenge_method: 'plain',
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
     });
 
     const authUrl = `https://x.com/i/oauth2/authorize?${params.toString()}`;
