@@ -174,14 +174,14 @@ export async function checkCryptoQuery(query: string, queryId: string, startTime
 // METHODOLOGY SELECTION
 // ============================================================================
 
-export function selectMethodology(query: string, requested: string) {
+export function selectMethodologyFallback(query: string, requested: string) {
   if (requested !== 'auto') {
     return { id: requested, reason: 'User selected' };
   }
 
   const queryLower = query.toLowerCase();
 
-  // Math/computation → pas (check BEFORE simple queries)
+  // Math/computation -> pas (most specific, check first)
   if (
     queryLower.includes('calculate') ||
     queryLower.includes('compute') ||
@@ -191,25 +191,7 @@ export function selectMethodology(query: string, requested: string) {
     return { id: 'pas', reason: 'Math/computation detected - Plan-and-Solve' };
   }
 
-  // Simple factual queries → direct
-  if (query.length < 100 && !queryLower.includes('analyze') && !queryLower.includes('compare')) {
-    logger.query.methodSelected('auto', 'direct', 'Simple query - direct response optimal');
-    return { id: 'direct', reason: 'Simple query - direct response optimal' };
-  }
-
-  // Complex context requiring buffering → sc
-  if (
-    queryLower.includes('given that') ||
-    queryLower.includes('assuming') ||
-    queryLower.includes('constraints') ||
-    queryLower.includes('requirements') ||
-    query.split(/[.!?]/).length > 2
-  ) {
-    logger.query.methodSelected('auto', 'sc', 'Complex context detected - Self-Consistency');
-    return { id: 'sc', reason: 'Complex context detected - Self-Consistency' };
-  }
-
-  // Step-by-step → cod
+  // Step-by-step -> cod (keyword-specific, before length short-circuit)
   if (
     queryLower.includes('step by step') ||
     queryLower.includes('explain how') ||
@@ -219,7 +201,7 @@ export function selectMethodology(query: string, requested: string) {
     return { id: 'cod', reason: 'Step-by-step request - Chain of Draft' };
   }
 
-  // Search/tools → react
+  // Search/tools -> react (keyword-specific, before length short-circuit)
   if (
     queryLower.includes('search') ||
     queryLower.includes('find') ||
@@ -230,7 +212,7 @@ export function selectMethodology(query: string, requested: string) {
     return { id: 'react', reason: 'Search/tools needed - ReAct' };
   }
 
-  // Multi-perspective → tot
+  // Multi-perspective -> tot (keyword-specific, before length short-circuit)
   if (
     queryLower.includes('consensus') ||
     queryLower.includes('multiple perspectives') ||
@@ -244,6 +226,24 @@ export function selectMethodology(query: string, requested: string) {
   ) {
     logger.query.methodSelected('auto', 'tot', 'Multi-perspective request - TOT Consensus');
     return { id: 'tot', reason: 'Multi-perspective request - TOT Consensus' };
+  }
+
+  // Simple factual queries -> direct (only after specific-intent checks)
+  if (query.length < 100 && !queryLower.includes('analyze') && !queryLower.includes('compare')) {
+    logger.query.methodSelected('auto', 'direct', 'Simple query - direct response optimal');
+    return { id: 'direct', reason: 'Simple query - direct response optimal' };
+  }
+
+  // Complex context requiring buffering -> sc
+  if (
+    queryLower.includes('given that') ||
+    queryLower.includes('assuming') ||
+    queryLower.includes('constraints') ||
+    queryLower.includes('requirements') ||
+    query.split(/[.!?]/).length > 2
+  ) {
+    logger.query.methodSelected('auto', 'sc', 'Complex context detected - Self-Consistency');
+    return { id: 'sc', reason: 'Complex context detected - Self-Consistency' };
   }
 
   // Default to direct

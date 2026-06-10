@@ -12,7 +12,7 @@ import {
   type IntelligenceFusionResult,
 } from '@/lib/intelligence-fusion';
 import { createAutoInstinctConfig } from '@/lib/instinct-mode';
-import { selectMethodology } from '@/lib/query-pipeline';
+import { selectMethodologyFallback } from '@/lib/query-pipeline';
 import { LAYER_METADATA, Layer } from '@/lib/layer-registry';
 import type { ThoughtEvent } from '@/lib/thought-stream';
 
@@ -182,7 +182,7 @@ export async function runFusionPipeline(
           id: fusionResult.selectedMethodology,
           reason: `Fusion: ${fusionResult.methodologyScores[0]?.reasons.join(', ') || 'Auto-selected'}`,
         }
-      : selectMethodology(query, methodology);
+      : selectMethodologyFallback(query, methodology);
 
   return { fusionResult, sideCanalContext, selectedMethod, weights };
 }
