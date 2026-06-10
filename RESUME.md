@@ -1,10 +1,10 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-05-04 20:00 UTC (Day 115/150)
+> Last updated: 2026-06-10 (Day 157 — post Day-150 plan)
 
 ## PROJECT STATE
-- **Day 115/150** | Launch: June 4, 2026 (**31 days**) | **~92% features complete**
-- **Commits:** 637 total | All pushed to `origin/main` + deployed to `akhai.app`
+- **Day 157** | akhai.app **live + healthy** | post Day-150 plan window | **~95% features complete**
+- **Commits:** 654 total | All pushed to `origin/main` | VPS redeploy PENDING for security sprint commits
 - **Repo:** `/Users/sheirraza/akhai` | GitHub: `algoq369/akhai`
 - **VPS:** `akhai@82.221.101.3` (FlokiNET Iceland) | **akhai.app** live + healthy
 - **Provider:** Claude Opus 4.7 primary | Opus 4.6 extended thinking | Haiku 4.5 enrichment | OpenRouter Llama 3.3 70B free fallback
@@ -12,6 +12,23 @@
 - **Master Plan:** `docs/plans/AKHAI_MASTER_PLAN_V5.md` (V5.5)
 
 ## LATEST SESSIONS (Days 101-115 — 71 commits: 566→637)
+
+### Session Jun 9-10 (17 commits: 637→654) — FABLE 5 DEEP AUDIT + SECURITY SPRINT
+
+**Audit:** `docs/audits/FABLE5_DEEP_AUDIT_2026-06-09.md` — 24 findings P0→P3, engine intelligence check.
+
+**P0 closed:**
+- `1e62fea` email auth codes → crypto.randomInt (was predictable Math.random — ATO vector)
+- `89c5081` X OAuth → crypto state + RFC 7636 PKCE S256
+- `8b6ab2f` + `99d0298` dependency pins + next 15.5.19 — **113→23 vulns, 0 critical, 0 high**
+
+**P1 closed:**
+- `7d6c1f3` AbortSignal.timeout on all 6 provider calls (180s env-tunable) + CoinGecko 10s
+- `80dabe4` fallback selector dead-branch fix; renamed selectMethodologyFallback (SSOT vs fusion scorer)
+- `2faa4e2` last 7 Math.random API ids → crypto.randomUUID
+- `a760868` server-only guards (database/auth/multi-provider) + vitest jsdom stub — prod build verified BUILD_EXIT:0
+
+Gates green at every commit: tsc 0 · vitest 91/91.
 
 ### Session May 4 (19 commits: 618→637) — Panel quality + Mindmap + WEBNA V3
 
@@ -54,19 +71,20 @@ See transcript: `/mnt/transcripts/2026-05-04-09-57-31-akhai-sprint-views-refinem
 | localhost:3000 | HTTP 200 ✅ |
 | akhai.app | HTTP 200 ✅ |
 | tsc | 0 errors ✅ |
-| vitest | 69/69 passing ✅ |
-| Git | clean, 637 commits ✅ |
+| vitest | 91/91 passing ✅ |
+| pnpm audit --prod | 0 critical / 0 high (23 moderate) ✅ |
+| Git | clean, 654 commits ✅ |
 | PM2 | online ✅ |
 | SQLite binding | ABI 137 — permanently fixed ✅ |
 
 ## WEBNA V3 COMPLIANCE — MASTER PLAN
 
-### Current Score: ~50/100 (Grade D+)
+### Current Score: ~70/100 (Grade B-) — post Jun 9-10 security sprint
 
 **Phase 1 — Critical Security** ✅ STEP 1 DONE
 - [x] Replace Math.random() → crypto.randomUUID() (13 files, 65 replacements)
 - [ ] Add Zod validation to top 5 API routes (simple-query, settings, enhanced-links, canvas-viz, depth-extract)
-- [ ] Add server-only package + ESLint no-restricted-imports
+- [x] server-only guards on database/auth/multi-provider (`a760868`) — ESLint no-restricted-imports still TODO
 - [ ] Audit all DB queries for OR user_id IS NULL patterns
 
 **Phase 2 — Security Headers + Secrets**
@@ -87,10 +105,10 @@ See transcript: `/mnt/transcripts/2026-05-04-09-57-31-akhai-sprint-views-refinem
 - [ ] + 3 more files near 500 lines
 
 **Phase 4 — Resilience + Observability**
-- [ ] withRetry() utility (3 retries, exponential backoff)
+- [x] withRetry() utility (3 retries, exponential backoff) — lib/retry.ts, wired in simple-query
 - [ ] Wrap all external API calls with withRetry()
 - [ ] Structured logging replacing 557 console.log statements
-- [ ] createContext().withTimeout() for LLM calls
+- [x] Timeouts for LLM calls — AbortSignal.timeout on all 6 providers (`7d6c1f3`)
 
 **Phase 5 — UI/UX Quality**
 - [ ] Text sizes: bump all <10px to 10px minimum
@@ -137,16 +155,23 @@ git checkout pre-mindmap-enhancement -- packages/web/components/MindMapSVG.tsx p
 
 4. **extractHighLevelInsights was shallow:** Only grabbed header text as fullContent. Fix: extract paragraph content BELOW each header (1-3 sentences). Same fix for extractInsights in insightMindmapTypes.
 
-5. **.next cache corruption:** After `npm run build` (for deploy), the `.next` directory has production artifacts that break Turbopack dev server. Always `rm -rf .next .turbo` before starting dev server.
+5. **zsh paste blocks:** interactive zsh ignores `#` comments — a comment after a pipe feeds words to the command (tail EPIPE crash). Never put comments in paste blocks.
+
+6. **DC + pnpm = hang:** Desktop Commander-spawned pnpm queues silently behind store locks (zombie installs from killed sessions). pnpm ONLY via user terminal; everything else (git/npx/tsc/vitest/python) fine via DC.
+
+7. **node 22 vs 24 after pnpm relink:** pnpm install re-links better-sqlite3 — user shells on node22 (conda/nvm) lose the ABI-137 binding and 2 db test files fail to LOAD (tests ≠ broken). Canonical env = homebrew node 24.
+
+8. **.next cache corruption:** After `npm run build` (for deploy), the `.next` directory has production artifacts that break Turbopack dev server. Always `rm -rf .next .turbo` before starting dev server.
 
 ## SAFETY NETS
 - **Mindmap backup:** `/tmp/akhai-mindmap-backup/` (5 files) + git tag `pre-mindmap-enhancement` at `f98a7d4`
 - **Revert mindmap:** `git checkout pre-mindmap-enhancement -- packages/web/components/MindMapSVG.tsx packages/web/components/MindMapClusterDetail.tsx packages/web/components/MindMapLayout.ts`
 
 ## NEXT SESSION — START HERE
-1. Read this file
-2. Continue WEBNA V3 Phase 1 Step 2: Zod validation on top 5 API routes
-3. Then Phase 2: Security headers + Gitleaks
-4. Target: complete Phases 1-2 in next session (~75 min)
+1. Read this file + `docs/audits/FABLE5_DEEP_AUDIT_2026-06-09.md`
+2. DEPLOY security sprint to VPS if not done: build is fresh — `bash deploy/quick-deploy.sh`
+3. P2: Zod on settings/enhanced-links/depth-extract · CSP single-source + nonce (kill next.config duplicate)
+4. P2 Guard substance: real factuality (Qdrant cross-check) + wire ReAct to real search (kill "even if simulated")
+5. Audit 20× `user_id IS NULL` queries for cross-user scope
 
-**Last commit:** `07e5488` security(WEBNA-3): replace Math.random() IDs with crypto.randomUUID()
+**Last commit:** `a760868` security(P1.7): server-only guards — client imports fail at build
