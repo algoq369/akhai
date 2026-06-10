@@ -1,10 +1,22 @@
+import 'server-only';
+
 /**
  * Authentication Service
- * 
+ *
  * Handles GitHub OAuth and Wallet authentication
  */
 
-import { createOrGetUser, createSession, validateSession, destroySession, User, savePKCEVerifier, getPKCEVerifier, deletePKCEVerifier, cleanupExpiredPKCEVerifiers } from './database';
+import {
+  createOrGetUser,
+  createSession,
+  validateSession,
+  destroySession,
+  User,
+  savePKCEVerifier,
+  getPKCEVerifier,
+  deletePKCEVerifier,
+  cleanupExpiredPKCEVerifiers,
+} from './database';
 import { randomBytes } from 'crypto';
 
 const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60; // 30 days
@@ -15,10 +27,11 @@ const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60; // 30 days
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
 // Use NEXT_PUBLIC_VERCEL_URL or default to localhost:3002 (common Next.js dev port)
-const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
+const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
   ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
   : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002';
-const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || `${baseUrl}/api/auth/github/callback`;
+const GITHUB_REDIRECT_URI =
+  process.env.GITHUB_REDIRECT_URI || `${baseUrl}/api/auth/github/callback`;
 
 /**
  * Generate GitHub OAuth authorization URL
@@ -27,7 +40,7 @@ export function getGitHubAuthUrl(): string {
   if (!GITHUB_CLIENT_ID) {
     throw new Error('GITHUB_CLIENT_ID is not configured. Please add it to .env.local');
   }
-  
+
   const state = randomBytes(16).toString('hex');
   const params = new URLSearchParams({
     client_id: GITHUB_CLIENT_ID,
@@ -41,7 +54,9 @@ export function getGitHubAuthUrl(): string {
 /**
  * Handle GitHub OAuth callback
  */
-export async function handleGitHubCallback(code: string): Promise<{ user: User; session: { token: string } }> {
+export async function handleGitHubCallback(
+  code: string
+): Promise<{ user: User; session: { token: string } }> {
   // Exchange code for access token
   const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
@@ -57,7 +72,7 @@ export async function handleGitHubCallback(code: string): Promise<{ user: User; 
   });
 
   const tokenData = await tokenResponse.json();
-  
+
   if (!tokenData.access_token) {
     throw new Error('Failed to get access token from GitHub');
   }
@@ -103,7 +118,11 @@ export function generateWalletMessage(address: string): string {
 /**
  * Verify wallet signature (simplified - in production, use proper EIP-191 verification)
  */
-export function verifyWalletSignature(address: string, signature: string, message: string): boolean {
+export function verifyWalletSignature(
+  address: string,
+  signature: string,
+  message: string
+): boolean {
   // In production, use ethers.js or web3.js to properly verify EIP-191 signatures
   // For now, this is a placeholder that accepts any signature
   // TODO: Implement proper signature verification
@@ -113,7 +132,11 @@ export function verifyWalletSignature(address: string, signature: string, messag
 /**
  * Authenticate with wallet
  */
-export function authenticateWallet(address: string, signature: string, message: string): { user: User; session: { token: string } } {
+export function authenticateWallet(
+  address: string,
+  signature: string,
+  message: string
+): { user: User; session: { token: string } } {
   // Verify signature
   if (!verifyWalletSignature(address, signature, message)) {
     throw new Error('Invalid wallet signature');
@@ -156,25 +179,26 @@ export function logout(token: string): void {
  */
 const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID || '';
 const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET || '';
-const TWITTER_REDIRECT_URI = process.env.TWITTER_REDIRECT_URI || `${baseUrl}/api/auth/social/x/callback`;
+const TWITTER_REDIRECT_URI =
+  process.env.TWITTER_REDIRECT_URI || `${baseUrl}/api/auth/social/x/callback`;
 
 // Clean up expired PKCE entries from database (older than 10 minutes)
-setInterval(() => {
-  const deleted = cleanupExpiredPKCEVerifiers();
-  if (deleted > 0) {
-    console.log(`[PKCE Cleanup] Deleted ${deleted} expired verifier(s)`);
-  }
-}, 5 * 60 * 1000); // Run every 5 minutes
+setInterval(
+  () => {
+    const deleted = cleanupExpiredPKCEVerifiers();
+    if (deleted > 0) {
+      console.log(`[PKCE Cleanup] Deleted ${deleted} expired verifier(s)`);
+    }
+  },
+  5 * 60 * 1000
+); // Run every 5 minutes
 
 /**
  * Generate PKCE code verifier and challenge
  */
 function generatePKCE(): { verifier: string; challenge: string } {
   const verifier = randomBytes(32).toString('base64url');
-  const challenge = require('crypto')
-    .createHash('sha256')
-    .update(verifier)
-    .digest('base64url');
+  const challenge = require('crypto').createHash('sha256').update(verifier).digest('base64url');
 
   return { verifier, challenge };
 }
@@ -210,12 +234,12 @@ export function getTwitterAuthUrl(userId: string): { authUrl: string; state: str
     redirect_uri: TWITTER_REDIRECT_URI,
     scope: 'tweet.read users.read offline.access',
     has_state: !!state,
-    has_challenge: !!challenge
+    has_challenge: !!challenge,
   });
 
   return {
     authUrl,
-    state
+    state,
   };
 }
 
@@ -241,7 +265,7 @@ export async function handleTwitterCallback(
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${TWITTER_CLIENT_ID}:${TWITTER_CLIENT_SECRET}`).toString('base64')}`,
+        Authorization: `Basic ${Buffer.from(`${TWITTER_CLIENT_ID}:${TWITTER_CLIENT_SECRET}`).toString('base64')}`,
       },
       body: new URLSearchParams({
         code,
@@ -261,7 +285,7 @@ export async function handleTwitterCallback(
     // Get user info from Twitter
     const userResponse = await fetch('https://api.twitter.com/2/users/me', {
       headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`,
+        Authorization: `Bearer ${tokenData.access_token}`,
       },
     });
 
@@ -289,13 +313,13 @@ export async function handleTwitterCallback(
 
     return {
       success: true,
-      username: twitterUser.username
+      username: twitterUser.username,
     };
   } catch (error) {
     console.error('Twitter OAuth callback error:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

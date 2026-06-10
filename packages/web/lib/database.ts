@@ -1,3 +1,5 @@
+import 'server-only';
+
 /**
  * SQLite Database for AkhAI
  *

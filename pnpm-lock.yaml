@@ -314,6 +314,9 @@ importers:
       recharts:
         specifier: ^2.10.0
         version: 2.15.4(react-dom@19.2.4)(react@19.2.4)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
       stripe:
         specifier: ^20.1.0
         version: 20.3.0(@types/node@22.19.8)
@@ -11876,6 +11879,10 @@ packages:
       send: 1.2.1
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
     dev: false
 
   /set-blocking@2.0.0:
