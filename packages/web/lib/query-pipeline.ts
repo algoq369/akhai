@@ -120,7 +120,7 @@ export async function checkCryptoQuery(query: string, queryId: string, startTime
   try {
     const response = await fetch(
       `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`,
-      { headers: { Accept: 'application/json' } }
+      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(10_000) }
     );
 
     if (!response.ok) {

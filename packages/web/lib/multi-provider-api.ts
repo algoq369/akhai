@@ -8,6 +8,9 @@
 import type { ProviderFamily } from './provider-selector';
 import { getProviderApiConfig, getProviderPricing } from './provider-selector';
 
+/** Hard ceiling per provider HTTP call — hung sockets abort instead of hanging forever (WEBNA P1.5). Tunable via env. */
+const PROVIDER_TIMEOUT_MS = Number(process.env.PROVIDER_TIMEOUT_MS) || 180_000;
+
 export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -192,6 +195,7 @@ async function callAnthropic(
   };
   const response = await fetch(config.baseUrl, {
     method: 'POST',
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     headers,
     body: JSON.stringify(body),
   });
@@ -258,6 +262,7 @@ async function callDeepSeek(
 
   const response = await fetch(config.baseUrl, {
     method: 'POST',
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${config.apiKey}`,
@@ -312,6 +317,7 @@ async function callMistral(
 
   const response = await fetch(config.baseUrl, {
     method: 'POST',
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${config.apiKey}`,
@@ -363,6 +369,7 @@ async function callXAI(request: CompletionRequest, startTime: number): Promise<C
 
   const response = await fetch(config.baseUrl, {
     method: 'POST',
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${config.apiKey}`,
@@ -422,6 +429,7 @@ async function callOpenRouter(
 
   const response = await fetch(config.baseUrl, {
     method: 'POST',
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${config.apiKey}`,
@@ -477,6 +485,7 @@ async function callOpenAICompatible(
 
   const response = await fetch(config.baseUrl, {
     method: 'POST',
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${config.apiKey}`,
