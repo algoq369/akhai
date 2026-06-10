@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomInt } from 'node:crypto';
 import { getDatabase } from '@/lib/database';
 import { generateUUID } from '@/lib/uuid';
 
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     if (action === 'send') {
       // Generate 6-digit code
-      const authCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const authCode = randomInt(100000, 1000000).toString();
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
       // Invalidate old codes for this email
