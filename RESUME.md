@@ -17,7 +17,7 @@
 - `e5cd2db` Block 1: output standalone + SHIELD gate (pre-push hook, tripwires, ratchets, 450kB budget) + 15 promptfoo goldens + standalone deploy script. Prod cutover: VPS now runs Next 15.5.19 runtime (gap closed), boot 5.6s→0.7s, zero installs on VPS ever again. A15 logged: activation noise = non-deterministic routing.
 - `d7956d4` Block 2: home First Load **887→299 kB (−66%)** — depth dictionaries (94kB), 6 response-render components, classifier → split chunks. All 33 routes ≤450. DEPLOYED, TTFB 0.20s.
 - Deploys now via `deploy/quick-deploy-standalone.sh` (self-gating). Legacy tree = rollback for 1 week.
-- Block 2 remaining: Anthropic prompt caching + nav fluidity (loading.tsx sweep, prefetch, View Transitions).
+- `836770b` Block 2 CLOSED: Anthropic prompt caching live (system prefix, 10% read cost) + 31 route loading.tsx (every nav = instant feedback) + prefetch audit clean. View Transitions deferred (react-experimental dep). DEPLOYED, TTFB 0.185s. NEXT: Block 3 Real Guard (CPU bench gate first).
 
 ### Session Jun 9-10 (17 commits: 637→654) — FABLE 5 DEEP AUDIT + SECURITY SPRINT
 
