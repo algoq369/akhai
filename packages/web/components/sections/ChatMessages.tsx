@@ -1,29 +1,34 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const ResponseMindmap = dynamic(() => import('@/components/ResponseMindmap'), { ssr: false });
 import { Message } from '@/lib/chat-store';
 import { Layer, LAYER_METADATA } from '@/lib/layer-registry';
 import { analyzeLayerContent } from '@/lib/layer-mapper';
 import type { DepthConfig } from '@/lib/depth-annotations';
-import { shouldShowLayers } from '@/components/LayerResponse';
-import { shouldShowInsightMap } from '@/components/InsightMindmap';
-import { shouldShowMindmap } from '@/components/ResponseMindmap';
+import { shouldShowLayers, shouldShowInsightMap, shouldShowMindmap } from '@/lib/render-predicates';
 import GuardWarning from '@/components/GuardWarning';
 import ProcessingIndicator from '@/components/ProcessingIndicator';
 import { DepthText } from '@/components/DepthAnnotation';
-import ResponseRenderer from '@/components/ResponseRenderer';
-import MetadataStrip from '@/components/MetadataStrip';
+const ResponseRenderer = dynamic(() => import('@/components/ResponseRenderer'), { ssr: false }); // V6-Block2
+const MetadataStrip = dynamic(() => import('@/components/MetadataStrip'), { ssr: false }); // V6-Block2
 import { InlineConsole } from '@/components/ConversationConsole';
-import ResponseMindmap from '@/components/ResponseMindmap';
 import IntelligenceBadge from '@/components/IntelligenceBadge';
-import { LayerTreeFull } from '@/components/LayerTreeFull';
+const LayerTreeFull = dynamic(
+  () => import('@/components/LayerTreeFull').then((m) => m.LayerTreeFull),
+  { ssr: false }
+); // V6-Block2
 import ViewTabs from '@/components/sections/ViewTabs';
 import GnosticDetails from '@/components/sections/GnosticDetails';
 import CouncilButton from '@/components/CouncilButton';
-import CouncilPanel from '@/components/CouncilPanel';
+const CouncilPanel = dynamic(() => import('@/components/CouncilPanel'), { ssr: false }); // V6-Block2
 import MacroButton from '@/components/MacroButton';
-import MacroPanel from '@/components/MacroPanel';
-import InlineDialogue from '@/components/cognitive/InlineDialogue';
+const MacroPanel = dynamic(() => import('@/components/MacroPanel'), { ssr: false }); // V6-Block2
+const InlineDialogue = dynamic(() => import('@/components/cognitive/InlineDialogue'), {
+  ssr: false,
+}); // V6-Block2
 
 /** Generate LayerMini data for every query — adapts to content and evolves with conversation */
 function generateLayerData(

@@ -12,7 +12,12 @@ import Overlays from '@/components/home/Overlays';
 import InputSection from '@/components/home/InputSection';
 import FileDropZone from '@/components/FileDropZone';
 import { METHODOLOGIES } from '@/lib/methodology-data';
-import { classifyContent } from '@/lib/mini-canvas/content-classifier';
+// V6-Block2: classifier loads as a split chunk; until ready the memo returns null and recomputes next render.
+let _classifyContent: typeof import('@/lib/mini-canvas/content-classifier').classifyContent | null =
+  null;
+import('@/lib/mini-canvas/content-classifier').then((m) => {
+  _classifyContent = m.classifyContent;
+});
 
 // Lazy-load heavy components that render conditionally
 const CanvasWorkspace = dynamic(() => import('@/components/canvas/CanvasWorkspace'), {
@@ -134,7 +139,7 @@ function HomePage() {
     if (last?.miniCanvas) return last.miniCanvas;
     if (!last?.content || last.content.length < 50) return null;
     const q = s.messages.filter((m) => m.role === 'user').pop()?.content || '';
-    return classifyContent(last.content, q);
+    return _classifyContent ? _classifyContent(last.content, q) : null;
   }, [s.messages]);
 
   return (

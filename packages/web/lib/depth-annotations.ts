@@ -61,7 +61,12 @@ export const DEPTH_COLORS: Record<AnnotationType, string> = {
 };
 
 // Detection patterns extracted to depth/patterns.ts
-import { DETECTION_PATTERNS, type DetectionPattern } from '@/lib/depth/patterns';
+import type { DetectionPattern } from '@/lib/depth/patterns';
+// V6-Block2: 94kB pattern dictionaries load as a split chunk post-hydration (kept out of First Load JS).
+const DETECTION_PATTERNS: DetectionPattern[] = [];
+import('@/lib/depth/patterns').then((m) => {
+  DETECTION_PATTERNS.push(...m.DETECTION_PATTERNS);
+});
 
 // ============ CORE DETECTION ENGINE ============
 
