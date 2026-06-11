@@ -1,0 +1,13 @@
+# AkhAI golden evals — Master Plan V6 Block 1 (B2)
+# Run: pnpm dlx promptfoo@latest eval -c evals/promptfooconfig.yaml   (dev server must be on :3000)
+description: AkhAI engine golden gate v1
+providers:
+  - id: file://./providers/akhai-sse.js
+    label: akhai-engine
+tests: file://./golden/queries.yaml
+defaultTest:
+  assert:
+    - type: javascript
+      value: output && output.length > 20
+    - type: latency
+      threshold: 60000

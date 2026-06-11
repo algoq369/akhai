@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+bash packages/web/scripts/shield.sh --fast
