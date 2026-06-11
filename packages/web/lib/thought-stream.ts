@@ -19,6 +19,7 @@ export type ThoughtStage =
   | 'streaming'
   | 'reasoning'
   | 'analysis'
+  | 'grounding'
   | 'complete'
   | 'error';
 
@@ -52,6 +53,14 @@ export interface ThoughtDetails {
 
   // guard
   guard?: { verdict: 'pass' | 'warn' | 'flag'; risk: number; checks?: string[] };
+  // grounding (V6 Block 3 — real NLI factuality)
+  grounding?: {
+    mode: 'grounded' | 'parametric';
+    score: number | null;
+    spans?: Array<{ start: number; end: number; text?: string; confidence?: number }>;
+    ms?: number;
+    error?: boolean;
+  };
 
   // side-canal
   sideCanal?: { topics: string[]; contextChars: number };

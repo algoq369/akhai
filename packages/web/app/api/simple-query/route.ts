@@ -34,6 +34,7 @@ import {
 } from '@/lib/query-response-builder';
 import { classifyContent } from '@/lib/mini-canvas/content-classifier';
 import { QuerySchema, emitAndPersist } from './schema';
+import { scoreGroundingAsync } from '@/lib/grounding-client';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -580,6 +581,9 @@ export async function POST(request: NextRequest) {
         duration: latency,
       },
     });
+
+    // ========== ASYNC GROUNDING (V6 Block 3 — context arrives with Block 4 tools) ==========
+    scoreGroundingAsync(queryId, emitAndPersist, content, [], startTime);
 
     // ========== MINI CANVAS CLASSIFICATION ==========
     const miniCanvas = classifyContent(content, query);

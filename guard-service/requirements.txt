@@ -1,0 +1,1 @@
+lettucedetect\nfastapi\nuvicorn[standard]\n
