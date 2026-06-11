@@ -13,6 +13,12 @@
 
 ## LATEST SESSIONS (Days 101-115 — 71 commits: 566→637)
 
+### Session Jun 11 (2 commits: 654→656) — V6 BLOCKS 1+2 CORE
+- `e5cd2db` Block 1: output standalone + SHIELD gate (pre-push hook, tripwires, ratchets, 450kB budget) + 15 promptfoo goldens + standalone deploy script. Prod cutover: VPS now runs Next 15.5.19 runtime (gap closed), boot 5.6s→0.7s, zero installs on VPS ever again. A15 logged: activation noise = non-deterministic routing.
+- `d7956d4` Block 2: home First Load **887→299 kB (−66%)** — depth dictionaries (94kB), 6 response-render components, classifier → split chunks. All 33 routes ≤450. DEPLOYED, TTFB 0.20s.
+- Deploys now via `deploy/quick-deploy-standalone.sh` (self-gating). Legacy tree = rollback for 1 week.
+- Block 2 remaining: Anthropic prompt caching + nav fluidity (loading.tsx sweep, prefetch, View Transitions).
+
 ### Session Jun 9-10 (17 commits: 637→654) — FABLE 5 DEEP AUDIT + SECURITY SPRINT
 
 **Audit:** `docs/audits/FABLE5_DEEP_AUDIT_2026-06-09.md` — 24 findings P0→P3, engine intelligence check.
