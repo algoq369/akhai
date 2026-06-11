@@ -6,7 +6,7 @@ import { CustomCursor } from '@/components/CustomCursor';
 import { PostHogProvider } from './providers';
 import { QuickChatProvider } from '@/components/QuickChatProvider';
 import { DepthProvider } from '@/hooks/useDepthAnnotations';
-import Web3Provider from '@/components/Web3Provider';
+import Web3Lazy from '@/components/wallet/Web3Lazy';
 import ProfileMenu from '@/components/ProfileMenu';
 import FinanceBanner from '@/components/FinanceBanner';
 // import { FibonacciBackground } from '@/components/FibonacciBackground'
@@ -195,21 +195,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ProfileMenu />
         </div>
 
-        <Web3Provider>
-          <PostHogProvider>
-            <OpenPanelComponent
-              clientId={process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID || ''}
-              trackScreenViews={true}
-              trackOutgoingLinks={true}
-              trackAttributes={true}
-              disabled={!process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID}
-            />
-            <DepthProvider>
-              {children}
-              <QuickChatProvider />
-            </DepthProvider>
-          </PostHogProvider>
-        </Web3Provider>
+        <Web3Lazy />
+        <PostHogProvider>
+          <OpenPanelComponent
+            clientId={process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID || ''}
+            trackScreenViews={true}
+            trackOutgoingLinks={true}
+            trackAttributes={true}
+            disabled={!process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID}
+          />
+          <DepthProvider>
+            {children}
+            <QuickChatProvider />
+          </DepthProvider>
+        </PostHogProvider>
 
         {/* Global Finance Banner - Fixed bottom */}
         {/* FinanceBanner moved into page.tsx footer */}

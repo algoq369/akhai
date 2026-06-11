@@ -170,7 +170,11 @@ async function callAnthropic(
   const body: Record<string, any> = {
     model: request.model,
     max_tokens: request.maxTokens || 4096,
-    system: systemPrompt,
+    // V6-Block2: prompt caching — methodology system prompt is a stable prefix; cache reads bill at
+    // ~10% of input price and cut TTFT. cache_control is harmlessly ignored below min cacheable size.
+    system: systemPrompt
+      ? [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }]
+      : undefined,
     messages: messages.map((m) => ({
       role: m.role === 'system' ? 'user' : m.role,
       content: m.content,
