@@ -4,14 +4,14 @@
 > Rule: UI-touching → localhost → your eyes → FlokiNET. Backend-only → gates → :3001 → cutover.
 > Gate every commit: tsc 0 · vitest 91/91 · SHIELD pass.
 
-LAST UPDATED: 2026-06-11 (S0 banking) · HEAD 36200b4
+LAST UPDATED: 2026-06-11 (S0 COMPLETE) · HEAD 575be40
 
 ---
 
 ## S0 · BANK AT-RISK WORK (do first — uncommitted, one `git checkout` from gone)
 - [x] S0.1  Build-verify orphaned Block 2 wallet-defer (wallet-bus + render-predicates + wallet/) — confirm home ≤299 kB
 - [x] S0.2  Commit it as proper Block 2 commit (6 mod + 4 new files)
-- [~] S0.3  Deploy to FlokiNET (UI-touching → localhost eyes first)
+- [x] S0.3  Deploy to FlokiNET (UI-touching → localhost eyes first)
 - [x] S0.4  Archive strays: AUDIT.md + docs/AUDIT_CLI_PROMPTS.md + docs/FINAL_AUDIT_CHECKLIST.md → docs/archive/
 
 ## S1 · BLOCK 3 — REAL GUARD (finish; foundation already pushed 32e9c94)
@@ -76,3 +76,4 @@ learned router live-or-shadow · 0 crit/high held by CI · evals green per-commi
 ## CHANGELOG
 - 2026-06-11: sprint created from V6. Done before sprint: P0+P1, Block1, Block2 core, Block3 foundation (32e9c94).
 - 2026-06-11: S0.1/S0.2 done — wallet-defer refactor committed (36200b4), bundle steady 299kB. S0.4 done — strays archived. S0.3 on localhost for eyes.
+- 2026-06-11: S0.3 shipped to FlokiNET (Ready 534ms, TTFB 0.17s). S0 COMPLETE. Next: S1 (guard) — S1.3 grounding meter UI is local/no-box, S1.1 box provision = you.
