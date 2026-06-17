@@ -1,14 +1,22 @@
 'use client';
 
 import { Suspense } from 'react';
-import TopicsPanel from '@/components/TopicsPanel';
-import MindMap from '@/components/MindMap';
-import AuthModal from '@/components/AuthModal';
+import dynamic from 'next/dynamic';
+
+const TopicsPanel = dynamic(() => import('@/components/TopicsPanel'), { ssr: false });
+const MindMap = dynamic(() => import('@/components/MindMap'), { ssr: false });
+const TreeConfigurationModal = dynamic(() => import('@/components/TreeConfigurationModal'), {
+  ssr: false,
+});
+const PipelineHistoryPanel = dynamic(() => import('@/components/PipelineHistoryPanel'), {
+  ssr: false,
+});
+
+import AuthModal from '@/components/wallet/AuthModalGate';
 import SuggestionToast from '@/components/SuggestionToast';
 import MethodologyChangePrompt from '@/components/MethodologyChangePrompt';
 import NewsNotification from '@/components/NewsNotification';
-import TreeConfigurationModal from '@/components/TreeConfigurationModal';
-import PipelineHistoryPanel from '@/components/PipelineHistoryPanel';
+
 import { Message } from '@/lib/chat-store';
 
 interface OverlaysProps {

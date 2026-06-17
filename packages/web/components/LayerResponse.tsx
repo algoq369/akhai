@@ -307,14 +307,4 @@ function FallbackView({
   );
 }
 
-export function shouldShowLayers(content: string, hasGnosticData: boolean = false): boolean {
-  if (hasGnosticData) {
-    return true;
-  }
-
-  const headerCount = (content.match(/^#+\s*.+$/gm) || []).length;
-  const boldCount = (content.match(/\*\*[^*]+\*\*/g) || []).length;
-  const bulletCount = (content.match(/^[-•*]\s+.+$/gm) || []).length;
-
-  return headerCount >= 1 || boldCount >= 2 || bulletCount >= 2 || content.length > 200;
-}
+export { shouldShowLayers } from '@/lib/render-predicates';
