@@ -161,6 +161,7 @@ function ClassicView({ events }: { events: ThoughtEvent[] }) {
   const routingEv = events.find((e) => e.stage === 'routing');
   const layersEv = events.find((e) => e.stage === 'layers');
   const guardEv = events.find((e) => e.stage === 'guard');
+  const groundingEv = events.find((e) => e.stage === 'grounding');
   const genEv = [...events].reverse().find((e) => e.stage === 'generating');
 
   const method =
@@ -171,6 +172,16 @@ function ClassicView({ events }: { events: ThoughtEvent[] }) {
   const cost = completeEv?.details?.cost;
   const guardVerdict = guardEv?.details?.guard?.verdict;
   const guardRisk = guardEv?.details?.guard?.risk;
+  const grounding = groundingEv?.details?.grounding;
+  const groundPct = grounding?.score == null ? null : Math.round(grounding.score * 100);
+  const groundColor =
+    groundPct == null
+      ? '#64748b'
+      : groundPct >= 80
+        ? '#10b981'
+        : groundPct >= 50
+          ? '#eab308'
+          : '#ef4444';
   const model = genEv?.details?.model;
   const dominantLayer = layersEv?.details?.dominantLayer;
 
@@ -246,6 +257,29 @@ function ClassicView({ events }: { events: ThoughtEvent[] }) {
                   {guardEv.details.guard.checks?.length
                     ? ` · ${guardEv.details.guard.checks.join(', ')}`
                     : ''}
+                </div>
+              )}
+              {grounding && (
+                <div>
+                  <span className="text-relic-silver/40">⊕ GROUNDING</span>{' '}
+                  {grounding.mode === 'parametric' ? (
+                    <span className="text-relic-silver/50">parametric · not fact-checked</span>
+                  ) : groundPct == null ? (
+                    <span className="text-relic-silver/50">unavailable</span>
+                  ) : (
+                    <>
+                      <span style={{ color: groundColor }}>{groundPct}% supported</span>
+                      <span className="ml-1.5 inline-block h-1.5 w-16 rounded-full bg-relic-silver/15 align-middle">
+                        <span
+                          className="block h-full rounded-full"
+                          style={{ width: `${groundPct}%`, backgroundColor: groundColor }}
+                        />
+                      </span>
+                      {grounding.spans?.length
+                        ? ` · ${grounding.spans.length} unsupported span${grounding.spans.length > 1 ? 's' : ''}`
+                        : ''}
+                    </>
+                  )}
                 </div>
               )}
               {model && (

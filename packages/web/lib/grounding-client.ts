@@ -22,7 +22,7 @@ export function scoreGroundingAsync(
   context: string[] = [],
   startTime: number = Date.now()
 ): void {
-  if (!GUARD_URL) return;
+  if (!answer.trim()) return;
   void (async () => {
     const base = {
       id: `${queryId}-grounding`,
@@ -31,10 +31,12 @@ export function scoreGroundingAsync(
       timestamp: Date.now() - startTime,
     };
     try {
-      if (!context.length || !answer.trim()) {
+      // No retrieval context, OR no guard box configured -> honest parametric label (no NLI call).
+      // The meter renders today; real grounded scores appear once GUARD_NLI_URL + context (Block 4) exist.
+      if (!context.length || !GUARD_URL) {
         emit(queryId, {
           ...base,
-          data: 'parametric · no retrieved sources',
+          data: 'parametric · not fact-checked',
           details: { grounding: { mode: 'parametric', score: null } },
         });
         return;
