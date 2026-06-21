@@ -4,7 +4,7 @@
 > Rule: UI-touching → localhost → your eyes → FlokiNET. Backend-only → gates → :3001 → cutover.
 > Gate every commit: tsc 0 · vitest 91/91 · SHIELD pass.
 
-LAST UPDATED: 2026-06-11 (S0 COMPLETE) · HEAD 575be40
+LAST UPDATED: 2026-06-11 (S1.3 done, FlokiNET DOWN) · HEAD b846974
 
 ---
 
@@ -15,11 +15,11 @@ LAST UPDATED: 2026-06-11 (S0 COMPLETE) · HEAD 575be40
 - [x] S0.4  Archive strays: AUDIT.md + docs/AUDIT_CLI_PROMPTS.md + docs/FINAL_AUDIT_CHECKLIST.md → docs/archive/
 
 ## S1 · BLOCK 3 — REAL GUARD (finish; foundation already pushed 32e9c94)
-- [!] S1.1  Provision EU CPU box (Hetzner CX22 ~€4/mo) — YOU (10 min, guard-service/README.md is copy-paste)
-- [ ] S1.2  Deploy guard-service to that box; set GUARD_NLI_URL + GUARD_NLI_TOKEN on FlokiNET .env.local
-- [ ] S1.3  Grounding meter UI in Side Canal (consume `grounding` stage event; show supported %, mode badge) — localhost eyes
+- [!] S1.1  Provision EU CPU box (Hetzner CX22 ~€4/mo) — YOU (BLOCKED: also waiting FlokiNET access)
+- [!] S1.2  Deploy guard-service + set GUARD_NLI_URL on FlokiNET — BLOCKED on FlokiNET outage
+- [x] S1.3  Grounding meter UI (b846974) — ⊕ GROUNDING row, parametric works box-free, gates pass, on localhost
 - [ ] S1.4  Highlight unsupported spans in answer (from spans payload)
-- [ ] S1.5  Verify end-to-end: real score appears on a grounded query in prod
+- [!] S1.5  Verify grounded score in prod — BLOCKED on FlokiNET + box
 - [-] S1.6  Async MiniCheck Tier-2 (high-stakes only) — deferred to post-launch unless time in buffer
 
 ## S2 · BLOCK 4 — REAL ReAct (also unlocks S1 context feed)
@@ -62,6 +62,12 @@ LAST UPDATED: 2026-06-11 (S0 COMPLETE) · HEAD 575be40
 
 ---
 
+## ⚠️ FLOKINET OUTAGE (2026-06-11) — host unreachable, support contacted
+Verified NOT our code: site was 200 same session, traceroute dies before FlokiNET (host down). DNS/internet fine.
+BLOCKED until host returns: S1.2, S1.5, any redeploy, S5.6 VPS env.
+DO-NOW (no deploy, localhost+GitHub only): S4 (Zod/CSP/user_id/ESLint), S2.1 (ReAct spike), S3.6/A15, A5.
+All work done now ships in one batch when FlokiNET returns.
+
 ## DEGRADATION LADDER (protects Aug 2 if a hard block slips)
 1. Router stays shadow-only (keyword scorer live — zero user impact)
 2. MiniCheck Tier-2 deferred
@@ -76,4 +82,6 @@ learned router live-or-shadow · 0 crit/high held by CI · evals green per-commi
 ## CHANGELOG
 - 2026-06-11: sprint created from V6. Done before sprint: P0+P1, Block1, Block2 core, Block3 foundation (32e9c94).
 - 2026-06-11: S0.1/S0.2 done — wallet-defer refactor committed (36200b4), bundle steady 299kB. S0.4 done — strays archived. S0.3 on localhost for eyes.
-- 2026-06-11: S0.3 shipped to FlokiNET (Ready 534ms, TTFB 0.17s). S0 COMPLETE. Next: S1 (guard) — S1.3 grounding meter UI is local/no-box, S1.1 box provision = you.
+- 2026-06-11: S0.3 shipped to FlokiNET (Ready 534ms, TTFB 0.17s). S0 COMPLETE.
+- 2026-06-11: S1.3 grounding meter built + committed (b846974), gates green, on localhost. Parametric mode renders box-free.
+- 2026-06-11: FlokiNET host went unreachable (infra outage, not code). S1.2/S1.5/redeploy blocked. Pivoting to deploy-free work (S4 security, S2.1 ReAct spike).
