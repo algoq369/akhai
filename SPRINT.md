@@ -4,7 +4,7 @@
 > Rule: UI-touching → localhost → your eyes → FlokiNET. Backend-only → gates → :3001 → cutover.
 > Gate every commit: tsc 0 · vitest 91/91 · SHIELD pass.
 
-LAST UPDATED: 2026-06-11 (S1.3 done, FlokiNET DOWN) · HEAD b846974
+LAST UPDATED: 2026-06-11 (live engine verified, SB block added) · HEAD 0eaf53c · NOTE: WEBNA-the-tool merge = separate future master-plan item; S4 'WEBNA' here = quality bar only, pending user's WEBNA standards sync
 
 ---
 
@@ -38,6 +38,13 @@ LAST UPDATED: 2026-06-11 (S1.3 done, FlokiNET DOWN) · HEAD b846974
 - [ ] S3.4  Shadow mode: log router vs keyword scorer disagreement to Langfuse
 - [ ] S3.5  Promptfoo eval: flip ONLY if router beats keyword scorer
 - [ ] S3.6  A15: make layer activation deterministic (seed or remove Math.random noise)
+
+## SB · BACKEND PERFECTION (found by live engine test 2026-06-11 — deploy-free, do now)
+- [ ] SB.1  Reconcile stale `fact:0` stub — guardResult.scores.fact hardcoded 0 now CONFLICTS with honest grounding meter (two factuality signals). Remove/replace fake fact score.
+- [ ] SB.2  Routing over-escalation — "capital of Iceland" → react (heaviest path). Trivial factual Qs must not hit search methodology. Tune fusion scorer threshold (react is simulated so answer was right, but wasteful).
+- [ ] SB.3  No cost cascade — premium Opus 4.7 runs EVERY query incl. trivial ($0.004 for a capital lookup). Implement cheap-first cascade (Booster B5): simple→Haiku/Scaleway, escalate on complexity.
+- [ ] SB.4  Model label inconsistency — provider.model "claude-opus-4-7" vs reasoning text "Opus 4.6". Fix label.
+- [x] SB.0  VERIFIED engine works: correct answer, full pipeline (routing→guard→sideCanal→miniCanvas), grounding meter wired to stream. Backend is FUNCTIONAL, these are refinements.
 
 ## S4 · BLOCK 6 — WEBNA CLOSE-OUT (security/quality to ≥85)
 - [ ] S4.1  Zod on remaining routes: settings, enhanced-links, depth-extract
@@ -84,4 +91,5 @@ learned router live-or-shadow · 0 crit/high held by CI · evals green per-commi
 - 2026-06-11: S0.1/S0.2 done — wallet-defer refactor committed (36200b4), bundle steady 299kB. S0.4 done — strays archived. S0.3 on localhost for eyes.
 - 2026-06-11: S0.3 shipped to FlokiNET (Ready 534ms, TTFB 0.17s). S0 COMPLETE.
 - 2026-06-11: S1.3 grounding meter built + committed (b846974), gates green, on localhost. Parametric mode renders box-free.
-- 2026-06-11: FlokiNET host went unreachable (infra outage, not code). S1.2/S1.5/redeploy blocked. Pivoting to deploy-free work (S4 security, S2.1 ReAct spike).
+- 2026-06-11: FlokiNET host went unreachable (infra outage, not code). S1.2/S1.5/redeploy blocked.
+- 2026-06-11: LIVE ENGINE TEST — works, correct high-quality answer, full pipeline populated, S1.3 grounding wired to stream. Found 4 backend refinements → new SB block (fact:0 stub conflict, routing over-escalation, no cost cascade, model label). Backend-perfection focus per user.
