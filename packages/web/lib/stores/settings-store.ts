@@ -99,7 +99,7 @@ const defaultSettings: Settings = {
     openrouter: '',
   },
   modelConfig: {
-    motherBase: 'claude-opus-4-7',
+    motherBase: 'claude-opus-4-8',
     slot1: 'deepseek-chat',
     slot2: 'grok-3',
   },

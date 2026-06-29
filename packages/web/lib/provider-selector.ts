@@ -32,7 +32,7 @@ export interface ModelSpec {
  * Methodology-to-Provider mapping
  *
  * Strategy:
- * - ALL methodologies (except GTP): Claude Opus 4.7 for maximum quality (4.6 when extended thinking streams)
+ * - ALL methodologies (except GTP): Claude Opus 4.8 for maximum quality (4.6 when extended thinking streams)
  * - GTP ONLY: Multi-AI consensus using all 4 providers (Anthropic, DeepSeek, Mistral, xAI)
  *
  * This ensures:
@@ -48,8 +48,8 @@ const FREE_PROVIDER: ModelSpec = {
 
 const PREMIUM_PROVIDER: ModelSpec = {
   provider: 'anthropic',
-  model: 'claude-opus-4-7',
-  reasoning: 'Premium Claude Opus 4.7 (downgrades to 4.6 for streamable extended thinking)',
+  model: 'claude-opus-4-8',
+  reasoning: 'Premium Claude Opus 4.8 (downgrades to 4.6 for streamable extended thinking)',
 };
 
 // Evaluated lazily at call time: Next.js dev server loads env *after* some
@@ -70,12 +70,12 @@ export function getProviderForMethodology(
   methodology: CoreMethodology,
   legendMode: boolean = false
 ): ModelSpec {
-  // Legend Mode overrides to always use Claude Opus 4.6
+  // Legend Mode: Claude Opus 4.8
   if (legendMode) {
     return {
       provider: 'anthropic',
-      model: 'claude-opus-4-7',
-      reasoning: 'Legend Mode: Premium R&D with Claude Opus 4.6',
+      model: 'claude-opus-4-8',
+      reasoning: 'Legend Mode: Premium R&D with Claude Opus 4.8',
     };
   }
 

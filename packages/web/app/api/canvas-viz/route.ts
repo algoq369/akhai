@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         { role: 'system' as const, content: systemPrompt },
         { role: 'user' as const, content: userContent },
       ],
-      model: 'claude-opus-4-7',
+      model: 'claude-opus-4-8',
       maxTokens: 1500,
     };
 

@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        model: 'claude-opus-4-7',
+        model: 'claude-opus-4-8',
         maxTokens: 300,
         temperature: 0.7,
       });

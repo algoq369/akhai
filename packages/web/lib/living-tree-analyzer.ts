@@ -166,7 +166,7 @@ Return your analysis as a JSON object with this structure:
 
   try {
     const message = await getAnthropicClient().messages.create({
-      model: 'claude-opus-4-7',
+      model: 'claude-opus-4-8',
       max_tokens: 4000,
       system: systemPrompt,
       messages: [

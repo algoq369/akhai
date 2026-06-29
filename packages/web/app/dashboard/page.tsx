@@ -50,7 +50,7 @@ export default function DashboardPage() {
     {
       key: 'anthropic',
       name: 'Anthropic Claude',
-      model: 'claude-opus-4-7',
+      model: 'claude-opus-4-8',
       active: stats?.providers?.anthropic?.status === 'active',
     },
     {
