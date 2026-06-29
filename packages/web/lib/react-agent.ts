@@ -22,6 +22,7 @@ export interface ReactResult {
   text: string;
   sources: { title: string; url: string }[]; // for grounding context in S2.2
   steps: number;
+  usage: { inputTokens: number; outputTokens: number; totalTokens: number };
 }
 
 /**
@@ -41,6 +42,8 @@ export async function runReactAgent(
   const result = await generateText({
     model,
     stopWhen: stepCountIs(5),
+    abortSignal: AbortSignal.timeout(85_000), // under the react 90s tier
+
     tools: {
       web_search: tool({
         description: 'Search the web for current/factual information. Returns real results.',
@@ -71,5 +74,14 @@ export async function runReactAgent(
     }
   }
 
-  return { text: result.text, sources, steps: result.steps.length };
+  return {
+    text: result.text,
+    sources,
+    steps: result.steps.length,
+    usage: {
+      inputTokens: result.usage.inputTokens ?? 0,
+      outputTokens: result.usage.outputTokens ?? 0,
+      totalTokens: result.usage.totalTokens ?? 0,
+    },
+  };
 }

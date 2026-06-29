@@ -82,6 +82,13 @@ describe('runReactAgent — real loop wiring', () => {
     expect(result.text).toBe('Reykjavik is the capital of Iceland.');
     expect(result.sources).toEqual([{ title: 'Iceland', url: 'https://example.com/iceland' }]);
     expect(result.steps).toBe(2);
+
+    // usage is mapped from the model's reported tokens (for the live pipeline's metrics).
+    expect(typeof result.usage.inputTokens).toBe('number');
+    expect(typeof result.usage.outputTokens).toBe('number');
+    expect(typeof result.usage.totalTokens).toBe('number');
+    expect(result.usage.inputTokens).toBeGreaterThan(0);
+    expect(result.usage.outputTokens).toBeGreaterThan(0);
   });
 
   it('honest-empty search → no sources, loop still completes', async () => {

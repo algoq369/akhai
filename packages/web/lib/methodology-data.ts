@@ -225,11 +225,11 @@ export const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     name: 'react',
     fullName: 'Reasoning + Acting',
     description:
-      'Cycles of thinking, acting (simulated search/lookup), and observing results until reaching a well-informed final answer.',
+      'Cycles of thinking, acting (real web search), and observing results until reaching a well-informed final answer.',
     howItWorks: [
       'Think: Analyze what information is needed',
-      'Act: Describe search/lookup operation (simulated)',
-      'Observe: State findings or knowledge retrieved',
+      'Act: Execute a real web search',
+      'Observe: Read real search results',
       'Repeat: Continue cycles until complete',
       'Answer: Provide final response based on observations',
     ],

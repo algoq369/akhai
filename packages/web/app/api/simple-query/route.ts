@@ -18,7 +18,8 @@ import {
   type CoreMethodology,
   type ProviderFamily,
 } from '@/lib/provider-selector';
-import { callProvider } from '@/lib/multi-provider-api';
+import { callProvider, type CompletionResponse } from '@/lib/multi-provider-api';
+import { runReactAgent } from '@/lib/react-agent';
 import { formatDuration } from '@/lib/thought-stream';
 
 // Extracted pipeline stages
@@ -339,7 +340,8 @@ export async function POST(request: NextRequest) {
     logger.query.apiCall(selectedProvider.toUpperCase(), usedModel);
     log('INFO', 'API', `Calling ${selectedProvider} API with model: ${usedModel}`);
 
-    let apiResponse;
+    let apiResponse: CompletionResponse | undefined;
+    let reactSources: string[] = [];
     const thinkingCb =
       extendedThinking && selectedProvider === 'anthropic'
         ? (chunk: string) => {
@@ -364,6 +366,30 @@ export async function POST(request: NextRequest) {
         : undefined;
 
     try {
+      if (selectedMethod.id === 'react' && process.env.REACT_AGENT_LIVE === '1') {
+        // Live ReAct agent (S2.2) — feature-gated, default OFF. Flag-off keeps prod byte-identical.
+        emitAndPersist(queryId, {
+          id: `${queryId}-react-agent`,
+          queryId,
+          stage: 'reasoning',
+          timestamp: Date.now() - startTime,
+          data: 'Running live web-search agent…',
+          details: {
+            methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+          },
+        });
+        const agent = await runReactAgent(query);
+        if (!agent.text?.trim()) throw new Error('REACT_AGENT_NO_CONTENT');
+        reactSources = agent.sources.map((s) => `${s.title} — ${s.url}`);
+        apiResponse = {
+          content: agent.text,
+          usage: agent.usage,
+          cost: 0,
+          model: usedModel,
+          provider: selectedProvider,
+          latencyMs: Date.now() - startTime,
+        };
+      } else {
       apiResponse = await withRetry(
         async () => {
           const r = await callProvider(selectedProvider, {
@@ -402,6 +428,7 @@ export async function POST(request: NextRequest) {
           },
         }
       );
+      }
     } catch (apiError: any) {
       logger.query.apiError(selectedProvider.toUpperCase(), apiError.message);
       log('ERROR', 'API', `Provider ${selectedProvider} failed: ${apiError.message}`);
@@ -583,7 +610,7 @@ export async function POST(request: NextRequest) {
     });
 
     // ========== ASYNC GROUNDING (V6 Block 3 — context arrives with Block 4 tools) ==========
-    scoreGroundingAsync(queryId, emitAndPersist, content, [], startTime);
+    scoreGroundingAsync(queryId, emitAndPersist, content, reactSources, startTime);
 
     // ========== MINI CANVAS CLASSIFICATION ==========
     const miniCanvas = classifyContent(content, query);
