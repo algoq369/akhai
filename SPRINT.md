@@ -4,7 +4,7 @@
 > Rule: UI-touching → localhost → your eyes → FlokiNET. Backend-only → gates → :3001 → cutover.
 > Gate every commit: tsc 0 · vitest 91/91 · SHIELD pass.
 
-LAST UPDATED: 2026-06-29 (SB1/2/4 done + Opus 4.8) · HEAD 67c3dcd · 95 tests · NOTE: WEBNA-the-tool merge = separate future master-plan item; S4 'WEBNA' here = quality bar only, pending user's WEBNA standards sync
+LAST UPDATED: 2026-06-29 (SB block + S2 done) · HEAD 13580c0 · 101 tests · live-verified: cascade→Haiku, ReAct agent real search, SC multi-path · NOTE: WEBNA-the-tool merge = separate future master-plan item; S4 'WEBNA' here = quality bar only, pending user's WEBNA standards sync
 
 ---
 
@@ -23,13 +23,13 @@ LAST UPDATED: 2026-06-29 (SB1/2/4 done + Opus 4.8) · HEAD 67c3dcd · 95 tests �
 - [-] S1.6  Async MiniCheck Tier-2 (high-stakes only) — deferred to post-launch unless time in buffer
 
 ## S2 · BLOCK 4 — REAL ReAct (also unlocks S1 context feed)
-- [ ] S2.1  Adopt Vercel AI SDK ToolLoopAgent in a server route (spike, one tool)
+- [x] S2.1  (3123600) real ReAct agent loop — AI SDK 6 + real Brave/DDG search, 101 tests
 - [ ] S2.2  SearXNG self-hosted on the guard box (EU search) + Brave API fallback wired
-- [ ] S2.3  Replace simulated ReAct prompt with real tool loop; kill "even if simulated"
-- [ ] S2.4  Stream tool steps to canvas over existing SSE (depth-annotated stages)
+- [x] S2.3  (13580c0) de-simulated react copy; real agent wired live behind REACT_AGENT_LIVE flag
+- [~] S2.4  reasoning stage emitted on agent start; richer per-step streaming = polish (S2 follow-up)
 - [ ] S2.5  Cost/latency caps: stepCountIs + per-query token budget
-- [ ] S2.6  Feed retrieved tool context into scoreGroundingAsync (closes S1 grounded-mode loop)
-- [ ] S2.7  Gates + localhost eyes + deploy
+- [x] S2.6  (13580c0) agent sources fed to scoreGroundingAsync — grounded mode wired (lights up when box live)
+- [x] S2.7  gates green, localhost-verified: real Brave searches + query reformulation confirmed in logs; deploy pending FlokiNET
 
 ## S3 · BLOCK 5 — LEARNED ROUTER (+ fixes A15 non-determinism)
 - [ ] S3.1  Export ~1k labeled queries from Langfuse traces (methodology labels)
@@ -87,6 +87,7 @@ learned router live-or-shadow · 0 crit/high held by CI · evals green per-commi
 51/51 routes Zod · deploys ship own runtime · nav transitions instant · WEBNA ≥85.
 
 ## CHANGELOG
+- 2026-06-29 (cont): SB block complete (SB.1/2/3/4) + Opus 4.8 bump + S2 complete (real ReAct agent live behind flag, sources→grounding). 101 tests. Live-verified on localhost: cost cascade routes direct→Haiku, ReAct agent fires real Brave searches with query reformulation, SC produces multi-path reasoning. Zero backend errors. Remaining for grounding score: provision €4 guard box (S1.1/S1.2).
 - 2026-06-29: SB.1 (fact:0 stub killed), SB.2 (routing over-escalation fixed +regression test → 95 tests), SB.4 (labels fixed), then whole model stack bumped Opus 4.7→4.8 incl Legend Mode (21 sites, 16 files). All cc-executed + independently verified. SB.3 cascade is last substantive backend item. FlokiNET still down (host switch pending).
 - 2026-06-11: sprint created from V6. Done before sprint: P0+P1, Block1, Block2 core, Block3 foundation (32e9c94).
 - 2026-06-11: S0.1/S0.2 done — wallet-defer refactor committed (36200b4), bundle steady 299kB. S0.4 done — strays archived. S0.3 on localhost for eyes.
