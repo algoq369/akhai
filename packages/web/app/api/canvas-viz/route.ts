@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { MODELS } from '@/lib/models';
 import { z } from 'zod';
 import { callProvider } from '@/lib/multi-provider-api';
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
         { role: 'system' as const, content: systemPrompt },
         { role: 'user' as const, content: userContent },
       ],
-      model: 'claude-opus-4-8',
+      model: MODELS.premium,
       maxTokens: 1500,
     };
 

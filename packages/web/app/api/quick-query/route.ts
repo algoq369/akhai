@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { MODELS } from '@/lib/models';
 import { z } from 'zod';
 import { callProvider } from '@/lib/multi-provider-api';
 import { getRecentQueries } from '@/lib/database';
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
           content: query,
         },
       ],
-      model: 'claude-opus-4-8',
+      model: MODELS.premium,
       maxTokens: 500,
       temperature: 0.7,
     };

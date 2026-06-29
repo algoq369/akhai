@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MODELS } from '@/lib/models';
 import Anthropic from '@anthropic-ai/sdk';
 
 export const dynamic = 'force-dynamic';
@@ -90,7 +91,7 @@ Generate suggestions that help explore this topic more deeply.`;
 
     // Call Claude Opus 4.8
     const message = await anthropic.messages.create({
-      model: 'claude-opus-4-8',
+      model: MODELS.premium,
       max_tokens: 4096,
       system: systemPrompt,
       messages: [

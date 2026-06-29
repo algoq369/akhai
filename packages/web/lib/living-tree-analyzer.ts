@@ -6,6 +6,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { MODELS } from '@/lib/models';
 
 // Lazy factory — module-scope SDK instantiation reads env before Next.js
 // dev finishes loading .env.local, which silently locks in an empty key.
@@ -166,7 +167,7 @@ Return your analysis as a JSON object with this structure:
 
   try {
     const message = await getAnthropicClient().messages.create({
-      model: 'claude-opus-4-8',
+      model: MODELS.premium,
       max_tokens: 4000,
       system: systemPrompt,
       messages: [

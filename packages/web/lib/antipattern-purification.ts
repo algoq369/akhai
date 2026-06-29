@@ -8,6 +8,7 @@
  */
 
 import { type AntipatternRisk, type AntipatternType } from './antipattern-patterns';
+import { MODELS } from '@/lib/models';
 import { detectAntipattern } from './antipattern-detection';
 
 /**
@@ -157,7 +158,7 @@ export async function detectAntipatternSemantic(
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-8',
+        model: MODELS.premium,
         max_tokens: 1000,
         messages: [
           {
@@ -315,7 +316,7 @@ export async function purifyResponseWithAI(
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-8',
+        model: MODELS.premium,
         max_tokens: 3000,
         messages: [
           {

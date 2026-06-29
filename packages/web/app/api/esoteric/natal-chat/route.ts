@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MODELS } from '@/lib/models';
 import { callProvider } from '@/lib/multi-provider-api';
 
 export async function POST(request: NextRequest) {
@@ -54,7 +55,7 @@ ${tone}`;
     try {
       const result = await callProvider('anthropic', {
         messages,
-        model: 'claude-opus-4-8',
+        model: MODELS.premium,
         maxTokens: 500,
         temperature: 0.7,
       });

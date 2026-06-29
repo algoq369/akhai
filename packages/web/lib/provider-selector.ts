@@ -5,6 +5,8 @@
  * cost-efficiency, and accuracy.
  */
 
+import { MODELS } from '@/lib/models';
+
 export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'tot' | 'auto';
 export type ProviderFamily =
   | 'anthropic'
@@ -42,13 +44,13 @@ export interface ModelSpec {
  */
 const FREE_PROVIDER: ModelSpec = {
   provider: 'openrouter',
-  model: 'meta-llama/llama-3.3-70b-instruct:free',
+  model: MODELS.free,
   reasoning: 'Free tier: Llama 3.3 70B via OpenRouter (GPT-4 class, $0 cost)',
 };
 
 const PREMIUM_PROVIDER: ModelSpec = {
   provider: 'anthropic',
-  model: 'claude-opus-4-8',
+  model: MODELS.premium,
   reasoning: 'Premium Claude Opus 4.8 (downgrades to 4.6 for streamable extended thinking)',
 };
 
@@ -74,7 +76,7 @@ export function getProviderForMethodology(
   if (legendMode) {
     return {
       provider: 'anthropic',
-      model: 'claude-opus-4-8',
+      model: MODELS.premium,
       reasoning: 'Legend Mode: Premium R&D with Claude Opus 4.8',
     };
   }

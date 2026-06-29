@@ -12,6 +12,8 @@
  * Phase 2: AI-Powered Classification with Opus 4.5
  */
 
+import { MODELS } from '@/lib/models';
+
 export type Methodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'tot' | 'auto';
 
 export interface QueryClassification {
@@ -238,7 +240,7 @@ export async function classifyQueryWithAI(query: string): Promise<AIQueryClassif
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-8',
+        model: MODELS.premium,
         max_tokens: 500,
         messages: [
           {

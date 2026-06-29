@@ -12,6 +12,8 @@
  * @module factuality-verifier
  */
 
+import { MODELS } from '@/lib/models';
+
 export interface FactualityVerification {
   score: number; // 0.0-1.0 (1.0 = fully supported)
   triggered: boolean; // true if score < threshold
@@ -190,7 +192,7 @@ export async function verifyFactuality(
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-8',
+        model: MODELS.premium,
         max_tokens: 1500,
         messages: [
           {

@@ -8,6 +8,7 @@
  */
 
 import { Layer, LAYER_METADATA } from './layer-registry';
+import { MODELS } from '@/lib/models';
 import { TreeConfiguration } from './tree-configuration';
 import { callProvider, type Message, type CompletionResponse } from './multi-provider-api';
 import type { ProviderFamily } from './provider-selector';
@@ -120,7 +121,7 @@ async function processWeightedMode(
   const startTime = Date.now();
   const response = await callProvider(provider, {
     messages,
-    model: 'claude-opus-4-8',
+    model: MODELS.premium,
     maxTokens: 4096,
     temperature: 0.7,
   });
@@ -191,7 +192,7 @@ async function processParallelMode(
     const startTime = Date.now();
     const response = await callProvider(provider, {
       messages,
-      model: 'claude-opus-4-8',
+      model: MODELS.premium,
       maxTokens: 1024,
       temperature: 0.7,
     });
@@ -332,7 +333,7 @@ Weight each perspective by its percentage. Resolve any conflicts by favoring hig
 
   const response = await callProvider(provider, {
     messages: [{ role: 'user' as const, content: synthesisPrompt }],
-    model: 'claude-opus-4-8',
+    model: MODELS.premium,
     maxTokens: 2048,
     temperature: 0.7,
   });

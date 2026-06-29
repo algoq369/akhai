@@ -1,6 +1,7 @@
 'use client';
 
 import type { SettingsTabProps } from './SettingsTab.types';
+import { MODELS } from '@/lib/models';
 
 export default function SettingsTab({
   settings,
@@ -204,8 +205,8 @@ export default function SettingsTab({
             </span>
             <div className="flex gap-3">
               {[
-                { id: 'claude-opus-4-8', label: 'opus 4.8', cost: '$0.075/q' },
-                { id: 'claude-haiku-4-5-20251001', label: 'haiku', cost: '$0.007/q' },
+                { id: MODELS.premium, label: 'opus 4.8', cost: '$0.075/q' },
+                { id: MODELS.budget, label: 'haiku', cost: '$0.007/q' },
               ].map((model) => (
                 <span
                   key={model.id}
@@ -218,14 +219,14 @@ export default function SettingsTab({
                   className="text-[9px] cursor-pointer transition-colors group"
                   style={{
                     color:
-                      (settings.modelConfig?.motherBase || 'claude-opus-4-8') === model.id
+                      (settings.modelConfig?.motherBase || MODELS.premium) === model.id
                         ? document.documentElement.classList.contains('dark')
                           ? '#ffffff'
                           : '#18181b'
                         : '#94a3b8',
                   }}
                 >
-                  {(settings.modelConfig?.motherBase || 'claude-opus-4-8') === model.id ? '●' : '○'}{' '}
+                  {(settings.modelConfig?.motherBase || MODELS.premium) === model.id ? '●' : '○'}{' '}
                   {model.label}
                   <span className="text-relic-silver/50 ml-1">{model.cost}</span>
                 </span>

@@ -1,4 +1,5 @@
 import 'server-only';
+import { MODELS } from '@/lib/models';
 
 /**
  * Multi-Provider API Caller
@@ -184,7 +185,7 @@ async function callAnthropic(
   if (request.extendedThinking) {
     // Opus 4.8 adaptive thinking does not emit visible thinking_delta events (verified Apr 2026).
     // Use Opus 4.6 with enabled thinking for streamable extended thinking content.
-    body.model = 'claude-opus-4-6';
+    body.model = MODELS.thinking;
     body.thinking = { type: 'enabled', budget_tokens: 10000 };
     body.max_tokens = 16000; // must exceed budget_tokens
     // Anthropic 400s if temperature/top_p/top_k present with extended thinking

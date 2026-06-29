@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { MODELS } from '@/lib/models';
 import { persist } from 'zustand/middleware';
 
 export interface ApiKeys {
@@ -99,7 +100,7 @@ const defaultSettings: Settings = {
     openrouter: '',
   },
   modelConfig: {
-    motherBase: 'claude-opus-4-8',
+    motherBase: MODELS.premium,
     slot1: 'deepseek-chat',
     slot2: 'grok-3',
   },

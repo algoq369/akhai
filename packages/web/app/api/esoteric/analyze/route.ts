@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MODELS } from '@/lib/models';
 import {
   getCurrentPositions,
   getConvergence,
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        model: 'claude-opus-4-8',
+        model: MODELS.premium,
         maxTokens: 300,
         temperature: 0.7,
       });

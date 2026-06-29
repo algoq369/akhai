@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MODELS } from '@/lib/models';
 import { getCurrentPositions, getConvergence } from '@/lib/esoteric/cycle-engine';
 import { callProvider } from '@/lib/multi-provider-api';
 
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: JSON.stringify(userData, null, 2) },
         ],
-        model: 'claude-opus-4-8',
+        model: MODELS.premium,
         maxTokens: 600,
         temperature: 0.7,
       });

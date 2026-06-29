@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { MODELS } from '@/lib/models';
 import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import DarkModeToggle from '@/components/DarkModeToggle';
 
@@ -50,7 +51,7 @@ export default function DashboardPage() {
     {
       key: 'anthropic',
       name: 'Anthropic Claude',
-      model: 'claude-opus-4-8',
+      model: MODELS.premium,
       active: stats?.providers?.anthropic?.status === 'active',
     },
     {
