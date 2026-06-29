@@ -4,7 +4,7 @@
 > Rule: UI-touching → localhost → your eyes → FlokiNET. Backend-only → gates → :3001 → cutover.
 > Gate every commit: tsc 0 · vitest 91/91 · SHIELD pass.
 
-LAST UPDATED: 2026-06-11 (live engine verified, SB block added) · HEAD 0eaf53c · NOTE: WEBNA-the-tool merge = separate future master-plan item; S4 'WEBNA' here = quality bar only, pending user's WEBNA standards sync
+LAST UPDATED: 2026-06-29 (SB1/2/4 done + Opus 4.8) · HEAD 67c3dcd · 95 tests · NOTE: WEBNA-the-tool merge = separate future master-plan item; S4 'WEBNA' here = quality bar only, pending user's WEBNA standards sync
 
 ---
 
@@ -40,10 +40,10 @@ LAST UPDATED: 2026-06-11 (live engine verified, SB block added) · HEAD 0eaf53c 
 - [ ] S3.6  A15: make layer activation deterministic (seed or remove Math.random noise)
 
 ## SB · BACKEND PERFECTION (found by live engine test 2026-06-11 — deploy-free, do now)
-- [ ] SB.1  Reconcile stale `fact:0` stub — guardResult.scores.fact hardcoded 0 now CONFLICTS with honest grounding meter (two factuality signals). Remove/replace fake fact score.
-- [ ] SB.2  Routing over-escalation — "capital of Iceland" → react (heaviest path). Trivial factual Qs must not hit search methodology. Tune fusion scorer threshold (react is simulated so answer was right, but wasteful).
-- [ ] SB.3  No cost cascade — premium Opus 4.7 runs EVERY query incl. trivial ($0.004 for a capital lookup). Implement cheap-first cascade (Booster B5): simple→Haiku/Scaleway, escalate on complexity.
-- [ ] SB.4  Model label inconsistency — provider.model "claude-opus-4-7" vs reasoning text "Opus 4.6". Fix label.
+- [x] SB.1  (bb7f90f) killed fact:0 stub — guardResult.scores.fact hardcoded 0 now CONFLICTS with honest grounding meter (two factuality signals). Remove/replace fake fact score.
+- [x] SB.2  (651a1f6) word-boundary regex + regression test, 95 tests — "capital of Iceland" → react (heaviest path). Trivial factual Qs must not hit search methodology. Tune fusion scorer threshold (react is simulated so answer was right, but wasteful).
+- [ ] SB.3  No cost cascade — NEXT substantive backend item (fold in model-constant extraction) — premium Opus 4.7 runs EVERY query incl. trivial ($0.004 for a capital lookup). Implement cheap-first cascade (Booster B5): simple→Haiku/Scaleway, escalate on complexity.
+- [x] SB.4  (9e564f0) labels fixed + (67c3dcd) whole stack → Opus 4.8 incl Legend Mode, 21 sites — provider.model "claude-opus-4-7" vs reasoning text "Opus 4.6". Fix label.
 - [x] SB.0  VERIFIED engine works: correct answer, full pipeline (routing→guard→sideCanal→miniCanvas), grounding meter wired to stream. Backend is FUNCTIONAL, these are refinements.
 
 ## S4 · BLOCK 6 — WEBNA CLOSE-OUT (security/quality to ≥85)
@@ -87,6 +87,7 @@ learned router live-or-shadow · 0 crit/high held by CI · evals green per-commi
 51/51 routes Zod · deploys ship own runtime · nav transitions instant · WEBNA ≥85.
 
 ## CHANGELOG
+- 2026-06-29: SB.1 (fact:0 stub killed), SB.2 (routing over-escalation fixed +regression test → 95 tests), SB.4 (labels fixed), then whole model stack bumped Opus 4.7→4.8 incl Legend Mode (21 sites, 16 files). All cc-executed + independently verified. SB.3 cascade is last substantive backend item. FlokiNET still down (host switch pending).
 - 2026-06-11: sprint created from V6. Done before sprint: P0+P1, Block1, Block2 core, Block3 foundation (32e9c94).
 - 2026-06-11: S0.1/S0.2 done — wallet-defer refactor committed (36200b4), bundle steady 299kB. S0.4 done — strays archived. S0.3 on localhost for eyes.
 - 2026-06-11: S0.3 shipped to FlokiNET (Ready 534ms, TTFB 0.17s). S0 COMPLETE.
