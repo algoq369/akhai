@@ -10,7 +10,7 @@ interface GuardWarningProps {
       hype: number
       echo: number
       drift: number
-      fact: number
+      fact?: number
     }
   }
   originalQuery: string
@@ -140,10 +140,12 @@ export default function GuardWarning({
                 <span className="text-relic-slate">Drift:</span>
                 <span className="ml-2 text-relic-slate">{guardResult.scores.drift}%</span>
               </div>
-              <div>
-                <span className="text-relic-slate">Fact:</span>
-                <span className="ml-2 text-relic-slate">{guardResult.scores.fact}</span>
-              </div>
+              {guardResult.scores.fact !== undefined && (
+                <div>
+                  <span className="text-relic-slate">Fact:</span>
+                  <span className="ml-2 text-relic-slate">{guardResult.scores.fact}</span>
+                </div>
+              )}
             </div>
           </div>
         )}

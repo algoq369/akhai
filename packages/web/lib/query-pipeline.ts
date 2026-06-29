@@ -478,12 +478,6 @@ export async function runGroundingGuard(response: string, query: string) {
   logger.guard.sanityCheck(sanityViolations, sanityTriggered);
   if (sanityTriggered) issues.push('sanity');
 
-  // 5. Factuality check (placeholder)
-  const factScore = 0;
-  const factTriggered = false;
-  logger.guard.factCheck(factScore, factTriggered);
-  if (factTriggered) issues.push('factuality');
-
   logger.guard.complete(issues, issues.length === 0);
 
   return {
@@ -493,7 +487,6 @@ export async function runGroundingGuard(response: string, query: string) {
       hype: hypeCount,
       echo: echoScore,
       drift: driftScore,
-      fact: factScore,
     },
     sanityViolations,
   };

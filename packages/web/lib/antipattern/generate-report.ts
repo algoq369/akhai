@@ -32,7 +32,7 @@ const SHADOW_THRESHOLDS = {
  */
 export function generateAntipatternReport(
   layersResult: LayersProcessingResult | null,
-  guardResult: { scores: { hype: number; drift: number; fact: number } } | null,
+  guardResult: { scores: { hype: number; drift: number; fact?: number } } | null,
   config: TreeConfiguration | null,
   content?: string
 ): AntipatternReport {
@@ -120,7 +120,7 @@ function getActiveLenses(result: LayersProcessingResult | null): string[] {
  * Calculate hallucination risk based on guard and layer results
  */
 function calculateHallucinationRisk(
-  guardResult: { scores: { hype: number; drift: number; fact: number } } | null,
+  guardResult: { scores: { hype: number; drift: number; fact?: number } } | null,
   layersResult: LayersProcessingResult | null
 ): number {
   let risk = 0
@@ -154,7 +154,7 @@ function calculateHallucinationRisk(
  */
 function detectShadowActivations(
   layersResult: LayersProcessingResult | null,
-  guardResult: { scores: { hype: number; drift: number; fact: number } } | null,
+  guardResult: { scores: { hype: number; drift: number; fact?: number } } | null,
   config: TreeConfiguration | null,
   content?: string
 ): ShadowActivation[] {
@@ -205,7 +205,7 @@ function detectShadowActivations(
   }
 
   // 5. Context-Loss (Executor shadow) - Hallucinated patterns
-  if (guardResult && guardResult.scores.fact < 0.5) {
+  if (guardResult && guardResult.scores.fact !== undefined && guardResult.scores.fact < 0.5) {
     const antipattern = ANTIPATTERN_MAP[9]
     activations.push({
       antipattern: antipattern.name,

@@ -34,7 +34,7 @@ export interface GuardTriggeredEvent {
     hype: number;
     echo: number;
     drift: number;
-    fact: number;
+    fact?: number;
   };
   issues: string[];
 }

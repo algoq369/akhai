@@ -22,7 +22,7 @@ export interface Message {
       hype: number;
       echo: number;
       drift: number;
-      fact: number;
+      fact?: number;
     };
     sanityViolations: string[];
   };

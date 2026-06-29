@@ -239,7 +239,7 @@ export function trackPostHogEvents(input: ResponseBuilderInput, request: NextReq
         action: 'pending',
         query,
         methodology: selectedMethod.id,
-        scores: guardResult.scores || { hype: 0, echo: 0, drift: 0, fact: 0 },
+        scores: guardResult.scores || { hype: 0, echo: 0, drift: 0 },
         issues: guardResult.issues || [],
       });
     }
