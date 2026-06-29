@@ -54,6 +54,12 @@ const PREMIUM_PROVIDER: ModelSpec = {
   reasoning: 'Premium Claude Opus 4.8 (downgrades to 4.6 for streamable extended thinking)',
 };
 
+const BUDGET_PROVIDER: ModelSpec = {
+  provider: 'anthropic',
+  model: MODELS.budget,
+  reasoning: 'Budget tier: Claude Haiku 4.5 for simple direct queries (~10x cheaper)',
+};
+
 // Evaluated lazily at call time: Next.js dev server loads env *after* some
 // module imports complete, so reading process.env at module scope locks us
 // into the free tier for the life of the process.
@@ -79,6 +85,12 @@ export function getProviderForMethodology(
       model: MODELS.premium,
       reasoning: 'Legend Mode: Premium R&D with Claude Opus 4.8',
     };
+  }
+
+  // Cost cascade: simple factual queries (direct) use the cheap fast model.
+  // All reasoning-heavy methodologies keep premium. Only applies when Anthropic key present.
+  if (methodology === 'direct' && process.env.ANTHROPIC_API_KEY) {
+    return BUDGET_PROVIDER;
   }
 
   const defaultProvider = getDefaultProvider();
