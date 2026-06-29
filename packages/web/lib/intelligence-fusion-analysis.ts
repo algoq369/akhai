@@ -300,7 +300,7 @@ export function analyzeQuery(query: string): QueryAnalysis {
   const result: QueryAnalysis = {
     complexity,
     queryType,
-    requiresTools: /search|lookup|find|fetch|get.*data|api|price|stock|weather/i.test(query),
+    requiresTools: /\b(?:search|lookup|find|fetch|api|price|stock|weather)\b|get\s+[\w\s]*\bdata\b/i.test(query),
     requiresMultiPerspective:
       /compare|perspective|opinion|view|argument|strateg|approach|best|recommend|pros|cons/i.test(
         query

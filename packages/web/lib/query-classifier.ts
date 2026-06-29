@@ -202,7 +202,7 @@ export function classifyQueryIntent(query: string): QueryIntent {
   }
 
   // Determine if tools required
-  const requiresTools = /calculate|compute|current|latest|price|search|find|lookup/i.test(query);
+  const requiresTools = /\b(?:calculate|compute|current|latest|price|search|find|lookup)\b/i.test(query);
 
   // Calculate confidence
   let confidence = 0.7;
