@@ -383,7 +383,7 @@ export async function POST(request: NextRequest) {
         reactSources = agent.sources.map((s) => `${s.title}. ${s.snippet}`.trim());
         apiResponse = {
           content: agent.text,
-          usage: agent.usage,
+          usage: { ...agent.usage, cacheRead: 0, cacheCreation: 0 },
           cost: 0,
           model: usedModel,
           provider: selectedProvider,
@@ -400,6 +400,8 @@ export async function POST(request: NextRequest) {
             extendedThinking:
               extendedThinking && selectedProvider === 'anthropic' ? true : undefined,
             onThinkingDelta: thinkingCb,
+            purpose: `${selectedMethod.id} answer`,
+            queryId,
           });
           // WEBNA R3: empty/whitespace content is retryable (re-roll same provider)
           if (!r.content || !r.content.trim()) throw new Error('PROVIDER_NO_CONTENT 529');

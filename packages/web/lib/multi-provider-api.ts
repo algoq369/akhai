@@ -10,6 +10,7 @@ import { MODELS } from '@/lib/models';
 
 import type { ProviderFamily } from './provider-selector';
 import { getProviderApiConfig, getProviderPricing } from './provider-selector';
+import { recordCall } from './cogs-scorecard';
 
 /** Hard ceiling per provider HTTP call — hung sockets abort instead of hanging forever (WEBNA P1.5). Tunable via env. */
 const PROVIDER_TIMEOUT_MS = Number(process.env.PROVIDER_TIMEOUT_MS) || 180_000;
@@ -28,6 +29,8 @@ export interface CompletionRequest {
   extendedThinking?: boolean;
   onThinkingDelta?: (chunk: string) => void;
   onTextDelta?: (chunk: string) => void;
+  purpose?: string;
+  queryId?: string;
 }
 
 export interface CompletionResponse {
@@ -37,6 +40,8 @@ export interface CompletionResponse {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
+    cacheRead: number;
+    cacheCreation: number;
   };
   model: string;
   provider: ProviderFamily;
@@ -56,24 +61,62 @@ export async function callProvider(
   request: CompletionRequest
 ): Promise<CompletionResponse> {
   const startTime = Date.now();
+  const queryId = request.queryId ?? 'unknown';
+  const purpose = request.purpose ?? `${provider} call`;
 
-  switch (provider) {
-    case 'anthropic':
-      return await callAnthropic(request, startTime);
-    case 'deepseek':
-      return await callDeepSeek(request, startTime);
-    case 'mistral':
-      return await callMistral(request, startTime);
-    case 'xai':
-      return await callXAI(request, startTime);
-    case 'openrouter':
-      return await callOpenRouter(request, startTime);
-    case 'groq':
-      return await callOpenAICompatible(request, startTime, 'groq');
-    case 'google':
-      return await callOpenAICompatible(request, startTime, 'google');
-    default:
-      throw new Error(`Unsupported provider: ${provider}`);
+  const dispatch = (): Promise<CompletionResponse> => {
+    switch (provider) {
+      case 'anthropic':
+        return callAnthropic(request, startTime);
+      case 'deepseek':
+        return callDeepSeek(request, startTime);
+      case 'mistral':
+        return callMistral(request, startTime);
+      case 'xai':
+        return callXAI(request, startTime);
+      case 'openrouter':
+        return callOpenRouter(request, startTime);
+      case 'groq':
+        return callOpenAICompatible(request, startTime, 'groq');
+      case 'google':
+        return callOpenAICompatible(request, startTime, 'google');
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
+    }
+  };
+
+  // Central COGS instrument: record one reconciling row per call (B1).
+  try {
+    const res = await dispatch();
+    recordCall({
+      queryId,
+      purpose,
+      model: res.model,
+      inTok: res.usage.inputTokens,
+      cacheRead: res.usage.cacheRead,
+      cacheCreation: res.usage.cacheCreation,
+      outTok: res.usage.outputTokens,
+      durationMs: res.latencyMs,
+      costUSD: res.cost,
+      outcome: res.content && res.content.trim() ? 'ok' : 'empty',
+      objectiveMet: null,
+    });
+    return res;
+  } catch (err) {
+    recordCall({
+      queryId,
+      purpose,
+      model: request.model,
+      inTok: 0,
+      cacheRead: 0,
+      cacheCreation: 0,
+      outTok: 0,
+      durationMs: Date.now() - startTime,
+      costUSD: 0,
+      outcome: 'error',
+      objectiveMet: null,
+    });
+    throw err;
   }
 }
 
@@ -90,6 +133,8 @@ async function parseAnthropicStream(
   let textContent = '';
   let inputTokens = 0;
   let outputTokens = 0;
+  let cacheRead = 0;
+  let cacheCreation = 0;
 
   try {
     while (true) {
@@ -110,6 +155,8 @@ async function parseAnthropicStream(
         }
         if (ev.type === 'message_start') {
           inputTokens = ev.message?.usage?.input_tokens || 0;
+          cacheRead = ev.message?.usage?.cache_read_input_tokens || 0;
+          cacheCreation = ev.message?.usage?.cache_creation_input_tokens || 0;
         } else if (ev.type === 'content_block_delta') {
           const dt = ev.delta?.type;
           if (dt === 'thinking_delta') {
@@ -136,12 +183,18 @@ async function parseAnthropicStream(
 
   const latencyMs = Date.now() - startTime;
   const pricing = getProviderPricing('anthropic');
-  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000;
+  // Cache economics: uncached input at 1x, cache reads at 0.1x, cache writes (5-min ephemeral) at 1.25x.
+  const cost =
+    (inputTokens * pricing.input +
+      cacheRead * pricing.input * 0.1 +
+      cacheCreation * pricing.input * 1.25 +
+      outputTokens * pricing.output) /
+    1000;
 
   return {
     content: textContent,
     rawThinking: rawThinking || undefined,
-    usage: { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens },
+    usage: { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens, cacheRead, cacheCreation },
     model: request.model,
     provider: 'anthropic',
     cost,
@@ -222,8 +275,16 @@ async function callAnthropic(
 
   const inputTokens = data.usage?.input_tokens || 0;
   const outputTokens = data.usage?.output_tokens || 0;
+  const cacheRead = data.usage?.cache_read_input_tokens || 0;
+  const cacheCreation = data.usage?.cache_creation_input_tokens || 0;
   const pricing = getProviderPricing('anthropic');
-  const cost = (inputTokens * pricing.input + outputTokens * pricing.output) / 1000;
+  // Cache economics: uncached input at 1x, cache reads at 0.1x, cache writes (5-min ephemeral) at 1.25x.
+  const cost =
+    (inputTokens * pricing.input +
+      cacheRead * pricing.input * 0.1 +
+      cacheCreation * pricing.input * 1.25 +
+      outputTokens * pricing.output) /
+    1000;
 
   // Extract thinking + text content blocks
   let textContent = '';
@@ -246,6 +307,8 @@ async function callAnthropic(
       inputTokens,
       outputTokens,
       totalTokens: inputTokens + outputTokens,
+      cacheRead,
+      cacheCreation,
     },
     model: request.model,
     provider: 'anthropic',
@@ -301,6 +364,8 @@ async function callDeepSeek(
       inputTokens,
       outputTokens,
       totalTokens: inputTokens + outputTokens,
+      cacheRead: 0,
+      cacheCreation: 0,
     },
     model: request.model,
     provider: 'deepseek',
@@ -356,6 +421,8 @@ async function callMistral(
       inputTokens,
       outputTokens,
       totalTokens: inputTokens + outputTokens,
+      cacheRead: 0,
+      cacheCreation: 0,
     },
     model: request.model,
     provider: 'mistral',
@@ -408,6 +475,8 @@ async function callXAI(request: CompletionRequest, startTime: number): Promise<C
       inputTokens,
       outputTokens,
       totalTokens: inputTokens + outputTokens,
+      cacheRead: 0,
+      cacheCreation: 0,
     },
     model: request.model,
     provider: 'xai',
@@ -468,6 +537,8 @@ async function callOpenRouter(
       inputTokens,
       outputTokens,
       totalTokens: inputTokens + outputTokens,
+      cacheRead: 0,
+      cacheCreation: 0,
     },
     model: 'nvidia/nemotron-3-super-120b-a12b:free',
     provider: 'openrouter',
@@ -524,6 +595,8 @@ async function callOpenAICompatible(
       inputTokens,
       outputTokens,
       totalTokens: inputTokens + outputTokens,
+      cacheRead: 0,
+      cacheCreation: 0,
     },
     model: request.model,
     provider,
