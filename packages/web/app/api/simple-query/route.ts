@@ -280,11 +280,18 @@ export async function POST(request: NextRequest) {
     ];
 
     // ========== BUILD SYSTEM PROMPT ==========
+    // Gap-A: systemPrompt is the STABLE cached prefix (~9KB methodology block). Do NOT mutate it —
+    // all per-query content goes into dynamicContext, which travels AFTER the cache breakpoint.
     let systemPrompt = getMethodologyPrompt(selectedMethod.id, pageContext, legendMode);
 
-    systemPrompt = `Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}. Always use up-to-date context when discussing current events, trends, or future projections.\n\n${systemPrompt}`;
+    const dynamicParts: string[] = [];
 
-    // Auto web search for every query
+    // 1. Current date
+    dynamicParts.push(
+      `Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}. Always use up-to-date context when discussing current events, trends, or future projections.`
+    );
+
+    // 2. Auto web search for every query
     try {
       const searchRes = await fetch('http://localhost:3000/api/web-search', {
         method: 'POST',
@@ -299,8 +306,7 @@ export async function POST(request: NextRequest) {
             .slice(0, 3)
             .map((r: any) => '- ' + (r.title || '') + ': ' + (r.snippet || r.description || ''))
             .join('\n');
-          systemPrompt =
-            'Live web context (searched as of today):\n' + webContext + '\n\n' + systemPrompt;
+          dynamicParts.push('Live web context (searched as of today):\n' + webContext);
           log('INFO', 'SEARCH', 'Auto-search: ' + results.length + ' results injected');
         }
       }
@@ -308,20 +314,21 @@ export async function POST(request: NextRequest) {
       log('WARN', 'SEARCH', 'Auto-search failed: ' + (e as Error).message);
     }
 
+    // 3. URL context
     if (urlContext) {
-      systemPrompt = `${systemPrompt}\n\n${urlContext}`;
-      log('INFO', 'URL_FETCH', `URL context injected into system prompt`);
+      dynamicParts.push(urlContext);
+      log('INFO', 'URL_FETCH', `URL context injected into dynamic context`);
     }
 
+    // 4. Fusion enhancement (preserves FUSION logging) — applied to the dynamic section, not the cached prefix.
+    let dynamicContext = dynamicParts.filter(Boolean).join('\n\n');
     if (fusionResult) {
-      systemPrompt = applyFusionToPrompt(systemPrompt, fusionResult, weights);
+      dynamicContext = applyFusionToPrompt(dynamicContext, fusionResult, weights);
     }
 
-    // When extended thinking is enabled, prepend a directive that encourages deeper reasoning
+    // 5. Extended-thinking directive — now AFTER the methodology block (in the dynamic section).
     if (extendedThinking) {
-      systemPrompt =
-        'When reasoning internally, think thoroughly — consider multiple angles, surface your genuine considerations, articulate doubts and trade-offs you are weighing, note what you are rejecting and why. Your internal reasoning should feel like authentic reflection, not summary. Take the time to examine the question from multiple lenses before answering.\n\n' +
-        systemPrompt;
+      dynamicContext = `${dynamicContext}\n\nWhen reasoning internally, think thoroughly — consider multiple angles, surface your genuine considerations, articulate doubts and trade-offs you are weighing, note what you are rejecting and why. Your internal reasoning should feel like authentic reflection, not summary. Take the time to examine the question from multiple lenses before answering.`;
     }
 
     // Emit: calling (pre-API — no model shown, just progress indicator)
@@ -393,7 +400,9 @@ export async function POST(request: NextRequest) {
       apiResponse = await withRetry(
         async () => {
           const r = await callProvider(selectedProvider, {
-            messages: [{ role: 'system', content: systemPrompt }, ...messages],
+            messages: messages,
+            systemPrompt: systemPrompt,
+            dynamicContext: dynamicContext,
             model: usedModel,
             maxTokens: 4096,
             temperature: 0.7,
@@ -460,7 +469,9 @@ export async function POST(request: NextRequest) {
           apiResponse = await withRetry(
             () =>
               callProvider(fallbackProvider, {
-                messages: [{ role: 'system', content: systemPrompt }, ...messages],
+                messages: messages,
+                systemPrompt: systemPrompt,
+                dynamicContext: dynamicContext,
                 model: fallbackModelSpec.model,
                 maxTokens: 4096,
                 temperature: 0.7,

@@ -31,6 +31,8 @@ export interface CompletionRequest {
   onTextDelta?: (chunk: string) => void;
   purpose?: string;
   queryId?: string;
+  /** Gap-A: per-query content that must NOT be in the cached prefix (date/web/fusion/thinking). */
+  dynamicContext?: string;
 }
 
 export interface CompletionResponse {
@@ -49,6 +51,34 @@ export interface CompletionResponse {
   latencyMs: number;
 }
 
+/** A system block for the Anthropic API: the stable prefix carries the cache breakpoint. */
+type AnthropicSystemBlock = {
+  type: 'text';
+  text: string;
+  cache_control?: { type: 'ephemeral' };
+};
+
+/**
+ * Gap-A: build the Anthropic `system` as a CACHED stable prefix + an UNCACHED dynamic suffix.
+ *
+ * The cache_control breakpoint sits on block 0 (the stable ~9KB methodology prompt), so that prefix
+ * is cached across queries. Per-query dynamic content (date/web/fusion/thinking) goes in block 1,
+ * which is reprocessed each call but does NOT change — and therefore does NOT invalidate — the
+ * cached prefix. This is the canonical Anthropic multi-block cache pattern; before this fix the
+ * single block mutated every query and never cached.
+ */
+export function buildAnthropicSystem(
+  systemPrompt: string | undefined,
+  dynamicContext?: string
+): AnthropicSystemBlock[] | undefined {
+  if (!systemPrompt) return undefined;
+  const blocks: AnthropicSystemBlock[] = [
+    { type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } },
+  ];
+  if (dynamicContext) blocks.push({ type: 'text', text: dynamicContext });
+  return blocks;
+}
+
 /**
  * Call AI provider API with unified interface
  *
@@ -63,6 +93,20 @@ export async function callProvider(
   const startTime = Date.now();
   const queryId = request.queryId ?? 'unknown';
   const purpose = request.purpose ?? `${provider} call`;
+
+  // Gap-A: only Anthropic caches a stable prefix + uncached dynamic block (see buildAnthropicSystem).
+  // The other providers read their system prompt from request.messages, so fold the stable prefix +
+  // dynamic context back into ONE system message here — keeps those builders untouched + behavior-identical.
+  if (provider !== 'anthropic' && request.systemPrompt) {
+    const full = [request.systemPrompt, request.dynamicContext].filter(Boolean).join('\n\n');
+    const userMessages = request.messages.filter((m) => m.role !== 'system');
+    request = {
+      ...request,
+      messages: [{ role: 'system', content: full }, ...userMessages],
+      systemPrompt: undefined,
+      dynamicContext: undefined,
+    };
+  }
 
   const dispatch = (): Promise<CompletionResponse> => {
     switch (provider) {
@@ -226,9 +270,7 @@ async function callAnthropic(
     max_tokens: request.maxTokens || 4096,
     // V6-Block2: prompt caching — methodology system prompt is a stable prefix; cache reads bill at
     // ~10% of input price and cut TTFT. cache_control is harmlessly ignored below min cacheable size.
-    system: systemPrompt
-      ? [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }]
-      : undefined,
+    system: buildAnthropicSystem(systemPrompt, request.dynamicContext),
     messages: messages.map((m) => ({
       role: m.role === 'system' ? 'user' : m.role,
       content: m.content,
