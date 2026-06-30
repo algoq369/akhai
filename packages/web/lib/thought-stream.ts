@@ -55,7 +55,7 @@ export interface ThoughtDetails {
   guard?: { verdict: 'pass' | 'warn' | 'flag'; risk: number; checks?: string[] };
   // grounding (V6 Block 3 — real NLI factuality)
   grounding?: {
-    mode: 'grounded' | 'parametric';
+    mode: 'grounded' | 'parametric' | 'heuristic';
     score: number | null;
     spans?: Array<{ start: number; end: number; text?: string; confidence?: number }>;
     ms?: number;

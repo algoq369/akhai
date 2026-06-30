@@ -20,7 +20,7 @@ export interface ReactStep {
 
 export interface ReactResult {
   text: string;
-  sources: { title: string; url: string }[]; // for grounding context in S2.2
+  sources: { title: string; snippet: string; url: string }[]; // for grounding context in S2.2
   steps: number;
   usage: { inputTokens: number; outputTokens: number; totalTokens: number };
 }
@@ -61,14 +61,14 @@ export async function runReactAgent(
 
   // Collect sources from the real tool results across all steps (deduped by URL) for S2.2 grounding.
   const seen = new Set<string>();
-  const sources: { title: string; url: string }[] = [];
+  const sources: { title: string; snippet: string; url: string }[] = [];
   for (const step of result.steps) {
     for (const toolResult of step.staticToolResults) {
       if (toolResult.toolName !== 'web_search') continue;
       for (const r of toolResult.output.results) {
         if (r.url && !seen.has(r.url)) {
           seen.add(r.url);
-          sources.push({ title: r.title, url: r.url });
+          sources.push({ title: r.title, snippet: r.snippet ?? '', url: r.url });
         }
       }
     }

@@ -264,6 +264,23 @@ function ClassicView({ events }: { events: ThoughtEvent[] }) {
                   <span className="text-relic-silver/40">⊕ GROUNDING</span>{' '}
                   {grounding.mode === 'parametric' ? (
                     <span className="text-relic-silver/50">parametric · not fact-checked</span>
+                  ) : grounding.mode === 'heuristic' ? (
+                    groundPct == null ? (
+                      <span className="text-relic-silver/50">unavailable</span>
+                    ) : (
+                      <>
+                        <span style={{ color: '#94a3b8' }}>≈{groundPct}% lexical support</span>
+                        <span className="ml-1.5 inline-block h-1.5 w-16 rounded-full bg-relic-silver/15 align-middle">
+                          <span
+                            className="block h-full rounded-full"
+                            style={{ width: `${groundPct}%`, backgroundColor: '#94a3b8' }}
+                          />
+                        </span>
+                        {grounding.spans?.length
+                          ? ` · ${grounding.spans.length} unsupported span${grounding.spans.length > 1 ? 's' : ''}`
+                          : ''}
+                      </>
+                    )
                   ) : groundPct == null ? (
                     <span className="text-relic-silver/50">unavailable</span>
                   ) : (

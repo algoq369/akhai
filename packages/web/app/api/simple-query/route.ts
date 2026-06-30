@@ -380,7 +380,7 @@ export async function POST(request: NextRequest) {
         });
         const agent = await runReactAgent(query);
         if (!agent.text?.trim()) throw new Error('REACT_AGENT_NO_CONTENT');
-        reactSources = agent.sources.map((s) => `${s.title} — ${s.url}`);
+        reactSources = agent.sources.map((s) => `${s.title}. ${s.snippet}`.trim());
         apiResponse = {
           content: agent.text,
           usage: agent.usage,

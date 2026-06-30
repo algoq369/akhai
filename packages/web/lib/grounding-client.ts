@@ -1,14 +1,15 @@
 import 'server-only';
 import type { ThoughtEvent } from '@/lib/thought-stream';
+import { scoreLexicalSupport } from './grounding-heuristic';
 
 /**
  * V6 Block 3 — async grounding client. Fire-and-forget after the answer completes:
  * zero added latency; the score arrives as a late `grounding` stage event.
- * Tri-state honesty (kills the factScore=0 stub pattern):
- *   env unset            -> emit nothing (feature off)
+ * Honest tiering (kills the factScore=0 stub pattern):
  *   no retrieval context -> mode 'parametric', score null (nothing to ground against)
- *   context present      -> mode 'grounded', real LettuceDetect score + unsupported spans
- * Block 4 wires ReAct tool results in as `context`.
+ *   context, no NLI box  -> mode 'heuristic', in-process lexical-support score (E1.1)
+ *   context + NLI box     -> mode 'grounded', real LettuceDetect score + unsupported spans
+ * ReAct tool results arrive as `context`.
  */
 const GUARD_URL = process.env.GUARD_NLI_URL;
 const GUARD_TOKEN = process.env.GUARD_NLI_TOKEN;
@@ -31,13 +32,22 @@ export function scoreGroundingAsync(
       timestamp: Date.now() - startTime,
     };
     try {
-      // No retrieval context, OR no guard box configured -> honest parametric label (no NLI call).
-      // The meter renders today; real grounded scores appear once GUARD_NLI_URL + context (Block 4) exist.
-      if (!context.length || !GUARD_URL) {
+      // No retrieval context -> honest parametric label (nothing to ground against).
+      if (!context.length) {
         emit(queryId, {
           ...base,
           data: 'parametric · not fact-checked',
           details: { grounding: { mode: 'parametric', score: null } },
+        });
+        return;
+      }
+      // Context present but no NLI box -> in-process lexical support (lighter tier, no network).
+      if (!GUARD_URL) {
+        const { score, spans } = scoreLexicalSupport(answer, context);
+        emit(queryId, {
+          ...base,
+          data: `heuristic · ${Math.round(score * 100)}% lexical support`,
+          details: { grounding: { mode: 'heuristic', score, spans } },
         });
         return;
       }

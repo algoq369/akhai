@@ -80,7 +80,9 @@ describe('runReactAgent — real loop wiring', () => {
     // The loop actually invoked the (mocked) real search with the model's chosen query.
     expect(mockedSearch).toHaveBeenCalledWith('capital of Iceland', 5);
     expect(result.text).toBe('Reykjavik is the capital of Iceland.');
-    expect(result.sources).toEqual([{ title: 'Iceland', url: 'https://example.com/iceland' }]);
+    expect(result.sources).toEqual([
+      { title: 'Iceland', snippet: 'Reykjavik is the capital.', url: 'https://example.com/iceland' },
+    ]);
     expect(result.steps).toBe(2);
 
     // usage is mapped from the model's reported tokens (for the live pipeline's metrics).
