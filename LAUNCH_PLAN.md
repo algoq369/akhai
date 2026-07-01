@@ -19,6 +19,14 @@ Pace basis: this session shipped 6 verified engine commits in clean focused bloc
 4. UI-touching → localhost → your eyes → only then deploy
 5. Tick plan, next step. Gate every commit: tsc 0 · vitest · SHIELD · Node 24.
 
+## EVAL BAR (frozen-core gate — the unified ≥85 verdict)
+`pnpm eval` (from packages/web) is the milestone quality gate that reconciles both engines into one
+number: a DETERMINISTIC FLOOR (SHIELD `--fast` + the 2 honesty goldens — hype-suppression + Einstein
+fabrication-refusal — hard pass/fail) AND a QUALITY SCORE (0–100 over the 13 correctness goldens).
+Verdict = floor PASS **and** quality ≥85. Goldens are tiered `floor`/`quality` in
+`evals/golden/queries.yaml`. Requires the dev server on :3000 + real API calls, so it is a
+milestone gate run in the terminal — **SHIELD `--fast` remains the per-push gate.**
+
 ═══════════════════════════════════════════════════════════════════
 ## PHASE A · AUDIT (find every gap — ~1 session)
 - [ ] A1  De-stub sweep (E5.4): grep engine for placeholder/sim/hardcoded-that-should-compute

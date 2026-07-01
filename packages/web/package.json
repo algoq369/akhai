@@ -15,7 +15,8 @@
     "test:coverage": "vitest --coverage",
     "db:init": "tsx scripts/init-db.ts",
     "db:backup": "tsx scripts/backup-db.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "eval": "node scripts/eval-bar.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",
