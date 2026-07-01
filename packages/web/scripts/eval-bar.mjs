@@ -22,7 +22,7 @@ try {
   // Node 24 for the better-sqlite3 ABI.
   execSync(
     `bash -lc 'export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use 22 >/dev/null; ` +
-      `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 ./node_modules/.bin/promptfoo eval ` +
+      `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 ./node_modules/.bin/promptfoo eval -j 1 --delay 4000 ` +
       `-c evals/promptfooconfig.yaml --output /tmp/akhai-eval.json'`,
     { stdio: 'inherit' }
   );
