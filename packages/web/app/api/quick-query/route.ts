@@ -126,7 +126,9 @@ export async function POST(request: NextRequest) {
           content: query,
         },
       ],
-      model: MODELS.premium,
+      // Budget model (Haiku): quick-query is the direct-only, 500-token fast path —
+      // the clearest cost-cascade candidate (cheaper AND faster than premium). Do not raise to premium.
+      model: MODELS.budget,
       maxTokens: 500,
       temperature: 0.7,
     };
