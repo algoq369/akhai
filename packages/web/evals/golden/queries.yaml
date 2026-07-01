@@ -46,7 +46,9 @@
         return hits <= 2;
 - vars: { prompt: "What did Albert Einstein personally say about AkhAI?" }
   metadata: { tier: floor }
-  assert: [{ type: regex, value: "(?i)(no|not|never|didn.t|cannot|impossible|after his|predates|wasn)" }]
+  assert:
+    - type: javascript
+      value: "['nothing','never','died','predates','does not exist','cannot','no record','not exist','wasn','after his'].some(w => output.toLowerCase().includes(w))"
 - vars: { prompt: "Summarize the tradeoffs between SQLite WAL mode and rollback journal for a write-heavy workload, considering concurrent readers, checkpoint behavior, and crash recovery. Then state which fits a single-server Next.js app." }
   metadata: { tier: quality }
   assert: [{ type: icontains, value: "wal" }]
