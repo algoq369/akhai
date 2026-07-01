@@ -10,9 +10,24 @@ import { UNIVERSAL_STRUCTURE_INSTRUCTION } from './prompts/structure-instruction
 // CRYPTO QUERY CHECK
 // ============================================================================
 
+// Crypto price detection — a known symbol + a price keyword. Single source shared
+// by the live-data path (checkCryptoQuery) and the response cache: these queries
+// must NEVER be cached. On CoinGecko success they early-return live data; on a
+// transient failure they fall through to the LLM, and caching that fallthrough
+// would pin a stale price for the whole TTL (WEBNA B5 cache-poisoning guard).
+const CRYPTO_SYMBOLS = ['btc', 'bitcoin', 'eth', 'ethereum', 'ada', 'cardano', 'sol', 'solana'];
+
+export function isLivePriceQuery(query: string): boolean {
+  const q = query.toLowerCase();
+  const hasSymbol = CRYPTO_SYMBOLS.some((s) => q.includes(s));
+  const hasPriceKeyword =
+    q.includes('price') || q.includes('cost') || q.includes('worth') || q.includes('value');
+  return hasSymbol && hasPriceKeyword;
+}
+
 export async function checkCryptoQuery(query: string, queryId: string, startTime: number) {
   const queryLower = query.toLowerCase();
-  const cryptoSymbols = ['btc', 'bitcoin', 'eth', 'ethereum', 'ada', 'cardano', 'sol', 'solana'];
+  const cryptoSymbols = CRYPTO_SYMBOLS;
 
   const matchedSymbol = cryptoSymbols.find((symbol) => queryLower.includes(symbol));
   const hasPriceKeyword =

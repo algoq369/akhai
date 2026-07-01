@@ -7,7 +7,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, log } from '@/lib/logger';
 import { withRetry } from '@/lib/retry';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { checkCryptoQuery, getMethodologyPrompt, runGroundingGuard } from '@/lib/query-pipeline';
+import {
+  checkCryptoQuery,
+  getMethodologyPrompt,
+  runGroundingGuard,
+  isLivePriceQuery,
+} from '@/lib/query-pipeline';
 import { createQuery, updateQuery, trackUsage } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
 import {
@@ -20,6 +25,8 @@ import {
 } from '@/lib/provider-selector';
 import { callProvider, type CompletionResponse } from '@/lib/multi-provider-api';
 import { maxTokensFor } from '@/lib/output-budgets';
+import { cacheKey, getCached, setCached, isCacheable } from '@/lib/query-cache';
+import { recordCall } from '@/lib/cogs-scorecard';
 import { runReactAgent } from '@/lib/react-agent';
 import { formatDuration } from '@/lib/thought-stream';
 
@@ -94,6 +101,61 @@ export async function POST(request: NextRequest) {
       data: `Analyzing your question about ${query.split(/\s+/).slice(0, 5).join(' ')}...`,
       details: {},
     });
+
+    // ========== RESPONSE CACHE CHECK (WEBNA B5) ==========
+    // A hit short-circuits ALL downstream work (URL visitor, fusion, LLM) — $0, instant.
+    // urlContext isn't computed yet, so detect a URL in the raw query text directly. We only
+    // consult the cache for time-invariant methodologies with no contextual signals: a wrong
+    // cache hit is worse than a miss. Live-price crypto queries are excluded outright — they
+    // must stay fresh, and a transient CoinGecko failure must never pin a stale price.
+    const cacheable =
+      isCacheable({
+        methodology,
+        hasUrlContext: /https?:\/\//.test(query),
+        hasLiveRefinements: !!liveRefinements?.length,
+        hasGrimoire: !!grimoireContext,
+        instinctMode: instinctMode === true,
+      }) && !isLivePriceQuery(query);
+    const key = cacheable ? cacheKey({ query, methodology, legendMode, extendedThinking }) : '';
+    if (cacheable) {
+      const hit = getCached(key);
+      if (hit) {
+        const hitObj = hit as Record<string, unknown>;
+        recordCall({
+          queryId,
+          purpose: `${methodology} answer [CACHE HIT]`,
+          model: 'cache',
+          inTok: 0,
+          cacheRead: 0,
+          cacheCreation: 0,
+          outTok: 0,
+          durationMs: Date.now() - startTime,
+          costUSD: 0,
+          outcome: 'ok',
+          objectiveMet: true,
+        });
+        emitAndPersist(queryId, {
+          id: `${queryId}-complete`,
+          queryId,
+          stage: 'complete',
+          timestamp: Date.now() - startTime,
+          data: `Cached · ${methodology} · ${formatDuration(Date.now() - startTime)}`,
+          details: {
+            methodology: {
+              selected: String(hitObj.methodology ?? methodology),
+              reason: 'Served from response cache',
+            },
+            model: 'cache',
+            provider: 'cache',
+            tokens: { input: 0, output: 0, total: 0 },
+            cost: 0,
+            duration: Date.now() - startTime,
+          },
+        });
+        log('INFO', 'CACHE', `Cache hit for ${methodology} query — served $0, instant`);
+        return NextResponse.json({ ...(hit as object), cached: true });
+      }
+    }
 
     // ========== URL VISITOR ==========
     const { urlContext, urlsFetched } = await visitURLs(query);
@@ -672,6 +734,11 @@ export async function POST(request: NextRequest) {
 
     trackPostHogEvents(builderInput, request);
     emitCompleteEvent(builderInput, emitAndPersist, startTime);
+
+    // ========== RESPONSE CACHE POPULATE (WEBNA B5) ==========
+    // Store the exact object we return so the next identical query replays it faithfully.
+    // The hit path adds `cached: true`; the stored object itself stays clean.
+    if (cacheable) setCached(key, responseData);
 
     return NextResponse.json(responseData);
   } catch (error) {
