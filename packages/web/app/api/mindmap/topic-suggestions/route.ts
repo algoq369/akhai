@@ -91,8 +91,8 @@ Generate suggestions that help explore this topic more deeply.`;
 
     // Call Claude Opus 4.8
     const message = await anthropic.messages.create({
-      model: MODELS.premium,
-      max_tokens: 4096,
+      model: MODELS.premium, // kept: topic-suggestions benefits from Opus quality
+      max_tokens: 1500, // right-sized from 4096 — output is a bounded 4-item + insights JSON (~600 tok)
       system: systemPrompt,
       messages: [
         {

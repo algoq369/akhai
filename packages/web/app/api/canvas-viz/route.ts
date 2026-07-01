@@ -48,7 +48,9 @@ export async function POST(request: NextRequest) {
         { role: 'system' as const, content: systemPrompt },
         { role: 'user' as const, content: userContent },
       ],
-      model: MODELS.premium,
+      // Budget model (Haiku): bounded structured-JSON generation (radar axes) — reliable on Haiku,
+      // and this path already tolerates free-model fallback. ~10x cheaper.
+      model: MODELS.budget,
       maxTokens: 1500,
     };
 
