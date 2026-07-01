@@ -26,6 +26,8 @@ fabrication-refusal — hard pass/fail) AND a QUALITY SCORE (0–100 over the 13
 Verdict = floor PASS **and** quality ≥85. Goldens are tiered `floor`/`quality` in
 `evals/golden/queries.yaml`. Requires the dev server on :3000 + real API calls, so it is a
 milestone gate run in the terminal — **SHIELD `--fast` remains the per-push gate.**
+Run with Node 24 active (SHIELD); eval-bar internally switches to Node 22 for promptfoo. First install:
+`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 pnpm add -D promptfoo`.
 
 ═══════════════════════════════════════════════════════════════════
 ## PHASE A · AUDIT (find every gap — ~1 session)

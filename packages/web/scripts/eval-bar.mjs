@@ -18,8 +18,12 @@ try {
 // 2. Goldens via promptfoo (writes JSON we parse)
 let results = [];
 try {
+  // promptfoo OOMs on Node 24 (worker-thread) — run it under Node 22 via nvm; SHIELD above stays on
+  // Node 24 for the better-sqlite3 ABI.
   execSync(
-    'pnpm dlx promptfoo@latest eval -c evals/promptfooconfig.yaml --output /tmp/akhai-eval.json',
+    `bash -lc 'export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use 22 >/dev/null; ` +
+      `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 ./node_modules/.bin/promptfoo eval ` +
+      `-c evals/promptfooconfig.yaml --output /tmp/akhai-eval.json'`,
     { stdio: 'inherit' }
   );
   const data = JSON.parse(readFileSync('/tmp/akhai-eval.json', 'utf8'));
