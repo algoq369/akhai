@@ -194,7 +194,7 @@ export const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     name: 'sc',
     fullName: 'Self-Consistency',
     description:
-      'Wang et al., ICLR 2023, samples multiple reasoning paths and takes majority vote for robust answers.',
+      'Buffers key facts and constraints, builds a reasoning chain, and self-validates the answer against them for consistency.',
     howItWorks: [
       'Extract and buffer key facts, constraints, requirements',
       'Build reasoning chain referencing buffered context',
