@@ -45,6 +45,7 @@ import { classifyContent } from '@/lib/mini-canvas/content-classifier';
 import { QuerySchema, emitAndPersist } from './schema';
 import { scoreGroundingAsync } from '@/lib/grounding-client';
 import { shouldGround } from '@/lib/grounding-policy';
+import { buildSourcesSection, citationCoverage } from '@/lib/citation-check';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -452,8 +453,22 @@ export async function POST(request: NextRequest) {
         const agent = await runReactAgent(query);
         if (!agent.text?.trim()) throw new Error('REACT_AGENT_NO_CONTENT');
         reactSources = agent.sources.map((s) => `${s.title}. ${s.snippet}`.trim());
+        // E1.3 citation enforcement: coverage on the RAW answer (before appending the Sources list),
+        // then surface the real retrieved URLs in the answer itself.
+        const coverage = citationCoverage(agent.text, agent.sources);
+        const withSources = agent.text + buildSourcesSection(agent.sources);
+        emitAndPersist(queryId, {
+          id: `${queryId}-citations`,
+          queryId,
+          stage: 'reasoning',
+          timestamp: Date.now() - startTime,
+          data: `Citations: ${coverage.referenced}/${coverage.total} sources reflected`,
+          details: {
+            methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+          },
+        });
         apiResponse = {
-          content: agent.text,
+          content: withSources,
           usage: { ...agent.usage, cacheRead: 0, cacheCreation: 0 },
           cost: 0,
           model: usedModel,
