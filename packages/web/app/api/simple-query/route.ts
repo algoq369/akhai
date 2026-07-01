@@ -19,6 +19,7 @@ import {
   type ProviderFamily,
 } from '@/lib/provider-selector';
 import { callProvider, type CompletionResponse } from '@/lib/multi-provider-api';
+import { maxTokensFor } from '@/lib/output-budgets';
 import { runReactAgent } from '@/lib/react-agent';
 import { formatDuration } from '@/lib/thought-stream';
 
@@ -404,7 +405,7 @@ export async function POST(request: NextRequest) {
             systemPrompt: systemPrompt,
             dynamicContext: dynamicContext,
             model: usedModel,
-            maxTokens: 4096,
+            maxTokens: maxTokensFor(selectedMethod.id),
             temperature: 0.7,
             extendedThinking:
               extendedThinking && selectedProvider === 'anthropic' ? true : undefined,
@@ -473,7 +474,7 @@ export async function POST(request: NextRequest) {
                 systemPrompt: systemPrompt,
                 dynamicContext: dynamicContext,
                 model: fallbackModelSpec.model,
-                maxTokens: 4096,
+                maxTokens: maxTokensFor(selectedMethod.id),
                 temperature: 0.7,
               }),
             { maxAttempts: 1, baseDelay: 500 }

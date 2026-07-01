@@ -30,6 +30,10 @@ describe('cost cascade / getProviderForMethodology', () => {
     expect(getProviderForMethodology('react').model).toBe('claude-opus-4-8');
   });
 
+  it('keeps sc on premium (Opus 4.8)', () => {
+    expect(getProviderForMethodology('sc').model).toBe('claude-opus-4-8');
+  });
+
   it('legendMode overrides the cascade — direct stays premium (Opus 4.8)', () => {
     expect(getProviderForMethodology('direct', true).model).toBe('claude-opus-4-8');
   });
