@@ -44,6 +44,7 @@ import {
 import { classifyContent } from '@/lib/mini-canvas/content-classifier';
 import { QuerySchema, emitAndPersist } from './schema';
 import { scoreGroundingAsync } from '@/lib/grounding-client';
+import { shouldGround } from '@/lib/grounding-policy';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -686,7 +687,13 @@ export async function POST(request: NextRequest) {
     });
 
     // ========== ASYNC GROUNDING (V6 Block 3 — context arrives with Block 4 tools) ==========
-    scoreGroundingAsync(queryId, emitAndPersist, content, reactSources, startTime);
+    // Selective grounding (gap-D): the grounding lens only applies to fact-reporting query types.
+    // For generative/subjective types (creative, planning) the answer is SUPPOSED to diverge from
+    // sources, so a grounding score would be a misleading false alarm — skip it and emit no row.
+    // Conservative default: with no classification, keep grounding (under-grounding is worse).
+    if (!fusionResult || shouldGround(fusionResult.analysis.queryType)) {
+      scoreGroundingAsync(queryId, emitAndPersist, content, reactSources, startTime);
+    }
 
     // ========== MINI CANVAS CLASSIFICATION ==========
     const miniCanvas = classifyContent(content, query);
