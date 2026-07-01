@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # AkhAI SHIELD — automated audit gate (Master Plan V6, Block 1 / W8)
 # Usage: shield.sh [--fast|--full] [--build-log <path>]
-# --fast (default): tsc + vitest + tripwires + ratchets  (~90s, pre-push)
+# --fast (default): tsc + vitest + tripwires + ratchets, ts-ignore/large-file/route-validation ratchets (WEBNA A2/A6)  (~90s, pre-push)
 # --full: fast + pnpm audit (no crit/high) + bundle budget (every route <= 450 kB)
 set -uo pipefail
 cd "$(dirname "$0")/.."   # packages/web
@@ -53,6 +53,21 @@ ANY=$(grep -rn ": any" app components lib hooks --include="*.ts" --include="*.ts
 ratchet any_types "$ANY"
 DT=$(grep -rn "datetime('now')" lib app --include="*.ts" 2>/dev/null | wc -l | tr -d ' ')
 ratchet sqlite_datetime_now "$DT"
+
+# WEBNA A6: no @ts-ignore / @ts-expect-error (target 0; ratchet down from current)
+TSI=$(grep -rn "@ts-ignore\|@ts-expect-error" app components lib hooks --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v __tests__ | wc -l | tr -d ' ')
+ratchet ts_ignore "$TSI"
+
+# WEBNA A6: source files under 500 lines (grandfather existing, block NEW oversized files)
+LF=$(find app components lib hooks \( -name "*.ts" -o -name "*.tsx" \) 2>/dev/null | grep -v __tests__ | xargs wc -l 2>/dev/null | awk '$2!="total" && $1>500' | wc -l | tr -d ' ')
+ratchet large_files "$LF"
+
+# WEBNA A2: Zod validation at mutating route boundaries (block NEW routes that read a body without validation)
+UV=0
+for f in $(grep -rl "request.json()" app/api --include="*.ts" 2>/dev/null); do
+  grep -qE "\.parse\(|\.safeParse\(|Schema|z\.object|parsed\." "$f" || UV=$((UV+1))
+done
+ratchet unvalidated_routes "$UV"
 
 # ---------- 5. Full mode ----------
 if [ "$MODE" = "--full" ]; then
