@@ -30,10 +30,10 @@ Run with Node 24 active (SHIELD); eval-bar switches to Node 22 internally for pr
 
 ═══════════════════════════════════════════════════════════════════
 ## R · REVIEW CLOSURE (this week — from the post-ban code review, F1–F5)
-- [ ] R1  quickharden (quick-query/route.ts, 1 pass): AbortSignal.timeout on callOpenRouterAlt (F2)
+- [x] R1  quickharden (quick-query/route.ts, 1 pass): AbortSignal.timeout on callOpenRouterAlt (F2)
           · recordCall + real usage on the alt path (F3) · strip user EMAIL from prompt/PII to
           3rd-party free models (F4) · narrow the '400' fallback trigger to credit/402 (F5).
-- [ ] R2  autocache (F1, HIGH): 2nd response-cache check on the RESOLVED methodology (after fusion
+- [x] R2  autocache (F1, HIGH): 2nd response-cache check on the RESOLVED methodology (after fusion
           resolves 'auto'→direct/cod) — makes gap C actually fire on the main UI's 'auto' default.
           Live-prove twice-query $0 [CACHE HIT] on an 'auto' request.
 
@@ -66,6 +66,8 @@ adaptive thinking always-on via `effort` param, NO raw CoT (4.6 thinking_delta p
 - [ ] E3  E6.1: fold remaining sonnet/haiku model strings into MODELS constant.
 - [ ] E4  Full QA sweep: all methodologies + all routes, fixed eval set, green.
 - [ ] E5  Flag flips: REACT_AGENT_LIVE → default (after box or in-process grounding proven).
+- [ ] E7  Cache-key dimensions audit (pre-freeze): conversationHistory, pageContext, per-user
+          sideCanal.suggestions embedded in cached payloads, layersWeights, URL-fetch-failure window.
 - [ ] E6  Hosting (WHEN DECIDED): provision, deploy, guard box → grounding upgrades heuristic→NLI.
           NOT on critical path — engine is launch-ready without it.
 
