@@ -119,45 +119,49 @@ export async function POST(request: NextRequest) {
         instinctMode: instinctMode === true,
       }) && !isLivePriceQuery(query);
     const key = cacheable ? cacheKey({ query, methodology, legendMode, extendedThinking }) : '';
+    const serveCacheHit = (hit: unknown, methodologyLabel: string) => {
+      const hitObj = hit as Record<string, unknown>;
+      recordCall({
+        queryId,
+        purpose: `${methodologyLabel} answer [CACHE HIT]`,
+        model: 'cache',
+        inTok: 0,
+        cacheRead: 0,
+        cacheCreation: 0,
+        outTok: 0,
+        durationMs: Date.now() - startTime,
+        costUSD: 0,
+        outcome: 'ok',
+        objectiveMet: true,
+      });
+      emitAndPersist(queryId, {
+        id: `${queryId}-complete`,
+        queryId,
+        stage: 'complete',
+        timestamp: Date.now() - startTime,
+        data: `Cached · ${methodologyLabel} · ${formatDuration(Date.now() - startTime)}`,
+        details: {
+          methodology: {
+            selected: String(hitObj.methodology ?? methodologyLabel),
+            reason: 'Served from response cache',
+          },
+          model: 'cache',
+          provider: 'cache',
+          tokens: { input: 0, output: 0, total: 0 },
+          cost: 0,
+          duration: Date.now() - startTime,
+        },
+      });
+      log('INFO', 'CACHE', `Cache hit for ${methodologyLabel} query — served $0, instant`);
+      return NextResponse.json({ ...(hit as object), cached: true });
+    };
     if (cacheable) {
       const hit = getCached(key);
-      if (hit) {
-        const hitObj = hit as Record<string, unknown>;
-        recordCall({
-          queryId,
-          purpose: `${methodology} answer [CACHE HIT]`,
-          model: 'cache',
-          inTok: 0,
-          cacheRead: 0,
-          cacheCreation: 0,
-          outTok: 0,
-          durationMs: Date.now() - startTime,
-          costUSD: 0,
-          outcome: 'ok',
-          objectiveMet: true,
-        });
-        emitAndPersist(queryId, {
-          id: `${queryId}-complete`,
-          queryId,
-          stage: 'complete',
-          timestamp: Date.now() - startTime,
-          data: `Cached · ${methodology} · ${formatDuration(Date.now() - startTime)}`,
-          details: {
-            methodology: {
-              selected: String(hitObj.methodology ?? methodology),
-              reason: 'Served from response cache',
-            },
-            model: 'cache',
-            provider: 'cache',
-            tokens: { input: 0, output: 0, total: 0 },
-            cost: 0,
-            duration: Date.now() - startTime,
-          },
-        });
-        log('INFO', 'CACHE', `Cache hit for ${methodology} query — served $0, instant`);
-        return NextResponse.json({ ...(hit as object), cached: true });
-      }
+      if (hit) return serveCacheHit(hit, methodology);
     }
+    // Populate key for the end of the request — the resolved-methodology check below may
+    // upgrade this from '' when 'auto' resolves to a cacheable methodology.
+    let effectiveCacheKey = cacheable ? key : '';
 
     // ========== URL VISITOR ==========
     const { urlContext, urlsFetched } = await visitURLs(query);
@@ -191,6 +195,40 @@ export async function POST(request: NextRequest) {
       queryId,
       startTime
     );
+
+    // ========== RESPONSE CACHE — RESOLVED-METHODOLOGY CHECK (R2) ==========
+    // 'auto' can't be cache-checked pre-fusion (final methodology unknown). Now that fusion has
+    // resolved it deterministically, re-check under the RESOLVED methodology key — auto traffic
+    // shares entries with explicit-methodology queries. History-driven resolution differences only
+    // produce safe misses (different key), never wrong hits.
+    if (!cacheable && methodology === 'auto') {
+      const resolvedCacheable =
+        // tot: consensus success early-returns before populate, so the only entries that could
+        // ever exist under a '|tot|' key are single-model fallbacks stored when /api/tot-consensus
+        // fails — never store or serve those from the auto path.
+        selectedMethod.id !== 'tot' &&
+        isCacheable({
+          methodology: selectedMethod.id,
+          hasUrlContext: !!urlContext,
+          hasLiveRefinements: !!liveRefinements?.length,
+          hasGrimoire: !!grimoireContext,
+          instinctMode: instinctMode === true,
+        }) &&
+        !isLivePriceQuery(query) &&
+        // sideCanalContext is per-user topic steering injected into the messages — a user-free
+        // key must never store or serve a steered answer. Post-fusion the real value is known.
+        !sideCanalContext;
+      if (resolvedCacheable) {
+        effectiveCacheKey = cacheKey({
+          query,
+          methodology: selectedMethod.id,
+          legendMode,
+          extendedThinking,
+        });
+        const hit = getCached(effectiveCacheKey);
+        if (hit) return serveCacheHit(hit, selectedMethod.id);
+      }
+    }
 
     // ========== GNOSTIC PRE-PROCESSING ==========
     const { metaCoreState, progressState } = activateGnosticProtocols(query, request);
@@ -760,7 +798,7 @@ export async function POST(request: NextRequest) {
     // ========== RESPONSE CACHE POPULATE (WEBNA B5) ==========
     // Store the exact object we return so the next identical query replays it faithfully.
     // The hit path adds `cached: true`; the stored object itself stays clean.
-    if (cacheable) setCached(key, responseData);
+    if (effectiveCacheKey) setCached(effectiveCacheKey, responseData);
 
     return NextResponse.json(responseData);
   } catch (error) {
