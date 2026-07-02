@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MODELS } from '@/lib/models';
 import { z } from 'zod';
 import { callProvider } from '@/lib/multi-provider-api';
+import { recordCall } from '@/lib/cogs-scorecard';
 import { getRecentQueries } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
 
@@ -35,6 +36,7 @@ async function callOpenRouterAlt(request: any) {
   if (!apiKey) throw new Error('No OpenRouter key');
   for (const model of ALT_FREE_MODELS) {
     try {
+      const startedAt = Date.now();
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -49,19 +51,40 @@ async function callOpenRouterAlt(request: any) {
           max_tokens: request.maxTokens || 500,
           temperature: request.temperature ?? 0.7,
         }),
+        // Free models can hang — abort per attempt so the loop moves to the next model
+        signal: AbortSignal.timeout(15000),
       });
       if (!res.ok) continue; // Try next model
       const data = await res.json();
       const content = data.choices?.[0]?.message?.content;
-      if (content)
+      if (content) {
+        const durationMs = Date.now() - startedAt;
+        const u = data.usage || {};
+        const inTok = u.prompt_tokens || 0;
+        const outTok = u.completion_tokens || 0;
+        // cost 0 is honest (free models) — the row exists so this path shows up in COGS
+        recordCall({
+          queryId: 'quick-query',
+          purpose: 'quick-query [ALT FALLBACK]',
+          model,
+          inTok,
+          cacheRead: 0,
+          cacheCreation: 0,
+          outTok,
+          durationMs,
+          costUSD: 0,
+          outcome: 'ok',
+          objectiveMet: true,
+        });
         return {
           content,
           provider: 'openrouter',
           model,
-          usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+          usage: { inputTokens: inTok, outputTokens: outTok, totalTokens: inTok + outTok },
           cost: 0,
-          latencyMs: 0,
+          latencyMs: durationMs,
         };
+      }
     } catch {
       continue;
     }
@@ -84,12 +107,10 @@ export async function POST(request: NextRequest) {
     let systemPrompt =
       'You are AkhAI Quick Chat assistant. Provide concise, helpful answers. Keep responses brief (2-3 paragraphs max).';
 
-    // Add user profile context
+    // Add user profile context (username only — email is PII and this prompt
+    // can reach 3rd-party free models on the fallback path)
     if (userContext?.username) {
       systemPrompt += `\n\nUser Profile:\n- Username: ${userContext.username}`;
-      if (userContext.email) {
-        systemPrompt += `\n- Email: ${userContext.email}`;
-      }
     }
 
     // Fetch recent conversation history from main chat
@@ -137,11 +158,8 @@ export async function POST(request: NextRequest) {
     try {
       response = await callProvider('anthropic', providerRequest);
     } catch (err: any) {
-      if (
-        err.message?.includes('credit balance') ||
-        err.message?.includes('402') ||
-        err.message?.includes('400')
-      ) {
+      // Credit/quota signals only — a genuine 400 (malformed request) must throw, not reroute
+      if (err.message?.includes('credit balance') || err.message?.includes('402')) {
         console.log('[QuickQuery] Anthropic credits depleted, trying OpenRouter');
         try {
           response = await callProvider('openrouter', providerRequest);
