@@ -28,6 +28,7 @@ import { maxTokensFor } from '@/lib/output-budgets';
 import { cacheKey, getCached, setCached, isCacheable } from '@/lib/query-cache';
 import { recordCall } from '@/lib/cogs-scorecard';
 import { runReactAgent } from '@/lib/react-agent';
+import { runScMultipath, extractConsensus, SC_SAMPLES } from '@/lib/sc-multipath';
 import { formatDuration } from '@/lib/thought-stream';
 
 // Extracted pipeline stages
@@ -508,6 +509,104 @@ export async function POST(request: NextRequest) {
           content: withSources,
           usage: { ...agent.usage, cacheRead: 0, cacheCreation: 0 },
           cost: 0,
+          model: usedModel,
+          provider: selectedProvider,
+          latencyMs: Date.now() - startTime,
+        };
+      } else if (
+        selectedMethod.id === 'sc' &&
+        process.env.SC_MULTIPATH === '1' &&
+        !extendedThinking // v1: thinking keeps the existing single-pass path (16k override)
+      ) {
+        // Genuine N-sample self-consistency (D3a) — feature-gated, default OFF. Flag-off keeps
+        // prod byte-identical. Sample 1 runs alone (writes the shared prompt-cache prefix), the
+        // rest run in parallel as cache reads. Consistency = measured cross-sample agreement,
+        // NOT correctness; null when fewer than 2 paths survive.
+        emitAndPersist(queryId, {
+          id: `${queryId}-sc-multipath`,
+          queryId,
+          stage: 'reasoning',
+          timestamp: Date.now() - startTime,
+          data: `Sampling ${SC_SAMPLES} independent reasoning paths…`,
+          details: {
+            methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+          },
+        });
+        const mp = await runScMultipath(
+          // Each sample gets one transient-error re-roll (retry parity with the single-pass
+          // path, scaled down since the samples are already 3-way redundant).
+          (temperature) =>
+            withRetry(
+              async () => {
+                const r = await callProvider(selectedProvider, {
+                  messages: messages,
+                  systemPrompt: systemPrompt,
+                  dynamicContext: dynamicContext,
+                  model: usedModel,
+                  maxTokens: maxTokensFor('sc'),
+                  temperature,
+                  purpose: 'sc answer [multipath sample]',
+                  queryId,
+                });
+                // Empty/whitespace content is retryable — same re-roll trick as single-pass.
+                if (!r.content || !r.content.trim()) throw new Error('SC_EMPTY_SAMPLE 529');
+                return {
+                  fullText: r.content,
+                  consensus: extractConsensus(r.content),
+                  usage: r.usage,
+                  cost: r.cost,
+                };
+              },
+              {
+                maxAttempts: 2,
+                baseDelay: 1000,
+                shouldRetry: (err) => {
+                  const msg = err.message?.toLowerCase() || '';
+                  if (
+                    msg.includes('credit') ||
+                    msg.includes('unauthorized') ||
+                    msg.includes('invalid_api_key') ||
+                    msg.includes('insufficient')
+                  )
+                    return false;
+                  return (
+                    msg.includes('rate') ||
+                    msg.includes('timeout') ||
+                    msg.includes('503') ||
+                    msg.includes('529')
+                  );
+                },
+              }
+            ),
+          (i, n) =>
+            emitAndPersist(queryId, {
+              id: `${queryId}-sc-path-${i}`,
+              queryId,
+              stage: 'reasoning',
+              timestamp: Date.now() - startTime,
+              data: `Path ${i}/${n}…`,
+              details: {
+                methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+              },
+            })
+        );
+        emitAndPersist(queryId, {
+          id: `${queryId}-sc-consistency`,
+          queryId,
+          stage: 'reasoning',
+          timestamp: Date.now() - startTime,
+          data:
+            mp.consistency === null
+              ? 'Self-consistency: single path (consistency unavailable)'
+              : `Self-consistency: ${(mp.consistency * 100).toFixed(0)}% agreement across ${mp.samplesUsed} independent paths`,
+          details: {
+            methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+          },
+        });
+        apiResponse = {
+          content: mp.content,
+          usage: { ...mp.usage, cacheRead: 0, cacheCreation: 0 },
+          cost: mp.cost,
           model: usedModel,
           provider: selectedProvider,
           latencyMs: Date.now() - startTime,
