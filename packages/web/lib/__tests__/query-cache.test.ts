@@ -106,14 +106,18 @@ describe('query-cache / isCacheable', () => {
     instinctMode: false,
   };
 
-  it('is true for direct/cod/sc/pas/tot with clean flags', () => {
-    for (const m of ['direct', 'cod', 'sc', 'pas', 'tot']) {
+  it('is true for direct/cod/sc/pas with clean flags', () => {
+    for (const m of ['direct', 'cod', 'sc', 'pas']) {
       expect(isCacheable({ methodology: m, ...clean })).toBe(true);
     }
   });
 
   it('is false for react (live web search — must stay fresh)', () => {
     expect(isCacheable({ methodology: 'react', ...clean })).toBe(false);
+  });
+
+  it('is false for tot (only consensus-failure fallbacks could ever be stored)', () => {
+    expect(isCacheable({ methodology: 'tot', ...clean })).toBe(false);
   });
 
   it('is false for auto (resolves unpredictably — be conservative)', () => {

@@ -29,8 +29,13 @@ interface CacheEntry {
 
 const store = new LRUCache<string, CacheEntry>(MAX_ENTRIES);
 
-/** Methodologies whose answer is a pure function of (query, mode) — safe to cache. */
-const CACHEABLE_METHODOLOGIES = new Set(['direct', 'cod', 'sc', 'pas', 'tot']);
+/**
+ * Methodologies whose answer is a pure function of (query, mode) — safe to cache.
+ * 'tot' is deliberately EXCLUDED: consensus success early-returns before the cache
+ * populate, so the only answers that could ever be stored under a '|tot|' key are
+ * degraded single-model fallbacks from a consensus outage — pure poison surface.
+ */
+const CACHEABLE_METHODOLOGIES = new Set(['direct', 'cod', 'sc', 'pas']);
 
 /**
  * Near-exact matcher: lowercase, collapse internal whitespace to single spaces,

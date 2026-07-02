@@ -203,9 +203,8 @@ export async function POST(request: NextRequest) {
     // produce safe misses (different key), never wrong hits.
     if (!cacheable && methodology === 'auto') {
       const resolvedCacheable =
-        // tot: consensus success early-returns before populate, so the only entries that could
-        // ever exist under a '|tot|' key are single-model fallbacks stored when /api/tot-consensus
-        // fails — never store or serve those from the auto path.
+        // tot: now also excluded from CACHEABLE_METHODOLOGIES (only degraded consensus-failure
+        // fallbacks could ever be stored under a '|tot|' key) — kept here as defense in depth.
         selectedMethod.id !== 'tot' &&
         isCacheable({
           methodology: selectedMethod.id,
@@ -797,8 +796,9 @@ export async function POST(request: NextRequest) {
 
     // ========== RESPONSE CACHE POPULATE (WEBNA B5) ==========
     // Store the exact object we return so the next identical query replays it faithfully.
-    // The hit path adds `cached: true`; the stored object itself stays clean.
-    if (effectiveCacheKey) setCached(effectiveCacheKey, responseData);
+    // The hit path adds `cached: true`; the stored object itself stays clean. Steered answers
+    // (per-user side-canal context in the messages) never enter the user-free cache.
+    if (effectiveCacheKey && !sideCanalContext) setCached(effectiveCacheKey, responseData);
 
     return NextResponse.json(responseData);
   } catch (error) {
