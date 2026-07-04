@@ -70,7 +70,7 @@ adaptive thinking always-on via `effort` param, NO raw CoT (4.6 thinking_delta p
 - [ ] E3  E6.1: fold remaining sonnet/haiku model strings into MODELS constant.
 - [ ] E4  Full QA sweep: all methodologies + all routes, fixed eval set, green.
 - [ ] E5  Flag flips: REACT_AGENT_LIVE → default (after box or in-process grounding proven).
-- [ ] E7  Cache-key dimensions audit (pre-freeze): conversationHistory, pageContext, per-user
+- [x] E7  CLOSED (98bc671+4580875): history gate · URL-outage belt (+case-insensitive early) · sideCanal+gnostic.progressState sanitized from cached payloads · pageContext OUT of the stable prefix → GAP-A RESURRECTED for browser traffic (proven: cR=1285 across differing contexts) + sha256 key partition. layersWeights closed earlier. Original scope: conversationHistory, pageContext, per-user
           sideCanal.suggestions embedded in cached payloads, layersWeights, URL-fetch-failure window.
 - [ ] E6  Hosting (WHEN DECIDED): provision, deploy, guard box → grounding upgrades heuristic→NLI.
           NOT on critical path — engine is launch-ready without it.
