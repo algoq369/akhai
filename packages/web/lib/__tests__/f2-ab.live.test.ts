@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { writeFileSync } from 'fs';
 import { callProvider } from '../multi-provider-api';
 import { MODELS } from '../models';
 import { runScMultipath, extractConsensus } from '../sc-multipath';
@@ -234,7 +233,7 @@ describe.skipIf(!LIVE)('F2 live A/B', () => {
     900_000
   );
 
-  it('REPORT: tables, summaries, suggestions', () => {
+  it('REPORT: tables, summaries, suggestions', async () => {
     const mark = (r: ArmResult) => (r.error ? `✗ (error: ${r.error})` : r.pass ? '✓' : '✗');
 
     console.log('\n=== F2 PART A: SC single-pass vs multipath (Opus 4.8, sc prompt) ===');
@@ -294,6 +293,8 @@ describe.skipIf(!LIVE)('F2 live A/B', () => {
     console.log(`calls: ${totalCalls} total, ${erroredCalls} errored\n`);
 
     try {
+      // Lazy node:fs import — top-level fs breaks vitest collection in this environment.
+      const { writeFileSync } = await import('node:fs');
       writeFileSync(
         '/tmp/f2-results.json',
         JSON.stringify(
