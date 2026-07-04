@@ -1,4 +1,5 @@
 import 'server-only';
+import { createHash } from 'node:crypto';
 import { LRUCache } from './intelligence-fusion-types';
 
 /**
@@ -55,6 +56,16 @@ export function normalizeQuery(q: string): string {
 }
 
 /**
+ * Collision-resistant context fingerprint (sha256/128-bit) — partitions the key by page
+ * context without storing it. NOT fnv1a: a 32-bit hash admits offline-crafted collisions,
+ * and a colliding pageContext would SHARE a key across different contexts (a wrong hit —
+ * cache poisoning). sha256 makes collisions cryptographically negligible.
+ */
+function hashContext(s: string): string {
+  return createHash('sha256').update(s).digest('hex').slice(0, 32);
+}
+
+/**
  * Stable cache key: normalized query + methodology + legendMode + extendedThinking.
  * Different methodology/mode → different answer → different key (correctly a miss).
  */
@@ -67,8 +78,12 @@ export function cacheKey(params: {
    *  calibration, so they must partition the cache: 50% (default) layers are omitted, so
    *  default-config traffic keeps sharing entries while each custom config gets its own. */
   layersWeights?: Record<number, number>;
+  /** Page context shapes the answer (deictic "this"/"it" queries) — differing contexts must
+   *  partition the key. Falsy values hash identically to the context-free key, mirroring the
+   *  route's `if (pageContext)` injection gate: the key covers exactly what the model saw. */
+  pageContext?: string;
 }): string {
-  const { query, methodology, legendMode, extendedThinking, layersWeights } = params;
+  const { query, methodology, legendMode, extendedThinking, layersWeights, pageContext } = params;
   const wPart = layersWeights
     ? Object.entries(layersWeights)
         .map(([id, v]) => [Number(id), Math.round((v ?? 0.5) * 100)] as const)
@@ -77,7 +92,10 @@ export function cacheKey(params: {
         .map(([id, pct]) => `${id}:${pct}`)
         .join(',')
     : '';
-  return `${normalizeQuery(query)}|${methodology}|${legendMode}|${extendedThinking ?? false}|W:${wPart}`;
+  // `pageContext ? String(pageContext) : ''` mirrors the route's injection gate exactly:
+  // falsy values (0, '', undefined) are never injected → context-free key; truthy non-strings
+  // (schema is z.any) hash as the same String() the prompt template renders.
+  return `${normalizeQuery(query)}|${methodology}|${legendMode}|${extendedThinking ?? false}|W:${wPart}|P:${hashContext(pageContext ? String(pageContext) : '')}`;
 }
 
 /** Return the stored response if present AND fresh (within TTL); else undefined (expired = miss). */
@@ -94,11 +112,11 @@ export function setCached(key: string, response: unknown): void {
 }
 
 /**
- * Cacheable ONLY for {direct, cod, sc, pas, tot} AND when no live/contextual
+ * Cacheable ONLY for {direct, cod, sc, pas} AND when no live/contextual
  * signal is present. Excludes 'react' (answer depends on live web search — must
  * stay fresh) and 'auto' (resolves unpredictably; be conservative). Any URL in
- * the query, live refinement, grimoire context, or instinct mode makes the
- * answer non-time-invariant, so it is not cacheable.
+ * the query, live refinement, grimoire context, instinct mode, or conversation
+ * history makes the answer non-time-invariant, so it is not cacheable.
  */
 export function isCacheable(params: {
   methodology: string;
@@ -106,10 +124,15 @@ export function isCacheable(params: {
   hasLiveRefinements: boolean;
   hasGrimoire: boolean;
   instinctMode: boolean;
+  /** Answers incorporate conversationHistory.slice(-6), so only history-FREE requests are a
+   *  pure function of the query — a cached "explain more" must never cross conversations. */
+  hasHistory: boolean;
 }): boolean {
-  const { methodology, hasUrlContext, hasLiveRefinements, hasGrimoire, instinctMode } = params;
+  const { methodology, hasUrlContext, hasLiveRefinements, hasGrimoire, instinctMode, hasHistory } =
+    params;
   if (!CACHEABLE_METHODOLOGIES.has(methodology)) return false;
-  if (hasUrlContext || hasLiveRefinements || hasGrimoire || instinctMode) return false;
+  if (hasUrlContext || hasLiveRefinements || hasGrimoire || instinctMode || hasHistory)
+    return false;
   return true;
 }
 

@@ -74,6 +74,16 @@ describe('query-cache / cacheKey', () => {
       cacheKey({ query: 'C', methodology: 'direct', legendMode: false, extendedThinking: false })
     );
   });
+
+  it('partitions by pageContext; empty and undefined share the context-free key (E7/D2)', () => {
+    const noCtx = cacheKey({ ...base, methodology: 'direct' });
+    const emptyCtx = cacheKey({ ...base, methodology: 'direct', pageContext: '' });
+    const ctxA = cacheKey({ ...base, methodology: 'direct', pageContext: 'viewing node about entropy' });
+    const ctxB = cacheKey({ ...base, methodology: 'direct', pageContext: 'viewing node about enthalpy' });
+    expect(emptyCtx).toBe(noCtx);
+    expect(ctxA).not.toBe(noCtx);
+    expect(ctxA).not.toBe(ctxB);
+  });
 });
 
 describe('query-cache / get + set', () => {
@@ -117,6 +127,7 @@ describe('query-cache / isCacheable', () => {
     hasLiveRefinements: false,
     hasGrimoire: false,
     instinctMode: false,
+    hasHistory: false,
   };
 
   it('is true for direct/cod/sc/pas with clean flags', () => {
@@ -142,6 +153,10 @@ describe('query-cache / isCacheable', () => {
     expect(isCacheable({ methodology: 'direct', ...clean, hasLiveRefinements: true })).toBe(false);
     expect(isCacheable({ methodology: 'direct', ...clean, hasGrimoire: true })).toBe(false);
     expect(isCacheable({ methodology: 'direct', ...clean, instinctMode: true })).toBe(false);
+  });
+
+  it('is false with conversation history — follow-ups must never cross conversations (E7/D1)', () => {
+    expect(isCacheable({ methodology: 'direct', ...clean, hasHistory: true })).toBe(false);
   });
 });
 

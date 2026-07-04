@@ -116,12 +116,17 @@ export async function POST(request: NextRequest) {
     const cacheable =
       isCacheable({
         methodology,
-        hasUrlContext: /https?:\/\//.test(query),
+        // /i matches the URL fetcher's case-insensitive detection — 'Https://…' (mobile
+        // autocapitalize) must not slip past the gate and cache a URL-conditioned answer
+        hasUrlContext: /https?:\/\//i.test(query),
         hasLiveRefinements: !!liveRefinements?.length,
         hasGrimoire: !!grimoireContext,
         instinctMode: instinctMode === true,
+        hasHistory: (conversationHistory?.length ?? 0) > 0,
       }) && !isLivePriceQuery(query);
-    const key = cacheable ? cacheKey({ query, methodology, legendMode, extendedThinking, layersWeights }) : '';
+    const key = cacheable
+      ? cacheKey({ query, methodology, legendMode, extendedThinking, layersWeights, pageContext })
+      : '';
     const serveCacheHit = (hit: unknown, methodologyLabel: string) => {
       const hitObj = hit as Record<string, unknown>;
       recordCall({
@@ -210,11 +215,13 @@ export async function POST(request: NextRequest) {
         // fallbacks could ever be stored under a '|tot|' key) — kept here as defense in depth.
         selectedMethod.id !== 'tot' &&
         isCacheable({
+          // belt: a FAILED URL fetch (urlContext '') must not make a URL query cacheable
+          hasUrlContext: !!urlContext || /https?:\/\//i.test(query),
           methodology: selectedMethod.id,
-          hasUrlContext: !!urlContext,
           hasLiveRefinements: !!liveRefinements?.length,
           hasGrimoire: !!grimoireContext,
           instinctMode: instinctMode === true,
+          hasHistory: (conversationHistory?.length ?? 0) > 0,
         }) &&
         !isLivePriceQuery(query) &&
         // sideCanalContext is per-user topic steering injected into the messages — a user-free
@@ -227,6 +234,7 @@ export async function POST(request: NextRequest) {
           legendMode,
           extendedThinking,
           layersWeights,
+          pageContext,
         });
         const hit = getCached(effectiveCacheKey);
         if (hit) return serveCacheHit(hit, selectedMethod.id);
@@ -388,7 +396,10 @@ export async function POST(request: NextRequest) {
     // ========== BUILD SYSTEM PROMPT ==========
     // Gap-A: systemPrompt is the STABLE cached prefix (~9KB methodology block). Do NOT mutate it —
     // all per-query content goes into dynamicContext, which travels AFTER the cache breakpoint.
-    let systemPrompt = getMethodologyPrompt(selectedMethod.id, pageContext, legendMode);
+    // pageContext is volatile per-message content (last-5 messages / DOM scrape incl. live ticker):
+    // baked into the prefix it defeats the prompt cache for ALL browser traffic — it rides the
+    // dynamic block instead (step 6 below), same wording, position preserved at the prompt's end.
+    let systemPrompt = getMethodologyPrompt(selectedMethod.id, undefined, legendMode);
 
     const dynamicParts: string[] = [];
 
@@ -435,6 +446,13 @@ export async function POST(request: NextRequest) {
     // 5. Extended-thinking directive — now AFTER the methodology block (in the dynamic section).
     if (extendedThinking) {
       dynamicContext = `${dynamicContext}\n\nWhen reasoning internally, think thoroughly — consider multiple angles, surface your genuine considerations, articulate doubts and trade-offs you are weighing, note what you are rejecting and why. Your internal reasoning should feel like authentic reflection, not summary. Take the time to examine the question from multiple lenses before answering.`;
+    }
+
+    // 6. Page context — LAST, mirroring its original position at the end of the prompt (E7/D2).
+    // Same wording as getMethodologyPrompt's contextSection; only its POSITION moved from the
+    // cached prefix to the dynamic block.
+    if (pageContext) {
+      dynamicContext = `${dynamicContext}\n\n**CURRENT PAGE CONTEXT:**\nThe user is currently viewing or working with the following content:\n${pageContext}\n\nWhen the user asks about "this", "it", "the subject", or refers to something without specifying, they are likely referring to the content above. Use this context to understand their queries and provide relevant responses.`;
     }
 
     // Emit: calling (pre-API — no model shown, just progress indicator)
@@ -945,7 +963,18 @@ export async function POST(request: NextRequest) {
     // Store the exact object we return so the next identical query replays it faithfully.
     // The hit path adds `cached: true`; the stored object itself stays clean. Steered answers
     // (per-user side-canal context in the messages) never enter the user-free cache.
-    if (effectiveCacheKey && !sideCanalContext) setCached(effectiveCacheKey, responseData);
+    // sideCanal.suggestions come from getSuggestions(topicIds, userId) — per-user topic-graph
+    // output must never enter a user-free cache entry. Matches the tot route's empty shape.
+    // gnostic.progressState is per-session ascent telemetry (trackAscent via x-session-id) —
+    // stripped for the same reason; layerAnalysis is a pure function of the query and stays.
+    if (effectiveCacheKey && !sideCanalContext)
+      setCached(effectiveCacheKey, {
+        ...responseData,
+        sideCanal: { contextInjected: false, suggestions: [] },
+        gnostic: responseData.gnostic
+          ? { ...responseData.gnostic, progressState: undefined }
+          : responseData.gnostic,
+      });
 
     return NextResponse.json(responseData);
   } catch (error) {

@@ -30,4 +30,8 @@ describe('methodology prompts — honesty locks (D5)', () => {
     expect(getMethodologyPrompt('tot', '', false)).toContain('[TECHNICAL]');
     expect(getMethodologyPrompt('direct', '', false)).toContain('direct, factual');
   });
+
+  it('stable prefix is context-free — pageContext rides the dynamic block (E7/D2)', () => {
+    expect(getMethodologyPrompt('direct', undefined, false)).not.toContain('CURRENT PAGE CONTEXT');
+  });
 });
