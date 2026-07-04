@@ -249,16 +249,30 @@ export function getAvailableProviders(): ProviderFamily[] {
   return providers.filter(validateProviderApiKey);
 }
 
+// F1: per-model rates (per 1K tokens) consulted BEFORE the provider default — the flat
+// anthropic rate mispriced every model (Opus 4.8 is $5/$25 per M, Haiku 4.5 $1/$5, Fable $10/$50).
+const MODEL_RATES: Record<string, { input: number; output: number }> = {
+  'claude-opus-4-8': { input: 0.005, output: 0.025 }, // $5/$25 per M
+  'claude-opus-4-6': { input: 0.005, output: 0.025 },
+  'claude-haiku-4-5-20251001': { input: 0.001, output: 0.005 }, // $1/$5 per M
+  'claude-fable-5': { input: 0.01, output: 0.05 }, // $10/$50 per M
+};
+
 /**
- * Get pricing for a provider (per 1K tokens)
+ * Get pricing (per 1K tokens) — exact model match wins, else the provider default.
  *
  * @param provider - Provider family
+ * @param model - Optional model id for model-aware rates
  * @returns Input and output pricing
  */
-export function getProviderPricing(provider: ProviderFamily): {
+export function getProviderPricing(
+  provider: ProviderFamily,
+  model?: string
+): {
   input: number;
   output: number;
 } {
+  if (model && MODEL_RATES[model]) return MODEL_RATES[model];
   const rates: Record<ProviderFamily, { input: number; output: number }> = {
     deepseek: { input: 0.00055, output: 0.00219 },
     anthropic: { input: 0.003, output: 0.015 },

@@ -29,6 +29,8 @@ export interface CompletionRequest {
   extendedThinking?: boolean;
   onThinkingDelta?: (chunk: string) => void;
   onTextDelta?: (chunk: string) => void;
+  /** F1: Fable adaptive-thinking control — only sent when model is MODELS.frontier. */
+  effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
   purpose?: string;
   queryId?: string;
   /** Gap-A: per-query content that must NOT be in the cached prefix (date/web/fusion/thinking). */
@@ -168,7 +170,8 @@ export async function callProvider(
 async function parseAnthropicStream(
   response: Response,
   request: CompletionRequest,
-  startTime: number
+  startTime: number,
+  pricingModel?: string // F1: the model actually called (thinking override swaps it) — for cost only
 ): Promise<CompletionResponse> {
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
@@ -226,7 +229,7 @@ async function parseAnthropicStream(
   if (!textContent && !rawThinking) throw new Error('Anthropic stream produced no content');
 
   const latencyMs = Date.now() - startTime;
-  const pricing = getProviderPricing('anthropic');
+  const pricing = getProviderPricing('anthropic', pricingModel ?? request.model);
   // Cache economics: uncached input at 1x, cache reads at 0.1x, cache writes (5-min ephemeral) at 1.25x.
   const cost =
     (inputTokens * pricing.input +
@@ -246,6 +249,11 @@ async function parseAnthropicStream(
   };
 }
 
+/** F1: Fable refusals arrive as HTTP 200 + stop_reason:'refusal' — retry once on Opus. */
+export function shouldFableFallback(stopReason: string | undefined, model: string): boolean {
+  return stopReason === 'refusal' && model === MODELS.frontier;
+}
+
 /**
  * Call Anthropic API (Claude)
  */
@@ -257,6 +265,14 @@ async function callAnthropic(
 
   if (!config.apiKey) {
     throw new Error('ANTHROPIC_API_KEY not configured');
+  }
+
+  // F1 hard guard: Fable has no thinking_delta — the opus-4-6 streaming override must never fire.
+  // Keep the pre-guard request so a refusal fallback retries Opus WITH the caller's original
+  // thinking intent (a direct premium+extendedThinking call would use the thinking override).
+  const preGuardRequest = request;
+  if (request.model === MODELS.frontier && request.extendedThinking) {
+    request = { ...request, extendedThinking: false, onThinkingDelta: undefined };
   }
 
   // Anthropic uses separate system parameter
@@ -290,6 +306,13 @@ async function callAnthropic(
     if (request.onThinkingDelta) body.stream = true;
   }
 
+  // F1: Fable adaptive thinking is controlled by effort, which the Messages API takes INSIDE
+  // output_config — a top-level `effort` field is rejected with a 400 (frontier-only; omit →
+  // API default 'high').
+  if (request.model === MODELS.frontier && request.effort) {
+    body.output_config = { effort: request.effort };
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-api-key': config.apiKey,
@@ -309,17 +332,49 @@ async function callAnthropic(
 
   // Streaming path: parse SSE events and invoke callbacks live
   if (request.extendedThinking && request.onThinkingDelta && response.body) {
-    return parseAnthropicStream(response, request, startTime);
+    return parseAnthropicStream(response, request, startTime, body.model as string);
   }
 
   const data = await response.json();
   const latencyMs = Date.now() - startTime;
 
+  // F1 refusal auto-fallback: Fable's safety layer declined (HTTP 200 + stop_reason:'refusal',
+  // content may be empty) — retry once on Opus. One-shot by construction (premium !== frontier).
+  // Billing per API docs: pre-output refusals bill NOTHING (usage reports zeros); a refusal after
+  // generation started bills the generated output — record whatever usage reports, at Fable rates,
+  // so COGS reconciles in both cases. durationMs stays 0: the retry's row spans the whole call.
+  if (shouldFableFallback(data.stop_reason, request.model)) {
+    const refusalIn = data.usage?.input_tokens || 0;
+    const refusalOut = data.usage?.output_tokens || 0;
+    const refusalCacheRead = data.usage?.cache_read_input_tokens || 0;
+    const refusalCacheCreation = data.usage?.cache_creation_input_tokens || 0;
+    const refusalRates = getProviderPricing('anthropic', MODELS.frontier);
+    recordCall({
+      queryId: request.queryId ?? 'unknown',
+      purpose: `${request.purpose ?? 'anthropic call'} [FABLE REFUSAL→OPUS]`,
+      model: MODELS.frontier,
+      inTok: refusalIn,
+      cacheRead: refusalCacheRead,
+      cacheCreation: refusalCacheCreation,
+      outTok: refusalOut,
+      durationMs: 0,
+      costUSD:
+        (refusalIn * refusalRates.input +
+          refusalCacheRead * refusalRates.input * 0.1 +
+          refusalCacheCreation * refusalRates.input * 1.25 +
+          refusalOut * refusalRates.output) /
+        1000,
+      outcome: 'ok',
+      objectiveMet: false,
+    });
+    return callAnthropic({ ...preGuardRequest, model: MODELS.premium }, startTime);
+  }
+
   const inputTokens = data.usage?.input_tokens || 0;
   const outputTokens = data.usage?.output_tokens || 0;
   const cacheRead = data.usage?.cache_read_input_tokens || 0;
   const cacheCreation = data.usage?.cache_creation_input_tokens || 0;
-  const pricing = getProviderPricing('anthropic');
+  const pricing = getProviderPricing('anthropic', body.model as string);
   // Cache economics: uncached input at 1x, cache reads at 0.1x, cache writes (5-min ephemeral) at 1.25x.
   const cost =
     (inputTokens * pricing.input +
