@@ -1,3 +1,6 @@
+// @vitest-environment node
+// query-cache imports node:crypto (sha256 context fingerprint) — a server-only builtin the
+// default browser-mode environment externalizes at collection. Server modules test under node.
 /**
  * Response cache (WEBNA B5) — NORMALIZED-QUERY tier.
  *
