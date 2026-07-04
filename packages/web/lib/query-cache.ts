@@ -1,5 +1,8 @@
 import 'server-only';
-import { createHash } from 'node:crypto';
+// node:crypto via the runtime builtin accessor — a STATIC 'node:crypto' import is externalized
+// at transform by the browser-mode test environment (collection failure; same class as the F2 fs
+// bug). This module is 'server-only', so the Node runtime — and this official API — is guaranteed.
+const { createHash } = process.getBuiltinModule('node:crypto');
 import { LRUCache } from './intelligence-fusion-types';
 
 /**
