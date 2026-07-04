@@ -50,12 +50,16 @@ Facts: model id `claude-fable-5` · $10/M in · $50/M out (2× Opus 4.8) · $1/M
 1M ctx / 128k out · refusals return HTTP 200 stop_reason:'refusal' (server-side fallback in beta) ·
 adaptive thinking always-on via `effort` param, NO raw CoT (4.6 thinking_delta path does NOT map) ·
 30-day retention, NOT available under ZDR (conflicts with sovereignty promise → opt-in + disclosed).
-- [ ] F1  plumbing (flag OFF): MODELS.frontier='claude-fable-5' · refusal handling
+- [x] F1  plumbing (flag OFF): MODELS.frontier='claude-fable-5' · refusal handling
           (stop_reason:'refusal' → auto-fallback Opus 4.8, COGS-tagged) · effort param · budgets row.
-- [ ] F2  eval A/B: 15 goldens + 5 long-horizon cases, Fable vs Opus on the eval bar + COGS
+- [x] F2  eval A/B (DONE 2026-07-02, $0.78, 52 calls, 0 errors): 15 goldens + 5 long-horizon cases, Fable vs Opus on the eval bar + COGS
           objective-per-$ → adopt ONLY where lift > 2× cost. Candidates: Legend Mode, ToT synthesis,
           hardest long-horizon queries. NEVER direct/cod/quick (those stay Haiku).
-- [ ] F3  product surface (if F2 passes): Legend "Frontier" toggle w/ explicit 30-day-retention
+- [x] F3  DECISION (made early, 2026-07-02, data-driven): SKIP for launch. F2 verdicts — SC HOLD
+          (multi 8/8 = single 8/8 at 2.96×, no headroom, consistency signal noisy on correct answers)
+          and FABLE SKIP (8/10 = 8/10 at 3.22× cost-per-pass, floor tie, no refusals, ~2× slower).
+          Flags stay OFF · plumbing retained (inert, zero cost) · rematch parked post-launch with
+          harder Part-A cases + premise-echo-exempt floor check. Original toggle plan (if adopted): Legend "Frontier" toggle w/ explicit 30-day-retention
           disclosure · Sovereign Mode HARD-excludes Fable. Decision ~Jul 20.
 - [ ] F4  positioning: the June-ban story (frontier model gone 19 days by gov order, ~90min notice)
           = live proof of AkhAI's sovereignty thesis → launch copy.
