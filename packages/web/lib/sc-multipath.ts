@@ -57,21 +57,25 @@ function jaccard(a: Set<string>, b: Set<string>): number {
 
 /**
  * Per-sample "final answer" for agreement purposes only — the SERVED content is always a
- * sample's FULL text. Anchored on the LAST '[CONSENSUS' marker with non-empty content —
- * a trailing marker truncated by the token budget steps back to the previous complete one.
- * Falls back to the final 30% of the text (never empty for non-blank input).
+ * sample's FULL text. Extracts the final ANSWER section (legacy CONSENSUS supported):
+ * anchored on the LAST '[ANSWER' marker with non-empty content — a trailing marker
+ * truncated by the token budget steps back to the previous complete one — then the LAST
+ * '[CONSENSUS' (old prompt format), then the final 30% tail (never empty for non-blank input).
  */
 export function extractConsensus(text: string): string {
   // matchAll on the ORIGINAL string — indexing a lowercased copy misaligns when
   // toLowerCase changes length (e.g. U+0130 'İ' → 'i' + combining dot).
-  const markers = [...text.matchAll(/\[consensus/gi)];
-  for (let i = markers.length - 1; i >= 0; i--) {
-    let out = text.slice(markers[i].index + '[consensus'.length);
-    out = out.replace(/^[\s:\]]+/, '');
-    const close = out.indexOf(']');
-    if (close !== -1) out = out.slice(0, close);
-    out = out.trim();
-    if (out.length > 0) return out;
+  for (const marker of ['[answer', '[consensus'] as const) {
+    const re = new RegExp('\\' + marker, 'gi');
+    const markers = [...text.matchAll(re)];
+    for (let i = markers.length - 1; i >= 0; i--) {
+      let out = text.slice(markers[i].index + marker.length);
+      out = out.replace(/^[\s:\]]+/, '');
+      const close = out.indexOf(']');
+      if (close !== -1) out = out.slice(0, close);
+      out = out.trim();
+      if (out.length > 0) return out;
+    }
   }
   const tail = text.slice(Math.floor(text.length * 0.7)).trim();
   return tail.length > 0 ? tail : text.trim();

@@ -61,6 +61,34 @@ describe('sc-multipath / extractConsensus', () => {
   it('is not misaligned by case-folding length changes before the marker (İ)', () => {
     expect(extractConsensus('İİİİİİİİİİ [CONSENSUS: answer]')).toBe('answer');
   });
+
+  it('extracts the [ANSWER] marker (current SC prompt format)', () => {
+    expect(
+      extractConsensus('[BUFFER] facts [REASONING] chain [VALIDATION] ok [ANSWER: Paris]')
+    ).toBe('Paris');
+  });
+
+  it('handles label-style [ANSWER] with the text after the bracket', () => {
+    expect(extractConsensus('[VALIDATION] checks out\n[ANSWER]\nThe ball costs $0.05.')).toBe(
+      'The ball costs $0.05.'
+    );
+  });
+
+  it('is case-insensitive on the ANSWER marker', () => {
+    expect(extractConsensus('reasoning... [answer: forty two]')).toBe('forty two');
+  });
+
+  it('steps back past a truncated trailing [ANSWER marker', () => {
+    expect(extractConsensus('[ANSWER: the real one] trailing reasoning [ANSWER:')).toBe(
+      'the real one'
+    );
+  });
+
+  it('prefers ANSWER over legacy CONSENSUS when both markers are present', () => {
+    expect(extractConsensus('[CONSENSUS: old format] more text [ANSWER: new format]')).toBe(
+      'new format'
+    );
+  });
 });
 
 describe('sc-multipath / pairwiseAgreement', () => {
