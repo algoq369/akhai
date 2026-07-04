@@ -40,7 +40,7 @@ Run with Node 24 active (SHIELD); eval-bar switches to Node 22 internally for pr
 ## D · REFINE (resequenced)
 - [ ] D3a sc-multipath: real N-sample self-consistency (the honest E1.2). Eval-gate vs single-pass
           on quality AND cost; adopt only if lift justifies N× cost. (agreed next after review)
-- [ ] D4  ReAct canvas streaming (E2): per-step visible on canvas — dedicated localhost session.
+- [x] D4  ReAct per-step streaming (E2): SHIPPED + user-verified live in browser (ff26ea9) — search/results/answer events, honest outage signal fired on real Brave 429, parallel-search ids held; react cost blindness found in the session and fixed (real $ + COGS). V2 candidates parked: pre-search signal (emit in tool execute), canvas step-nodes.
 - [ ] D5  methodology prompt consistency (E5.3).
 - [ ] D2  retrieval into main path (E4.1)     ← GATED on Hetzner box.
 - [ ] D1  learned router (E3)                  ← CUTTABLE (widest variance / needs training rig).
