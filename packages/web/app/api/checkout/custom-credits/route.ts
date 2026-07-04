@@ -4,24 +4,31 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { stripe } from '@/lib/stripe';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { getAnonymousDistinctId } from '@/lib/posthog-events';
+
+export const CheckoutCustomCreditsSchema = z.object({
+  // handler contract: $5–$10,000; fractional dollars are valid (UI parseFloat, Stripe gets
+  // Math.round(amount*100) cents) — int() would 400 a currently-valid $7.50 purchase
+  amount: z.number().min(5).max(10000),
+  // UI computes Math.floor(dollars/0.04*1000) — max legit is 250M at $10,000; 1e9 = absurdity guard
+  tokens: z.number().int().positive().max(1_000_000_000),
+});
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { amount, tokens } = body;
-
-    // Validate amount
-    if (!amount || typeof amount !== 'number' || amount < 5 || amount > 10000) {
+    const parsed = CheckoutCustomCreditsSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid amount. Must be between $5 and $10,000' },
+        { error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { amount, tokens } = parsed.data;
 
     // Get the base URL for redirects
     const origin = request.headers.get('origin') || 'http://localhost:3000';

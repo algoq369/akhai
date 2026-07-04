@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { authenticateWallet, generateWalletMessage } from '@/lib/auth';
+
+export const AuthWalletVerifySchema = z.object({
+  // EVM address: 0x + 40 hex chars (checksummed or lowercase)
+  address: z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'invalid wallet address'),
+  // 0x-hex floor. Standard ECDSA personal_sign is 0x+130 hex, but smart-account (EIP-1271)
+  // signatures run longer — and verifyWalletSignature is currently a placeholder, so this
+  // is a shape floor, not a cryptographic check.
+  signature: z.string().regex(/^0x[0-9a-fA-F]+$/, 'invalid signature').max(5000),
+  // the handler regenerates and compares the exact expected message (~150 chars)
+  message: z.string().min(1).max(500),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -10,24 +22,19 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   console.log('[DEBUG] POST /api/auth/wallet/verify entry');
   try {
-    const { address, signature, message } = await request.json();
-    console.log('[DEBUG] Received:', {
-      address: address?.substring(0, 10),
-      hasSignature: !!signature,
-      messageLength: message?.length,
-    });
-
-    if (!address || !signature || !message) {
-      console.log('[DEBUG] Missing required fields:', {
-        hasAddress: !!address,
-        hasSignature: !!signature,
-        hasMessage: !!message,
-      });
+    const parsed = AuthWalletVerifySchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Address, signature, and message are required' },
+        { error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { address, signature, message } = parsed.data;
+    console.log('[DEBUG] Received:', {
+      address: address.substring(0, 10),
+      hasSignature: !!signature,
+      messageLength: message.length,
+    });
 
     // Extract timestamp from received message to regenerate expected message
     const timestampMatch = message.match(/Timestamp: (\d+)/);

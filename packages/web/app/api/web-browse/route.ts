@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { callProvider } from '@/lib/multi-provider-api';
 import { fetchYouTubeVideo, formatYouTubeData } from '@/lib/tools/youtube-fetcher';
+
+export const WebBrowseSchema = z.object({
+  // schema-level SSRF floor: http(s) only, even though the handler also parses the URL
+  url: z
+    .string()
+    .url()
+    .max(2048)
+    .refine((u) => /^https?:\/\//i.test(u), 'http(s) only'),
+  query: z.string().max(4000).optional(),
+  // the handler's switch treated unknown types as 'webpage' — the enum makes that contract explicit
+  type: z.enum(['github', 'youtube', 'image', 'webpage']).optional(),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -12,13 +25,16 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { url, query, type } = await request.json();
-
-    if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+    const parsed = WebBrowseSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { url, query, type } = parsed.data;
 
-    // Validate URL
+    // Parse URL (schema guarantees http(s) shape; URL object is used for type detection)
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(url);

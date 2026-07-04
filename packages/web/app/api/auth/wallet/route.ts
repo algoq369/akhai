@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+export const AuthWalletSchema = z.object({
+  // EVM address: 0x + 40 hex chars (checksummed or lowercase)
+  address: z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'invalid wallet address'),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +20,14 @@ function generateWalletMessage(address: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { address } = await request.json();
-
-    if (!address || typeof address !== 'string') {
-      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
+    const parsed = AuthWalletSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { address } = parsed.data;
 
     const message = generateWalletMessage(address);
 

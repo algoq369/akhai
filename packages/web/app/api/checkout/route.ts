@@ -4,29 +4,36 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { stripe } from '@/lib/stripe';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { getAnonymousDistinctId } from '@/lib/posthog-events';
+
+export const CheckoutSchema = z.object({
+  priceId: z.string().min(1).max(200),
+  // passed straight through as the Stripe Checkout mode — only these two are valid here
+  mode: z.enum(['subscription', 'payment']),
+  planId: z.string().max(200).optional(),
+  userId: z.string().max(200).optional(),
+  // Stripe line-item quantity; the UI always sends 1 — 100 is a generous ceiling
+  quantity: z.number().int().min(1).max(100).default(1),
+  // analytics-only fields PricingCard sends alongside the checkout body
+  price: z.number().nonnegative().max(1_000_000).optional(),
+  tokens: z.number().nonnegative().max(1_000_000_000_000).optional(),
+});
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const {
-      priceId,
-      mode, // 'subscription' or 'payment'
-      planId,
-      userId,
-      quantity = 1,
-    } = body;
-
-    if (!priceId || !mode) {
+    const parsed = CheckoutSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields: priceId, mode' },
+        { error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { priceId, mode, planId, userId, quantity, price, tokens } = parsed.data;
 
     // Get the base URL for redirects
     const origin = request.headers.get('origin') || 'http://localhost:3000';
@@ -85,15 +92,15 @@ export async function POST(request: NextRequest) {
       if (mode === 'subscription') {
         trackServerEvent('checkout_started', distinctId, {
           plan: planId,
-          price: body.price || 0,
+          price: price || 0,
           billing_period: 'monthly',
           session_id: session.id,
         });
       } else {
         trackServerEvent('credits_checkout_started', distinctId, {
           credit_tier: planId,
-          price: body.price || 0,
-          tokens: body.tokens || 0,
+          price: price || 0,
+          tokens: tokens || 0,
           session_id: session.id,
         });
       }

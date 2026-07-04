@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { webSearchCore } from '@/lib/web-search-core';
+
+export const WebSearchSchema = z.object({
+  // simple-query's auto-search forwards the full user query (its schema caps at 10000)
+  query: z.string().min(1).max(10000),
+  maxResults: z.number().int().min(1).max(20).default(5),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +21,14 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { query, maxResults = 5 } = await request.json();
-
-    if (!query || typeof query !== 'string') {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    const parsed = WebSearchSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { query, maxResults } = parsed.data;
 
     const { results, source, unavailable } = await webSearchCore(query, maxResults);
 

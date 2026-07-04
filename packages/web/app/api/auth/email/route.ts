@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomInt } from 'node:crypto';
+import { z } from 'zod';
 import { getDatabase } from '@/lib/database';
 import { generateUUID } from '@/lib/uuid';
+
+export const AuthEmailSchema = z.object({
+  email: z.string().email().max(320),
+  action: z.enum(['send', 'verify']),
+  // 6-digit code; length-capped only — format wrongness surfaces as the handler's own
+  // 'Invalid or expired code' (behavior-preserving), presence is checked per-action below
+  code: z.string().min(1).max(10).optional(),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +20,14 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, action, code } = body;
-
-    if (!email || !action) {
-      return NextResponse.json({ error: 'Missing email or action' }, { status: 400 });
+    const parsed = AuthEmailSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { email, action, code } = parsed.data;
 
     const db = getDatabase();
 

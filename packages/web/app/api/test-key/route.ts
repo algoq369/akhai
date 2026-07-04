@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+// NOTE: flatten() emits schema messages only — the submitted key value is NEVER echoed
+export const TestKeySchema = z.object({
+  provider: z.enum(['anthropic', 'deepseek', 'xai', 'openrouter']),
+  key: z.string().min(1).max(300),
+});
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const { provider, key } = await request.json();
-
-    if (!provider || !key) {
+    const parsed = TestKeySchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'Provider and key are required' },
+        { success: false, error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { provider, key } = parsed.data;
 
     let testResult = false;
     let errorMessage = '';

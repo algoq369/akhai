@@ -20,7 +20,19 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { log } from '@/lib/logger';
+
+// ⚠ INTERNAL CONTRACT: simple-query/route.ts calls this endpoint with the body
+// { query, conversationHistory } where both already passed simple-query's own schema
+// (query ≤10000; history is an UNBOUNDED array of {role, content} — no caps here, or a
+// long conversation would 400 the internal call and silently degrade ToT to single-model).
+export const TotConsensusSchema = z.object({
+  query: z.string().min(1).max(10000),
+  conversationHistory: z
+    .array(z.object({ role: z.string(), content: z.string() }))
+    .default([]),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -211,11 +223,14 @@ export async function POST(request: NextRequest) {
   log('INFO', 'GTP_CONSENSUS', `Starting multi-AI consensus: ${queryId}`);
 
   try {
-    const { query, conversationHistory = [] } = await request.json();
-
-    if (!query) {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    const parsed = TotConsensusSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { query, conversationHistory } = parsed.data;
 
     // Get API keys
     const apiKeys = {
