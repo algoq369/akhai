@@ -27,6 +27,19 @@ describe('query-cache / normalizeQuery', () => {
     expect(b).toBe(c);
   });
 
+  it('cacheKey partitions by non-default layersWeights; defaults share the no-weights key', () => {
+    const base = { query: 'q', methodology: 'direct', legendMode: false };
+    const none = cacheKey(base);
+    const allDefault = cacheKey({ ...base, layersWeights: { 4: 0.5, 9: 0.5 } });
+    const custom = cacheKey({ ...base, layersWeights: { 9: 0.98, 4: 0.02 } });
+    const customSameReordered = cacheKey({ ...base, layersWeights: { 4: 0.02, 9: 0.98 } });
+    const otherCustom = cacheKey({ ...base, layersWeights: { 9: 0.02, 4: 0.98 } });
+    expect(allDefault).toBe(none);
+    expect(custom).toBe(customSameReordered);
+    expect(custom).not.toBe(none);
+    expect(custom).not.toBe(otherCustom);
+  });
+
   it('does NOT collapse identifier punctuation — "C#" stays distinct from "C" (no wrong-topic hit)', () => {
     expect(normalizeQuery('C#')).toBe('c#');
     expect(normalizeQuery('C#')).not.toBe(normalizeQuery('C'));

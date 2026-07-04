@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         hasGrimoire: !!grimoireContext,
         instinctMode: instinctMode === true,
       }) && !isLivePriceQuery(query);
-    const key = cacheable ? cacheKey({ query, methodology, legendMode, extendedThinking }) : '';
+    const key = cacheable ? cacheKey({ query, methodology, legendMode, extendedThinking, layersWeights }) : '';
     const serveCacheHit = (hit: unknown, methodologyLabel: string) => {
       const hitObj = hit as Record<string, unknown>;
       recordCall({
@@ -226,6 +226,7 @@ export async function POST(request: NextRequest) {
           methodology: selectedMethod.id,
           legendMode,
           extendedThinking,
+          layersWeights,
         });
         const hit = getCached(effectiveCacheKey);
         if (hit) return serveCacheHit(hit, selectedMethod.id);

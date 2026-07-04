@@ -63,9 +63,21 @@ export function cacheKey(params: {
   methodology: string;
   legendMode: boolean;
   extendedThinking?: boolean;
+  /** Custom AI-layer weights (0-1 per Layer id). Non-default weights change the answer's
+   *  calibration, so they must partition the cache: 50% (default) layers are omitted, so
+   *  default-config traffic keeps sharing entries while each custom config gets its own. */
+  layersWeights?: Record<number, number>;
 }): string {
-  const { query, methodology, legendMode, extendedThinking } = params;
-  return `${normalizeQuery(query)}|${methodology}|${legendMode}|${extendedThinking ?? false}`;
+  const { query, methodology, legendMode, extendedThinking, layersWeights } = params;
+  const wPart = layersWeights
+    ? Object.entries(layersWeights)
+        .map(([id, v]) => [Number(id), Math.round((v ?? 0.5) * 100)] as const)
+        .filter(([, pct]) => pct !== 50)
+        .sort((a, b) => a[0] - b[0])
+        .map(([id, pct]) => `${id}:${pct}`)
+        .join(',')
+    : '';
+  return `${normalizeQuery(query)}|${methodology}|${legendMode}|${extendedThinking ?? false}|W:${wPart}`;
 }
 
 /** Return the stored response if present AND fresh (within TTL); else undefined (expired = miss). */
