@@ -18,6 +18,16 @@ export interface ReactStep {
   text?: string;
 }
 
+/** One live event per observable agent action — for per-step streaming (D4). */
+export interface ReactStepEvent {
+  step: number; // 1-based, human-facing
+  kind: 'search' | 'results' | 'answer';
+  query?: string; // kind 'search': the search query the model issued
+  count?: number; // kind 'results': how many results came back (0 = refining)
+  topTitles?: string[]; // kind 'results': up to 2 titles for the feed
+  unavailable?: boolean; // kind 'results': provider was down — count 0 is an outage, not a zero-hit
+}
+
 export interface ReactResult {
   text: string;
   sources: { title: string; snippet: string; url: string }[]; // for grounding context in S2.2
@@ -37,12 +47,45 @@ export interface ReactResult {
  */
 export async function runReactAgent(
   query: string,
-  model: LanguageModel = anthropic(MODELS.premium)
+  model: LanguageModel = anthropic(MODELS.premium),
+  onStep?: (e: ReactStepEvent) => void
 ): Promise<ReactResult> {
+  // Fire-and-forget: a listener throw (UI side) must never kill the agent loop.
+  const emit = (e: ReactStepEvent) => {
+    if (!onStep) return;
+    try {
+      onStep(e);
+    } catch {
+      /* listener errors are the listener's problem */
+    }
+  };
+
   const result = await generateText({
     model,
     stopWhen: stepCountIs(5),
     abortSignal: AbortSignal.timeout(85_000), // under the react 90s tier
+    onStepFinish: (ev) => {
+      const step = ev.stepNumber + 1; // stepNumber is zero-based
+      for (const call of ev.staticToolCalls) {
+        if (call.toolName === 'web_search') {
+          emit({ step, kind: 'search', query: call.input.query });
+        }
+      }
+      for (const toolResult of ev.staticToolResults) {
+        if (toolResult.toolName !== 'web_search') continue;
+        const results = toolResult.output.results;
+        emit({
+          step,
+          kind: 'results',
+          count: results.length,
+          topTitles: results.slice(0, 2).map((r) => r.title),
+          unavailable: toolResult.output.note ? true : undefined,
+        });
+      }
+      if (ev.toolCalls.length === 0 && ev.text.trim()) {
+        emit({ step, kind: 'answer' });
+      }
+    },
 
     tools: {
       web_search: tool({

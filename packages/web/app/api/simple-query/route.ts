@@ -488,7 +488,31 @@ export async function POST(request: NextRequest) {
             methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
           },
         });
-        const agent = await runReactAgent(query);
+        const agent = await runReactAgent(query, undefined, (e) => {
+          // Model/web-controlled strings are truncated at display; the feed is a one-liner.
+          const titles = (e.topTitles ?? []).map((t) => t.slice(0, 80)).join(' · ');
+          const text =
+            e.kind === 'search'
+              ? `Step ${e.step} — searching: “${(e.query ?? '').slice(0, 120)}”`
+              : e.kind === 'results'
+                ? e.count === 0
+                  ? e.unavailable
+                    ? `Step ${e.step} — search unavailable`
+                    : `Step ${e.step} — no results, refining…`
+                  : `Step ${e.step} — found ${e.count} result${e.count === 1 ? '' : 's'}${titles ? `: ${titles}` : ''}`
+                : `Step ${e.step} — composing grounded answer…`;
+          emitAndPersist(queryId, {
+            // random suffix like the thinking emitter — parallel same-kind events share a millisecond
+            id: `${queryId}-react-step-${e.step}-${e.kind}-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 5)}`,
+            queryId,
+            stage: 'reasoning',
+            timestamp: Date.now() - startTime,
+            data: text,
+            details: {
+              methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
+            },
+          });
+        });
         if (!agent.text?.trim()) throw new Error('REACT_AGENT_NO_CONTENT');
         reactSources = agent.sources.map((s) => `${s.title}. ${s.snippet}`.trim());
         // E1.3 citation enforcement: coverage on the RAW answer (before appending the Sources list),

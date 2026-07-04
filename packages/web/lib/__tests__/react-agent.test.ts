@@ -12,7 +12,7 @@ import { MockLanguageModelV3 } from 'ai/test';
 
 vi.mock('../web-search-core', () => ({ webSearchCore: vi.fn() }));
 
-import { runReactAgent } from '../react-agent';
+import { runReactAgent, type ReactStepEvent } from '../react-agent';
 import { webSearchCore } from '../web-search-core';
 
 const mockedSearch = vi.mocked(webSearchCore);
@@ -102,5 +102,81 @@ describe('runReactAgent — real loop wiring', () => {
     expect(mockedSearch).toHaveBeenCalledWith('obscure unindexed thing', 5);
     expect(result.text).toBe('I could not find reliable sources.');
     expect(result.sources).toEqual([]);
+  });
+
+  it('onStep streams search → results → answer, in order, with payloads (D4)', async () => {
+    mockedSearch.mockResolvedValue({
+      results: [
+        { title: 'Iceland', snippet: 'Reykjavik is the capital.', url: 'https://example.com/a' },
+        { title: 'Reykjavik', snippet: 'Capital city.', url: 'https://example.com/b' },
+        { title: 'Third', snippet: 'Extra.', url: 'https://example.com/c' },
+      ],
+      source: 'Brave',
+      unavailable: false,
+    });
+
+    const events: ReactStepEvent[] = [];
+    const model = twoTurnModel('capital of Iceland', 'Reykjavik is the capital of Iceland.');
+    const result = await runReactAgent('What is the capital of Iceland?', model, (e) =>
+      events.push(e)
+    );
+
+    expect(result.text).toBe('Reykjavik is the capital of Iceland.');
+    expect(events.map((e) => e.kind)).toEqual(['search', 'results', 'answer']);
+    expect(events[0]).toMatchObject({ step: 1, kind: 'search', query: 'capital of Iceland' });
+    expect(events[1]).toMatchObject({ step: 1, kind: 'results', count: 3 });
+    expect(events[1].topTitles).toEqual(['Iceland', 'Reykjavik']);
+    expect(events[2]).toMatchObject({ step: 2, kind: 'answer' });
+  });
+
+  it('onStep reports count 0 + unavailable for a provider outage', async () => {
+    mockedSearch.mockResolvedValue({ results: [], source: 'none', unavailable: true });
+
+    const events: ReactStepEvent[] = [];
+    const model = twoTurnModel('obscure thing', 'No reliable sources found.');
+    await runReactAgent('Find an obscure thing', model, (e) => events.push(e));
+
+    const results = events.find((e) => e.kind === 'results');
+    expect(results).toMatchObject({ kind: 'results', count: 0, topTitles: [], unavailable: true });
+  });
+
+  it('onStep reports count 0 WITHOUT unavailable for a genuine zero-hit search', async () => {
+    mockedSearch.mockResolvedValue({ results: [], source: 'Brave', unavailable: false });
+
+    const events: ReactStepEvent[] = [];
+    const model = twoTurnModel('very obscure thing', 'Nothing found.');
+    await runReactAgent('Find a very obscure thing', model, (e) => events.push(e));
+
+    const results = events.find((e) => e.kind === 'results');
+    expect(results).toMatchObject({ kind: 'results', count: 0 });
+    expect(results?.unavailable).toBeUndefined();
+  });
+
+  it('a throwing onStep does not reject the agent', async () => {
+    mockedSearch.mockResolvedValue({
+      results: [{ title: 'T', snippet: 'S', url: 'https://example.com/t' }],
+      source: 'Brave',
+      unavailable: false,
+    });
+
+    const model = twoTurnModel('anything', 'final answer');
+    const result = await runReactAgent('x', model, () => {
+      throw new Error('ui boom');
+    });
+
+    expect(result.text).toBe('final answer');
+    expect(result.sources).toHaveLength(1);
+  });
+
+  it('omitting onStep keeps behavior identical (no callback required)', async () => {
+    mockedSearch.mockResolvedValue({
+      results: [{ title: 'T', snippet: 'S', url: 'https://example.com/t' }],
+      source: 'Brave',
+      unavailable: false,
+    });
+
+    const model = twoTurnModel('anything', 'plain answer');
+    const result = await runReactAgent('x', model);
+    expect(result.text).toBe('plain answer');
   });
 });
