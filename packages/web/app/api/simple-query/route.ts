@@ -27,6 +27,8 @@ import { callProvider, type CompletionResponse } from '@/lib/multi-provider-api'
 import { maxTokensFor } from '@/lib/output-budgets';
 import { cacheKey, getCached, setCached, isCacheable } from '@/lib/query-cache';
 import { recordCall } from '@/lib/cogs-scorecard';
+import { getProviderPricing } from '@/lib/provider-selector';
+import { MODELS } from '@/lib/models';
 import { runReactAgent } from '@/lib/react-agent';
 import { runScMultipath, extractConsensus, SC_SAMPLES } from '@/lib/sc-multipath';
 import { formatDuration } from '@/lib/thought-stream';
@@ -529,10 +531,31 @@ export async function POST(request: NextRequest) {
             methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
           },
         });
+        // Real economics for the agent path: it bypasses callProvider, so price its usage here
+        // (F1 model-aware rates) and record the COGS row — otherwise react runs show $0 (free)
+        // for real Opus tokens and the scorecard is blind to the whole path.
+        const reactPricing = getProviderPricing('anthropic', MODELS.premium);
+        const reactCost =
+          (agent.usage.inputTokens * reactPricing.input +
+            agent.usage.outputTokens * reactPricing.output) /
+          1000;
+        recordCall({
+          queryId,
+          purpose: 'react agent answer',
+          model: MODELS.premium,
+          inTok: agent.usage.inputTokens,
+          cacheRead: 0,
+          cacheCreation: 0,
+          outTok: agent.usage.outputTokens,
+          durationMs: Date.now() - startTime,
+          costUSD: reactCost,
+          outcome: 'ok',
+          objectiveMet: true,
+        });
         apiResponse = {
           content: withSources,
           usage: { ...agent.usage, cacheRead: 0, cacheCreation: 0 },
-          cost: 0,
+          cost: reactCost,
           model: usedModel,
           provider: selectedProvider,
           latencyMs: Date.now() - startTime,
