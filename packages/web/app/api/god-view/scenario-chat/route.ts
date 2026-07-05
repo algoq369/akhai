@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callProvider } from '@/lib/multi-provider-api';
+import { GodViewScenarioChatSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const { branchSummary, keyEvents, question, messages } = await request.json();
-
-    if (!question) {
-      return NextResponse.json({ error: 'question is required' }, { status: 400 });
+    const parsed = GodViewScenarioChatSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { branchSummary, keyEvents, question, messages } = parsed.data;
 
     const eventsText = (keyEvents || []).map((e: string, i: number) => `${i + 1}. ${e}`).join('\n');
 

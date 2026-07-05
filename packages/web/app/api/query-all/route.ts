@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
+import { QueryAllSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const { query } = await request.json();
-
-    if (!query || typeof query !== 'string') {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    const parsed = QueryAllSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { query } = parsed.data;
 
     // Create comparison ID
     const comparisonId = nanoid(10);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromSession } from '@/lib/auth';
+import { SideCanalSchema } from '@/lib/route-schemas';
 import {
   extractTopics,
   generateSynopsis,
@@ -58,14 +59,14 @@ export async function POST(request: NextRequest) {
     const user = token ? getUserFromSession(token) : null;
     const userId = user?.id || null;
 
-    const { query, response, queryId } = await request.json();
-
-    if (!query || !response || !queryId) {
+    const parsed = SideCanalSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'query, response, and queryId are required' },
+        { error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { query, response, queryId } = parsed.data;
 
     // Extract topics
     const topics = await extractTopics(query, response, userId);

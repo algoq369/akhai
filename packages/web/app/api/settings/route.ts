@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SettingsSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,19 +48,20 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const settings = await request.json();
-
-    // Validate settings structure
-    if (!settings || typeof settings !== 'object') {
-      return NextResponse.json({ error: 'Invalid settings format' }, { status: 400 });
+    const parsed = SettingsSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const settings = parsed.data;
 
     // Update settings store
     // In production, this would save to a database
     if (settings.apiKeys) {
       // Only update keys that are not masked
-      Object.keys(settings.apiKeys).forEach((provider) => {
-        const key = settings.apiKeys[provider];
+      Object.entries(settings.apiKeys).forEach(([provider, key]) => {
         if (key && !key.includes('*')) {
           settingsStore.apiKeys[provider as keyof typeof settingsStore.apiKeys] = key;
         }

@@ -2,16 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { COUNCIL_AGENTS } from '@/lib/god-view/agents';
 import { callProvider, isProviderAvailable } from '@/lib/multi-provider-api';
 import type { ProviderFamily } from '@/lib/provider-selector';
+import { GodViewAgentChatSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
 /** POST /api/god-view/agent-chat — Follow-up conversation with a specific council agent. */
 export async function POST(request: NextRequest) {
   try {
-    const { agentId, messages, originalQuery, originalResponse } = await request.json();
-    if (!agentId || !messages?.length) {
-      return NextResponse.json({ error: 'agentId and messages required' }, { status: 400 });
+    const parsed = GodViewAgentChatSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { agentId, messages, originalQuery, originalResponse } = parsed.data;
 
     const agent = COUNCIL_AGENTS.find((a) => a.id === agentId);
     if (!agent) return NextResponse.json({ error: 'Unknown agent' }, { status: 404 });

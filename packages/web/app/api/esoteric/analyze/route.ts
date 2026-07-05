@@ -10,17 +10,19 @@ import {
 } from '@/lib/esoteric/cycle-engine';
 import { getPatterns } from '@/lib/esoteric/cross-civilizational';
 import { callProvider } from '@/lib/multi-provider-api';
+import { EsotericAnalyzeSchema } from '@/lib/route-schemas';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const query: string = body.query ?? '';
-    const topics: string[] = body.topics ?? [];
-    const mode: 'secular' | 'esoteric' = body.mode === 'esoteric' ? 'esoteric' : 'secular';
-
-    if (!query) {
-      return NextResponse.json({ error: 'query is required' }, { status: 400 });
+    const parsed = EsotericAnalyzeSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { query, topics } = parsed.data;
+    const mode: 'secular' | 'esoteric' = parsed.data.mode === 'esoteric' ? 'esoteric' : 'secular';
 
     // Relevance is now a HINT, not a gate.
     // User explicitly clicked ◇ MACRO — always attempt the analysis.

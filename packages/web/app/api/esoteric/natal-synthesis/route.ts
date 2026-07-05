@@ -2,16 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MODELS } from '@/lib/models';
 import { getCurrentPositions, getConvergence } from '@/lib/esoteric/cycle-engine';
 import { callProvider } from '@/lib/multi-provider-api';
+import { NatalSynthesisSchema } from '@/lib/route-schemas';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const chart = body.chart;
-    const mode: 'secular' | 'esoteric' = body.mode === 'esoteric' ? 'esoteric' : 'secular';
-
-    if (!chart?.northNode) {
-      return NextResponse.json({ error: 'chart with northNode is required' }, { status: 400 });
+    // ⚠ PII (birth-data chart): the 400 below emits flatten() messages only — never echoes values
+    const parsed = NatalSynthesisSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { chart } = parsed.data;
+    const mode: 'secular' | 'esoteric' = parsed.data.mode === 'esoteric' ? 'esoteric' : 'secular';
 
     const positions = getCurrentPositions();
     const convergence = getConvergence();

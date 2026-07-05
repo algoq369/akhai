@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { callProvider } from '@/lib/multi-provider-api';
+import { GodViewPredictSchema } from '@/lib/route-schemas';
 import {
   buildEntityPrompt,
   buildBranchPrompt,
@@ -31,16 +32,19 @@ const CREDIT_ERROR_MSG =
 
 export async function POST(request: NextRequest) {
   try {
-    const { seed, question, domain: rawDomain } = await request.json();
-
-    if (!seed || !question) {
-      return new Response(JSON.stringify({ error: 'seed and question are required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    const parsed = GodViewPredictSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      // raw Response to match this SSE route's style (it does not import NextResponse)
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: parsed.error.flatten() }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
     }
+    const { seed, question, domain: rawDomain } = parsed.data;
 
-    const domain = rawDomain === 'auto' ? detectDomain(seed, question) : rawDomain;
+    // omitted domain auto-detects like 'auto' (callers always send one; pre-schema an omitted
+    // value reached the prompts as the literal string "undefined")
+    const domain = rawDomain === 'auto' || rawDomain === undefined ? detectDomain(seed, question) : rawDomain;
     const startTime = Date.now();
 
     const stream = new ReadableStream({

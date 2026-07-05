@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { COUNCIL_AGENTS, type CouncilAgent } from '@/lib/god-view/agents';
+import { GodViewCouncilSchema } from '@/lib/route-schemas';
 import { callProvider } from '@/lib/multi-provider-api';
 import type { ProviderFamily } from '@/lib/provider-selector';
 
@@ -43,8 +44,14 @@ async function callAgent(agent: CouncilAgent, context: string) {
 /** POST /api/god-view/council — Fan out to 4 perspective agents + synthesizer. */
 export async function POST(request: NextRequest) {
   try {
-    const { query, response } = await request.json();
-    if (!query) return NextResponse.json({ error: 'query is required' }, { status: 400 });
+    const parsed = GodViewCouncilSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const { query, response } = parsed.data;
 
     const context = `Original query: ${query}\n\nAI Response: ${(response || '').slice(0, 4000)}`;
     const perspectiveAgents = COUNCIL_AGENTS.filter((a) => a.id !== 'synthesizer');

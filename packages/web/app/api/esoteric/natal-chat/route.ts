@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MODELS } from '@/lib/models';
 import { callProvider } from '@/lib/multi-provider-api';
+import { NatalChatSchema } from '@/lib/route-schemas';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const question: string = body.question ?? '';
-    const chart = body.chart;
-    const mode: 'secular' | 'esoteric' = body.mode === 'esoteric' ? 'esoteric' : 'secular';
-    const history: { role: string; content: string }[] = body.messages ?? [];
-
-    if (!question || !chart?.northNode) {
-      return NextResponse.json({ error: 'question and chart required' }, { status: 400 });
+    // ⚠ PII (birth-data chart): the 400 below emits flatten() messages only — never echoes values
+    const parsed = NatalChatSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { question, chart } = parsed.data;
+    const mode: 'secular' | 'esoteric' = parsed.data.mode === 'esoteric' ? 'esoteric' : 'secular';
+    const history = parsed.data.messages;
 
     const aspectList = (chart.aspects ?? [])
       .map(

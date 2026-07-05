@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromSession } from '@/lib/auth';
 import { generateSynopsis } from '@/lib/side-canal';
+import { SideCanalSynopsisSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,14 +15,14 @@ export async function POST(request: NextRequest) {
     const user = token ? getUserFromSession(token) : null;
     const userId = user?.id || null;
 
-    const { topicId, queryIds } = await request.json();
-
-    if (!topicId || !queryIds || !Array.isArray(queryIds)) {
+    const parsed = SideCanalSynopsisSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'topicId and queryIds (array) are required' },
+        { error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { topicId, queryIds } = parsed.data;
 
     // Generate synopsis for this topic
     const synopsis = await generateSynopsis(topicId, queryIds, userId);
