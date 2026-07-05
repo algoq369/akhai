@@ -1,19 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { callProvider } from '@/lib/multi-provider-api';
 import { fetchYouTubeVideo, formatYouTubeData } from '@/lib/tools/youtube-fetcher';
-
-export const WebBrowseSchema = z.object({
-  // schema-level SSRF floor: http(s) only, even though the handler also parses the URL
-  url: z
-    .string()
-    .url()
-    .max(2048)
-    .refine((u) => /^https?:\/\//i.test(u), 'http(s) only'),
-  query: z.string().max(4000).optional(),
-  // the handler's switch treated unknown types as 'webpage' — the enum makes that contract explicit
-  type: z.enum(['github', 'youtube', 'image', 'webpage']).optional(),
-});
+import { WebBrowseSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 

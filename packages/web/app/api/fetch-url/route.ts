@@ -11,20 +11,7 @@ import {
   type FetchedContent,
 } from '@/lib/url-content-fetcher';
 import { detectURLs, hasURLs } from '@/lib/url-detector';
-import { z } from 'zod';
-
-// schema-level SSRF floor: http(s) only, even though the fetcher also guards
-const HttpUrl = z
-  .string()
-  .url()
-  .max(2048)
-  .refine((u) => /^https?:\/\//i.test(u), 'http(s) only');
-
-export const FetchUrlSchema = z.object({
-  urls: z.union([HttpUrl, z.array(HttpUrl).max(20)]).optional(),
-  text: z.string().max(20000).optional(),
-  maxUrls: z.number().int().min(1).max(10).default(3),
-});
+import { FetchUrlSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 

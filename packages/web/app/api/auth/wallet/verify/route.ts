@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { authenticateWallet, generateWalletMessage } from '@/lib/auth';
-
-export const AuthWalletVerifySchema = z.object({
-  // EVM address: 0x + 40 hex chars (checksummed or lowercase)
-  address: z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'invalid wallet address'),
-  // 0x-hex floor. Standard ECDSA personal_sign is 0x+130 hex, but smart-account (EIP-1271)
-  // signatures run longer — and verifyWalletSignature is currently a placeholder, so this
-  // is a shape floor, not a cryptographic check.
-  signature: z.string().regex(/^0x[0-9a-fA-F]+$/, 'invalid signature').max(5000),
-  // the handler regenerates and compares the exact expected message (~150 chars)
-  message: z.string().min(1).max(500),
-});
+import { AuthWalletVerifySchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 

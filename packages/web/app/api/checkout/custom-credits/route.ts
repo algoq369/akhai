@@ -4,18 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { stripe } from '@/lib/stripe';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { getAnonymousDistinctId } from '@/lib/posthog-events';
-
-export const CheckoutCustomCreditsSchema = z.object({
-  // handler contract: $5–$10,000; fractional dollars are valid (UI parseFloat, Stripe gets
-  // Math.round(amount*100) cents) — int() would 400 a currently-valid $7.50 purchase
-  amount: z.number().min(5).max(10000),
-  // UI computes Math.floor(dollars/0.04*1000) — max legit is 250M at $10,000; 1e9 = absurdity guard
-  tokens: z.number().int().positive().max(1_000_000_000),
-});
+import { CheckoutCustomCreditsSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 

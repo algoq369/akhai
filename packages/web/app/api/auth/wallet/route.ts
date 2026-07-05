@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-
-export const AuthWalletSchema = z.object({
-  // EVM address: 0x + 40 hex chars (checksummed or lowercase)
-  address: z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'invalid wallet address'),
-});
+import { AuthWalletSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 

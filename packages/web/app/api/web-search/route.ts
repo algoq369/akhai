@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { webSearchCore } from '@/lib/web-search-core';
-
-export const WebSearchSchema = z.object({
-  // simple-query's auto-search forwards the full user query (its schema caps at 10000)
-  query: z.string().min(1).max(10000),
-  maxResults: z.number().int().min(1).max(20).default(5),
-});
+import { WebSearchSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 

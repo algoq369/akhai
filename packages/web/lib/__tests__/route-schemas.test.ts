@@ -4,14 +4,16 @@
  * tot-consensus INTERNAL caller contract (simple-query → tot-consensus).
  */
 import { describe, it, expect } from 'vitest';
-import { CheckoutCustomCreditsSchema } from '../../app/api/checkout/custom-credits/route';
-import { CheckoutSchema } from '../../app/api/checkout/route';
-import { FetchUrlSchema } from '../../app/api/fetch-url/route';
-import { WebBrowseSchema } from '../../app/api/web-browse/route';
-import { AuthEmailSchema } from '../../app/api/auth/email/route';
-import { AuthWalletVerifySchema } from '../../app/api/auth/wallet/verify/route';
-import { TotConsensusSchema } from '../../app/api/tot-consensus/route';
-import { TestKeySchema } from '../../app/api/test-key/route';
+import {
+  AuthEmailSchema,
+  AuthWalletVerifySchema,
+  CheckoutCustomCreditsSchema,
+  CheckoutSchema,
+  FetchUrlSchema,
+  TestKeySchema,
+  TotConsensusSchema,
+  WebBrowseSchema,
+} from '@/lib/route-schemas';
 
 describe('route schemas (E1 tranche 1)', () => {
   it('custom-credits rejects negative/zero/sub-minimum/absurd amounts, accepts valid ones', () => {

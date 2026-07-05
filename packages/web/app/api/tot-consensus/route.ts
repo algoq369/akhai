@@ -20,19 +20,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { log } from '@/lib/logger';
-
-// ⚠ INTERNAL CONTRACT: simple-query/route.ts calls this endpoint with the body
-// { query, conversationHistory } where both already passed simple-query's own schema
-// (query ≤10000; history is an UNBOUNDED array of {role, content} — no caps here, or a
-// long conversation would 400 the internal call and silently degrade ToT to single-model).
-export const TotConsensusSchema = z.object({
-  query: z.string().min(1).max(10000),
-  conversationHistory: z
-    .array(z.object({ role: z.string(), content: z.string() }))
-    .default([]),
-});
+// TotConsensusSchema encodes the simple-query→tot-consensus INTERNAL contract — see route-schemas.ts
+import { TotConsensusSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 

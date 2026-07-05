@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomInt } from 'node:crypto';
-import { z } from 'zod';
 import { getDatabase } from '@/lib/database';
 import { generateUUID } from '@/lib/uuid';
-
-export const AuthEmailSchema = z.object({
-  email: z.string().email().max(320),
-  action: z.enum(['send', 'verify']),
-  // 6-digit code; length-capped only — format wrongness surfaces as the handler's own
-  // 'Invalid or expired code' (behavior-preserving), presence is checked per-action below
-  code: z.string().min(1).max(10).optional(),
-});
+import { AuthEmailSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 

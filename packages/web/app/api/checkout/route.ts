@@ -4,23 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { stripe } from '@/lib/stripe';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { getAnonymousDistinctId } from '@/lib/posthog-events';
-
-export const CheckoutSchema = z.object({
-  priceId: z.string().min(1).max(200),
-  // passed straight through as the Stripe Checkout mode — only these two are valid here
-  mode: z.enum(['subscription', 'payment']),
-  planId: z.string().max(200).optional(),
-  userId: z.string().max(200).optional(),
-  // Stripe line-item quantity; the UI always sends 1 — 100 is a generous ceiling
-  quantity: z.number().int().min(1).max(100).default(1),
-  // analytics-only fields PricingCard sends alongside the checkout body
-  price: z.number().nonnegative().max(1_000_000).optional(),
-  tokens: z.number().nonnegative().max(1_000_000_000_000).optional(),
-});
+import { CheckoutSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
