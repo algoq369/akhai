@@ -497,7 +497,12 @@ export async function POST(request: NextRequest) {
         : undefined;
 
     try {
-      if (selectedMethod.id === 'react' && process.env.REACT_AGENT_LIVE === '1') {
+      // E5 FLIP (2026-07-05): the live agent is now the DEFAULT for react — proven over 5 weeks:
+      // real searches with per-step streaming (D4, user-verified), citations + Sources (E1.3),
+      // honest outage degradation (real Brave-429 test), full cost recording (COGS). Escape hatch:
+      // REACT_AGENT_LIVE=0 restores the knowledge-recall prompt instantly (PM2 env + restart).
+      // Search quota (Brave 2k/mo free) rides the Aug-8 hosting/SearXNG decision.
+      if (selectedMethod.id === 'react' && process.env.REACT_AGENT_LIVE !== '0') {
         // Live ReAct agent (S2.2) — feature-gated, default OFF. Flag-off keeps prod byte-identical.
         emitAndPersist(queryId, {
           id: `${queryId}-react-agent`,

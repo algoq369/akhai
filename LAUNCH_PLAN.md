@@ -69,7 +69,7 @@ adaptive thinking always-on via `effort` param, NO raw CoT (4.6 thinking_delta p
 - [ ] E2  Code health: console_log 323↓ · any_types 291↓ · split the 12 large files · Sentry hooks.
 - [ ] E3  E6.1: fold remaining sonnet/haiku model strings into MODELS constant.
 - [ ] E4  Full QA sweep: all methodologies + all routes, fixed eval set, green.
-- [ ] E5  Flag flips: REACT_AGENT_LIVE → default (after box or in-process grounding proven).
+- [x] E5  FLIPPED (2026-07-05): live agent is the DEFAULT for react — both states live-proven (no-flag → agent w/ 19-source answer + $0.044 COGS; =0 → knowledge-recall single-call, no Sources). Rollback: REACT_AGENT_LIVE=0 + restart. Auto→react exposure confirmed (fusion-scoring:176) — Brave 2k/mo quota rides the Aug-8 hosting/SearXNG decision.
 - [x] E7  CLOSED (98bc671+4580875): history gate · URL-outage belt (+case-insensitive early) · sideCanal+gnostic.progressState sanitized from cached payloads · pageContext OUT of the stable prefix → GAP-A RESURRECTED for browser traffic (proven: cR=1285 across differing contexts) + sha256 key partition. layersWeights closed earlier. Original scope: conversationHistory, pageContext, per-user
           sideCanal.suggestions embedded in cached payloads, layersWeights, URL-fetch-failure window.
 - [ ] E6  Hosting (WHEN DECIDED): provision, deploy, guard box → grounding upgrades heuristic→NLI.
