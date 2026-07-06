@@ -77,7 +77,7 @@ export const METHODOLOGY_REGISTRY: Record<CoreMethodology, MethodologyEntry> = {
       name: 'Self-Consistency',
       tier: 2,
       icon: '🧠',
-      description: 'Wang et al., ICLR 2023, samples multiple reasoning paths and takes majority vote',
+      description: 'Buffers key facts and constraints, builds a reasoning chain, and self-validates the answer against them for consistency',
       tokenMultiplier: 0.12,
       avgLatencyMs: 18000,
       costPer1K: 0.006,

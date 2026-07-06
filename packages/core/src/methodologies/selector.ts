@@ -288,7 +288,7 @@ export class MethodologySelector {
     // SC (Self-Consistency) Scoring
     // =======================
     // Best for: complex analysis, comparisons, planning
-    // SC samples multiple reasoning paths and takes majority vote
+    // SC buffers key facts, builds a reasoning chain, and self-validates against them
     if (analysis.queryType === 'analytical' || analysis.queryType === 'planning') {
       scores.sc += 0.8;
       reasons.sc.push('Complex analysis/planning (multi-path voting)');

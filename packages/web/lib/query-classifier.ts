@@ -252,7 +252,7 @@ Query: "${query}"
 Methodologies:
 - direct: Simple facts, quick answers, factual lookups (e.g., "what is X", "btc price")
 - cod: Step-by-step explanations, iterative reasoning with reflection (e.g., "explain how X works", "analyze Y")
-- sc: Self-Consistency, multiple reasoning paths with majority vote (e.g., "compare X and Y", "evaluate Z")
+- sc: Self-Consistency, buffers key facts and self-validates the answer against them (e.g., "compare X and Y", "evaluate Z")
 - react: Research, fact-finding with tools, multi-step investigation (e.g., "find latest research on X")
 - pas: Plan-and-Solve, decompose then execute step by step (e.g., "calculate X", "solve Y equation")
 - tot: Tree of Thoughts, multi-perspective consensus for complex judgments (e.g., "which is better X or Y", "should I do Z")
