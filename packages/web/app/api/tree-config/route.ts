@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/database';
+import { TreeConfigSaveSchema, TreeConfigPatchSchema } from '@/lib/route-schemas';
 import {
   getAllTreeConfigurations,
   getActiveTreeConfiguration,
@@ -58,23 +59,15 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const {
-      name,
-      description,
-      layerWeights,
-      antipatternSuppression,
-      pillarBalance,
-      processingMode,
-    } = body;
-
-    // Validate required fields
-    if (!name || !layerWeights) {
+    const parsed = TreeConfigSaveSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, layerWeights' },
+        { error: 'Invalid input', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { name, description, layerWeights, antipatternSuppression, pillarBalance, processingMode } =
+      parsed.data;
 
     // Get user from session token (optional)
     const token = request.cookies.get('session_token')?.value;
@@ -114,12 +107,14 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { configId, action, updates } = body;
-
-    if (!configId) {
-      return NextResponse.json({ error: 'Missing configId' }, { status: 400 });
+    const parsed = TreeConfigPatchSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { configId, action, updates } = parsed.data;
 
     // Get user from session token (optional)
     const token = request.cookies.get('session_token')?.value;

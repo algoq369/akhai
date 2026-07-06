@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
 import { randomBytes } from 'crypto';
+import { IdeaFactoryAgentSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const config = await request.json();
+    const parsed = IdeaFactoryAgentSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const config = parsed.data;
     const agentId = randomBytes(8).toString('hex');
 
     db.prepare(

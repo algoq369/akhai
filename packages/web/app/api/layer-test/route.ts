@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server';
 import { fuseIntelligence, generateEnhancedSystemPrompt } from '@/lib/intelligence-fusion';
 import { callProvider } from '@/lib/multi-provider-api';
 import { DEFAULT_INSTINCT_CONFIG } from '@/lib/instinct-mode';
+import { LayerTestSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,11 +35,14 @@ FORBIDDEN: "Great question!", "Let me explain", "I'd be happy to help", "It's im
 
 export async function POST(request: Request) {
   try {
-    const { query, configs } = await request.json();
-
-    if (!query || !configs || !Array.isArray(configs)) {
-      return NextResponse.json({ error: 'Missing query or configs array' }, { status: 400 });
+    const parsed = LayerTestSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { query, configs } = parsed.data;
 
     const results = [];
 

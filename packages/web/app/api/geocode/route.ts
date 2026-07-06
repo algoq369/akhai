@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { GeocodeSchema } from '@/lib/route-schemas';
 
 export async function POST(request: NextRequest) {
   try {
-    const { city } = await request.json();
-    if (!city || typeof city !== 'string') {
-      return NextResponse.json({ found: false });
+    const parsed = GeocodeSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { city } = parsed.data;
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`;
     const res = await fetch(url, { headers: { 'User-Agent': 'AkhAI/1.0 (akhai.app)' } });
     const data = await res.json();

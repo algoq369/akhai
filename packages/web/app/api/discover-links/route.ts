@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { DiscoverLinksSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -200,11 +201,14 @@ async function searchDuckDuckGo(query: string): Promise<SearchResult[]> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, topics, maxLinks = 6 } = await request.json();
-
-    if (!query || typeof query !== 'string') {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    const parsed = DiscoverLinksSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { query, topics, maxLinks } = parsed.data;
 
     console.log('[DiscoverLinks] Searching for:', {
       query: query.substring(0, 100),

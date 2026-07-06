@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromSession } from '@/lib/auth';
 import { getStageIds, setStageIds } from '@/lib/db/canvas-stage';
+import { CanvasStageSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,10 +23,14 @@ export async function POST(request: NextRequest) {
   const user = token ? getUserFromSession(token) : null;
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   try {
-    const body = await request.json();
-    const stageIds = Array.isArray(body.stageIds)
-      ? body.stageIds.filter((id: unknown): id is string => typeof id === 'string').slice(0, 5)
-      : [];
+    const parsed = CanvasStageSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const stageIds = parsed.data.stageIds.slice(0, 5);
     setStageIds(user.id, stageIds);
     return NextResponse.json({ stageIds, ok: true });
   } catch (error) {

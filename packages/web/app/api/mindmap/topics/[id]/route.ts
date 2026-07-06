@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
+import { MindmapTopicPatchSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const { id: topicId } = await params;
-    const updates = await request.json();
+    const parsed = MindmapTopicPatchSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const updates = parsed.data;
 
     // Verify topic belongs to user
     const topic = db

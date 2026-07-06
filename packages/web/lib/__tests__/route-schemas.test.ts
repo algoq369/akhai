@@ -10,8 +10,13 @@ import {
   CheckoutCustomCreditsSchema,
   CheckoutSchema,
   FetchUrlSchema,
+  GeocodeSchema,
   GodViewAgentChatSchema,
+  LayerTestSchema,
+  MindmapTopicPatchSchema,
   NatalChatSchema,
+  TreeConfigTestSchema,
+  XVideoAnalysisSchema,
   SettingsSchema,
   SideCanalSchema,
   SideCanalSynopsisSchema,
@@ -138,5 +143,47 @@ describe('route schemas (E1 tranche 1)', () => {
       GodViewAgentChatSchema.safeParse({ agentId: 'skeptic', messages: msgs(101) }).success
     ).toBe(false);
     expect(GodViewAgentChatSchema.safeParse({ agentId: 'skeptic', messages: [] }).success).toBe(false);
+  });
+
+  // ─────────────────────── tranche 3 (terminal) ───────────────────────
+
+  it('x-video rejects javascript: URLs (SSRF floor), accepts https tweet URLs', () => {
+    expect(XVideoAnalysisSchema.safeParse({ url: 'javascript:alert(1)', userId: 'u1' }).success).toBe(
+      false
+    );
+    expect(
+      XVideoAnalysisSchema.safeParse({ url: 'https://x.com/user/status/123', userId: 'u1' }).success
+    ).toBe(true);
+  });
+
+  it('layer-test caps configs at 20 (each entry ≈ one live LLM run)', () => {
+    const cfgs = (n: number) => Array.from({ length: n }, () => ({ weights: { 4: 0.9 } }));
+    expect(LayerTestSchema.safeParse({ query: 'q', configs: cfgs(1) }).success).toBe(true);
+    expect(LayerTestSchema.safeParse({ query: 'q', configs: cfgs(21) }).success).toBe(false);
+    expect(LayerTestSchema.safeParse({ query: 'q', configs: [] }).success).toBe(false);
+  });
+
+  it('tree-config/test rejects bogus processingMode and out-of-range weights', () => {
+    expect(
+      TreeConfigTestSchema.safeParse({ query: 'q', processingMode: 'bogus' }).success
+    ).toBe(false);
+    expect(TreeConfigTestSchema.safeParse({ query: 'q', weights: { 4: 1.5 } }).success).toBe(false);
+    const ok = TreeConfigTestSchema.safeParse({ query: 'q', weights: { 4: 0.9 } });
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.processingMode).toBe('weighted'); // handler default preserved
+  });
+
+  it('geocode rejects an empty city', () => {
+    expect(GeocodeSchema.safeParse({ city: '' }).success).toBe(false);
+    expect(GeocodeSchema.safeParse({ city: 'Reykjavik' }).success).toBe(true);
+  });
+
+  it('mindmap PATCH strips unknown fields (never reaches the SQL builder)', () => {
+    const parsed = MindmapTopicPatchSchema.safeParse({ pinned: true, evil_column: 'DROP TABLE' });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.pinned).toBe(true);
+      expect('evil_column' in parsed.data).toBe(false);
+    }
   });
 });

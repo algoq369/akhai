@@ -243,3 +243,132 @@ export const QueryAllSchema = z.object({
   // forwarded to /api/query per methodology (that route's own schema caps query at 10000)
   query: z.string().min(1).max(4000),
 });
+
+// ───────────────────────── tranche 3 (terminal) ─────────────────────────
+
+/** 11-layer weight map keyed by numeric layer id; handlers fill missing layers with 0.5 */
+const LayerWeightsSchema = z
+  .record(z.string().regex(/^\d+$/), z.number().min(0).max(1))
+  .refine((o) => Object.keys(o).length <= 32, 'too many layer keys');
+
+const PillarBalanceSchema = z.object({
+  left: z.number().min(0).max(1),
+  middle: z.number().min(0).max(1),
+  right: z.number().min(0).max(1),
+});
+
+const ProcessingModeSchema = z.enum(['weighted', 'parallel', 'adaptive']);
+
+export const CanvasStageSchema = z.object({
+  // every call site (page.tsx / canvas/page.tsx) sends a pre-cleaned string[]; the handler
+  // slices to 5 — the 100 cap here is transport sanity, not the business limit
+  stageIds: z.array(z.string().max(200)).max(100).default([]),
+});
+
+export const DiscoverLinksSchema = z.object({
+  query: z.string().min(1).max(4000),
+  topics: z.array(z.string().max(200)).max(50).optional(),
+  maxLinks: z.number().int().min(1).max(20).default(6),
+});
+
+export const GeocodeSchema = z.object({
+  city: z.string().min(1).max(200),
+});
+
+// idea-factory agent config: name/type land in columns; the WHOLE object persists as
+// config_json — passthrough keeps arbitrary agent settings, the refine bounds the DB row
+export const IdeaFactoryAgentSchema = z
+  .object({
+    name: z.string().max(200).optional(),
+    type: z.string().max(50).optional(),
+  })
+  .passthrough()
+  .refine((o) => JSON.stringify(o).length <= 50_000, 'config too large');
+
+export const ImplementationsCreateSchema = z.object({
+  featureName: z.string().min(1).max(300),
+  // Implementation['featureType'] in lib/implementation-tracker.ts
+  featureType: z.enum(['function', 'tool', 'app', 'methodology', 'enhancement', 'fix', 'integration']),
+  description: z.string().min(1).max(4000),
+  sessionId: z.string().max(200).optional(),
+  commandUsed: z.string().max(500).optional(),
+  filesCreated: z.array(z.string().max(500)).max(200).optional(),
+  filesModified: z.array(z.string().max(500)).max(200).optional(),
+  linesAdded: z.number().int().min(0).optional(),
+  linesModified: z.number().int().min(0).optional(),
+  // the handler only ACTS on 'validated'/'testing'; other values echo back — bounded string,
+  // not an enum, so unknown CLI callers keep today's behavior
+  status: z.string().max(50).optional(),
+  validationMessage: z.string().max(2000).optional(),
+});
+
+export const ImplementationsPatchSchema = z.object({
+  id: z.number().int().positive(), // Implementation.id is numeric (implementation-store types)
+  action: z.enum(['validate', 'reject', 'revert', 'testing', 'update-files']),
+  message: z.string().max(2000).optional(),
+  filesCreated: z.array(z.string().max(500)).max(200).optional(),
+  filesModified: z.array(z.string().max(500)).max(200).optional(),
+  linesAdded: z.number().int().min(0).optional(),
+  linesModified: z.number().int().min(0).optional(),
+});
+
+export const LayerTestSchema = z.object({
+  query: z.string().min(1).max(4000),
+  // ⚠ COST AMPLIFICATION: each config entry fans into one live LLM run — the 20 cap is a
+  // cost-safety bound, not a style choice
+  configs: z
+    .array(z.object({ name: z.string().max(200).optional(), weights: LayerWeightsSchema.optional() }))
+    .min(1)
+    .max(20),
+});
+
+// whole-body PATCH: only the fields the handler persists; unknown keys are stripped
+export const MindmapTopicPatchSchema = z.object({
+  color: z.string().max(50).optional(),
+  // the UI sends booleans; SQLite persists 0/1 — accept both, exactly what works today
+  pinned: z.union([z.boolean(), z.number().int().min(0).max(1)]).optional(),
+  archived: z.union([z.boolean(), z.number().int().min(0).max(1)]).optional(),
+  ai_instructions: z.string().max(4000).optional(),
+});
+
+export const TreeConfigSaveSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  layerWeights: LayerWeightsSchema,
+  antipatternSuppression: z
+    .record(z.string().regex(/^\d+$/), z.number().min(0).max(1))
+    .optional(),
+  pillarBalance: PillarBalanceSchema.optional(),
+  processingMode: ProcessingModeSchema.optional(),
+});
+
+export const TreeConfigPatchSchema = z.object({
+  configId: z.number().int().positive(), // TreeConfiguration.id is numeric
+  action: z.enum(['activate', 'update']),
+  updates: z
+    .object({
+      name: z.string().max(200).optional(),
+      description: z.string().max(2000).optional(),
+      layerWeights: LayerWeightsSchema.optional(),
+      antipatternSuppression: z
+        .record(z.string().regex(/^\d+$/), z.number().min(0).max(1))
+        .optional(),
+      pillarBalance: PillarBalanceSchema.optional(),
+      processingMode: ProcessingModeSchema.optional(),
+    })
+    .optional(),
+});
+
+export const TreeConfigTestSchema = z.object({
+  // ⚠ fans into the live pipeline (internal simple-query call) — bounds are cost-safety
+  query: z.string().min(1).max(4000),
+  weights: LayerWeightsSchema.optional(),
+  processingMode: ProcessingModeSchema.default('weighted'),
+});
+
+export const XVideoAnalysisSchema = z.object({
+  url: HttpUrl,
+  // optional here so the handler's 401 'Please log in' branch keeps its UX for missing ids
+  userId: z.string().max(200).optional(),
+  analysisPrompt: z.string().max(4000).optional(),
+});

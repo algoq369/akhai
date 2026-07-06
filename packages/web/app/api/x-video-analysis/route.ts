@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { extractTweetId, fetchXThread, extractVideos } from '@/lib/tools/x-thread-fetcher';
+import { XVideoAnalysisSchema } from '@/lib/route-schemas';
 import Anthropic from '@anthropic-ai/sdk';
 
 export const dynamic = 'force-dynamic';
@@ -36,13 +37,16 @@ async function fetchVideoPreview(url: string): Promise<string | null> {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { url, userId, analysisPrompt } = body;
-
-    if (!url) {
-      return NextResponse.json({ error: 'X/Twitter URL is required' }, { status: 400 });
+    const parsed = XVideoAnalysisSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { url, userId, analysisPrompt } = parsed.data;
 
+    // userId is schema-optional so this keeps its 401 'Please log in' UX
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required. Please log in.' }, { status: 401 });
     }

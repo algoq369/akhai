@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { tracker } from '@/lib/implementation-tracker';
+import { ImplementationsCreateSchema, ImplementationsPatchSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const parsed = ImplementationsCreateSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
     const {
       featureName,
       featureType,
@@ -43,11 +50,7 @@ export async function POST(request: NextRequest) {
       linesModified,
       status,
       validationMessage,
-    } = body;
-
-    if (!featureName || !featureType || !description) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
+    } = parsed.data;
 
     // Start the implementation record
     const id = await tracker.start({
@@ -89,12 +92,15 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { id, action, message, filesCreated, filesModified, linesAdded, linesModified } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: 'Missing implementation ID' }, { status: 400 });
+    const parsed = ImplementationsPatchSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { id, action, message, filesCreated, filesModified, linesAdded, linesModified } =
+      parsed.data;
 
     if (action === 'validate') {
       await tracker.validate(id, message || 'Validated');

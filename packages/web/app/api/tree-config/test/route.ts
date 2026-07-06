@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateAntipatternReport, formatJSONAnnotation } from '@/lib/antipattern';
 import type { TreeConfiguration } from '@/lib/tree-configuration';
+import { TreeConfigTestSchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,16 +17,18 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    const body = await request.json();
-    const { query, weights, processingMode = 'weighted' } = body;
-
-    if (!query) {
-      return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+    const parsed = TreeConfigTestSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { query, weights, processingMode } = parsed.data;
 
     // Build tree config override
     const treeConfigOverride: Partial<TreeConfiguration> = {
-      layer_weights: weights || {},
+      layer_weights: (weights ?? {}) as Record<number, number>,
       processing_mode: processingMode,
     };
 
