@@ -239,11 +239,6 @@ export const SettingsSchema = z.object({
   appearance: z.object({ compactView: z.boolean().optional() }).optional(),
 });
 
-export const QueryAllSchema = z.object({
-  // forwarded to /api/query per methodology (that route's own schema caps query at 10000)
-  query: z.string().min(1).max(4000),
-});
-
 // ───────────────────────── tranche 3 (terminal) ─────────────────────────
 
 /** 11-layer weight map keyed by numeric layer id; handlers fill missing layers with 0.5 */
