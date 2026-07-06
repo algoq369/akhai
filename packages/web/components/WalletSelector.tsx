@@ -2,18 +2,33 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
+// EIP-1193 injected wallet provider — untyped third-party injection; only the members this component reads
+interface Eip1193Provider {
+  request(args: { method: string; params?: unknown[] }): Promise<unknown>
+  isMetaMask?: boolean
+  isCoinbaseWallet?: boolean
+  isBraveWallet?: boolean
+  providers?: Eip1193Provider[]
+}
+
+// EIP-6963 announceProvider event detail — shape per the standard, as read below
+interface Eip6963ProviderDetail {
+  info?: { name: string; icon?: string; uuid: string; rdns?: string }
+  provider?: Eip1193Provider
+}
+
 interface DetectedWallet {
   name: string
   icon: string
   uuid: string
   rdns: string
-  provider: any
+  provider: Eip1193Provider
 }
 
 interface WalletModalProps {
   isOpen: boolean
   onClose: () => void
-  onConnected: (address: string, provider: any) => void
+  onConnected: (address: string, provider: Eip1193Provider) => void
 }
 
 // Known wallet metadata for fallback icons
@@ -33,8 +48,8 @@ export default function WalletSelector({ isOpen, onClose, onConnected }: WalletM
     if (!isOpen) return
     const detected: DetectedWallet[] = []
 
-    const handler = (event: any) => {
-      const { info, provider } = event.detail || {}
+    const handler = (event: Event) => {
+      const { info, provider } = (event as CustomEvent<Eip6963ProviderDetail>).detail || {}
       if (info && provider) {
         detected.push({
           name: info.name,
@@ -52,11 +67,11 @@ export default function WalletSelector({ isOpen, onClose, onConnected }: WalletM
 
     // Fallback: if no EIP-6963 wallets detected after 500ms, check window.ethereum
     const fallbackTimer = setTimeout(() => {
-      if (detected.length === 0 && (window as any).ethereum) {
-        const eth = (window as any).ethereum
+      const eth = (window as Window & { ethereum?: Eip1193Provider }).ethereum
+      if (detected.length === 0 && eth) {
         // Check for multiple providers (MetaMask + others)
         if (eth.providers && Array.isArray(eth.providers)) {
-          eth.providers.forEach((p: any, i: number) => {
+          eth.providers.forEach((p, i) => {
             detected.push({
               name: p.isMetaMask ? 'MetaMask' : p.isCoinbaseWallet ? 'Coinbase Wallet' : `Wallet ${i + 1}`,
               icon: p.isMetaMask ? (WALLET_ICONS.metamask || '') : p.isCoinbaseWallet ? (WALLET_ICONS.coinbase || '') : '',
@@ -88,13 +103,16 @@ export default function WalletSelector({ isOpen, onClose, onConnected }: WalletM
     setConnecting(wallet.uuid)
     setError('')
     try {
-      const accounts = await wallet.provider.request({ method: 'eth_requestAccounts' })
+      // eth_requestAccounts returns an array of hex address strings per EIP-1193
+      const accounts = (await wallet.provider.request({ method: 'eth_requestAccounts' })) as string[]
       const address = accounts[0]
       if (!address) throw new Error('No address returned')
       onConnected(address, wallet.provider)
-    } catch (err: any) {
-      if (!err?.message?.includes('rejected')) {
-        setError(err?.message || 'Connection failed')
+    } catch (err) {
+      // wallet errors are plain objects with a message field, not always Error instances
+      const message = (err as { message?: string } | null | undefined)?.message
+      if (!message?.includes('rejected')) {
+        setError(message || 'Connection failed')
       }
     } finally {
       setConnecting(null)

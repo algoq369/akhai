@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { ChartData, DiagramData } from './CanvasHelpers';
 
 const TOPIC_COLORS = [
   '#94a3b8',
@@ -19,7 +20,7 @@ const TOPIC_COLORS = [
   '#27272a',
 ];
 
-function DiagramRenderer({ data }: { data: any }) {
+function DiagramRenderer({ data }: { data?: DiagramData }) {
   if (!data?.nodes)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
   const cx = 150,
@@ -30,7 +31,7 @@ function DiagramRenderer({ data }: { data: any }) {
   const children = allNodes.slice(1);
   const nodePos: Record<string, { x: number; y: number }> = {};
   if (central) nodePos[central.id] = { x: cx, y: cy };
-  children.forEach((n: any, i: number) => {
+  children.forEach((n, i) => {
     const angle = (i / Math.max(children.length, 1)) * Math.PI * 2 - Math.PI / 2;
     nodePos[n.id] = { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
   });
@@ -57,7 +58,7 @@ function DiagramRenderer({ data }: { data: any }) {
             <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.12" />
           </filter>
         </defs>
-        {(data.edges || []).map((e: any, i: number) => {
+        {(data.edges || []).map((e, i) => {
           const f = nodePos[e.from],
             t = nodePos[e.to];
           if (!f || !t) return null;
@@ -65,7 +66,7 @@ function DiagramRenderer({ data }: { data: any }) {
             my = (f.y + t.y) / 2;
           const cpx = mx + (cy - my) * 0.3,
             cpy = my + (mx - cx) * 0.3;
-          const tNode = allNodes.find((n: any) => n.id === e.to);
+          const tNode = allNodes.find((n) => n.id === e.to);
           const edgeColor = tNode?.color || '#cbd5e1';
           return (
             <path
@@ -116,7 +117,7 @@ function DiagramRenderer({ data }: { data: any }) {
           </g>
         )}
         {/* Child nodes */}
-        {children.map((n: any) => {
+        {children.map((n) => {
           const pos = nodePos[n.id];
           const c = n.color || '#6366f1';
           return (
@@ -151,7 +152,7 @@ function DiagramRenderer({ data }: { data: any }) {
   );
 }
 
-function ChartRenderer({ data }: { data: any }) {
+function ChartRenderer({ data }: { data?: ChartData }) {
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -160,7 +161,7 @@ function ChartRenderer({ data }: { data: any }) {
   }, []);
   if (!data?.data)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
-  const maxVal = Math.max(...data.data.map((d: any) => d.value || 0), 1);
+  const maxVal = Math.max(...data.data.map((d) => d.value || 0), 1);
   const ticks = [0, 25, 50, 75, 100];
   const chartH = 120,
     chartL = 28,
@@ -237,7 +238,7 @@ function ChartRenderer({ data }: { data: any }) {
             strokeWidth={0.5}
           />
           {/* Bars */}
-          {data.data.map((d: any, i: number) => {
+          {data.data.map((d, i) => {
             const barColor = d.color || TOPIC_COLORS[i % TOPIC_COLORS.length];
             const pct = Math.max(0.02, (d.value || 0) / maxVal);
             const barH = mounted ? pct * chartH : 0;

@@ -25,6 +25,8 @@ export interface CanvasNode {
   y: number;
   w: number;
   h: number;
+  // Heterogeneous per-node payload (query/topic/note/config/viz shapes) read untyped
+  // across CanvasNodeContent/CanvasWorkspace; a discriminated union cascades too widely.
   data: any;
 }
 
@@ -66,6 +68,64 @@ export const TOPIC_COLORS = [
 ];
 
 export type VizType = 'diagram' | 'chart' | 'table' | 'timeline' | 'radar';
+
+// === VIZ DATA SHAPES ===
+// Honest structural contracts for the payloads rendered by CanvasRenderers /
+// CanvasChartDiagramRenderers. Produced by the /api/canvas-viz LLM endpoint
+// (shape-checked by isValidVizShape) or by the local fallback generators below.
+// Fields the renderers defend against with `?.` / `||` are optional.
+export interface DiagramNode {
+  id: string;
+  label?: string;
+  color?: string;
+}
+export interface DiagramEdge {
+  from: string;
+  to: string;
+  label?: string;
+}
+export interface DiagramData {
+  title?: string;
+  type?: string;
+  nodes: DiagramNode[];
+  edges?: DiagramEdge[];
+}
+export interface ChartDatum {
+  label?: string;
+  value?: number;
+  color?: string;
+}
+export interface ChartData {
+  title?: string;
+  xLabel?: string;
+  yLabel?: string;
+  data: ChartDatum[];
+}
+export type TableRow = Array<string | number> | Record<string, string | number>;
+export interface TableData {
+  title?: string;
+  columns?: string[];
+  rows: TableRow[];
+}
+export interface TimelineEvent {
+  label?: string;
+  description?: string;
+  color?: string;
+}
+export interface TimelineData {
+  title?: string;
+  events: TimelineEvent[];
+}
+export interface RadarAxis {
+  label?: string;
+  value: number;
+}
+export interface RadarData {
+  title?: string;
+  color?: string;
+  axes: RadarAxis[];
+}
+export type VizData = DiagramData | ChartData | TableData | TimelineData | RadarData;
 
 export const VIZ_TYPES: VizType[] = ['diagram', 'chart', 'table', 'timeline', 'radar'];
 export const VIZ_COLORS: Record<VizType, string> = {
@@ -581,7 +641,7 @@ export function extractTopics(text: string): string[] {
 }
 
 // === LOCAL FALLBACK GENERATORS ===
-function generateLocalDiagram(query: string, response: string): any {
+function generateLocalDiagram(query: string, response: string): DiagramData {
   const topics = extractTopics(response);
   if (topics.length === 0) topics.push(query.split(' ').slice(0, 3).join(' '));
   const nodes = topics.map((t, i) => ({
@@ -595,7 +655,7 @@ function generateLocalDiagram(query: string, response: string): any {
   return { title: query.slice(0, 60), type: 'mindmap', nodes: [central, ...nodes], edges };
 }
 
-function generateLocalChart(query: string, response: string): any {
+function generateLocalChart(query: string, response: string): ChartData {
   // Extract numbers from response, or estimate topic relevance
   const numMatches = response.match(/\d+(\.\d+)?%?/g)?.slice(0, 8) || [];
   const topics = extractTopics(response).slice(0, 6);
@@ -610,7 +670,7 @@ function generateLocalChart(query: string, response: string): any {
   return { title: query.slice(0, 60), xLabel: 'Topics', yLabel: 'Relevance', data };
 }
 
-function generateLocalTable(query: string, response: string): any {
+function generateLocalTable(query: string, response: string): TableData {
   const topics = extractTopics(response).slice(0, 5);
   if (topics.length === 0) topics.push('Item 1', 'Item 2', 'Item 3');
   const rows = topics.map((t, i) => ({
@@ -621,7 +681,7 @@ function generateLocalTable(query: string, response: string): any {
   return { title: query.slice(0, 60), columns: ['Entity', 'Relevance', 'Category'], rows };
 }
 
-function generateLocalTimeline(query: string, response: string): any {
+function generateLocalTimeline(query: string, response: string): TimelineData {
   const topics = extractTopics(response).slice(0, 6);
   if (topics.length === 0) topics.push('Start', 'Middle', 'End');
   const events = topics.map((t, i) => ({
@@ -632,7 +692,7 @@ function generateLocalTimeline(query: string, response: string): any {
   return { title: query.slice(0, 60), events };
 }
 
-function generateLocalRadar(query: string, response: string): any {
+function generateLocalRadar(query: string, response: string): RadarData {
   const topics = extractTopics(response).slice(0, 6);
   if (topics.length < 3) topics.push('Dimension A', 'Dimension B', 'Dimension C');
   const axes = topics.map((t) => ({ label: t, value: Math.round(30 + Math.random() * 70) }));
@@ -645,7 +705,17 @@ function generateLocalRadar(query: string, response: string): any {
  * Shape-check viz data before returning. Prevents undefined-field propagation
  * (e.g., <circle r={undefined}>) when the API succeeds-with-garbage.
  */
-function isValidVizShape(viz: any, type: VizType): boolean {
+/** Loose view over API-returned viz JSON — only the fields the shape check inspects. */
+interface VizShapeCandidate {
+  nodes?: unknown;
+  data?: unknown;
+  columns?: unknown;
+  rows?: unknown;
+  events?: unknown;
+  axes?: unknown;
+}
+
+function isValidVizShape(viz: VizShapeCandidate | null | undefined, type: VizType): boolean {
   if (!viz || typeof viz !== 'object') return false;
   switch (type) {
     case 'diagram':
@@ -667,7 +737,7 @@ export async function generateVisualization(
   query: string,
   response: string,
   type: VizType
-): Promise<any> {
+): Promise<VizData> {
   try {
     const res = await fetch('/api/canvas-viz', {
       method: 'POST',
@@ -684,7 +754,7 @@ export async function generateVisualization(
     console.warn('[Viz] API unavailable, using local fallback:', e);
   }
   // Local fallback — always produce something with a valid shape.
-  const fallbacks: Record<VizType, () => any> = {
+  const fallbacks: Record<VizType, () => VizData> = {
     diagram: () => generateLocalDiagram(query, response),
     chart: () => generateLocalChart(query, response),
     table: () => generateLocalTable(query, response),

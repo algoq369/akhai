@@ -2,10 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { BoardNodeType, TOPIC_COLORS } from './VisionBoardTypes';
+import {
+  ChartViz,
+  DiagramViz,
+  RadarViz,
+  TableViz,
+  TimelineViz,
+  VizData,
+} from './VisionBoardVizHelpers';
 
 // ── Mini Renderers (from CanvasWorkspace) ──────────────────────────────────────
 
-export function DiagramRenderer({ data }: { data: any }) {
+export function DiagramRenderer({ data }: { data: DiagramViz }) {
   if (!data?.nodes)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
   const cx = 200,
@@ -16,7 +24,7 @@ export function DiagramRenderer({ data }: { data: any }) {
   const children = allNodes.slice(1);
   const nodePos: Record<string, { x: number; y: number }> = {};
   if (central) nodePos[central.id] = { x: cx, y: cy };
-  children.forEach((n: any, i: number) => {
+  children.forEach((n, i) => {
     const angle = (i / Math.max(children.length, 1)) * Math.PI * 2 - Math.PI / 2;
     nodePos[n.id] = { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
   });
@@ -38,7 +46,7 @@ export function DiagramRenderer({ data }: { data: any }) {
         {data.title || 'Diagram'}
       </div>
       <svg width="100%" height="100%" viewBox="0 0 400 300" style={{ flex: 1 }}>
-        {(data.edges || []).map((e: any, i: number) => {
+        {(data.edges || []).map((e, i) => {
           const f = nodePos[e.from],
             t = nodePos[e.to];
           if (!f || !t) return null;
@@ -46,7 +54,7 @@ export function DiagramRenderer({ data }: { data: any }) {
             my = (f.y + t.y) / 2;
           const cpx = mx + (cy - my) * 0.3,
             cpy = my + (mx - cx) * 0.3;
-          const tNode = allNodes.find((n: any) => n.id === e.to);
+          const tNode = allNodes.find((n) => n.id === e.to);
           return (
             <path
               key={i}
@@ -82,7 +90,7 @@ export function DiagramRenderer({ data }: { data: any }) {
             </text>
           </g>
         )}
-        {children.map((n: any) => {
+        {children.map((n) => {
           const pos = nodePos[n.id];
           const c = n.color || '#6366f1';
           return (
@@ -116,7 +124,7 @@ export function DiagramRenderer({ data }: { data: any }) {
   );
 }
 
-export function ChartRenderer({ data }: { data: any }) {
+export function ChartRenderer({ data }: { data: ChartViz }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
@@ -124,7 +132,7 @@ export function ChartRenderer({ data }: { data: any }) {
   }, []);
   if (!data?.data)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
-  const maxVal = Math.max(...data.data.map((d: any) => d.value || 0), 1);
+  const maxVal = Math.max(...data.data.map((d) => d.value || 0), 1);
   const chartH = 120,
     chartL = 28,
     chartR = 8,
@@ -158,7 +166,7 @@ export function ChartRenderer({ data }: { data: any }) {
             stroke="#e2e8f0"
             strokeWidth={0.5}
           />
-          {data.data.map((d: any, i: number) => {
+          {data.data.map((d, i) => {
             const barColor = d.color || TOPIC_COLORS[i % TOPIC_COLORS.length];
             const pct = Math.max(0.02, (d.value || 0) / maxVal);
             const barH = mounted ? pct * chartH : 0;
@@ -208,7 +216,7 @@ export function ChartRenderer({ data }: { data: any }) {
   );
 }
 
-export function TableRenderer({ data }: { data: any }) {
+export function TableRenderer({ data }: { data: TableViz }) {
   if (!data?.rows)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
   const cols = data.columns || Object.keys(data.rows[0] || {});
@@ -256,13 +264,13 @@ export function TableRenderer({ data }: { data: any }) {
             </tr>
           </thead>
           <tbody>
-            {data.rows.map((row: any, ri: number) => {
+            {data.rows.map((row, ri) => {
               const vals = Array.isArray(row)
                 ? row
                 : cols.map((c: string) => row[c.toLowerCase()] ?? row[c] ?? '');
               return (
                 <tr key={ri} style={{ background: ri % 2 === 0 ? '#f8fafc' : 'white' }}>
-                  {vals.map((v: any, ci: number) => (
+                  {vals.map((v, ci) => (
                     <td
                       key={ci}
                       style={{
@@ -284,7 +292,7 @@ export function TableRenderer({ data }: { data: any }) {
   );
 }
 
-export function TimelineVizRenderer({ data }: { data: any }) {
+export function TimelineVizRenderer({ data }: { data: TimelineViz }) {
   if (!data?.events)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
   const events = data.events.slice(0, 8);
@@ -310,7 +318,7 @@ export function TimelineVizRenderer({ data }: { data: any }) {
           stroke="#e2e8f0"
           strokeWidth={2}
         />
-        {events.map((ev: any, i: number) => {
+        {events.map((ev, i) => {
           const x = 20 + i * spacing + spacing / 2;
           const color = ev.color || TOPIC_COLORS[i % TOPIC_COLORS.length];
           const above = i % 2 === 0;
@@ -336,7 +344,7 @@ export function TimelineVizRenderer({ data }: { data: any }) {
   );
 }
 
-export function RadarRenderer({ data }: { data: any }) {
+export function RadarRenderer({ data }: { data: RadarViz }) {
   if (!data?.axes)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
   const axes = data.axes.slice(0, 8);
@@ -345,12 +353,12 @@ export function RadarRenderer({ data }: { data: any }) {
     maxR = 90;
   const rings = [25, 50, 75, 100];
   const angleStep = (Math.PI * 2) / axes.length;
-  const dataPoints = axes.map((a: any, i: number) => {
+  const dataPoints = axes.map((a, i) => {
     const angle = i * angleStep - Math.PI / 2;
     const r = (Math.min(a.value, 100) / 100) * maxR;
     return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
   });
-  const polygon = dataPoints.map((p: any) => `${p.x},${p.y}`).join(' ');
+  const polygon = dataPoints.map((p) => `${p.x},${p.y}`).join(' ');
   const c = data.color || '#6366f1';
   return (
     <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -375,7 +383,7 @@ export function RadarRenderer({ data }: { data: any }) {
             strokeWidth={0.5}
           />
         ))}
-        {axes.map((a: any, i: number) => {
+        {axes.map((a, i) => {
           const angle = i * angleStep - Math.PI / 2;
           const lx = cx + Math.cos(angle) * (maxR + 16),
             ly = cy + Math.sin(angle) * (maxR + 16);
@@ -403,7 +411,7 @@ export function RadarRenderer({ data }: { data: any }) {
           );
         })}
         <polygon points={polygon} fill={`${c}20`} stroke={c} strokeWidth={2} />
-        {dataPoints.map((p: any, i: number) => (
+        {dataPoints.map((p, i) => (
           <circle key={i} cx={p.x} cy={p.y} r={3} fill={c} stroke="white" strokeWidth={1} />
         ))}
       </svg>
@@ -411,7 +419,7 @@ export function RadarRenderer({ data }: { data: any }) {
   );
 }
 
-export const VIZ_RENDERERS: Partial<Record<BoardNodeType, React.FC<{ data: any }>>> = {
+export const VIZ_RENDERERS: Partial<Record<BoardNodeType, React.FC<{ data: VizData }>>> = {
   diagram: DiagramRenderer,
   chart: ChartRenderer,
   table: TableRenderer,

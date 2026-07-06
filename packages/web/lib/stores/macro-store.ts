@@ -1,15 +1,17 @@
 import { create } from 'zustand';
+import type { FrameworkPositions, CrossCivilizationalInsight } from '@/lib/esoteric/cycle-engine';
+import type { ConvergenceData, DalioNation, BarbaultYear, BarbaultData } from '@/lib/esoteric/types';
 
 export interface MacroResult {
   queryId: string;
   relevant: boolean;
   strongRelevance?: boolean;
-  positions?: any;
-  convergence?: any;
+  positions?: FrameworkPositions;
+  convergence?: ConvergenceData;
   synthesis?: string;
-  crossCiv?: any[];
-  powerIndex?: any[];
-  chart?: any;
+  crossCiv?: CrossCivilizationalInsight[];
+  powerIndex?: DalioNation[];
+  chart?: { years: BarbaultYear[]; pairCycles: BarbaultData['pairCycles'] };
   cost?: number;
   error?: string;
 }

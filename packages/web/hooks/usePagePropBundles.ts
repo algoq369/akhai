@@ -1,4 +1,14 @@
 import type { Message } from '@/lib/chat-store';
+import type { ComponentProps } from 'react';
+import type ChatMessages from '@/components/sections/ChatMessages';
+import type InputSection from '@/components/home/InputSection';
+import type Overlays from '@/components/home/Overlays';
+import type { useHomePageHandlers } from './useHomePageHandlers';
+
+// Prop types of the consumer components — the bundles below must satisfy these.
+type CMProps = ComponentProps<typeof ChatMessages>;
+type ISProps = ComponentProps<typeof InputSection>;
+type OVProps = ComponentProps<typeof Overlays>;
 
 /**
  * Constructs prop bundles for section components to reduce prop drilling in page.tsx.
@@ -10,78 +20,78 @@ export function buildPagePropBundles(opts: {
   methodology: string;
   query: string;
   attachedFiles: File[];
-  setAttachedFiles: any;
+  setAttachedFiles: ISProps['setAttachedFiles'];
   // Viz
-  vizMode: any;
-  setVizMode: any;
-  globalVizMode: any;
-  setGlobalVizMode: any;
-  depthConfig: any;
-  setDepthConfig: any;
-  messageAnnotations: any;
-  messageCognitiveSignatures: any;
+  vizMode: CMProps['vizMode'];
+  setVizMode: CMProps['setVizMode'];
+  globalVizMode: CMProps['globalVizMode'];
+  setGlobalVizMode: ISProps['setGlobalVizMode'];
+  depthConfig: CMProps['depthConfig'];
+  setDepthConfig: CMProps['setDepthConfig'];
+  messageAnnotations: CMProps['messageAnnotations'];
+  messageCognitiveSignatures: CMProps['messageCognitiveSignatures'];
   messageRawThinking?: Record<string, string>;
-  mindmapVisibility: any;
-  setMindmapVisibility: any;
-  gnosticVisibility: any;
-  setGnosticVisibility: any;
+  mindmapVisibility: CMProps['mindmapVisibility'];
+  setMindmapVisibility: CMProps['setMindmapVisibility'];
+  gnosticVisibility: CMProps['gnosticVisibility'];
+  setGnosticVisibility: CMProps['setGnosticVisibility'];
   // Pipeline
   pipelineEnabled: boolean;
-  setPipelineEnabled: any;
+  setPipelineEnabled: ISProps['setPipelineEnabled'];
   hiddenPipelines: Set<string>;
-  toggleMsgPipeline: any;
+  toggleMsgPipeline: CMProps['toggleMsgPipeline'];
   // Guard
   loadingSuggestions: string | null;
-  guardSuggestions: any;
+  guardSuggestions: CMProps['guardSuggestions'];
   // Refs
-  messagesEndRef: any;
-  inputRef: any;
-  fileInputRef: any;
+  messagesEndRef: CMProps['messagesEndRef'];
+  inputRef: ISProps['inputRef'];
+  fileInputRef: ISProps['fileInputRef'];
   // Setters
-  setQuery: any;
-  setShowMindMap: any;
-  setDeepDiveQuery: any;
-  setLegendMode: any;
-  setShowAuthModal: any;
-  setShowTopicsPanel: any;
-  setMindMapInitialView: any;
-  setShowLayerDashboard: any;
+  setQuery: CMProps['setQuery'];
+  setShowMindMap: CMProps['setShowMindMap'];
+  setDeepDiveQuery: CMProps['setDeepDiveQuery'];
+  setLegendMode: (enabled: boolean) => void;
+  setShowAuthModal: (show: boolean) => void;
+  setShowTopicsPanel: OVProps['setShowTopicsPanel'];
+  setMindMapInitialView: (view: OVProps['mindMapInitialView']) => void;
+  setShowLayerDashboard: ISProps['setShowLayerDashboard'];
   // UI state
   isExpanded: boolean;
   isLoading: boolean;
   isTransitioning: boolean;
   darkMode: boolean;
   legendMode: boolean;
-  user: any;
+  user: ISProps['user'];
   selectedModel: string;
-  setSelectedModel: any;
+  setSelectedModel: ISProps['setSelectedModel'];
   showLayerDashboard: boolean;
   instinctModeEnabled: boolean;
-  setInstinctModeEnabled: any;
+  setInstinctModeEnabled: ISProps['setInstinctModeEnabled'];
   suggestionsEnabled: boolean;
-  setSuggestionsEnabled: any;
+  setSuggestionsEnabled: ISProps['setSuggestionsEnabled'];
   auditEnabled: boolean;
-  setAuditEnabled: any;
+  setAuditEnabled: ISProps['setAuditEnabled'];
   mindmapConnectorEnabled: boolean;
-  setMindmapConnectorEnabled: any;
+  setMindmapConnectorEnabled: ISProps['setMindmapConnectorEnabled'];
   sideCanalEnabled: boolean;
-  setSideCanalEnabled: any;
+  setSideCanalEnabled: ISProps['setSideCanalEnabled'];
   // Overlays
   showTopicsPanel: boolean;
   showMindMap: boolean;
-  mindMapInitialView: any;
+  mindMapInitialView: OVProps['mindMapInitialView'];
   showAuthModal: boolean;
-  topicSuggestions: any;
-  removeSuggestion: any;
+  topicSuggestions: OVProps['topicSuggestions'];
+  removeSuggestion: OVProps['onRemoveSuggestion'];
   showMethodologyPrompt: boolean;
   historyPanelOpen: boolean;
-  setHistoryPanelOpen: any;
-  loadConversation: any;
-  checkSession: any;
+  setHistoryPanelOpen: OVProps['setHistoryPanelOpen'];
+  loadConversation: OVProps['loadConversation'];
+  checkSession: () => Promise<void>;
   // Chat ID
   activeChatId: string | null;
   // Handlers
-  handlers: any;
+  handlers: ReturnType<typeof useHomePageHandlers>;
 }) {
   const s = opts;
   const h = opts.handlers;
@@ -188,7 +198,7 @@ export function buildPagePropBundles(opts: {
     },
     topicSuggestions: s.topicSuggestions,
     onRemoveSuggestion: s.removeSuggestion,
-    onSuggestionClick: (suggestion: any) => {
+    onSuggestionClick: (suggestion: OVProps['topicSuggestions'][number]) => {
       s.setQuery(suggestion.topicName + ' ');
       if (s.inputRef.current) s.inputRef.current.focus();
     },

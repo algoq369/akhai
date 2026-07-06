@@ -8,6 +8,10 @@ import ConversationConsole from '@/components/ConversationConsole'
 import LiveRefinementCanal from '@/components/LiveRefinementCanal'
 import ChatDashboard from '@/components/ChatDashboard'
 import { Message } from '@/lib/chat-store'
+import type { User } from '@/lib/db/auth'
+
+/** Shape returned by GET /api/auth/session (subset of the DB User row). */
+export type SessionUser = Pick<User, 'id' | 'username' | 'email' | 'avatar_url' | 'auth_provider'>
 
 interface InputSectionProps {
   // Core state
@@ -48,7 +52,7 @@ interface InputSectionProps {
   globalVizMode: 'off' | 'synthesis' | 'insight'
   setGlobalVizMode: (v: 'off' | 'synthesis' | 'insight') => void
   // Dashboard
-  user: any
+  user: SessionUser | null
   legendMode: boolean
   darkMode: boolean
   onMethodologySwitch: (newMethodology: string, option: 'same' | 'side' | 'new') => void

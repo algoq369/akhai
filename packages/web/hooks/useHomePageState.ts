@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Message } from '@/lib/chat-store';
 import type { SupportedLanguage } from '@/components/LanguageSelector';
+import type { SessionUser } from '@/components/home/InputSection';
 import { useHomePageDerived } from './useHomePageDerived';
 import { useHomePageHandlers } from './useHomePageHandlers';
 import { useHomePageEffects } from './useHomePageEffects';
@@ -35,7 +36,7 @@ export function useHomePageState() {
   >({});
 
   // ─── Auth state ──────────────────────────────────────────
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // ─── MindMap / Dashboard ─────────────────────────────────

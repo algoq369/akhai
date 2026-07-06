@@ -132,8 +132,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       content: string;
       timestamp: number;
       methodology?: string;
-      gnostic?: any;
-      pipelineEvents?: any[];
+      gnostic?: unknown;
+      pipelineEvents?: unknown[];
     }> = [];
 
     sessionQueries.forEach((q) => {
@@ -158,12 +158,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
 
         // Fetch pipeline events for this query
-        let pipelineEvents: any[] = [];
+        let pipelineEvents: unknown[] = [];
         try {
           const rawEvents = getEvents(q.id);
           pipelineEvents = rawEvents
-            .filter((ev: any) => ev.type.startsWith('pipeline:'))
-            .map((ev: any) => {
+            .filter((ev) => ev.type.startsWith('pipeline:'))
+            .map((ev) => {
               try {
                 return JSON.parse(ev.data);
               } catch {

@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MODELS } from '@/lib/models';
 import { z } from 'zod';
-import { callProvider } from '@/lib/multi-provider-api';
+import { callProvider, type CompletionRequest } from '@/lib/multi-provider-api';
 import { recordCall } from '@/lib/cogs-scorecard';
 import { getRecentQueries } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
@@ -31,7 +31,7 @@ const ALT_FREE_MODELS = [
   'nvidia/nemotron-3-nano-30b-a3b:free',
   'openai/gpt-oss-20b:free',
 ];
-async function callOpenRouterAlt(request: any) {
+async function callOpenRouterAlt(request: CompletionRequest) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('No OpenRouter key');
   for (const model of ALT_FREE_MODELS) {
@@ -47,7 +47,7 @@ async function callOpenRouterAlt(request: any) {
         },
         body: JSON.stringify({
           model,
-          messages: request.messages.map((m: any) => ({ role: m.role, content: m.content })),
+          messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
           max_tokens: request.maxTokens || 500,
           temperature: request.temperature ?? 0.7,
         }),
@@ -122,7 +122,9 @@ export async function POST(request: NextRequest) {
 
         if (recentQueries && recentQueries.length > 0) {
           conversationContext = '\n\nRecent Conversation History (last 3 exchanges):\n';
-          recentQueries.reverse().forEach((q: any, i: number) => {
+          // NOTE: getRecentQueries' SELECT does not include a `response` column, so
+          // `q.response` is undefined at runtime — the shape below is what this code reads.
+          recentQueries.reverse().forEach((q: { query: string; flow: string; response?: string }, i: number) => {
             const responsePreview = q.response ? q.response.substring(0, 300) : 'No response';
             conversationContext += `\n[${i + 1}] User: ${q.query}\nAkhAI (${q.flow}): ${responsePreview}...\n`;
           });
@@ -157,14 +159,20 @@ export async function POST(request: NextRequest) {
     let response;
     try {
       response = await callProvider('anthropic', providerRequest);
-    } catch (err: any) {
+    } catch (err) {
       // Credit/quota signals only — a genuine 400 (malformed request) must throw, not reroute
-      if (err.message?.includes('credit balance') || err.message?.includes('402')) {
+      if (
+        (err as Error).message?.includes('credit balance') ||
+        (err as Error).message?.includes('402')
+      ) {
         console.log('[QuickQuery] Anthropic credits depleted, trying OpenRouter');
         try {
           response = await callProvider('openrouter', providerRequest);
-        } catch (orErr: any) {
-          if (orErr.message?.includes('429') || orErr.message?.includes('rate limit')) {
+        } catch (orErr) {
+          if (
+            (orErr as Error).message?.includes('429') ||
+            (orErr as Error).message?.includes('rate limit')
+          ) {
             console.log('[QuickQuery] OpenRouter rate limited, trying alt model');
             try {
               response = await callOpenRouterAlt(providerRequest);
@@ -194,11 +202,11 @@ export async function POST(request: NextRequest) {
       cost: response.cost,
       latencyMs: response.latencyMs,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[QuickQuery] Error:', error);
     return NextResponse.json(
       {
-        error: error.message || 'An error occurred',
+        error: (error as Error).message || 'An error occurred',
         content: 'Sorry, I encountered an error processing your request. Please try again.',
       },
       { status: 500 }

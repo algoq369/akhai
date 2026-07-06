@@ -11,7 +11,7 @@ import {
   generateEnhancedSystemPrompt,
   type IntelligenceFusionResult,
 } from '@/lib/intelligence-fusion';
-import { createAutoInstinctConfig } from '@/lib/instinct-mode';
+import { createAutoInstinctConfig, type InstinctConfig } from '@/lib/instinct-mode';
 import { selectMethodologyFallback } from '@/lib/query-pipeline';
 import { LAYER_METADATA, Layer } from '@/lib/layer-registry';
 import type { ThoughtEvent } from '@/lib/thought-stream';
@@ -34,13 +34,21 @@ const DEFAULT_WEIGHTS: Record<number, number> = {
   11: 0.5,
 };
 
+/** Client-sent grimoire payload — only the fields the fusion pipeline reads */
+interface GrimoireContextInput {
+  id: string;
+  name: string;
+  instructions?: string;
+  memories?: string[];
+}
+
 export interface FusionInput {
   query: string;
   methodology: string;
   layersWeights?: Record<number, number>;
-  instinctConfig?: any;
+  instinctConfig?: InstinctConfig;
   liveRefinements?: { type: string; text: string }[];
-  grimoireContext?: any;
+  grimoireContext?: GrimoireContextInput;
   userId: string | null;
 }
 
@@ -213,7 +221,7 @@ export function emitFusionEvents(
           selectedMethod.reason ||
           (methodology !== 'auto' ? `user selected ${selectedMethod.id}` : 'auto-detected'),
         candidates:
-          fusionResult?.methodologyScores?.slice(0, 3).map((s: any) => s.methodology) || [],
+          fusionResult?.methodologyScores?.slice(0, 3).map((s) => s.methodology) || [],
       },
       confidence: fusionResult ? fusionResult.confidence : undefined,
       queryAnalysis: fusionResult
@@ -228,7 +236,7 @@ export function emitFusionEvents(
           }
         : undefined,
       methodologyScores:
-        fusionResult?.methodologyScores?.slice(0, 4).map((s: any) => ({
+        fusionResult?.methodologyScores?.slice(0, 4).map((s) => ({
           methodology: s.methodology,
           score: Math.round(s.score * 100),
           reasons: s.reasons,
@@ -252,7 +260,7 @@ export function emitFusionEvents(
       const num = Number(key) as Layer;
       const meta = LAYER_METADATA[num];
       if (meta) {
-        const activation = fusionResult.layerActivations.find((a: any) => a.layerNode === num);
+        const activation = fusionResult.layerActivations.find((a) => a.layerNode === num);
         layerDetails[num] = {
           name: meta.aiName,
           weight: activation
@@ -264,7 +272,7 @@ export function emitFusionEvents(
       }
     }
     const pathActs =
-      fusionResult.pathActivations?.slice(0, 5).map((p: any) => ({
+      fusionResult.pathActivations?.slice(0, 5).map((p) => ({
         from: LAYER_METADATA[p.from as Layer]?.aiName || String(p.from),
         to: LAYER_METADATA[p.to as Layer]?.aiName || String(p.to),
         weight: Math.round(p.weight * 100),

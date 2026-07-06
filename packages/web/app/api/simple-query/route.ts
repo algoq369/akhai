@@ -23,7 +23,7 @@ import {
   type CoreMethodology,
   type ProviderFamily,
 } from '@/lib/provider-selector';
-import { callProvider, type CompletionResponse } from '@/lib/multi-provider-api';
+import { callProvider, type CompletionResponse, type Message } from '@/lib/multi-provider-api';
 import { maxTokensFor } from '@/lib/output-budgets';
 import { cacheKey, getCached, setCached, isCacheable } from '@/lib/query-cache';
 import { recordCall } from '@/lib/cogs-scorecard';
@@ -303,11 +303,11 @@ export async function POST(request: NextRequest) {
           guardResult,
           sideCanal: { contextInjected: false, suggestions: [] },
         });
-      } catch (gtpError: any) {
+      } catch (gtpError) {
         log(
           'ERROR',
           'TOT',
-          `Tree of Thoughts consensus failed: ${gtpError.message}, falling back to Claude`
+          `Tree of Thoughts consensus failed: ${(gtpError as Error).message}, falling back to Claude`
         );
         // Fall through to standard Claude processing
       }
@@ -378,8 +378,10 @@ export async function POST(request: NextRequest) {
 
     // ========== BUILD MESSAGES ==========
     const messages = [
-      ...conversationHistory.slice(-6).map((msg: any) => ({
-        role: msg.role,
+      // Client sends role as a plain string (zod: z.string()) — asserted to the provider
+      // union at this boundary; the value is passed through unchanged.
+      ...conversationHistory.slice(-6).map((msg) => ({
+        role: msg.role as Message['role'],
         content: msg.content,
       })),
       ...(sideCanalContext
@@ -421,7 +423,10 @@ export async function POST(request: NextRequest) {
         if (results.length > 0) {
           const webContext = results
             .slice(0, 3)
-            .map((r: any) => '- ' + (r.title || '') + ': ' + (r.snippet || r.description || ''))
+            .map(
+              (r: { title?: string; snippet?: string; description?: string }) =>
+                '- ' + (r.title || '') + ': ' + (r.snippet || r.description || '')
+            )
             .join('\n');
           dynamicParts.push('Live web context (searched as of today):\n' + webContext);
           log('INFO', 'SEARCH', 'Auto-search: ' + results.length + ' results injected');
@@ -726,9 +731,9 @@ export async function POST(request: NextRequest) {
         }
       );
       }
-    } catch (apiError: any) {
-      logger.query.apiError(selectedProvider.toUpperCase(), apiError.message);
-      log('ERROR', 'API', `Provider ${selectedProvider} failed: ${apiError.message}`);
+    } catch (apiError) {
+      logger.query.apiError(selectedProvider.toUpperCase(), (apiError as Error).message);
+      log('ERROR', 'API', `Provider ${selectedProvider} failed: ${(apiError as Error).message}`);
 
       // Try ALL remaining providers in fallback chain
       const allProviders: ProviderFamily[] = [
@@ -769,20 +774,22 @@ export async function POST(request: NextRequest) {
           log('INFO', 'API', `Fallback provider ${fallbackProvider} succeeded`);
           fallbackSucceeded = true;
           break;
-        } catch (fbError: any) {
-          log('WARN', 'API', `Fallback ${fallbackProvider} also failed: ${fbError.message}`);
+        } catch (fbError) {
+          log('WARN', 'API', `Fallback ${fallbackProvider} also failed: ${(fbError as Error).message}`);
           continue;
         }
       }
 
       if (!fallbackSucceeded) {
         const creditKeywords = ['credit', 'balance', 'insufficient', 'billing'];
-        const isCredit = creditKeywords.some((k) => apiError.message?.toLowerCase().includes(k));
+        const isCredit = creditKeywords.some((k) =>
+          (apiError as Error).message?.toLowerCase().includes(k)
+        );
         return NextResponse.json(
           {
             error: isCredit
               ? 'API credits exhausted. Please check your provider billing.'
-              : `All AI providers failed. Last error: ${apiError.message}`,
+              : `All AI providers failed. Last error: ${(apiError as Error).message}`,
           },
           { status: 500 }
         );

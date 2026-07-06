@@ -6,6 +6,7 @@
  */
 
 import { DiagramRenderer, ChartRenderer } from './CanvasChartDiagramRenderers';
+import type { TableData, TimelineData, RadarData } from './CanvasHelpers';
 
 const TOPIC_COLORS = [
   '#94a3b8',
@@ -20,7 +21,7 @@ const TOPIC_COLORS = [
   '#27272a',
 ];
 
-function TableRenderer({ data }: { data: any }) {
+function TableRenderer({ data }: { data?: TableData }) {
   if (!data?.rows)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
   const cols = data.columns || Object.keys(data.rows[0] || {});
@@ -81,13 +82,13 @@ function TableRenderer({ data }: { data: any }) {
             </tr>
           </thead>
           <tbody>
-            {data.rows.map((row: any, ri: number) => {
+            {data.rows.map((row, ri) => {
               const vals = Array.isArray(row)
                 ? row
                 : cols.map((c: string) => row[c.toLowerCase()] ?? row[c] ?? '');
               return (
                 <tr key={ri} style={{ background: ri % 2 === 0 ? '#f8fafc' : 'white' }}>
-                  {vals.map((v: any, ci: number) => (
+                  {vals.map((v, ci) => (
                     <td
                       key={ci}
                       title={String(v)}
@@ -110,7 +111,7 @@ function TableRenderer({ data }: { data: any }) {
   );
 }
 
-function TimelineRenderer({ data }: { data: any }) {
+function TimelineRenderer({ data }: { data?: TimelineData }) {
   if (!data?.events)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
   const events = data.events.slice(0, 8);
@@ -149,7 +150,7 @@ function TimelineRenderer({ data }: { data: any }) {
           stroke="#e2e8f0"
           strokeWidth={2}
         />
-        {events.map((ev: any, i: number) => {
+        {events.map((ev, i) => {
           const x = 20 + i * spacing + spacing / 2;
           const color = ev.color || TOPIC_COLORS[i % TOPIC_COLORS.length];
           const above = i % 2 === 0;
@@ -176,7 +177,7 @@ function TimelineRenderer({ data }: { data: any }) {
   );
 }
 
-function RadarRenderer({ data }: { data: any }) {
+function RadarRenderer({ data }: { data?: RadarData }) {
   if (!data?.axes)
     return <div style={{ padding: 10, fontSize: 9, color: '#94a3b8' }}>generating...</div>;
   const axes = data.axes.slice(0, 8);
@@ -185,12 +186,12 @@ function RadarRenderer({ data }: { data: any }) {
     maxR = 90;
   const rings = [25, 50, 75, 100];
   const angleStep = (Math.PI * 2) / axes.length;
-  const dataPoints = axes.map((a: any, i: number) => {
+  const dataPoints = axes.map((a, i) => {
     const angle = i * angleStep - Math.PI / 2;
     const r = (Math.min(a.value, 100) / 100) * maxR;
     return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
   });
-  const polygon = dataPoints.map((p: any) => `${p.x},${p.y}`).join(' ');
+  const polygon = dataPoints.map((p) => `${p.x},${p.y}`).join(' ');
   return (
     <div style={{ padding: '8px 10px', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div
@@ -228,7 +229,7 @@ function RadarRenderer({ data }: { data: any }) {
           />
         ))}
         {/* Axis lines + labels */}
-        {axes.map((a: any, i: number) => {
+        {axes.map((a, i) => {
           const angle = i * angleStep - Math.PI / 2;
           const lx = cx + Math.cos(angle) * (maxR + 16);
           const ly = cy + Math.sin(angle) * (maxR + 16);
@@ -261,7 +262,7 @@ function RadarRenderer({ data }: { data: any }) {
           return (
             <>
               <polygon points={polygon} fill={`${c}20`} stroke={c} strokeWidth={2} />
-              {dataPoints.map((p: any, i: number) => (
+              {dataPoints.map((p, i) => (
                 <circle key={i} cx={p.x} cy={p.y} r={3} fill={c} stroke="white" strokeWidth={1} />
               ))}
             </>

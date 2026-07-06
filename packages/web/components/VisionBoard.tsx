@@ -18,6 +18,20 @@ import VisionBoardNode from './VisionBoardNode';
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
+// Fields read off /api/mindmap/data nodes/links (see app/api/mindmap/data/route.ts)
+interface MindMapApiNode {
+  id: string;
+  name: string;
+  category?: string | null;
+  queryCount?: number;
+  description?: string | null;
+}
+
+interface MindMapApiLink {
+  source: string;
+  target: string;
+}
+
 interface VisionBoardProps {
   userId: string | null;
 }
@@ -55,16 +69,16 @@ export default function VisionBoard({ userId }: VisionBoardProps) {
     fetch('/api/mindmap/data')
       .then((r) => r.json())
       .then((data) => {
-        const allNodes = data.nodes || [];
-        const links = data.links || [];
+        const allNodes: MindMapApiNode[] = data.nodes || [];
+        const links: MindMapApiLink[] = data.links || [];
         const t = allNodes
-          .map((n: any) => {
+          .map((n) => {
             const connIds = links
-              .filter((l: any) => l.source === n.id || l.target === n.id)
-              .map((l: any) => (l.source === n.id ? l.target : l.source));
+              .filter((l) => l.source === n.id || l.target === n.id)
+              .map((l) => (l.source === n.id ? l.target : l.source));
             const connNames = connIds
-              .map((id: string) => allNodes.find((nn: any) => nn.id === id)?.name)
-              .filter(Boolean)
+              .map((id: string) => allNodes.find((nn) => nn.id === id)?.name)
+              .filter((name): name is string => Boolean(name))
               .slice(0, 5);
             return {
               name: n.name,

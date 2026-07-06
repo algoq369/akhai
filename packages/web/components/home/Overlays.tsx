@@ -18,6 +18,7 @@ import MethodologyChangePrompt from '@/components/MethodologyChangePrompt';
 import NewsNotification from '@/components/NewsNotification';
 
 import { Message } from '@/lib/chat-store';
+import type { Suggestion } from '@/lib/side-canal';
 
 interface OverlaysProps {
   // TopicsPanel (hidden)
@@ -35,9 +36,9 @@ interface OverlaysProps {
   onCloseAuth: () => void;
   onAuthSuccess: () => void;
   // Suggestions
-  topicSuggestions: any[];
+  topicSuggestions: Suggestion[];
   onRemoveSuggestion: (id: string) => void;
-  onSuggestionClick: (suggestion: any) => void;
+  onSuggestionClick: (suggestion: Suggestion) => void;
   // Methodology prompt
   showMethodologyPrompt: boolean;
   methodologyName: string;

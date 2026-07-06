@@ -75,7 +75,7 @@ async function callAnthropic(model: string, system: string, user: string): Promi
 }
 
 /** Salvage parser — extracts complete JSON objects from potentially truncated output. */
-function salvageParse(raw: string): any {
+function salvageParse(raw: string): unknown {
   const cleaned = raw
     .replace(/^```(?:json)?\s*/m, '')
     .replace(/\s*```\s*$/m, '')
@@ -125,10 +125,34 @@ function salvageParse(raw: string): any {
   throw new Error('No salvageable JSON object found');
 }
 
-function validateSignature(obj: any): CognitiveSignature & { source: string } {
+/** Untrusted parsed LLM JSON — only the fields the validators inspect. */
+interface RawSignaturePayload {
+  inline_dialogue?: unknown;
+  short_metadata_summary?: unknown;
+  short_output_summary?: unknown;
+}
+
+/** Candidate dialogue entry from untrusted LLM JSON. */
+interface RawDialogueEntry {
+  lens_id?: unknown;
+  text?: unknown;
+}
+
+interface RawSynthesisPayload {
+  chapters?: unknown;
+}
+
+/** Candidate chapter from untrusted LLM JSON. */
+interface RawChapter {
+  title?: unknown;
+  exchanges?: unknown;
+  body?: unknown;
+}
+
+function validateSignature(obj: RawSignaturePayload): CognitiveSignature & { source: string } {
   const dialogue = Array.isArray(obj.inline_dialogue) ? obj.inline_dialogue : [];
   const valid = dialogue.filter(
-    (e: any) =>
+    (e: RawDialogueEntry) =>
       typeof e?.lens_id === 'string' &&
       VALID_LENS_IDS.has(e.lens_id) &&
       typeof e?.text === 'string' &&
@@ -144,10 +168,10 @@ function validateSignature(obj: any): CognitiveSignature & { source: string } {
   };
 }
 
-function validateSynthesis(obj: any): ConversationSynthesisResult {
+function validateSynthesis(obj: RawSynthesisPayload): ConversationSynthesisResult {
   const chapters = Array.isArray(obj.chapters) ? obj.chapters : [];
   const valid = chapters.filter(
-    (c: any) =>
+    (c: RawChapter) =>
       typeof c?.title === 'string' &&
       Array.isArray(c?.exchanges) &&
       typeof c?.body === 'string' &&
@@ -168,7 +192,7 @@ export async function extractCognitiveSignature(input: {
   for (const model of MODELS) {
     try {
       const raw = await callAnthropic(model.id, system, user);
-      const parsed = salvageParse(raw);
+      const parsed = salvageParse(raw) as RawSignaturePayload;
       const sig = validateSignature(parsed);
       sig.source = model.label;
       console.log(`[Cognitive] ${model.label}: ${sig.inline_dialogue.length} lenses extracted`);
@@ -193,7 +217,7 @@ export async function restructureThinkingIntoLenses(input: {
   for (const model of MODELS) {
     try {
       const raw = await callAnthropic(model.id, system, user);
-      const parsed = salvageParse(raw);
+      const parsed = salvageParse(raw) as RawSignaturePayload;
       const sig = validateSignature(parsed);
       sig.source = `${model.label}-restructure`;
       console.log(`[Cognitive] Restructure ${model.label}: ${sig.inline_dialogue.length} lenses`);
@@ -223,7 +247,7 @@ export async function generateSynthesis(input: {
   for (const model of MODELS) {
     try {
       const raw = await callAnthropic(model.id, system, user);
-      const parsed = salvageParse(raw);
+      const parsed = salvageParse(raw) as RawSynthesisPayload;
       const result = validateSynthesis(parsed);
       result.source = model.label;
       console.log(`[Cognitive] Synthesis ${model.label}: ${result.chapters.length} chapters`);

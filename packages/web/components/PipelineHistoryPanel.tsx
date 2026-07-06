@@ -10,6 +10,8 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSideCanalStore } from '@/lib/stores/side-canal-store';
 import { formatDuration } from '@/lib/thought-stream';
+import type { ThoughtDetails } from '@/lib/thought-stream';
+import type { CognitiveSignature } from '@/lib/cognitive/llm-extractor';
 import CognitivePanel from '@/components/cognitive/CognitivePanel';
 
 interface Message {
@@ -21,8 +23,33 @@ interface PipelineHistoryPanelProps {
   isOpen: boolean;
   onToggle: () => void;
   messages: Message[];
-  messageCognitiveSignatures?: Record<string, any>;
+  messageCognitiveSignatures?: Record<string, CognitiveSignature | null>;
   chatId?: string;
+}
+
+/** One query's reasoning trace, derived from its pipeline ThoughtEvents in the groups memo below */
+interface ReasoningGroup {
+  messageId: string;
+  queryText: string;
+  summary: string;
+  methScores: Array<{ method: string; score: number; reasons: string[] }>;
+  allLayers: Array<{ name: string; weight: number; activated: boolean; keywords: string[] }>;
+  dominantLayer: string;
+  guardVerdict: string;
+  guardRisk: number;
+  guardReasons: string[];
+  activeLenses: string[];
+  processingMode: string;
+  model: string;
+  provider: string;
+  method: string;
+  confidence?: number;
+  duration?: number;
+  tokens: { input: number; output: number; total: number };
+  cost: number;
+  isComplete: boolean;
+  isError: boolean;
+  lastTimestamp: number;
 }
 
 export default function PipelineHistoryPanel({
@@ -58,22 +85,22 @@ export default function PipelineHistoryPanel({
         const genEv = ev('generating');
         const completeEv = ev('complete');
         const receivedEv = ev('received');
-        const d = routingEv?.details || {};
-        const ld = layersEv?.details || {};
+        const d: ThoughtDetails = routingEv?.details || {};
+        const ld: ThoughtDetails = layersEv?.details || {};
         const receivedText = receivedEv?.data?.replace('query: ', '').replace(/"/g, '') || '';
 
         // Extract rich layer data
         const layerData = ld.layers || {};
         const allLayers = Object.entries(layerData)
-          .sort(([_, a]: [string, any], [__, b]: [string, any]) => b.weight - a.weight)
-          .map(([_, v]: [string, any]) => ({
+          .sort(([_, a], [__, b]) => b.weight - a.weight)
+          .map(([_, v]) => ({
             name: v.name,
             weight: v.weight,
             activated: v.activated,
             keywords: v.keywords || [],
           }));
 
-        const methScores: any[] = d.methodologyScores || [];
+        const methScores = d.methodologyScores || [];
 
         const dur = completeEv?.details?.duration ?? completeEv?.timestamp;
         const tok = completeEv?.details?.tokens?.total || 0;
@@ -82,7 +109,7 @@ export default function PipelineHistoryPanel({
           queryText: queryLookup[msgId] || receivedText || '',
           summary: d.methodology?.reason || d.methodology?.selected || '—',
           // Method scores for comparison
-          methScores: methScores.map((m: any) => ({
+          methScores: methScores.map((m) => ({
             method: m.methodology,
             score: m.score,
             reasons: m.reasons || [],
@@ -233,7 +260,7 @@ function Entry({
   open,
   toggle,
 }: {
-  g: any;
+  g: ReasoningGroup;
   idx: number;
   open: boolean;
   toggle: () => void;
@@ -306,7 +333,7 @@ function Entry({
                     </span>
                   </div>
                   <div className="space-y-1.5">
-                    {g.methScores.map((m: any) => (
+                    {g.methScores.map((m) => (
                       <div key={m.method} className="flex items-center gap-2">
                         <span
                           className={`text-[8px] w-[40px] uppercase ${m.method === g.method ? 'text-amber-400/80 font-medium' : 'text-relic-silver/30'}`}
@@ -351,7 +378,7 @@ function Entry({
                     )}
                   </div>
                   <div className="space-y-1">
-                    {g.allLayers.slice(0, 7).map((l: any) => (
+                    {g.allLayers.slice(0, 7).map((l) => (
                       <div key={l.name}>
                         <div className="flex items-center gap-2">
                           <span
