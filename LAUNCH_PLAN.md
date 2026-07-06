@@ -65,7 +65,7 @@ adaptive thinking always-on via `effort` param, NO raw CoT (4.6 thinking_delta p
           = live proof of AkhAI's sovereignty thesis → launch copy.
 
 ## E · HARDEN (Aug 4–13)
-- [ ] E1  Zod the 31 unvalidated routes (ratchet unvalidated_routes↓) · CSP nonce · user_id audit.
+- [x] E1  ZOD COMPLETE (04e0caf→09b60f6): 31→21→10→0 in three tranches. 33 schemas in pure lib/route-schemas.ts, 19 boundary tests, PII no-echo live-probed, cost-amplification caps live-probed, internal contracts preserved. TERMINAL ratchet 0 — every future body-reading route validates from birth. Remaining from original scope: CSP nonce · user_id audit (fold into E4 QA).
 - [ ] E2  Code health: console_log 323↓ · any_types 291↓ · split the 12 large files · Sentry hooks.
 - [ ] E3  E6.1: fold remaining sonnet/haiku model strings into MODELS constant.
 - [ ] E4  Full QA sweep: all methodologies + all routes, fixed eval set, green.
