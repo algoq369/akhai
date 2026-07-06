@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
+import { log } from '@/lib/logger';
 import { trackServerEvent } from '@/lib/posthog-server';
 import {
   upsertSubscription,
@@ -112,9 +113,7 @@ export async function POST(request: NextRequest) {
             customer_email: session.customer_email,
           });
 
-          console.log(
-            `[Webhook] Subscription created and saved to DB: ${subscription.id} | Plan: ${planId}`
-          );
+          log('INFO', 'STRIPE_WEBHOOK', `Subscription created and saved to DB: ${subscription.id} | Plan: ${planId}`);
         } else if (session.mode === 'payment') {
           // One-time payment (token credits)
           const creditTier = session.metadata?.planId || 'unknown';
@@ -146,7 +145,7 @@ export async function POST(request: NextRequest) {
               },
             });
 
-            console.log(`[Webhook] Tokens added to DB: ${tokens} tokens for user ${userId}`);
+            log('INFO', 'STRIPE_WEBHOOK', `Tokens added to DB: ${tokens} tokens for user ${userId}`);
           }
 
           // Track credits purchased
@@ -159,9 +158,7 @@ export async function POST(request: NextRequest) {
             customer_email: session.customer_email,
           });
 
-          console.log(
-            `[Webhook] Credits purchased: ${creditTier} for $${amount} (${tokens} tokens)`
-          );
+          log('INFO', 'STRIPE_WEBHOOK', `Credits purchased: ${creditTier} for $${amount} (${tokens} tokens)`);
         }
         break;
       }
@@ -187,7 +184,7 @@ export async function POST(request: NextRequest) {
             currentPeriodEnd: subscription.current_period_end,
           });
 
-          console.log(`[Webhook] Subscription updated in DB: ${subscription.id} | Plan: ${planId}`);
+          log('INFO', 'STRIPE_WEBHOOK', `Subscription updated in DB: ${subscription.id} | Plan: ${planId}`);
         } else {
           console.warn(`[Webhook] Subscription updated but not found in DB: ${subscription.id}`);
         }
@@ -211,7 +208,7 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        console.log(`[Webhook] Subscription canceled, downgraded to free: ${subscription.id}`);
+        log('INFO', 'STRIPE_WEBHOOK', `Subscription canceled, downgraded to free: ${subscription.id}`);
         break;
       }
 
@@ -261,9 +258,7 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          console.log(
-            `[Webhook] Recurring payment succeeded, subscription extended: ${subscription.id}`
-          );
+          log('INFO', 'STRIPE_WEBHOOK', `Recurring payment succeeded, subscription extended: ${subscription.id}`);
         } else {
           console.warn(`[Webhook] Payment succeeded but subscription not found: ${invoice.id}`);
         }
@@ -293,7 +288,7 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        console.log(`[Webhook] Payment failed, subscription marked as past_due: ${invoice.id}`);
+        log('INFO', 'STRIPE_WEBHOOK', `Payment failed, subscription marked as past_due: ${invoice.id}`);
         // Note: Stripe will automatically retry failed payments
         // After all retry attempts fail, subscription will be canceled automatically
         break;
@@ -305,12 +300,12 @@ export async function POST(request: NextRequest) {
 
       case 'customer.created': {
         const customer = event.data.object as Stripe.Customer;
-        console.log(`[Webhook] Customer created: ${customer.id}`);
+        log('INFO', 'STRIPE_WEBHOOK', `Customer created: ${customer.id}`);
         break;
       }
 
       default:
-        console.log(`[Webhook] Unhandled event type: ${event.type}`);
+        log('INFO', 'STRIPE_WEBHOOK', `Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });

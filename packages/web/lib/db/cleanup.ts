@@ -1,4 +1,5 @@
 import { db } from '@/lib/database';
+import { log } from '@/lib/logger';
 import {
   cleanExpiredSessions as _cleanExpiredSessions,
   cleanupExpiredPKCEVerifiers as _cleanupExpiredPKCEVerifiers,
@@ -43,10 +44,7 @@ export function cleanupStalePendingQueries(): { cleaned: number; queries: string
     .run(oneHourAgo);
 
   const cleanedIds = staleQueries.map((q) => q.id);
-  console.log(
-    `[Cleanup] Marked ${result.changes} stale pending queries as failed:`,
-    cleanedIds.slice(0, 5)
-  );
+  log('INFO', 'DB_CLEANUP', `Marked ${result.changes} stale pending queries as failed:`, cleanedIds.slice(0, 5));
 
   return { cleaned: result.changes, queries: cleanedIds };
 }
@@ -86,7 +84,7 @@ let cleanupIntervalId: NodeJS.Timeout | null = null;
  */
 export function startCleanupScheduler(): void {
   if (cleanupIntervalId) {
-    console.log('[Cleanup] Scheduler already running');
+    log('INFO', 'DB_CLEANUP', 'Scheduler already running');
     return;
   }
 
@@ -101,7 +99,7 @@ export function startCleanupScheduler(): void {
     60 * 60 * 1000
   ); // 1 hour
 
-  console.log('[Cleanup] Scheduler started - will run every hour');
+  log('INFO', 'DB_CLEANUP', 'Scheduler started - will run every hour');
 }
 
 /**
@@ -111,7 +109,7 @@ export function stopCleanupScheduler(): void {
   if (cleanupIntervalId) {
     clearInterval(cleanupIntervalId);
     cleanupIntervalId = null;
-    console.log('[Cleanup] Scheduler stopped');
+    log('INFO', 'DB_CLEANUP', 'Scheduler stopped');
   }
 }
 
@@ -120,7 +118,7 @@ export function stopCleanupScheduler(): void {
  */
 function runCleanupTasks(): void {
   const timestamp = new Date().toISOString();
-  console.log(`[Cleanup] Running cleanup tasks at ${timestamp}`);
+  log('INFO', 'DB_CLEANUP', `Running cleanup tasks at ${timestamp}`);
 
   try {
     // 1. Clean stale pending queries
@@ -132,9 +130,7 @@ function runCleanupTasks(): void {
     // 3. Clean expired PKCE verifiers
     const expiredPKCE = _cleanupExpiredPKCEVerifiers();
 
-    console.log(
-      `[Cleanup] Completed: ${staleQueries} stale queries, ${expiredPKCE} expired PKCE verifiers`
-    );
+    log('INFO', 'DB_CLEANUP', `Completed: ${staleQueries} stale queries, ${expiredPKCE} expired PKCE verifiers`);
   } catch (error) {
     console.error('[Cleanup] Error during cleanup tasks:', error);
   }

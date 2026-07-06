@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { log } from '@/lib/logger';
 import Anthropic from '@anthropic-ai/sdk';
 import { calculateRelevance } from './relevance';
 import { isCaptchaResponse, parseDDGResults } from '../../../lib/enhanced-links-parser';
@@ -114,7 +115,7 @@ Return ONLY valid JSON:
 
           const result = JSON.parse(cleanedJson);
 
-          console.log('[EnhancedLinks] AI analysis successful:', {
+          log('INFO', 'ENHANCED_LINKS', 'AI analysis successful', {
             confidence: result.confidence || 'unknown',
             reasoning: result.reasoning?.substring(0, 100) || 'none',
             insightCount: result.insightQueries?.length || 0,
@@ -194,15 +195,11 @@ const DDG_RATE_LIMIT_BACKOFF = 3 * 60 * 1000; // 3 minutes backoff after CAPTCHA
 async function searchWeb(
   searchQuery: string
 ): Promise<Array<{ url: string; title: string; snippet: string }>> {
-  console.log(`[DDG] Searching: "${searchQuery.substring(0, 80)}"`);
-
+  
   // Check cache first
   const cached = ddgCache.get(searchQuery);
   if (cached && Date.now() - cached.ts < DDG_CACHE_TTL) {
-    console.log(
-      `[DDG] Cache hit: "${searchQuery.substring(0, 40)}" → ${cached.results.length} results`
-    );
-    return cached.results;
+        return cached.results;
   }
 
   // Skip DDG if we were recently rate-limited (avoid wasting requests)
@@ -248,8 +245,7 @@ async function searchWeb(
 
     const results = parseDDGResults(html, searchQuery);
 
-    console.log(`[DDG] Searching: "${searchQuery.substring(0, 40)}" → ${results.length} results`);
-
+    
     // Cache successful results
     if (results.length > 0) {
       ddgCache.set(searchQuery, { results, ts: Date.now() });
@@ -274,8 +270,7 @@ async function searchBrave(
   const apiKey = process.env.BRAVE_SEARCH_API_KEY;
   if (!apiKey) return [];
 
-  console.log(`[Brave] Searching: "${searchQuery.substring(0, 80)}"`);
-  try {
+    try {
     const res = await fetch(
       `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(searchQuery)}&count=5`,
       {
@@ -300,8 +295,7 @@ async function searchBrave(
         snippet: r.description || '',
       }))
       .filter((r: any) => r.url && r.title);
-    console.log(`[Brave] Found ${results.length} results`);
-    return results;
+        return results;
   } catch (error) {
     console.error(`[Brave] Error: ${error instanceof Error ? error.message : 'Unknown'}`);
     return [];
@@ -335,25 +329,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    console.log('[EnhancedLinks] Analyzing:', {
-      query: query.substring(0, 100),
-      topics: topics.slice(0, 3),
-      contextLength: conversationContext.length,
-    });
-
-    // Step 1: Use AI to extract targeted search queries with metacognitive awareness
+        // Step 1: Use AI to extract targeted search queries with metacognitive awareness
     const { insightQueries, minichatQueries, confidence, reasoning } = await extractSearchQueries(
       query,
       conversationContext,
       topics
     );
-
-    console.log('[EnhancedLinks] Search queries (with metacognition):', {
-      insight: insightQueries,
-      minichat: minichatQueries,
-      confidence: `${(confidence * 100).toFixed(0)}%`,
-      reasoning: reasoning.substring(0, 150),
-    });
 
     // Step 2: Search DDG — limit to 1 query per type to avoid rate-limiting
     // DDG aggressively rate-limits: 6 requests triggers CAPTCHA
@@ -419,7 +400,7 @@ export async function POST(request: NextRequest) {
       console.warn('[DDG] Search unavailable — 0 results for all queries (likely rate-limited)');
     }
 
-    console.log('[EnhancedLinks] Results:', {
+    log('INFO', 'ENHANCED_LINKS', 'Results', {
       insightCount: insightLinks.length,
       minichatCount: minichatLinks.length,
       searchUnavailable,

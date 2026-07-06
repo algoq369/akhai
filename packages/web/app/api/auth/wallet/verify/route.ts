@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
  * Verify wallet signature and create session
  */
 export async function POST(request: NextRequest) {
-  console.log('[DEBUG] POST /api/auth/wallet/verify entry');
   try {
     const parsed = AuthWalletVerifySchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -19,38 +18,20 @@ export async function POST(request: NextRequest) {
       );
     }
     const { address, signature, message } = parsed.data;
-    console.log('[DEBUG] Received:', {
-      address: address.substring(0, 10),
-      hasSignature: !!signature,
-      messageLength: message.length,
-    });
-
     // Extract timestamp from received message to regenerate expected message
     const timestampMatch = message.match(/Timestamp: (\d+)/);
     const timestamp = timestampMatch ? parseInt(timestampMatch[1]) : Date.now();
 
     // Regenerate expected message with the same timestamp
     const expectedMessage = `Sign this message to authenticate with AkhAI.\n\nAddress: ${address}\nTimestamp: ${timestamp}`;
-
-    console.log('[DEBUG] Message comparison:', {
-      receivedMessage: message.substring(0, 50),
-      expectedMessage: expectedMessage.substring(0, 50),
-      messagesMatch: message === expectedMessage,
-      timestampFromMessage: timestamp,
-    });
-
     if (message !== expectedMessage) {
-      console.log('[DEBUG] Message format mismatch');
       return NextResponse.json(
         { error: 'Invalid message format', details: 'Message does not match expected format' },
         { status: 400 }
       );
     }
 
-    console.log('[DEBUG] Calling authenticateWallet');
     const { user, session } = authenticateWallet(address, signature, message);
-    console.log('[DEBUG] Authentication successful, userId:', user.id);
-
     // Set session cookie
     const response = NextResponse.json({
       success: true,

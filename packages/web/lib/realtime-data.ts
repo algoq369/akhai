@@ -2,6 +2,7 @@
  * Real-time data fetching service
  * Provides crypto prices, web search, and other live data
  */
+import { log } from '@/lib/logger';
 
 interface CryptoPrice {
   symbol: string
@@ -42,7 +43,6 @@ export async function getCryptoPriceFromCoinGecko(symbol: string): Promise<Crypt
   const coinId = symbolMap[symbol.toLowerCase()] || symbol.toLowerCase()
 
   try {
-    console.log(`[CoinGecko] Fetching price for: ${coinId}`)
 
     const res = await fetch(
       `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`,
@@ -63,11 +63,9 @@ export async function getCryptoPriceFromCoinGecko(symbol: string): Promise<Crypt
     const coinData = data[coinId]
 
     if (!coinData) {
-      console.log(`[CoinGecko] No data for: ${coinId}`)
       return null
     }
 
-    console.log(`[CoinGecko] Success: ${symbol.toUpperCase()} = $${coinData.usd}`)
 
     return {
       symbol: symbol.toUpperCase(),
@@ -87,12 +85,11 @@ export async function getCryptoPriceFromCoinGecko(symbol: string): Promise<Crypt
 export async function getCryptoPriceFromCMC(symbol: string): Promise<CryptoPrice | null> {
   const apiKey = process.env.COINMARKETCAP_API_KEY
   if (!apiKey) {
-    console.log('[CoinMarketCap] API key not configured')
+    log('WARN', 'REALTIME_DATA', 'CoinMarketCap API key not configured')
     return null
   }
 
   try {
-    console.log(`[CoinMarketCap] Fetching price for: ${symbol}`)
 
     const res = await fetch(
       `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbol.toUpperCase()}`,
@@ -113,11 +110,9 @@ export async function getCryptoPriceFromCMC(symbol: string): Promise<CryptoPrice
     const coinData = data.data?.[symbol.toUpperCase()]
 
     if (!coinData) {
-      console.log(`[CoinMarketCap] No data for: ${symbol}`)
       return null
     }
 
-    console.log(`[CoinMarketCap] Success: ${symbol.toUpperCase()} = $${coinData.quote.USD.price}`)
 
     return {
       symbol: symbol.toUpperCase(),
@@ -137,12 +132,11 @@ export async function getCryptoPriceFromCMC(symbol: string): Promise<CryptoPrice
 export async function searchWithBrave(query: string): Promise<string | null> {
   const apiKey = process.env.BRAVE_API_KEY
   if (!apiKey) {
-    console.log('[Brave Search] API key not configured')
+    log('WARN', 'REALTIME_DATA', 'Brave Search API key not configured')
     return null
   }
 
   try {
-    console.log(`[Brave Search] Searching for: ${query}`)
 
     const res = await fetch(
       `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`,
@@ -163,11 +157,9 @@ export async function searchWithBrave(query: string): Promise<string | null> {
     const results = data.web?.results || []
 
     if (results.length === 0) {
-      console.log('[Brave Search] No results found')
       return null
     }
 
-    console.log(`[Brave Search] Found ${results.length} results`)
 
     // Return top 3 results as context
     return results
@@ -192,7 +184,6 @@ export async function getCryptoPrice(symbol: string): Promise<CryptoPrice | null
   price = await getCryptoPriceFromCMC(symbol)
   if (price) return price
 
-  console.log(`[Crypto] No price data available for: ${symbol}`)
   return null
 }
 

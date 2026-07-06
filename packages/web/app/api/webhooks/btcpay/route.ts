@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { log } from '@/lib/logger';
 import { btcPay, WebhookPayload } from '@/lib/btcpay';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { db } from '@/lib/database';
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     // Parse payload
     const payload: WebhookPayload = JSON.parse(rawBody);
 
-    console.log('[BTCPay Webhook] Received:', {
+    log('INFO', 'BTCPAY_WEBHOOK', 'Received', {
       type: payload.type,
       invoiceId: payload.invoiceId,
       storeId: payload.storeId,
@@ -75,30 +76,30 @@ async function processWebhookEvent(payload: WebhookPayload) {
   switch (type) {
     case 'InvoiceSettled':
       // Payment completed successfully
-      console.log('[BTCPay Webhook] Invoice settled:', invoiceId);
+      log('INFO', 'BTCPAY_WEBHOOK', 'Invoice settled', invoiceId);
       await handleInvoiceSettled(invoiceId);
       break;
 
     case 'InvoiceProcessing':
       // Payment received, confirming
-      console.log('[BTCPay Webhook] Invoice processing:', invoiceId);
+      log('INFO', 'BTCPAY_WEBHOOK', 'Invoice processing', invoiceId);
       await handleInvoiceProcessing(invoiceId);
       break;
 
     case 'InvoiceExpired':
       // Invoice expired without payment
-      console.log('[BTCPay Webhook] Invoice expired:', invoiceId);
+      log('INFO', 'BTCPAY_WEBHOOK', 'Invoice expired', invoiceId);
       await handleInvoiceExpired(invoiceId);
       break;
 
     case 'InvoiceInvalid':
       // Payment failed or invalid
-      console.log('[BTCPay Webhook] Invoice invalid:', invoiceId);
+      log('INFO', 'BTCPAY_WEBHOOK', 'Invoice invalid', invoiceId);
       await handleInvoiceInvalid(invoiceId);
       break;
 
     default:
-      console.log('[BTCPay Webhook] Unknown event type:', type);
+      log('INFO', 'BTCPAY_WEBHOOK', 'Unknown event type', type);
   }
 }
 
@@ -256,7 +257,7 @@ async function processCreditsPayment(invoiceId: string, posData: PosData, amount
     ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
   ).run(invoiceId, userId, 'credits', amountUSD, tokens, 'completed');
 
-  console.log('[BTCPay Webhook] Credits payment completed:', {
+  log('INFO', 'BTCPAY_WEBHOOK', 'Credits payment completed', {
     invoiceId,
     userId,
     tokenAmount: tokens,
@@ -317,7 +318,7 @@ async function processSubscriptionPayment(invoiceId: string, posData: PosData, a
     ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
   ).run(invoiceId, userId, 'subscription', planId, amountUSD, 'completed');
 
-  console.log('[BTCPay Webhook] Subscription payment completed:', {
+  log('INFO', 'BTCPAY_WEBHOOK', 'Subscription payment completed', {
     invoiceId,
     userId,
     plan: planId,

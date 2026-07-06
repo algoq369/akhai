@@ -4,6 +4,7 @@
  */
 
 import type { YouTubeContent, TwitterContent } from './url-content-fetcher';
+import { log } from './logger';
 
 // ============================================================================
 // UTILITY FUNCTIONS (shared across parsers)
@@ -57,7 +58,6 @@ function formatDuration(seconds: number): string {
  * Fetch YouTube video content including transcript
  */
 export async function fetchYouTubeContent(url: string, videoId: string): Promise<YouTubeContent> {
-  console.log(`[URL_FETCH] Fetching YouTube video: ${videoId}`);
 
   const result: YouTubeContent = {
     url,
@@ -77,7 +77,6 @@ export async function fetchYouTubeContent(url: string, videoId: string): Promise
       result.author = oembed.author_name;
       result.channelName = oembed.author_name;
       result.thumbnailUrl = oembed.thumbnail_url;
-      console.log(`[URL_FETCH] YouTube oEmbed success: "${result.title}"`);
     }
 
     // Method 2: Try to get transcript using youtube-transcript approach
@@ -85,7 +84,6 @@ export async function fetchYouTubeContent(url: string, videoId: string): Promise
     if (transcript) {
       result.transcript = transcript;
       result.content = transcript;
-      console.log(`[URL_FETCH] YouTube transcript fetched: ${transcript.length} chars`);
     }
 
     // Method 3: Scrape video page for more metadata
@@ -151,7 +149,7 @@ async function fetchYouTubeTranscript(videoId: string): Promise<string | null> {
       }
     }
   } catch (error) {
-    console.log(`[URL_FETCH] Transcript fetch failed, continuing without transcript`);
+    log('WARN', 'URL_FETCH', 'YouTube transcript fetch failed, continuing without transcript');
   }
 
   return null;
@@ -227,7 +225,6 @@ function buildYouTubeContentSummary(content: YouTubeContent): string {
  * Fetch Twitter/X content using multiple fallback methods
  */
 export async function fetchTwitterContent(url: string, tweetId?: string): Promise<TwitterContent> {
-  console.log(`[URL_FETCH] Fetching Twitter/X content: ${url}`);
 
   const result: TwitterContent = {
     url,
@@ -253,7 +250,6 @@ export async function fetchTwitterContent(url: string, tweetId?: string): Promis
     if (fxContent) {
       Object.assign(result, fxContent);
       result.success = true;
-      console.log(`[URL_FETCH] FxTwitter success`);
       return result;
     }
 
@@ -262,7 +258,6 @@ export async function fetchTwitterContent(url: string, tweetId?: string): Promis
     if (nitterContent) {
       Object.assign(result, nitterContent);
       result.success = true;
-      console.log(`[URL_FETCH] Nitter success`);
       return result;
     }
 
@@ -271,7 +266,6 @@ export async function fetchTwitterContent(url: string, tweetId?: string): Promis
     if (vxContent) {
       Object.assign(result, vxContent);
       result.success = true;
-      console.log(`[URL_FETCH] VxTwitter success`);
       return result;
     }
   } catch (error) {

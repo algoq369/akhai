@@ -76,8 +76,8 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
 
   // Log depth config on mount
   useEffect(() => {
-    console.log('[DepthAnnotations] Config loaded:', depthConfig);
-    console.log('[DepthAnnotations] LocalStorage:', localStorage.getItem('akhai-depth-config'));
+    console.debug('[DepthAnnotations] Config loaded:', depthConfig);
+    console.debug('[DepthAnnotations] LocalStorage:', localStorage.getItem('akhai-depth-config'));
   }, []);
 
   // Fetch LLM-powered depth annotations for any assistant message that lacks them.
@@ -106,7 +106,7 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
         .then((r) => r.json())
         .then((data) => {
           const anns = data.annotations || [];
-          console.log(`[DepthAnnotations] ${data.source}: ${anns.length} annotations for ${msgId}`);
+          console.debug(`[DepthAnnotations] ${data.source}: ${anns.length} annotations for ${msgId}`);
           setMessageAnnotations((prev) => ({ ...prev, [msgId]: anns }));
         })
         .catch(() => {
@@ -149,7 +149,7 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
     })
       .then((r) => r.json())
       .then((data) => {
-        console.log(
+        console.debug(
           `[Cognitive] ${data.source}: ${data.inline_dialogue?.length || 0} lenses for ${msgId}`
         );
         setMessageCognitiveSignatures((prev) => ({ ...prev, [msgId]: data }));
@@ -285,12 +285,10 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
   // ─── Load conversation ─────────────────────────────────────
   const loadConversation = useCallback(async (queryId: string) => {
     try {
-      console.log('[History] Fetching conversation for:', queryId);
+      console.debug('[History] Fetching conversation for:', queryId);
       const res = await fetch(`/api/history/${queryId}/conversation`);
-      console.log('[History] Response status:', res.status);
       if (res.ok) {
         const data = await res.json();
-        console.log('[History] Data received:', data.messages?.length, 'messages');
         if (data.messages && data.messages.length > 0) {
           const loadedMessages = data.messages.map((msg: any) => ({
             id: generateId(),
@@ -308,11 +306,10 @@ export function useHomePageEffects(input: HomePageEffectsInput) {
               });
             }
           });
-          console.log('[History] Setting messages:', loadedMessages.length);
           setMessages(loadedMessages);
           setContinuingConversation(queryId);
           setIsExpanded(true);
-          console.log('[History] Conversation loaded successfully');
+          console.debug('[History] Conversation loaded successfully');
           window.history.replaceState({}, '', '/');
           setTimeout(() => setContinuingConversation(null), 3000);
         } else {

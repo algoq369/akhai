@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queries } from '@/lib/query-store';
+import { log } from '@/lib/logger';
 import { getQuery } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
 import { classifyContent } from '@/lib/mini-canvas/content-classifier';
@@ -20,7 +21,6 @@ interface QueryResult {
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: queryId } = await params;
-  console.log(`[API GET] Fetching query: ${queryId}`);
 
   try {
     // Get user from session (optional - allows anonymous usage)
@@ -32,9 +32,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const memoryQuery = queries.get(queryId);
 
     if (memoryQuery) {
-      console.log(`[API GET] Found query in memory:`, memoryQuery.status);
-      console.log(`[API DEBUG] Full memoryQuery:`, JSON.stringify(memoryQuery, null, 2));
-      console.log(`[API DEBUG] result.finalAnswer:`, memoryQuery.result?.finalAnswer);
 
       // Since tokens/cost are only in database, we need to fetch them (scoped to user)
       const dbQuery = getQuery(queryId, userId) as QueryResult | undefined;
@@ -64,11 +61,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Fallback to database (scoped to user)
-    console.log(`[API GET] Query not in memory, checking database...`);
     const dbQuery = getQuery(queryId, userId) as QueryResult | undefined;
 
     if (dbQuery) {
-      console.log(`[API GET] Found query in database`);
 
       // Parse the result JSON string
       let parsedResult = null;
@@ -80,7 +75,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         console.error('[API GET] Failed to parse result JSON:', e);
       }
 
-      console.log(`[API DEBUG] Parsed result:`, parsedResult);
 
       const dbResponseText = parsedResult?.finalAnswer || '';
       const dbMiniCanvas = dbResponseText
@@ -104,7 +98,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       });
     }
 
-    console.log(`[API GET] Query not found: ${queryId}`);
+    log('WARN', 'QUERY_API', `Query not found: ${queryId}`);
     return NextResponse.json({ error: 'Query not found', id: queryId }, { status: 404 });
   } catch (error) {
     console.error('[API GET] Error fetching query:', error);

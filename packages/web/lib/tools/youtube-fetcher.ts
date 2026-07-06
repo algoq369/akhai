@@ -5,6 +5,7 @@
  */
 
 import { Innertube } from 'youtubei.js/web'
+import { log } from '@/lib/logger'
 
 export interface YouTubeVideo {
   videoId: string
@@ -49,7 +50,7 @@ async function fetchVideoMetadataAPI(videoId: string): Promise<Partial<YouTubeVi
   const apiKey = process.env.YOUTUBE_API_KEY
 
   if (!apiKey) {
-    console.log('[YouTube] No API key found, skipping metadata fetch')
+    log('WARN', 'YOUTUBE_FETCHER', 'No API key found, skipping metadata fetch')
     return {}
   }
 
@@ -93,8 +94,6 @@ async function fetchVideoMetadataAPI(videoId: string): Promise<Partial<YouTubeVi
  */
 async function fetchTranscript(videoId: string): Promise<string | null> {
   try {
-    console.log(`[YouTube] Fetching transcript for: ${videoId}`)
-
     const youtube = await Innertube.create({
       cache: new Proxy({}, {
         get: () => () => {},
@@ -107,13 +106,11 @@ async function fetchTranscript(videoId: string): Promise<string | null> {
     const transcriptData = await info.getTranscript()
 
     if (!transcriptData || !transcriptData.transcript) {
-      console.log('[YouTube] No transcript available for this video')
       return null
     }
 
     // Check for transcript content and body
     if (!transcriptData.transcript.content || !transcriptData.transcript.content.body) {
-      console.log('[YouTube] Transcript content is incomplete')
       return null
     }
 
@@ -124,7 +121,6 @@ async function fetchTranscript(videoId: string): Promise<string | null> {
       .replace(/\s+/g, ' ') // Normalize whitespace
       .trim()
 
-    console.log(`[YouTube] Transcript fetched: ${fullTranscript.length} characters`)
     return fullTranscript
 
   } catch (error: any) {
@@ -144,9 +140,6 @@ export async function fetchYouTubeVideo(url: string): Promise<YouTubeVideo | nul
     console.error('[YouTube] Invalid URL or could not extract video ID')
     return null
   }
-
-  console.log(`[YouTube] Fetching video: ${videoId}`)
-
   // Fetch metadata and transcript in parallel
   const [metadata, transcript] = await Promise.all([
     fetchVideoMetadataAPI(videoId),
@@ -160,13 +153,6 @@ export async function fetchYouTubeVideo(url: string): Promise<YouTubeVideo | nul
   }
 
   // Log what we got
-  console.log('[YouTube] Fetched:', {
-    hasTitle: !!video.title,
-    hasDescription: !!video.description,
-    hasTranscript: !!video.transcript,
-    transcriptLength: video.transcript?.length || 0,
-  })
-
   return video
 }
 

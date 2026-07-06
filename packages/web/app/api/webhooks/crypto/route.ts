@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { log } from '@/lib/logger';
 import { nowPayments, IPNPayload, PaymentStatus } from '@/lib/nowpayments';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { db } from '@/lib/database';
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     // Parse payload
     const payload: IPNPayload = JSON.parse(rawBody);
 
-    console.log('[Crypto Webhook] Received IPN:', {
+    log('INFO', 'CRYPTO_WEBHOOK', 'Received IPN', {
       payment_id: payload.payment_id,
       status: payload.payment_status,
       order_id: payload.order_id,
@@ -135,7 +136,7 @@ async function processPaymentStatus(payload: IPNPayload) {
   switch (payment_status) {
     case 'finished':
       // Payment completed successfully
-      console.log('[Crypto Webhook] Payment finished:', payment_id);
+      log('INFO', 'CRYPTO_WEBHOOK', 'Payment finished', payment_id);
 
       if (parsedOrder.isLegacy || !parsedOrder.userId) {
         // Legacy processing without user info
@@ -170,7 +171,7 @@ async function processPaymentStatus(payload: IPNPayload) {
     case 'failed':
     case 'expired':
       // Payment failed or expired
-      console.log('[Crypto Webhook] Payment failed/expired:', payment_id, payment_status);
+      log('INFO', 'CRYPTO_WEBHOOK', 'Payment failed/expired', { payment_id, payment_status });
 
       trackServerEvent('crypto_payment_failed', parsedOrder.userId || 'anonymous', {
         payment_id,
@@ -185,17 +186,17 @@ async function processPaymentStatus(payload: IPNPayload) {
     case 'confirmed':
     case 'sending':
       // Intermediate states - log but don't process yet
-      console.log('[Crypto Webhook] Payment in progress:', payment_id, payment_status);
+      log('INFO', 'CRYPTO_WEBHOOK', 'Payment in progress', { payment_id, payment_status });
       break;
 
     case 'partially_paid':
       // Payment partially received
-      console.log('[Crypto Webhook] Partial payment:', payment_id);
+      log('INFO', 'CRYPTO_WEBHOOK', 'Partial payment', payment_id);
       break;
 
     case 'refunded':
       // Payment refunded
-      console.log('[Crypto Webhook] Payment refunded:', payment_id);
+      log('INFO', 'CRYPTO_WEBHOOK', 'Payment refunded', payment_id);
       break;
 
     default:
@@ -254,7 +255,7 @@ async function processCreditsPayment(
     ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
   ).run(paymentId, userId, 'credits', amountUSD, tokens, 'completed');
 
-  console.log('[Crypto Webhook] Credits payment completed:', {
+  log('INFO', 'CRYPTO_WEBHOOK', 'Credits payment completed', {
     paymentId,
     userId,
     tokenAmount: tokens,
@@ -323,7 +324,7 @@ async function processSubscriptionPayment(
     ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
   ).run(paymentId, userId, 'subscription', planId, amountUSD, 'completed');
 
-  console.log('[Crypto Webhook] Subscription payment completed:', {
+  log('INFO', 'CRYPTO_WEBHOOK', 'Subscription payment completed', {
     paymentId,
     userId,
     plan: planId,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleTwitterCallback } from '@/lib/auth';
+import { log } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,19 +10,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('[X Callback] Received callback request');
     const searchParams = request.nextUrl.searchParams;
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
-
-    console.log('[X Callback] Params:', {
-      hasCode: !!code,
-      hasState: !!state,
-      hasError: !!error,
-      error: error || 'none',
-    });
-
     // Handle OAuth errors
     if (error) {
       const errorDescription = searchParams.get('error_description') || 'Unknown error';
@@ -38,16 +30,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Handle OAuth callback
-    console.log('[X Callback] Calling handleTwitterCallback...');
     const result = await handleTwitterCallback(code, state);
-    console.log('[X Callback] Result:', {
-      success: result.success,
-      username: result.username,
-      error: result.error,
-    });
 
     if (!result.success) {
-      console.log('[X Callback] Failed, redirecting with error:', result.error);
+      log('WARN', 'X_AUTH', 'Twitter callback failed', result.error);
       return NextResponse.redirect(
         new URL(
           `/profile?error=${encodeURIComponent(result.error || 'Unknown error')}`,
@@ -55,9 +41,6 @@ export async function GET(request: NextRequest) {
         )
       );
     }
-
-    console.log('[X Callback] Success! Redirecting to profile');
-
     // Redirect back to profile with success message
     return NextResponse.redirect(
       new URL(

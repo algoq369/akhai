@@ -6,14 +6,15 @@
  */
 
 import { db, getOrCreateAnonymousUser } from '../database';
+import { log } from '../logger';
 
 export function migrateToUsers() {
-  console.log('🔄 Starting migration to user-based system...');
+  log('INFO', 'DB_MIGRATIONS', 'Starting migration to user-based system');
   
   try {
     // Get or create anonymous user
     const anonymousUser = getOrCreateAnonymousUser();
-    console.log(`✅ Anonymous user created/found: ${anonymousUser.id}`);
+    log('INFO', 'DB_MIGRATIONS', `Anonymous user created/found: ${anonymousUser.id}`);
     
     // Update all queries without user_id to anonymous user
     const queriesUpdated = db.prepare(`
@@ -21,7 +22,7 @@ export function migrateToUsers() {
       SET user_id = ? 
       WHERE user_id IS NULL
     `).run(anonymousUser.id).changes;
-    console.log(`✅ Updated ${queriesUpdated} queries with anonymous user`);
+    log('INFO', 'DB_MIGRATIONS', `Updated ${queriesUpdated} queries with anonymous user`);
     
     // Update all topics without user_id to anonymous user
     const topicsUpdated = db.prepare(`
@@ -29,7 +30,7 @@ export function migrateToUsers() {
       SET user_id = ? 
       WHERE user_id IS NULL
     `).run(anonymousUser.id).changes;
-    console.log(`✅ Updated ${topicsUpdated} topics with anonymous user`);
+    log('INFO', 'DB_MIGRATIONS', `Updated ${topicsUpdated} topics with anonymous user`);
     
     // Update all synopses without user_id to anonymous user
     const synopsesUpdated = db.prepare(`
@@ -37,7 +38,7 @@ export function migrateToUsers() {
       SET user_id = ? 
       WHERE user_id IS NULL
     `).run(anonymousUser.id).changes;
-    console.log(`✅ Updated ${synopsesUpdated} synopses with anonymous user`);
+    log('INFO', 'DB_MIGRATIONS', `Updated ${synopsesUpdated} synopses with anonymous user`);
     
     // Update all topic_relationships without user_id to anonymous user
     const relationshipsUpdated = db.prepare(`
@@ -45,9 +46,9 @@ export function migrateToUsers() {
       SET user_id = ? 
       WHERE user_id IS NULL
     `).run(anonymousUser.id).changes;
-    console.log(`✅ Updated ${relationshipsUpdated} topic relationships with anonymous user`);
+    log('INFO', 'DB_MIGRATIONS', `Updated ${relationshipsUpdated} topic relationships with anonymous user`);
     
-    console.log('✅ Migration completed successfully!');
+    log('INFO', 'DB_MIGRATIONS', 'Migration completed successfully!');
     return {
       success: true,
       anonymousUserId: anonymousUser.id,

@@ -1,4 +1,5 @@
 import { db } from '@/lib/database';
+import { log } from '@/lib/logger';
 
 /**
  * Migration: Add user_id columns to existing tables if they don't exist
@@ -6,19 +7,15 @@ import { db } from '@/lib/database';
  */
 export function migrateAddUserIdColumns() {
   try {
-    // console.log('[DEBUG] Starting migration: migrateAddUserIdColumns');
     // Check if user_id column exists in queries table
     const queriesInfo = db.prepare('PRAGMA table_info(queries)').all() as Array<{ name: string }>;
     const hasUserIdInQueries = queriesInfo.some((col) => col.name === 'user_id');
-    // console.log('[DEBUG] Queries table columns:', queriesInfo.map(c => c.name), 'hasUserId:', hasUserIdInQueries);
 
     if (!hasUserIdInQueries) {
-      // console.log('[DEBUG] Adding user_id column to queries table');
       db.exec('ALTER TABLE queries ADD COLUMN user_id TEXT');
       db.exec('CREATE INDEX IF NOT EXISTS idx_queries_user_id ON queries(user_id)');
-      console.log('✅ Added user_id column to queries table');
+      log('INFO', 'DB_MIGRATIONS', 'Added user_id column to queries table');
     } else {
-      // console.log('[DEBUG] user_id column already exists in queries table');
     }
 
     // Check if user_id column exists in topics table (will be created if table doesn't exist)
@@ -26,11 +23,9 @@ export function migrateAddUserIdColumns() {
     const hasUserIdInTopics = topicsInfo.some((col) => col.name === 'user_id');
 
     if (topicsInfo.length > 0 && !hasUserIdInTopics) {
-      // console.log('[DEBUG] Adding user_id column to topics table');
       db.exec('ALTER TABLE topics ADD COLUMN user_id TEXT');
-      console.log('✅ Added user_id column to topics table');
+      log('INFO', 'DB_MIGRATIONS', 'Added user_id column to topics table');
     } else {
-      // console.log('[DEBUG] Topics table check - table exists:', topicsInfo.length > 0, 'hasUserId:', topicsInfo.length > 0 ? hasUserIdInTopics : 'N/A (table does not exist)');
     }
   } catch (error) {
     const errorInfo = {
@@ -56,7 +51,7 @@ export function migrateAddProcessingMode() {
 
     if (!hasProcessingMode) {
       db.exec("ALTER TABLE tree_configurations ADD COLUMN processing_mode TEXT DEFAULT 'weighted'");
-      console.log('✅ Added processing_mode column to tree_configurations table');
+      log('INFO', 'DB_MIGRATIONS', 'Added processing_mode column to tree_configurations table');
     }
   } catch (error) {
     console.error('[Migration Error] Failed to add processing_mode column:', error);
@@ -74,19 +69,19 @@ export function migrateAddTopicsColumns() {
 
     if (!columnNames.includes('color')) {
       db.exec("ALTER TABLE topics ADD COLUMN color TEXT DEFAULT '#94a3b8'");
-      console.log('✅ Added color column to topics table');
+      log('INFO', 'DB_MIGRATIONS', 'Added color column to topics table');
     }
     if (!columnNames.includes('pinned')) {
       db.exec('ALTER TABLE topics ADD COLUMN pinned INTEGER DEFAULT 0');
-      console.log('✅ Added pinned column to topics table');
+      log('INFO', 'DB_MIGRATIONS', 'Added pinned column to topics table');
     }
     if (!columnNames.includes('archived')) {
       db.exec('ALTER TABLE topics ADD COLUMN archived INTEGER DEFAULT 0');
-      console.log('✅ Added archived column to topics table');
+      log('INFO', 'DB_MIGRATIONS', 'Added archived column to topics table');
     }
     if (!columnNames.includes('ai_instructions')) {
       db.exec('ALTER TABLE topics ADD COLUMN ai_instructions TEXT');
-      console.log('✅ Added ai_instructions column to topics table');
+      log('INFO', 'DB_MIGRATIONS', 'Added ai_instructions column to topics table');
     }
   } catch (error) {
     console.error('[Migration Error] Failed to add topics columns:', error);
@@ -104,11 +99,11 @@ export function migrateAddAnnotationsColumns() {
 
     if (!columnNames.includes('annotations')) {
       db.exec('ALTER TABLE queries ADD COLUMN annotations TEXT DEFAULT NULL');
-      console.log('✅ Added annotations column to queries table');
+      log('INFO', 'DB_MIGRATIONS', 'Added annotations column to queries table');
     }
     if (!columnNames.includes('annotations_version')) {
       db.exec('ALTER TABLE queries ADD COLUMN annotations_version INTEGER DEFAULT 0');
-      console.log('✅ Added annotations_version column to queries table');
+      log('INFO', 'DB_MIGRATIONS', 'Added annotations_version column to queries table');
     }
   } catch (error) {
     console.error('[Migration Error] Failed to add annotations columns:', error);
@@ -125,11 +120,11 @@ export function migrateAddCognitiveSignatureColumns() {
 
     if (!columnNames.includes('cognitive_signature')) {
       db.exec('ALTER TABLE queries ADD COLUMN cognitive_signature TEXT DEFAULT NULL');
-      console.log('✅ Added cognitive_signature column to queries table');
+      log('INFO', 'DB_MIGRATIONS', 'Added cognitive_signature column to queries table');
     }
     if (!columnNames.includes('cognitive_signature_version')) {
       db.exec('ALTER TABLE queries ADD COLUMN cognitive_signature_version INTEGER DEFAULT 0');
-      console.log('✅ Added cognitive_signature_version column to queries table');
+      log('INFO', 'DB_MIGRATIONS', 'Added cognitive_signature_version column to queries table');
     }
   } catch (error) {
     console.error('[Migration Error] Failed to add cognitive_signature columns:', error);
@@ -220,7 +215,7 @@ export function migrateAddRawThinkingColumn() {
 
     if (!columnNames.includes('raw_thinking')) {
       db.exec('ALTER TABLE queries ADD COLUMN raw_thinking TEXT DEFAULT NULL');
-      console.log('✅ Added raw_thinking column to queries table');
+      log('INFO', 'DB_MIGRATIONS', 'Added raw_thinking column to queries table');
     }
   } catch (error) {
     console.error('[Migration Error] Failed to add raw_thinking column:', error);
