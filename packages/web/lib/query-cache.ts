@@ -1,8 +1,7 @@
 import 'server-only';
-// node:crypto via the runtime builtin accessor — a STATIC 'node:crypto' import is externalized
-// at transform by the browser-mode test environment (collection failure; same class as the F2 fs
-// bug). This module is 'server-only', so the Node runtime — and this official API — is guaranteed.
-const { createHash } = process.getBuiltinModule('node:crypto');
+// Standard import — server suites run in the node test project (vitest.config projects);
+// if this file ever fails collection again, the env split regressed.
+import { createHash } from 'node:crypto';
 import { LRUCache } from './intelligence-fusion-types';
 
 /**
