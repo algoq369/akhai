@@ -3,6 +3,7 @@ import { btcPay, isBTCPayConfigured, getBTCPayQRCode } from '@/lib/btcpay';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { getAnonymousDistinctId } from '@/lib/posthog-events';
 import { getUserFromSession } from '@/lib/auth';
+import { log } from '@/lib/logger';
 import { nanoid } from 'nanoid';
 
 export const dynamic = 'force-dynamic';
@@ -31,8 +32,11 @@ export async function POST(req: NextRequest) {
 
     const body: CheckoutRequest = await req.json();
 
-    // Use userId from body if provided, otherwise from session
-    const userId = body.userId || user?.id || null;
+    // SESSION-FIRST (E4.2): a session id always wins; body userId only covers anonymous checkout
+    const userId = user?.id || body.userId || null;
+    if (!user?.id && body.userId) {
+      log('WARN', 'CHECKOUT', 'unauthenticated checkout with client-supplied userId', { userId });
+    }
 
     if (!userId) {
       return NextResponse.json(

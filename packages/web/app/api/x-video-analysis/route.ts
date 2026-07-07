@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractTweetId, fetchXThread, extractVideos } from '@/lib/tools/x-thread-fetcher';
 import { XVideoAnalysisSchema } from '@/lib/route-schemas';
+import { getUserFromSession } from '@/lib/auth';
 import Anthropic from '@anthropic-ai/sdk';
 
 export const dynamic = 'force-dynamic';
@@ -44,9 +45,15 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { url, userId, analysisPrompt } = parsed.data;
+    const { url, analysisPrompt } = parsed.data;
 
-    // userId is schema-optional so this keeps its 401 'Please log in' UX
+    // SESSION-FIRST (E4.2 HIGH): identity is session-derived ONLY. parsed.data.userId is
+    // ignored for all logic — the client-sent id previously selected other users' stored
+    // X OAuth tokens via fetchXThread.
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id ?? null;
+
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required. Please log in.' }, { status: 401 });
     }

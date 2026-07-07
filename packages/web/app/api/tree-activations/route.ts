@@ -7,12 +7,13 @@
  * GET /api/tree-activations
  * Query params:
  * - limit: number of queries to analyze (default: 50)
- * - userId: filter by user (optional)
  * - conversationId: filter by conversation (optional)
+ * Reads are scoped to the session user; no session returns an empty result set.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
+import { getUserFromSession } from '@/lib/auth';
 import { Layer } from '@/lib/layer-registry';
 
 export const dynamic = 'force-dynamic';
@@ -47,8 +48,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
-    const userId = searchParams.get('userId');
     const conversationId = searchParams.get('conversationId');
+
+    // SESSION-FIRST (E4.2): reads are scoped to the authenticated user. The client-supplied
+    // ?userId= selector was an IDOR read (the UI only ever sends ?limit=) — removed.
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id ?? null;
 
     // Build query
     let sqlQuery = `
@@ -77,9 +83,8 @@ export async function GET(request: NextRequest) {
     sqlQuery += ` ORDER BY created_at DESC LIMIT ?`;
     params.push(limit);
 
-    // Execute query
-    const stmt = db.prepare(sqlQuery);
-    const rows = stmt.all(...params) as Array<{
+    // Execute query — no session means no rows (same response shape as an empty history)
+    const rows = (userId ? db.prepare(sqlQuery).all(...params) : []) as Array<{
       id: string;
       query: string;
       created_at: number;

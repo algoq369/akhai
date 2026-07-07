@@ -363,7 +363,8 @@ export const TreeConfigTestSchema = z.object({
 
 export const XVideoAnalysisSchema = z.object({
   url: HttpUrl,
-  // optional here so the handler's 401 'Please log in' branch keeps its UX for missing ids
+  // accepted for caller compat; NEVER used — identity is session-derived
+  // (E4.2 HIGH: client id selected other users' stored X tokens)
   userId: z.string().max(200).optional(),
   analysisPrompt: z.string().max(4000).optional(),
 });

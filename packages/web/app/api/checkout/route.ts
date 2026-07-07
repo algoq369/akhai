@@ -8,6 +8,8 @@ import { stripe } from '@/lib/stripe';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { getAnonymousDistinctId } from '@/lib/posthog-events';
 import { CheckoutSchema } from '@/lib/route-schemas';
+import { getUserFromSession } from '@/lib/auth';
+import { log } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +22,15 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { priceId, mode, planId, userId, quantity, price, tokens } = parsed.data;
+    const { priceId, mode, planId, quantity, price, tokens } = parsed.data;
+
+    // SESSION-FIRST (E4.2): a session id always wins; body userId only covers anonymous checkout
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id || parsed.data.userId || '';
+    if (!user?.id && parsed.data.userId) {
+      log('WARN', 'CHECKOUT', 'unauthenticated checkout with client-supplied userId', { userId });
+    }
 
     // Get the base URL for redirects
     const origin = request.headers.get('origin') || 'http://localhost:3000';
