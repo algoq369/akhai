@@ -228,23 +228,6 @@ export function validateSession(token: string): User | null {
       stack: error instanceof Error ? error.stack?.substring(0, 300) : 'no stack',
     };
     console.error('[DEBUG] validateSession error:', errorInfo);
-    // #region agent log
-    try {
-      fetch('http://127.0.0.1:7242/ingest/3a942698-b8f2-4482-824a-ac082ba88036', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          location: 'lib/database.ts:540',
-          message: 'validateSession error',
-          data: errorInfo,
-          timestamp: Date.now(),
-          sessionId: 'debug-session',
-          runId: 'run1',
-          hypothesisId: 'C',
-        }),
-      }).catch(() => {});
-    } catch (e) {}
-    // #endregion
     throw error;
   }
 }
