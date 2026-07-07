@@ -103,6 +103,12 @@ export async function POST(request: NextRequest) {
     }
     const { query, userContext } = parsed.data;
 
+    // history is session-scoped — body userId was an IDOR (E4.2b): it read other users'
+    // recent queries into the prompt. userContext.username stays (harmless display string).
+    const token = request.cookies.get('session_token')?.value;
+    const sessionUser = token ? getUserFromSession(token) : null;
+    const sessionUserId = sessionUser?.id ?? null;
+
     // Build context-aware system prompt
     let systemPrompt =
       'You are AkhAI Quick Chat assistant. Provide concise, helpful answers. Keep responses brief (2-3 paragraphs max).';
@@ -115,10 +121,10 @@ export async function POST(request: NextRequest) {
 
     // Fetch recent conversation history from main chat
     let conversationContext = '';
-    if (userContext?.userId) {
+    if (sessionUserId) {
       try {
         // Get last 3 conversations from history
-        const recentQueries = getRecentQueries(3, userContext.userId, null);
+        const recentQueries = getRecentQueries(3, sessionUserId, null);
 
         if (recentQueries && recentQueries.length > 0) {
           conversationContext = '\n\nRecent Conversation History (last 3 exchanges):\n';

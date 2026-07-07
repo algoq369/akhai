@@ -1,14 +1,19 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
+import { getUserFromSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { searchParams } = new URL(request.url);
   const format = searchParams.get('format') || 'md';
   const { id: queryId } = await params;
 
   try {
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id ?? null;
+
     const query = db.prepare('SELECT * FROM queries WHERE id = ?').get(queryId) as
       | {
           id: string;
@@ -19,9 +24,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           cost: number | null;
           result: string | null;
           created_at: number;
+          user_id: string | null;
         }
       | undefined;
     if (!query) return NextResponse.json({ error: 'Query not found' }, { status: 404 });
+
+    // Ownership scope (E4.2b): a row owned by someone (user_id set) is exportable only by
+    // that someone. Anonymous/legacy rows (user_id null) stay exportable. Return the SAME
+    // 404 as a missing row — a 403 would leak that the id is valid.
+    if (query.user_id !== null && query.user_id !== userId) {
+      return NextResponse.json({ error: 'Query not found' }, { status: 404 });
+    }
 
     const events = db
       .prepare('SELECT type, data, timestamp FROM events WHERE query_id = ? ORDER BY id ASC')
