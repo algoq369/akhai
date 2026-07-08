@@ -3,11 +3,11 @@
  *
  * Research-Validated Top 7 Methodologies (December 2025):
  * - Direct: Simple factual queries (Tier 1)
- * - CoD: Chain of Draft - 92% cheaper than CoT (Tier 2)
- * - BoT: Buffer of Thoughts - 88% cheaper than ToT (Tier 2)
+ * - CoD: Chain of Draft - 92% cheaper than CoT per CoD paper (Tier 2)
+ * - BoT: Buffer of Thoughts - BoT paper reports 88% cheaper than ToT (Tier 2)
  * - ReAct: Tool-augmented reasoning (Tier 3)
  * - PoT: Program of Thought - Code-based computation (Tier 4)
- * - GTP: Multi-AI consensus with Self-Consistency (Tier 5)
+ * - GTP: GTP Flash - parallel multi-advisor broadcast + quorum consensus (Tier 5)
  * - Auto: Smart methodology selector (Meta)
  *
  * Legacy/Optional:

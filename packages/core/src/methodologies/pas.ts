@@ -7,7 +7,7 @@
  * Key Innovation:
  * - Generates executable code instead of natural language reasoning
  * - Separates reasoning (what to compute) from computation (how to compute)
- * - Achieves +24% accuracy on mathematical and computational tasks
+ * - The PoT paper reports +24% accuracy on mathematical and computational tasks
  * - More reliable than chain-of-thought for numerical problems
  *
  * Best for:

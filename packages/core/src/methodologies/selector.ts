@@ -285,7 +285,7 @@ export class MethodologySelector {
     }
 
     // =======================
-    // SC (Self-Consistency) Scoring
+    // SC (Buffer of Thoughts) Scoring
     // =======================
     // Best for: complex analysis, comparisons, planning
     // SC buffers key facts, builds a reasoning chain, and self-validates against them
