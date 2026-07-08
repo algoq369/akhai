@@ -68,7 +68,11 @@ adaptive thinking always-on via `effort` param, NO raw CoT (4.6 thinking_delta p
 - [x] E1  ZOD COMPLETE (04e0caf→09b60f6): 31→21→10→0 in three tranches. 33 schemas in pure lib/route-schemas.ts, 19 boundary tests, PII no-echo live-probed, cost-amplification caps live-probed, internal contracts preserved. TERMINAL ratchet 0 — every future body-reading route validates from birth. Remaining from original scope: CSP nonce · user_id audit (fold into E4 QA).
 - [x] E2  Code health DONE (99aa398+4c80dd1): console 244→103 (incl. 2 secret-logging catches) · any 277→135 (laundering-audited) · file-splits formally HELD at ratchet 12 (post-launch lane) · Sentry hooks deferred post-launch.
 - [ ] E3  E6.1 model strings: 31 hardcoded outside models.ts (measured 2026-07-05) → fold into MODELS constant. (Separate win under this label: dead-code retirement DONE 1534b9c, 2,743 lines + tree-wide SC honesty.)
-- [ ] E4  Full QA sweep: all methodologies + all routes, fixed eval set, green.
+- [◕] E4  QA lane — IN PROGRESS. DONE: E4.1 vitest env-split (be13258); SECURITY ARC CLOSED —
+          7 vulns fixed: 5 session-first (8af805b) + 2 HIGH IDORs (a818881) + debug-egress artifact
+          (f2dee83) + delimiter-safe payment order-ids (4090ece) + CRITICAL dev-login prod-gate &
+          living-tree IDOR (49207a1). REMAINING: E4.4 packages/core honesty audit (pre-OSS) · E4.5
+          CSP nonce · E4.6 methodology×route functional sweep · E4.7 eval-bar ≥85 (freeze week).
 - [x] E5  FLIPPED (2026-07-05): live agent is the DEFAULT for react — both states live-proven (no-flag → agent w/ 19-source answer + $0.044 COGS; =0 → knowledge-recall single-call, no Sources). Rollback: REACT_AGENT_LIVE=0 + restart. Auto→react exposure confirmed (fusion-scoring:176) — Brave 2k/mo quota rides the Aug-8 hosting/SearXNG decision.
 - [x] E7  CLOSED (98bc671+4580875): history gate · URL-outage belt (+case-insensitive early) · sideCanal+gnostic.progressState sanitized from cached payloads · pageContext OUT of the stable prefix → GAP-A RESURRECTED for browser traffic (proven: cR=1285 across differing contexts) + sha256 key partition. layersWeights closed earlier. Original scope: conversationHistory, pageContext, per-user
           sideCanal.suggestions embedded in cached payloads, layersWeights, URL-fetch-failure window.
