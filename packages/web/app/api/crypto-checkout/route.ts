@@ -4,6 +4,7 @@ import { trackServerEvent } from '@/lib/posthog-server';
 import { getAnonymousDistinctId } from '@/lib/posthog-events';
 import { getUserFromSession } from '@/lib/auth';
 import { log } from '@/lib/logger';
+import { encodeOrderId } from '@/lib/order-id';
 import { nanoid } from 'nanoid';
 
 export const dynamic = 'force-dynamic';
@@ -23,13 +24,8 @@ interface CheckoutRequest {
  * NOWPayments Crypto Checkout
  *
  * IMPORTANT: NOWPayments doesn't support custom metadata fields.
- * We encode userId in the orderId for webhook processing.
- *
- * Order ID format: akhai-{type}-{userId}-{tokenAmount}-{nanoId}
- * Example: akhai-credits-abc123-50000-xYz789
- *
- * For subscriptions: akhai-subscription-{userId}-{planId}-{nanoId}
- * Example: akhai-subscription-abc123-pro-xYz789
+ * We encode userId in the orderId for webhook processing — delimiter-safe (see lib/order-id):
+ * akhai.2.{type}.{base64url(userId)}.{meta}.{nonce}
  */
 export async function POST(req: NextRequest) {
   try {
@@ -65,15 +61,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
     }
 
-    // Generate unique order ID with userId encoded
-    // Format: akhai-{type}-{userId}-{planIdOrTokenAmount}-{nanoId}
+    // Delimiter-safe order id — userId is a hyphenated UUID that shattered the old
+    // '-'-positional scheme (see lib/order-id).
     let orderId: string;
     if (body.productType === 'credits') {
-      // Include token amount in orderId for easy parsing
-      orderId = `akhai-credits-${userId}-${body.creditAmount || 0}-${nanoid(8)}`;
+      orderId = encodeOrderId({
+        type: 'credits',
+        userId,
+        // token counts are integers — trunc keeps meta digit-only (delimiter-safe) even
+        // if a client sends a float creditAmount (body is not zod-validated here)
+        meta: String(Math.trunc(body.creditAmount || 0)),
+        nonce: nanoid(8),
+      });
     } else {
-      // Include planId in orderId for easy parsing
-      orderId = `akhai-subscription-${userId}-${body.planId || 'unknown'}-${nanoid(8)}`;
+      orderId = encodeOrderId({
+        type: 'subscription',
+        userId,
+        meta: body.planId || 'unknown',
+        nonce: nanoid(8),
+      });
     }
 
     // Create description

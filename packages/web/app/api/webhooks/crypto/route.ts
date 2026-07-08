@@ -3,6 +3,7 @@ import { log } from '@/lib/logger';
 import { nowPayments, IPNPayload, PaymentStatus } from '@/lib/nowpayments';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { db } from '@/lib/database';
+import { decodeOrderId } from '@/lib/order-id';
 import { addTokens, upsertSubscription, recordPayment, type Tier } from '@/lib/subscription';
 
 export const dynamic = 'force-dynamic';
@@ -75,9 +76,9 @@ export async function POST(req: NextRequest) {
  * Parse orderId to extract userId, productType, and metadata
  *
  * Formats:
- * - New: akhai-credits-{userId}-{tokenAmount}-{nanoId}
- * - New: akhai-subscription-{userId}-{planId}-{nanoId}
- * - Legacy: akhai-{type}-{nanoId}
+ * - v2 (delimiter-safe): akhai.2.{type}.{base64url(userId)}.{meta}.{nonce} — see lib/order-id
+ * - Legacy new: akhai-{type}-{userId}-{meta}-{nanoId}  (broken on UUID userIds — kept for in-flight orders)
+ * - Legacy old: akhai-{type}-{nanoId}
  */
 interface ParsedOrder {
   productType: 'subscription' | 'credits';
@@ -88,6 +89,26 @@ interface ParsedOrder {
 }
 
 function parseOrderId(orderId: string): ParsedOrder {
+  // v2 delimiter-safe format — the UUID survives intact.
+  const decoded = decodeOrderId(orderId);
+  if (decoded) {
+    if (decoded.type === 'credits') {
+      return {
+        productType: 'credits',
+        userId: decoded.userId,
+        tokenAmount: parseInt(decoded.meta) || 0,
+        isLegacy: false,
+      };
+    }
+    return {
+      productType: 'subscription',
+      userId: decoded.userId,
+      planId: decoded.meta,
+      isLegacy: false,
+    };
+  }
+
+  // Legacy '-' fallback — unchanged, so any already-issued order is handled exactly as before.
   const parts = orderId.split('-');
 
   // New format: akhai-{type}-{userId}-{metadata}-{nanoId}

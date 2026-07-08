@@ -3,6 +3,7 @@ import { log } from '@/lib/logger';
 import { btcPay, WebhookPayload } from '@/lib/btcpay';
 import { trackServerEvent } from '@/lib/posthog-server';
 import { db } from '@/lib/database';
+import { decodeOrderId } from '@/lib/order-id';
 import { addTokens, upsertSubscription, recordPayment, type Tier } from '@/lib/subscription';
 
 export const dynamic = 'force-dynamic';
@@ -140,11 +141,12 @@ async function handleInvoiceSettled(invoiceId: string) {
     const posData = parsePosData(invoice.metadata.posData);
 
     if (!posData || !posData.userId) {
-      // Fallback: try to parse from orderId for backwards compatibility
-      // Format: akhai-btc-{type}-{nanoId}
+      // Fallback: recover productType from the orderId (v2 delimiter-safe, or legacy
+      // akhai-btc-{type}-{nanoId}). Crediting stays user-less here — posData is the only
+      // path that attributes a user, so this fallback's behavior is unchanged.
       const orderId = invoice.metadata.orderId;
-      const orderParts = orderId.split('-');
-      const productType = orderParts[2] as 'subscription' | 'credits';
+      const productType = (decodeOrderId(orderId)?.type ??
+        orderId.split('-')[2]) as 'subscription' | 'credits';
 
       console.warn('[BTCPay Webhook] No posData found, using legacy processing for:', invoiceId);
 

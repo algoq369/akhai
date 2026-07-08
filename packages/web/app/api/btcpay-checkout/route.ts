@@ -4,6 +4,7 @@ import { trackServerEvent } from '@/lib/posthog-server';
 import { getAnonymousDistinctId } from '@/lib/posthog-events';
 import { getUserFromSession } from '@/lib/auth';
 import { log } from '@/lib/logger';
+import { encodeOrderId } from '@/lib/order-id';
 import { nanoid } from 'nanoid';
 
 export const dynamic = 'force-dynamic';
@@ -58,8 +59,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid product type' }, { status: 400 });
     }
 
-    // Generate unique order ID (include userId for easy lookup)
-    const orderId = `akhai-btc-${body.productType}-${nanoid(12)}`;
+    // Delimiter-safe order id that actually embeds userId (posData carries it as the
+    // primary path; this keeps the id scheme consistent with crypto — see lib/order-id).
+    const orderId = encodeOrderId({
+      type: body.productType,
+      userId,
+      // token counts are integers — trunc keeps meta digit-only (delimiter-safe)
+      meta:
+        body.productType === 'credits'
+          ? String(Math.trunc(body.creditAmount || 0))
+          : body.planId || 'unknown',
+      nonce: nanoid(12),
+    });
 
     // Create description
     let description = '';
