@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-08 · HEAD 0bc7147 (core3, UNPUSHED) · origin at 43d5e92 · SHIELD PASS · clean tree
+> Last updated: 2026-07-08 · HEAD = RESUME sync atop 68c376c (E4.5a CSP reconcile) · UNPUSHED (origin at 58e6fa6) · SHIELD PASS · clean tree
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -76,17 +76,28 @@ DONE:
   "SC (Self-Consistency)"→"SC (Buffer of Thoughts)"). HONESTY LANE FULLY CLOSED — zero known-false
   labels/metrics left in core. tsc 0, SHIELD PASS. (5th residual selector.ts:288 was found by a broader
   grep than E4.4's term list — lesson: honesty grep-proofs should include bare "Self-Consist"/"+NN%".)
+- E4.5a DONE (68c376c, UNPUSHED pending localhost eyeball): CSP CONFLICT BUG fixed. Two disagreeing
+  CSPs shipped — middleware.ts .set() OVERRODE on app paths (blocking deepseek/mistral/xai/coingecko/
+  api.stripe there), next.config applied on middleware-excluded static paths (blocking openrouter/brave/
+  sentry/openpanel there). NOT a header intersection (my hypothesis was wrong) — per-path override, 1
+  header per path but different policy. Fix: single UNION CSP in next.config (sole source), middleware
+  CSP removed (other 6 headers kept), dead 127.0.0.1:7242 dropped. SUPERSET-PROVEN (independent Python
+  check: every old origin present, only 127.0.0.1 removed, ZERO additions → can only widen, cannot
+  newly block). tsc/SHIELD PASS, live / = exactly 1 CSP header. 'unsafe-inline'/'unsafe-eval' KEPT.
 
 ## NEXT STEPS (pick up here — recommended order)
-1. E4.5 CSP nonce — assess current headers first; CSP lives in packages/web/middleware.ts today
-   (full script-src 'unsafe-inline' 'unsafe-eval'); may move Caddy-level (report-only to start). `go csp`.
-2. E4.6 methodology × route functional sweep — all 7 methodologies × routes on the fixed eval set.
-3. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `pnpm eval`, Node 24, server :3000.
-4. E6.1 — fold the 31 hardcoded model strings (measured 2026-07-05) into the MODELS constant. NOW ALSO
+1. E4.6 methodology × route functional sweep — all 7 methodologies × routes on the fixed eval set.
+2. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `pnpm eval`, Node 24, server :3000.
+3. E6.1 — fold the 31 hardcoded model strings (measured 2026-07-05) into the MODELS constant. NOW ALSO
    folds core PROVIDER_RATES (sc.ts): hardcoded flat Sonnet pricing applied to ALL anthropic calls.
-5. F4 — ban-story launch copy (with partner).
+4. F4 — ban-story launch copy (with partner).
 
 ## PARKED CHIPS (don't lose)
+- E4.5b (post-launch hardening, was going to be E4.5 nonce): drop 'unsafe-inline' via per-request
+  nonce. Blocker is ONE first-party inline script (layout.tsx:48 — wallet-err suppress + randomUUID
+  polyfill). Nonce MUST use Web Crypto (crypto.randomUUID), NOT Math.random (SHIELD ratchet=0). Keep
+  'wasm-unsafe-eval' — Reown/WalletConnect need WASM; full 'unsafe-eval' removal risks Web3 auth,
+  needs localhost wallet test. Report-only first, then enforce. Low urgency (single controlled inline).
 - quick-query getRecentQueries never SELECTs the `response` column it reads (runtime bug, own fix).
 - dev-login 404 body is plaintext not native-HTML (cosmetic prober signal; post-launch).
 - sc-multipath rematch (harder cases) · Fable rematch (if agentic surface) — post-launch.
