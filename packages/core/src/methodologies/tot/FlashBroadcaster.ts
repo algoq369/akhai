@@ -2,7 +2,8 @@
  * Flash Broadcaster
  *
  * Broadcasts Flash Context Frame to ALL advisors SIMULTANEOUSLY using Promise.allSettled().
- * This is the core of GTP's parallel architecture - achieving 3x speedup over sequential execution.
+ * This is the core of GTP's parallel architecture - parallel advisor execution
+ * (Promise.allSettled) instead of sequential awaits.
  *
  * Critical: Uses Promise.allSettled() for TRUE parallelism, not sequential awaits!
  */

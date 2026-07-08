@@ -23,10 +23,10 @@ import type { ModelFamily } from '../models/types.js';
 export type CoreMethodology =
   | 'direct'    // Tier 1: Instant response
   | 'cod'       // Tier 2: Chain of Draft (cost-optimized)
-  | 'sc'        // Tier 2: Self-Consistency (Wang et al., ICLR 2023)
+  | 'sc'        // Tier 2: Buffer of Thoughts (arXiv:2406.04271); key 'sc' retained for compat
   | 'react'     // Tier 3: Tool-augmented reasoning
-  | 'pas'       // Tier 4: Plan-and-Solve (Wang et al., ACL 2023)
-  | 'tot'       // Tier 5: Tree of Thoughts (Yao et al., NeurIPS 2023)
+  | 'pas'       // Tier 4: Program of Thought (Chen et al., arXiv:2211.12588); key 'pas' retained
+  | 'tot'       // Tier 5: GTP Flash Consensus (original architecture, not Yao ToT); key 'tot' retained
   | 'auto';     // Meta: Auto-selector
 
 /**
@@ -165,7 +165,7 @@ export const METHODOLOGY_INFO: Record<CoreMethodology, MethodologyInfo> = {
     bestFor: ['procedural', 'how-to', 'sequential'],
   },
   sc: {
-    name: 'Self-Consistency',
+    name: 'Buffer of Thoughts',
     tier: 2,
     icon: '🧠',
     description: 'Buffers key facts and constraints, builds a reasoning chain, and self-validates the answer against them for consistency',
@@ -188,17 +188,17 @@ export const METHODOLOGY_INFO: Record<CoreMethodology, MethodologyInfo> = {
     name: 'Program of Thought',
     tier: 4,
     icon: '💻',
-    description: 'Code-based computation (+24% on numerical tasks)',
+    description: 'Chen et al. 2022 — generates executable JS, sandboxed run; separates reasoning from computation',
     tokenMultiplier: 1.5,
     avgLatencyMs: 12000,
     costPer1K: 0.01,
     bestFor: ['math', 'finance', 'computation'],
   },
   tot: {
-    name: 'Tree of Thoughts',
+    name: 'GTP Flash Consensus',
     tier: 5,
     icon: '🤝',
-    description: 'Yao et al., NeurIPS 2023, explores multiple reasoning branches, evaluates and prunes',
+    description: 'Parallel multi-advisor broadcast with quorum early-exit and Mother Base synthesis (original architecture)',
     tokenMultiplier: 5.0,
     avgLatencyMs: 30000,
     costPer1K: 0.03,
@@ -739,7 +739,6 @@ export interface BoTResult {
     input: number;
     output: number;
     total: number;
-    saved: number; // Tokens saved through distillation
   };
 
   /** Execution time in milliseconds */
@@ -754,12 +753,6 @@ export interface BoTResult {
     distillationCount: number;
     avgConfidence: number;
     solutionDepth: number;
-    tokenSavings: string;
-    comparisonToToT: {
-      estimatedToTTokens: number;
-      actualBoTTokens: number;
-      savingsPercent: number;
-    };
   };
 }
 

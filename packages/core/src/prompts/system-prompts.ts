@@ -120,7 +120,7 @@ Thought-action cycles with tool use.
 `,
   pas: `
 ### PLAN-AND-SOLVE (PaS) MODE
-Wang et al., ACL 2023. Decompose problem into plan then execute step by step.
+Program of Thought (Chen et al. 2022): generate executable code, run it, separate reasoning from computation.
 - Devise a plan breaking the problem into sub-tasks
 - Execute each sub-task step by step
 - Verify the result
@@ -128,7 +128,7 @@ Wang et al., ACL 2023. Decompose problem into plan then execute step by step.
 `,
   tot: `
 ### TREE OF THOUGHTS (ToT) MODE
-Yao et al., NeurIPS 2023. Explore multiple reasoning branches, evaluate and prune.
+GTP Flash: broadcast to parallel advisors, merge into a living database, reach quorum, synthesize.
 - Consider multiple viewpoints (technical, strategic, contrarian)
 - Identify areas of agreement and disagreement
 - Synthesize into balanced recommendation

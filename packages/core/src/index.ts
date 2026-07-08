@@ -64,7 +64,8 @@ export {
 } from './models/ModelProviderFactory.js';
 
 // ============================================================================
-// TOT (TREE OF THOUGHTS) - Yao et al., NeurIPS 2023
+// GTP FLASH CONSENSUS (registry key 'tot') — parallel advisor broadcast + quorum;
+// original architecture, not Yao et al. ToT
 // ============================================================================
 
 export {
@@ -92,7 +93,7 @@ export {
 } from './methodologies/cod.js';
 
 // ============================================================================
-// SELF-CONSISTENCY (SC) - Wang et al., ICLR 2023
+// BUFFER OF THOUGHTS (registry key 'sc') — arXiv:2406.04271
 // ============================================================================
 
 export {
@@ -121,7 +122,7 @@ export {
 } from './methodologies/react.js';
 
 // ============================================================================
-// PLAN-AND-SOLVE (PAS) - Wang et al., ACL 2023
+// PROGRAM OF THOUGHT (registry key 'pas') — Chen et al., arXiv:2211.12588
 // ============================================================================
 
 export {

@@ -7,10 +7,10 @@
  * Core 7 Methodologies (Research-Validated December 2025):
  * - direct: Simple factual queries (~2s, Tier 1)
  * - cod: Chain of Draft, 92% cheaper than CoT (~8s, Tier 2)
- * - sc: Self-Consistency, Wang et al. ICLR 2023 (~18s, Tier 2)
+ * - sc: Buffer of Thoughts (key 'sc') (~18s, Tier 2)
  * - react: Tool-augmented reasoning (~20s, Tier 3)
- * - pas: Plan-and-Solve, Wang et al. ACL 2023 (~12s, Tier 4)
- * - tot: Tree of Thoughts, Yao et al. NeurIPS 2023 (~30s, Tier 5)
+ * - pas: Program of Thought (key 'pas', Chen et al. 2022) (~12s, Tier 4)
+ * - tot: GTP Flash Consensus (key 'tot') (~30s, Tier 5)
  * - auto: Smart selector (meta, default)
  *
  * Legacy/Optional:
@@ -20,7 +20,7 @@
  * Selection logic (priority order):
  * - direct: complexity < 0.3, factual queries
  * - cod: procedural, how-to, cost-efficient sequential reasoning
- * - sc: complex analysis, comparisons, planning (multi-path voting)
+ * - sc: complex analysis, comparisons, planning (buffered-fact validation)
  * - react: requires external tools (search, calculate)
  * - pas: mathematical, financial, numerical tasks
  * - tot: multi-perspective, critical decisions, verification
@@ -291,7 +291,7 @@ export class MethodologySelector {
     // SC buffers key facts, builds a reasoning chain, and self-validates against them
     if (analysis.queryType === 'analytical' || analysis.queryType === 'planning') {
       scores.sc += 0.8;
-      reasons.sc.push('Complex analysis/planning (multi-path voting)');
+      reasons.sc.push('Complex analysis/planning (buffered-fact validation)');
     }
 
     if (analysis.queryType === 'comparative') {

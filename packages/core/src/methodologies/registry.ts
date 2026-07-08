@@ -61,7 +61,7 @@ export const METHODOLOGY_REGISTRY: Record<CoreMethodology, MethodologyEntry> = {
       name: 'Chain of Draft',
       tier: 2,
       icon: '📝',
-      description: 'Token-efficient step-by-step reasoning (92% cheaper than CoT)',
+      description: 'Token-efficient step-by-step reasoning (92% cheaper than CoT per CoD paper)',
       tokenMultiplier: 0.08,
       avgLatencyMs: 8000,
       costPer1K: 0.0008,
@@ -74,7 +74,7 @@ export const METHODOLOGY_REGISTRY: Record<CoreMethodology, MethodologyEntry> = {
   sc: {
     execute: executeBufferOfThoughts,
     info: {
-      name: 'Self-Consistency',
+      name: 'Buffer of Thoughts',
       tier: 2,
       icon: '🧠',
       description: 'Buffers key facts and constraints, builds a reasoning chain, and self-validates the answer against them for consistency',
@@ -84,7 +84,7 @@ export const METHODOLOGY_REGISTRY: Record<CoreMethodology, MethodologyEntry> = {
       bestFor: ['complex', 'analysis', 'comparison', 'planning'],
     },
     status: 'implemented',
-    notes: 'Standalone implementation in sc.ts with thought buffering and distillation',
+    notes: "Standalone implementation in sc.ts with thought buffering and distillation; registry key 'sc' retained for compatibility",
   },
 
   react: {
@@ -106,33 +106,33 @@ export const METHODOLOGY_REGISTRY: Record<CoreMethodology, MethodologyEntry> = {
   pas: {
     execute: executeProgramOfThought,
     info: {
-      name: 'Plan-and-Solve',
+      name: 'Program of Thought',
       tier: 4,
       icon: '💻',
-      description: 'Wang et al., ACL 2023, decomposes problem into plan then executes step by step',
+      description: 'Chen et al. 2022 — generates executable JS, sandboxed run; separates reasoning from computation',
       tokenMultiplier: 1.5,
       avgLatencyMs: 12000,
       costPer1K: 0.01,
       bestFor: ['math', 'finance', 'computation'],
     },
     status: 'implemented',
-    notes: 'JavaScript execution with sandboxed Function constructor and timeout protection',
+    notes: "JavaScript execution with sandboxed Function constructor and timeout protection; key 'pas' retained for compat",
   },
 
   tot: {
     execute: GTPExecutor, // Wrapped in class, need to adapt
     info: {
-      name: 'Tree of Thoughts',
+      name: 'GTP Flash Consensus',
       tier: 5,
       icon: '🤝',
-      description: 'Yao et al., NeurIPS 2023, explores multiple reasoning branches, evaluates and prunes',
+      description: 'Parallel multi-advisor broadcast with quorum early-exit and Mother Base synthesis (original architecture)',
       tokenMultiplier: 5.0,
       avgLatencyMs: 30000,
       costPer1K: 0.03,
       bestFor: ['debate', 'verification', 'critical-decisions'],
     },
     status: 'implemented',
-    notes: 'Full Flash architecture with TUMIX early exit',
+    notes: "Flash architecture, TUMIX-inspired early exit; key 'tot' retained for compat",
   },
 
   auto: {

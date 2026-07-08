@@ -22,11 +22,13 @@ Based on comprehensive analysis of recent research papers (2024-2025), AkhAI use
 |---|-------------|------|------|-------------------|-------------|---------|--------|
 | 1 | Direct | ⚡ | 1 | Instant response | <2s | $0.0001 | ✅ Implemented |
 | 2 | Chain of Draft | 📝 | 2 | Token-efficient reasoning | 5-10s | $0.0008 | ✅ Implemented |
-| 3 | Buffer of Thoughts | 🧠 | 2 | Template-based analysis | 15-20s | $0.006 | ⏳ Next |
-| 4 | ReAct | 🔧 | 3 | Tool-augmented reasoning | 10-30s | $0.02 | ❌ Planned |
-| 5 | Program of Thought | 💻 | 4 | Code-based computation | 5-15s | $0.01 | ❌ Planned |
-| 6 | GTP + Self-Consistency | 🤝 | 5 | Multi-perspective consensus | 20-35s | $0.03 | ✅ Implemented |
+| 3 | Buffer of Thoughts | 🧠 | 2 | Buffered-fact validation | 15-20s | $0.006 | ✅ Implemented |
+| 4 | ReAct | 🔧 | 3 | Tool-augmented reasoning | 10-30s | $0.02 | ✅ Implemented |
+| 5 | Program of Thought | 💻 | 4 | Code-based computation | 5-15s | $0.01 | ✅ Implemented |
+| 6 | GTP Flash Consensus | 🤝 | 5 | Multi-perspective consensus | 20-35s | $0.03 | ✅ Implemented |
 | 7 | Auto Selector | 🎯 | 0 | Smart routing | <500ms | $0 | ✅ Implemented |
+
+> **Registry keys vs names:** the code retains legacy registry keys `sc`, `tot`, `pas` for compatibility. Their truthful names are **Buffer of Thoughts** (`sc`, arXiv:2406.04271), **GTP Flash Consensus** (`tot`, original architecture — not Yao ToT), and **Program of Thought** (`pas`, Chen et al. 2022, arXiv:2211.12588).
 
 ---
 
@@ -291,12 +293,10 @@ function selectMethodology(query: string, analysis: QueryAnalysis): string {
 
 | Excluded | Reason | Replacement |
 |----------|--------|-------------|
-| **Tree of Thoughts** | Only 3.2% on MATH-500, 12x cost of BoT | Buffer of Thoughts |
 | **Graph of Thoughts** | Overkill for most tasks, complex to implement | Buffer of Thoughts |
 | **Skeleton of Thought** | Niche latency optimization, CoD covers it | Chain of Draft |
 | **Multi-Agent Debate** | Inferior to Self-MoA by 6.6% | GTP + Self-Consistency |
 | **Reflexion** | Nice-to-have, not essential for MVP | Future addition |
-| **Self-Consistency** | Merged into GTP/Flash | GTP methodology |
 | **Least-to-Most** | BoT templates cover decomposition | Buffer of Thoughts |
 | **Step-Back** | BoT templates cover abstraction | Buffer of Thoughts |
 | **Analogical** | Low value, niche use case | Not needed |
@@ -319,7 +319,9 @@ function selectMethodology(query: string, analysis: QueryAnalysis): string {
 
 ---
 
-## Cost-Efficiency Analysis
+## Cost-Efficiency Analysis (Design Targets — Not Measured)
+
+> The token counts, per-query costs, and relative multipliers below are design-time estimates, not measured benchmarks. No production telemetry backs these figures.
 
 ### Token Usage Comparison
 
@@ -340,22 +342,20 @@ function selectMethodology(query: string, analysis: QueryAnalysis): string {
 
 ## Implementation Status
 
-### Current (5/7 Complete - 71%)
+### Current (7/7 core methodologies implemented)
 
 ✅ **Implemented:**
 1. Direct
 2. Chain of Draft
-3. GTP + Self-Consistency
-4. Auto Selector
+3. Buffer of Thoughts (registry key `sc`)
+4. ReAct
+5. Program of Thought (registry key `pas`)
+6. GTP Flash Consensus (registry key `tot`)
+7. Auto Selector
 
 ✅ **Legacy/Optional:**
 - Standard CoT (for debugging)
 - Atom of Thoughts (optional fallback)
-
-⏳ **Next (3 remaining - 29%):**
-1. Buffer of Thoughts (BoT) - PRIORITY
-2. ReAct
-3. Program of Thought (PoT)
 
 ---
 
@@ -388,9 +388,11 @@ const result = await akhai.query("Analyze the pros and cons of microservices");
 
 ---
 
-## Performance Benchmarks
+## Performance Benchmarks (Design Targets — Not Measured)
 
-### Accuracy vs Cost (Research-Validated)
+> Accuracy figures below are illustrative design targets, not measured results.
+
+### Accuracy vs Cost (illustrative design targets)
 
 ```
 Accuracy (%)
@@ -460,4 +462,4 @@ AkhAI's 7-methodology stack represents a **research-validated, production-optimi
 
 *Last Updated: December 22, 2025*  
 *Version: 1.0*  
-*Status: 5/7 Complete (71%)*
+*Status: 7/7 core methodologies implemented*
