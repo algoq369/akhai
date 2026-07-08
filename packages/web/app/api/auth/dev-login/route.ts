@@ -7,6 +7,13 @@ export const dynamic = 'force-dynamic';
  * Remove before production deployment.
  */
 export async function GET() {
+  // HARD prod guard (E4.3 CRITICAL): this endpoint mints an admin session with no auth;
+  // it must be unreachable in production. Dev-only convenience below. 404 (not 403) so the
+  // endpoint is invisible in prod — no signal it exists.
+  if (process.env.NODE_ENV === 'production') {
+    return new NextResponse('Not found', { status: 404 });
+  }
+
   try {
     const { default: Database } = await import('better-sqlite3');
     const path = await import('path');

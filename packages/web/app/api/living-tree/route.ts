@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
+import { getUserFromSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,49 @@ export async function GET(request: NextRequest) {
 
     if (!conversationId) {
       return NextResponse.json({ error: 'conversationId parameter is required' }, { status: 400 });
+    }
+
+    // Ownership scope (E4.3): the thought-graph was exposed by conversation_id alone. There is no
+    // user_id on the living_* tables, so derive the owner via the queries that produced this
+    // conversation's data (all three read surfaces link to queries.id: living_topics via
+    // emergence_query_id, evolution events and hermetic analysis via query_id) and deny cross-user
+    // reads — mirrors query/[id]'s owner-or-anonymous rule. IS NOT is null-safe: an anonymous viewer
+    // (userId null) is denied any conversation that has a non-null owner. Anonymous/null-owner
+    // conversations stay public.
+    const token = request.cookies.get('session_token')?.value;
+    const user = token ? getUserFromSession(token) : null;
+    const userId = user?.id || null;
+
+    const otherOwner = db
+      .prepare(
+        `SELECT 1 FROM (
+           SELECT emergence_query_id AS qid FROM living_topics WHERE conversation_id = ?
+           UNION ALL
+           SELECT query_id AS qid FROM topic_evolution_events WHERE conversation_id = ?
+           UNION ALL
+           SELECT query_id AS qid FROM hermetic_analysis WHERE conversation_id = ?
+         ) links
+         JOIN queries q ON q.id = links.qid
+         WHERE q.user_id IS NOT NULL AND q.user_id IS NOT ?
+         LIMIT 1`
+      )
+      .get(conversationId, conversationId, conversationId, userId);
+
+    if (otherOwner) {
+      // Owned by another user — return the same empty shape the route yields for a conversation
+      // with no data (see the zero-topics tail below), so ownership is not revealed.
+      return NextResponse.json({
+        nodes: [],
+        edges: [],
+        evolutionEvents: [],
+        hermeticSummary: {
+          dominantLaw: 'Unknown',
+          overallVibration: 'medium',
+          rhythmPhase: 'rising',
+          instinctInsight: '',
+        },
+        stats: { totalTopics: 0, activeTopics: 0, totalConnections: 0, avgImportance: 0 },
+      });
     }
 
     // Fetch living topics (nodes)
