@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-08 · HEAD 7981d5d (E4.4 core honesty, local, UNPUSHED) · SHIELD PASS · clean tree
+> Last updated: 2026-07-08 · HEAD 0bc7147 (core3, UNPUSHED) · origin at 43d5e92 · SHIELD PASS · clean tree
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -71,6 +71,11 @@ DONE:
   MEASURED. Retired 3 dead Opus-4.5 paths (Enhanced-BoT/CoD/Synthesis, all zero-caller). Doc rewrite,
   dist rebuilt clean. Registry keys sc/tot/pas + methodology literals + MetaBuffer.tokensSaved PRESERVED
   (web renders them) — relabel not re-key, freeze-safe. react.ts/tools ICLR citation is CORRECT (protected).
+- core3 DONE (0bc7147): 5 final header/section-comment residuals rewritten to truthful (types.ts CoD/BoT
+  metrics→attributed, GTP→broadcast+quorum; pas.ts +24%→"PoT paper reports"; selector.ts:288
+  "SC (Self-Consistency)"→"SC (Buffer of Thoughts)"). HONESTY LANE FULLY CLOSED — zero known-false
+  labels/metrics left in core. tsc 0, SHIELD PASS. (5th residual selector.ts:288 was found by a broader
+  grep than E4.4's term list — lesson: honesty grep-proofs should include bare "Self-Consist"/"+NN%".)
 
 ## NEXT STEPS (pick up here — recommended order)
 1. E4.5 CSP nonce — assess current headers first; CSP lives in packages/web/middleware.ts today
@@ -80,9 +85,6 @@ DONE:
 4. E6.1 — fold the 31 hardcoded model strings (measured 2026-07-05) into the MODELS constant. NOW ALSO
    folds core PROVIDER_RATES (sc.ts): hardcoded flat Sonnet pricing applied to ALL anthropic calls.
 5. F4 — ban-story launch copy (with partner).
-6. core3 (tiny, optional) — 2 header-comment honesty residuals E4.4's grep-term list missed (NOT
-   runtime, NOT returned fields): pas.ts:10 "Achieves +24%…" → "The PoT paper reports +24%…";
-   types.ts:10 "GTP: Multi-AI consensus with Self-Consistency" → drop stale SC label. `go core3`.
 
 ## PARKED CHIPS (don't lose)
 - quick-query getRecentQueries never SELECTs the `response` column it reads (runtime bug, own fix).
