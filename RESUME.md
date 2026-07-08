@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-05 · HEAD cd4fdbc · 219 tests (+3 gated) · all ratchets locked · clean tree
+> Last updated: 2026-07-08 · HEAD 7981d5d (E4.4 core honesty, local, UNPUSHED) · SHIELD PASS · clean tree
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -61,16 +61,28 @@ DONE:
     Legacy ids still decode.
   · E4.3 (49207a1): dev-login minted a no-auth 30-day ADMIN session in prod [CRITICAL] → NODE_ENV
     404 gate · living-tree thought-graph IDOR → ownership via UNION join to queries.user_id.
+- E4.4 CORE HONESTY AUDIT DONE (7981d5d, +55/−640, verified HERE: grep-proof clean, SHIELD PASS,
+  web+core tsc 0). Core mislabels removed: sc was Buffer-of-Thoughts (arXiv:2406.04271) mislabeled
+  Self-Consistency/Wang-ICLR; tot is GTP Flash (parallel broadcast+quorum, original arch) mislabeled
+  Yao-ToT; pas is Program-of-Thought (Chen 2022) mislabeled Plan-and-Solve. Fixed across index.ts,
+  registry.ts, types.ts union+METHODOLOGY_INFO, selector.ts, tot headers, AND system-prompts.ts
+  (RUNTIME strings sent to model — the fabrication-in-prompt class). Removed fabricated sc.ts metrics
+  (estimatedToTTokens*8.3 / tokenSavings / comparisonToToT); parseDistillation tokensSaved now
+  MEASURED. Retired 3 dead Opus-4.5 paths (Enhanced-BoT/CoD/Synthesis, all zero-caller). Doc rewrite,
+  dist rebuilt clean. Registry keys sc/tot/pas + methodology literals + MetaBuffer.tokensSaved PRESERVED
+  (web renders them) — relabel not re-key, freeze-safe. react.ts/tools ICLR citation is CORRECT (protected).
 
 ## NEXT STEPS (pick up here — recommended order)
-1. E4.4 packages/core honesty audit — the LAST honesty item. E3's sweep found core still carried
-   "majority vote"/Yao (Wang ICLR) SC claims; web's ToT is verified real but core's ToT/Yao impl is
-   UNREAD. Audit before open-sourcing. (Recommended FIRST — read-and-classify, low risk. `go core`.)
-2. E4.5 CSP nonce — assess current headers first; may be Caddy-level (report-only to start). `go csp`.
-3. E4.6 methodology × route functional sweep — all 7 methodologies × routes on the fixed eval set.
-4. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `pnpm eval`, Node 24, server :3000.
-5. E6.1 — fold the 31 hardcoded model strings (measured 2026-07-05) into the MODELS constant.
-6. F4 — ban-story launch copy (with partner).
+1. E4.5 CSP nonce — assess current headers first; CSP lives in packages/web/middleware.ts today
+   (full script-src 'unsafe-inline' 'unsafe-eval'); may move Caddy-level (report-only to start). `go csp`.
+2. E4.6 methodology × route functional sweep — all 7 methodologies × routes on the fixed eval set.
+3. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `pnpm eval`, Node 24, server :3000.
+4. E6.1 — fold the 31 hardcoded model strings (measured 2026-07-05) into the MODELS constant. NOW ALSO
+   folds core PROVIDER_RATES (sc.ts): hardcoded flat Sonnet pricing applied to ALL anthropic calls.
+5. F4 — ban-story launch copy (with partner).
+6. core3 (tiny, optional) — 2 header-comment honesty residuals E4.4's grep-term list missed (NOT
+   runtime, NOT returned fields): pas.ts:10 "Achieves +24%…" → "The PoT paper reports +24%…";
+   types.ts:10 "GTP: Multi-AI consensus with Self-Consistency" → drop stale SC label. `go core3`.
 
 ## PARKED CHIPS (don't lose)
 - quick-query getRecentQueries never SELECTs the `response` column it reads (runtime bug, own fix).
@@ -79,6 +91,13 @@ DONE:
 - temperature: callAnthropic drops it — CONFIRMED no-op on Opus 4.8 (rejects non-default temp). Low.
 - D2 retrieval (gated on box) · D1 router (cuttable) — decide at the Aug-8 hosting gate.
 - crypto-webhook: already FIXED (was task_3ef8b1f1) — do not reopen.
+- E4.3 verify findings (from re-check of 49207a1, all backlog not blockers):
+  · living-tree owner rule is intentionally STRICTER than query/[id] (denies anon on owned convos).
+    DO NOT "align it down" to match query/[id] — that reopens the anon-read hole. Keep as-is.
+  · query/[id] + history/[id]/conversation allow anon read-any-by-id (getQuery unscoped when userId
+    null). Decide: public-share-by-design or gap? Own security item, was NOT closed by E4.3.
+  · in-memory `queries` Map (query-store.ts) returns response bodies BEFORE db owner-scope + never
+    evicts (.set only, no .delete/TTL) → narrow cross-user read window until process restart. Low.
 
 ## ALGOQ'S DECISIONS (external, not engine work)
 - HOSTING by Aug 8 (HARD gate): FlokiNET outage unresolved; Hetzner CX22 recommended. Also carries
