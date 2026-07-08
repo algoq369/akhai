@@ -49,8 +49,10 @@ const nextConfig = {
   },
   // Relaxed CSP for development - allows all necessary Next.js features
   async headers() {
-    // Always use relaxed CSP in development to avoid blocking Next.js features
-    const isDev = process.env.NODE_ENV !== 'production';
+    // Single reconciled CSP (E4.5a) — union of the former middleware + next.config policies so no
+    // origin is silently blocked; 'unsafe-inline'/'unsafe-eval' kept (nonce tightening is E4.5b, parked).
+    const csp =
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://eu.i.posthog.com https://openpanel.dev https://js.stripe.com https://*.walletconnect.com https://*.walletconnect.org https://*.reown.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.web3modal.com https://*.web3modal.org https://*.walletconnect.com https://*.walletconnect.org; img-src 'self' blob: data: https:; font-src 'self' data: blob: https://fonts.gstatic.com https://fonts.googleapis.com https://fonts.reown.com https://*.web3modal.com https://*.web3modal.org https://*.walletconnect.com https://*.walletconnect.org https://*.reown.com; connect-src 'self' https://api.anthropic.com https://openrouter.ai https://api.brave.com https://api.deepseek.com https://api.mistral.ai https://api.x.ai https://api.coingecko.com https://eu.i.posthog.com https://eu.posthog.com https://eu-assets.i.posthog.com https://openpanel.dev https://api.openpanel.dev https://*.ingest.de.sentry.io https://api.stripe.com https://js.stripe.com https://api.web3modal.org https://*.web3modal.com https://*.web3modal.org https://*.walletconnect.com https://*.walletconnect.org https://*.reown.com wss: wss://*.walletconnect.com wss://*.walletconnect.org wss://*.reown.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://verify.walletconnect.com https://verify.walletconnect.org https://*.reown.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'";
 
     return [
       {
@@ -78,9 +80,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: isDev
-              ? "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' 'wasm-unsafe-eval' https://js.stripe.com https://*.walletconnect.com https://*.walletconnect.org https://*.reown.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.web3modal.com https://*.web3modal.org https://*.walletconnect.com https://*.walletconnect.org; font-src 'self' data: blob: https://fonts.gstatic.com https://fonts.googleapis.com https://*.web3modal.com https://*.web3modal.org https://*.walletconnect.com https://*.walletconnect.org https://*.reown.com; img-src 'self' data: blob: https:; connect-src 'self' http://127.0.0.1:7242 https://api.anthropic.com https://api.deepseek.com https://api.mistral.ai https://api.x.ai https://api.coingecko.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://api.stripe.com https://js.stripe.com wss://*.walletconnect.com wss://*.walletconnect.org wss://*.reown.com https://*.walletconnect.com https://*.walletconnect.org https://*.reown.com https://*.web3modal.com https://*.web3modal.org; frame-src https://js.stripe.com https://hooks.stripe.com https://verify.walletconnect.com https://verify.walletconnect.org https://*.reown.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
-              : "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://*.walletconnect.com https://*.walletconnect.org https://*.reown.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.web3modal.com https://*.web3modal.org https://*.walletconnect.com https://*.walletconnect.org; font-src 'self' data: blob: https://fonts.gstatic.com https://fonts.googleapis.com https://*.web3modal.com https://*.web3modal.org https://*.walletconnect.com https://*.walletconnect.org https://*.reown.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.deepseek.com https://api.mistral.ai https://api.x.ai https://api.coingecko.com https://eu.i.posthog.com https://eu-assets.i.posthog.com https://api.stripe.com https://js.stripe.com wss://*.walletconnect.com wss://*.walletconnect.org wss://*.reown.com https://*.walletconnect.com https://*.walletconnect.org https://*.reown.com https://*.web3modal.com https://*.web3modal.org; frame-src https://js.stripe.com https://hooks.stripe.com https://verify.walletconnect.com https://verify.walletconnect.org https://*.reown.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+            value: csp,
           },
         ],
       },
