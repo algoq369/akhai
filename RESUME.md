@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-09 · HEAD = RESUME sync atop b3c1ef1 (E6.1b + dashboard fix) · UNPUSHED (origin 756d4fc, 8 ahead) · SHIELD PASS · clean tree
+> Last updated: 2026-07-09 · HEAD = RESUME sync (E6.1b pushed) · origin ffadd63 · free-advisor decision logged · SHIELD PASS · clean tree
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -118,7 +118,15 @@ DONE:
    query log msgs :270/310 (internal, lower pri). Fix → sc=Buffer of Thoughts, tot=GTP Flash Consensus,
    pas=Program of Thought (mirror the registry). Same honesty-first principle, USER-FACING = arguably
    higher stakes than core. `go web-honesty`.
-3. F4 — ban-story launch copy (with partner).
+3. FREE CONSENSUS (side-lane, Algoq priority) — make the multi-advisor consensus FREE + actually
+   working. Drop paid Grok + DeepSeek from consensus; route advisors through OpenRouter :free models
+   (OPENROUTER_API_KEY already SET, $0, no new keys) — rewrite the tot-consensus PROVIDERS block.
+   NOT a launch blocker (Opus fallback works today). Quick-test first: free Mistral key (EU, no code)
+   → verify consensus path runs. Ollama parked (dev-only, needs GPU hardware). `go free-consensus`.
+4. ReAct 404 fix — react → opus-4-8 → "Not Found" → silently falls back to free Llama. Route ReAct's
+   extended-thinking to MODELS.thinking (opus-4-6) so premium ReAct actually uses premium. `go react-fix`.
+5. Live-reasoning-always-visible (UX) — reasoning stream should always show regardless of methodology.
+6. F4 — ban-story launch copy (with partner).
 
 ## PARKED CHIPS (don't lose)
 - SESSION FINDINGS 2026-07-09 (from log verification of E6.1b on localhost — dev log /tmp/akhai-dev.log):
@@ -131,6 +139,15 @@ DONE:
     advisors + Mother Base) — a HEADLINE feature — is silently single-Opus. grok-4.3 unverifiable
     until XAI key added. ACTION: (a) add advisor keys to dev, re-run TOT to verify grok-4.3 + consensus;
     (b) CONFIRM PROD has these keys or consensus is degraded at launch too.
+    DECISION 2026-07-09: FREE-ONLY advisors (Algoq: no paid APIs). Grok=PAID ($1.25/$2.50 per M; $25
+    signup credit 30-day; $150/mo only via DATA-SHARING = xAI trains on our queries = anti-sovereignty)
+    → DROP Grok, remove ADVISORS.creative from constant. DeepSeek also paid (cheap, not free). Consensus
+    route hardcodes only 3 providers (deepseek/mistral/xai in PROVIDERS block, checks their keys).
+    OLLAMA not wired anywhere + CAN'T run on €11 VPS (no GPU) → dev-machine only until sovereign-GPU
+    (Q1 2027), NOT launchable. OPENROUTER_API_KEY IS SET → cleanest free path = rewrite consensus to
+    OpenRouter :free models (Llama/Qwen/DeepSeek-R1 free, $0, no new keys, but data via US OpenRouter).
+    Mistral free tier (EU) = quickest test (free key, NO code change, 1 advisor + Opus synth). Consensus
+    NOT broken for users (Opus fallback returns real answers) → side-lane, NOT a launch blocker.
   · [BUG, pre-existing] react → claude-opus-4-8 → 404 "Not Found" → falls back to openrouter (free
     Llama). Premium ReAct silently degraded to free tier. Likely extended-thinking streaming on
     opus-4-8 (MODELS.thinking=opus-4-6 is the "streamable extended-thinking ONLY" model). Investigate.
