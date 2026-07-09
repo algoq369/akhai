@@ -121,6 +121,23 @@ DONE:
 3. F4 — ban-story launch copy (with partner).
 
 ## PARKED CHIPS (don't lose)
+- SESSION FINDINGS 2026-07-09 (from log verification of E6.1b on localhost — dev log /tmp/akhai-dev.log):
+  · E6.1b RUNTIME: Sonnet 5 CONFIRMED working (arboreal-chat + god-view/council = 7 successful
+    claude-sonnet-5 calls, 200 OK). SC→Opus confirmed. grok-4.3 UNVERIFIED + Vision(Sonnet 5)
+    NOT EXERCISED (see below). E6.1b is NOT a regression — safe to push; Sonnet 5 part proven.
+  · [IMPORTANT] TOT CONSENSUS NOT ACTUALLY RUNNING: /api/tot-consensus 500s EVERY time with
+    "No AI providers configured" → falls back to single Opus. Cause: XAI_API_KEY, DEEPSEEK_API_KEY,
+    MISTRAL_API_KEY all ABSENT from .env.local. So the multi-AI consensus (Grok/DeepSeek/Mistral
+    advisors + Mother Base) — a HEADLINE feature — is silently single-Opus. grok-4.3 unverifiable
+    until XAI key added. ACTION: (a) add advisor keys to dev, re-run TOT to verify grok-4.3 + consensus;
+    (b) CONFIRM PROD has these keys or consensus is degraded at launch too.
+  · [BUG, pre-existing] react → claude-opus-4-8 → 404 "Not Found" → falls back to openrouter (free
+    Llama). Premium ReAct silently degraded to free tier. Likely extended-thinking streaming on
+    opus-4-8 (MODELS.thinking=opus-4-6 is the "streamable extended-thinking ONLY" model). Investigate.
+  · Video/URL in main query box = sc/search/Opus, NOT the x-video-analysis vision endpoint — so the
+    Sonnet-5 vision swap is untested; needs the actual vision entry point to verify.
+  · [UX] Live reasoning stream not always visible (sat at "ANALYZING… 0 chars") — user wants it ALWAYS
+    visible regardless of methodology selected. Real fix.
 - E4.5b (post-launch hardening, was going to be E4.5 nonce): drop 'unsafe-inline' via per-request
   nonce. Blocker is ONE first-party inline script (layout.tsx:48 — wallet-err suppress + randomUUID
   polyfill). Nonce MUST use Web Crypto (crypto.randomUUID), NOT Math.random (SHIELD ratchet=0). Keep
