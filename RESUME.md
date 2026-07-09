@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-09 · HEAD = RESUME sync atop 8e293e0 (E6.1a) · UNPUSHED (origin 756d4fc, 5 ahead) · SHIELD PASS · clean tree
+> Last updated: 2026-07-09 · HEAD = RESUME sync atop b3c1ef1 (E6.1b + dashboard fix) · UNPUSHED (origin 756d4fc, 8 ahead) · SHIELD PASS · clean tree
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -96,20 +96,28 @@ DONE:
   rate-table KEYS, models.ts def, ModelSelector UI values, __tests__ (cost-cascade .toBe is the
   independent guardrail — do NOT fold). llm-extractors import `MODELS as MODEL_IDS` (local const
   MODELS collision). opus-4-8/opus-4-6 had ZERO fold targets (only def/keys/tests). tsc 0, SHIELD PASS.
+- E6.1b DONE (21aa88f + dashboard fix b3c1ef1, UNPUSHED — NEEDS Algoq localhost eyes: god-view/vision/
+  consensus/chats changed model). Fixed Sonnet drift to tiers: Mother Base synthesis (tot-consensus:376
+  + settings motherBase)→MODELS.premium (Opus); god-view lenses+chats, arboreal, tree-chat, x-video
+  VISION, llm-extractor sonnet entries, anthropic fallback→MODELS.mid (NEW='claude-sonnet-5'). Added
+  ADVISORS export {technical:deepseek-chat, strategic:mistral-small-latest, creative:grok-4.3} —
+  centralized GTP advisors, normalized grok-3/grok-2→grok-4.3 (current EU flagship; grok-4.5 NOT EU
+  until ~mid-Jul — parked upgrade). Verified: superset of intent, ZERO new literals, tiers correct,
+  vitest 219 unchanged, SHIELD PASS. Rates UNTOUCHED (E6.1.1).
 
 ## NEXT STEPS (pick up here — recommended order)
 1. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `node scripts/eval-bar.mjs` (or `pnpm eval`
    in your terminal), Node 24, server :3000. DRY RUN 2026-07-09 = PASS 100/100 (floor 2/2, quality
    13/13, 0 ERRORED, independently artifact-verified from /tmp/akhai-eval.json) — 15pt margin, NO
    tuning needed. Official freeze-week rerun still REQUIRED at Aug 13 (dry run only de-risks it).
-2. E6.1b (BLOCKED on Algoq's decision) — the hard part of E6.1 that reading exposed: MODELS covers
-   only 4 of ~13 hardcoded model strings. NO keys for Sonnet (4 DIFFERENT versions: sonnet-4-6 ×12,
-   sonnet-4-20250514 ×8, 3-5-sonnet-20241022 ×2 [x-video VISION — maybe intentional], sonnet-4-5 ×1),
-   grok (grok-3/grok-2/grok), deepseek (chat/reasoner). Collapsing versions = BEHAVIOR change → needs
-   Algoq to pick target Sonnet per surface (or keep pins as new verbatim keys). ALSO folds the sc.ts
-   PROVIDER_RATES bug: keyed by provider so anthropic=$3/$15 (Sonnet) charged for ALL anthropic calls
-   (Opus under-billed, Haiku over-billed); web provider-selector.ts:255 has the correct per-model
-   table to reconcile to. DECISION PENDING — do not spec until Algoq answers the Sonnet question.
+2. WEB-HONESTY SWEEP (NEW — user-facing, pre-launch) — core3 closed honesty in packages/core ONLY;
+   web UI still mislabels methodologies with the false names/attributions E4.4 removed: dashboard/
+   page.tsx:81/83/84 (sc="Self-Consistency"/"Multi-path voting", pas="Plan-and-Solve", tot="Tree of
+   Thoughts"), explore/page.tsx:37 (full "Yao et al., NeurIPS 2023, explores...branches, evaluates and
+   prunes" on a USER-FACING page), FunctionIndicators.tsx:55/91, IntelligenceBadge.tsx:39/41; simple-
+   query log msgs :270/310 (internal, lower pri). Fix → sc=Buffer of Thoughts, tot=GTP Flash Consensus,
+   pas=Program of Thought (mirror the registry). Same honesty-first principle, USER-FACING = arguably
+   higher stakes than core. `go web-honesty`.
 3. F4 — ban-story launch copy (with partner).
 
 ## PARKED CHIPS (don't lose)
@@ -118,6 +126,12 @@ DONE:
   polyfill). Nonce MUST use Web Crypto (crypto.randomUUID), NOT Math.random (SHIELD ratchet=0). Keep
   'wasm-unsafe-eval' — Reown/WalletConnect need WASM; full 'unsafe-eval' removal risks Web3 auth,
   needs localhost wallet test. Report-only first, then enforce. Low urgency (single controlled inline).
+- E6.1.1 (was parked) — sc.ts PROVIDER_RATES provider-keyed flat-Sonnet ($3/$15 for ALL anthropic);
+  fix to per-model rates. Needs current per-model Anthropic pricing (Opus 4.8 $5/$25, Haiku $1/$5,
+  Sonnet 5 = verify) + which model BoT calls. Split from E6.1b to avoid guessing pricing.
+- E6.1.x diagnostic routes — test-key/test-providers/layer-test still pin sonnet-4-20250514/grok-3
+  (unlisted in E6.1b, left per scope). Decide: fold to MODELS.mid/ADVISORS.creative OR remove (they're
+  stale-pinned AND prod-exposed test endpoints — the prod-exposure is its own security question).
 - quick-query getRecentQueries never SELECTs the `response` column it reads (runtime bug, own fix).
 - dev-login 404 body is plaintext not native-HTML (cosmetic prober signal; post-launch).
 - sc-multipath rematch (harder cases) · Fable rematch (if agentic surface) — post-launch.
