@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-09 · HEAD = RESUME sync (E6.1b pushed) · origin ffadd63 · free-advisor decision logged · SHIELD PASS · clean tree
+> Last updated: 2026-07-09 · HEAD dac5a9b (web-honesty-2) · UNPUSHED (origin ce29b87, 5 ahead) · SHIELD PASS · clean tree · HONESTY LANE FULLY CLOSED (core + UI names/attributions/process descriptions)
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -110,21 +110,13 @@ DONE:
    in your terminal), Node 24, server :3000. DRY RUN 2026-07-09 = PASS 100/100 (floor 2/2, quality
    13/13, 0 ERRORED, independently artifact-verified from /tmp/akhai-eval.json) — 15pt margin, NO
    tuning needed. Official freeze-week rerun still REQUIRED at Aug 13 (dry run only de-risks it).
-2. web-honesty-2 (residual from cf74cf9) — the web-honesty sweep is DONE (cf74cf9, 12 files, verified
-   HERE: false paper CITATIONS Wang/ICLR + Yao/NeurIPS removed from UI, all methodology NAMES mirrored
-   to registry truth BoT/GTP/PoT; genuine N-sample self-consistency D3a + react/ReAct correctly
-   preserved; SHIELD PASS). RESIDUAL: MethodologyExplorer.tsx howItWorks/bestFor/examples ARRAYS still
-   describe LEGACY processes (sc:122 "take majority vote", tot "explore/prune branches") → now
-   CONTRADICTS the fixed names. Needs accurate rewrite (content authoring, not mechanical): sc = buffer
-   facts→distill meta-buffer→retrieve→synthesize; tot = broadcast to advisors→quorum→Mother Base synth;
-   pas = generate code→run sandboxed. `go web-honesty-2`.
-3. FREE CONSENSUS (side-lane, Algoq priority) — make the multi-advisor consensus FREE + actually
+2. FREE CONSENSUS (side-lane, Algoq priority) — make the multi-advisor consensus FREE + actually
    working. Drop paid Grok + DeepSeek from consensus; route advisors through OpenRouter :free models
    (OPENROUTER_API_KEY already SET, $0, no new keys) — rewrite the tot-consensus PROVIDERS block.
    NOT a launch blocker (Opus fallback works today). Quick-test first: free Mistral key (EU, no code)
    → verify consensus path runs. Ollama parked (dev-only, needs GPU hardware). `go free-consensus`.
-4. Live-reasoning-always-visible (UX) — reasoning stream should always show regardless of methodology.
-5. F4 — ban-story launch copy (with partner).
+3. Live-reasoning-always-visible (UX) — reasoning stream should always show regardless of methodology.
+4. F4 — ban-story launch copy (with partner).
 
 ## PARKED CHIPS (don't lose)
 - SESSION FINDINGS 2026-07-09 (from log verification of E6.1b on localhost — dev log /tmp/akhai-dev.log):
