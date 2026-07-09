@@ -10,6 +10,7 @@ import { z } from 'zod';
 import Anthropic from '@anthropic-ai/sdk';
 import { getActiveTreeConfiguration } from '@/lib/tree-configuration';
 import { validateSession } from '@/lib/database';
+import { MODELS } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Call Claude Sonnet 4.5
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: MODELS.mid,
       max_tokens: 800,
       system: systemPrompt,
       messages: [

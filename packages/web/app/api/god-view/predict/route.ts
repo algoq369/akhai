@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { callProvider } from '@/lib/multi-provider-api';
 import { GodViewPredictSchema } from '@/lib/route-schemas';
+import { MODELS } from '@/lib/models';
 import {
   buildEntityPrompt,
   buildBranchPrompt,
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
               { role: 'system', content: buildEntityPrompt() },
               { role: 'user', content: seed.slice(0, 5000) },
             ],
-            model: 'claude-sonnet-4-6',
+            model: MODELS.mid,
             maxTokens: 500,
             temperature: 0.3,
           });
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
                   content: `Seed material: ${seed.slice(0, 3000)}\n\nQuestion: ${question}`,
                 },
               ],
-              model: 'claude-sonnet-4-6',
+              model: MODELS.mid,
               maxTokens: 800,
               temperature: 0.7,
             }).then((res) => ({ res, lens: lenses[i] }))

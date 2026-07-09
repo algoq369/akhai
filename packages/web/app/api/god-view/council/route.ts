@@ -3,6 +3,7 @@ import { COUNCIL_AGENTS, type CouncilAgent } from '@/lib/god-view/agents';
 import { GodViewCouncilSchema } from '@/lib/route-schemas';
 import { callProvider } from '@/lib/multi-provider-api';
 import type { ProviderFamily } from '@/lib/provider-selector';
+import { MODELS } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,7 @@ async function callAgent(agent: CouncilAgent, context: string) {
   // Direct env check — bypasses module caching issues with isProviderAvailable
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const provider: ProviderFamily = anthropicKey ? 'anthropic' : (agent.provider as ProviderFamily);
-  const model = anthropicKey ? 'claude-sonnet-4-6' : agent.model;
+  const model = anthropicKey ? MODELS.mid : agent.model;
 
   const result = await callProvider(provider, {
     messages: [

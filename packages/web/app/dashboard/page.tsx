@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MODELS } from '@/lib/models';
+import { MODELS, ADVISORS } from '@/lib/models';
 import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import DarkModeToggle from '@/components/DarkModeToggle';
 
@@ -57,13 +57,13 @@ export default function DashboardPage() {
     {
       key: 'deepseek',
       name: 'DeepSeek',
-      model: 'deepseek-chat',
+      model: ADVISORS.technical,
       active: stats?.providers?.deepseek?.status === 'active',
     },
     {
       key: 'xai',
       name: 'Grok',
-      model: 'grok-3',
+      model: ADVISORS.creative,
       active: stats?.providers?.xai?.status === 'active',
     },
     {

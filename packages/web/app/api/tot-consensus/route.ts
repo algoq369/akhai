@@ -23,6 +23,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { log } from '@/lib/logger';
 // TotConsensusSchema encodes the simple-query→tot-consensus INTERNAL contract — see route-schemas.ts
 import { TotConsensusSchema } from '@/lib/route-schemas';
+import { MODELS, ADVISORS } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ const PROVIDERS = {
   deepseek: {
     name: 'DeepSeek',
     endpoint: 'https://api.deepseek.com/v1/chat/completions',
-    model: 'deepseek-chat',
+    model: ADVISORS.technical,
     role: 'Technical Analyst',
     icon: '🔬',
     color: '#4F46E5',
@@ -39,7 +40,7 @@ const PROVIDERS = {
   mistral: {
     name: 'Mistral',
     endpoint: 'https://api.mistral.ai/v1/chat/completions',
-    model: 'mistral-small-latest',
+    model: ADVISORS.strategic,
     role: 'Strategic Advisor',
     icon: '🎯',
     color: '#F97316',
@@ -47,7 +48,7 @@ const PROVIDERS = {
   xai: {
     name: 'Grok',
     endpoint: 'https://api.x.ai/v1/chat/completions',
-    model: 'grok-3',
+    model: ADVISORS.creative,
     role: 'Creative Challenger',
     icon: '⚡',
     color: '#10B981',
@@ -372,7 +373,7 @@ Be collaborative, not combative.`;
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: MODELS.premium,
           max_tokens: 4096,
           system: `You are Mother Base, the synthesizer in AkhAI's multi-AI consensus system.
 

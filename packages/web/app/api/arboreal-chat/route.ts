@@ -4,6 +4,7 @@ import { getOrCreateAnonymousUser } from '@/lib/db/auth';
 import { callProvider } from '@/lib/multi-provider-api';
 import { appendMessage, getThread, listThreadsForQuery } from '@/lib/db/arboreal-threads';
 import { buildBlockChatContext } from '@/lib/arboreal/build-context';
+import { MODELS } from '@/lib/models';
 import type { Layer } from '@/lib/layer-metadata';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     const response = await callProvider('anthropic', {
       messages: ctx.messages,
-      model: 'claude-sonnet-4-20250514',
+      model: MODELS.mid,
       maxTokens: 1024,
       temperature: 0.7,
       systemPrompt: ctx.systemPrompt,

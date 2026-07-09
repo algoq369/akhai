@@ -17,7 +17,7 @@ export interface LLMAnnotation {
 
 const MODELS = [
   { id: MODEL_IDS.budget, label: 'llm-haiku', provider: 'anthropic' as const },
-  { id: 'claude-sonnet-4-6', label: 'llm-sonnet', provider: 'anthropic' as const },
+  { id: MODEL_IDS.mid, label: 'llm-sonnet', provider: 'anthropic' as const },
   {
     id: 'meta-llama/llama-3.3-70b-instruct',
     label: 'llm-openrouter',

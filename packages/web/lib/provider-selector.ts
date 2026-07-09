@@ -5,7 +5,7 @@
  * cost-efficiency, and accuracy.
  */
 
-import { MODELS } from '@/lib/models';
+import { MODELS, ADVISORS } from '@/lib/models';
 
 export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'tot' | 'auto';
 export type ProviderFamily =
@@ -167,13 +167,13 @@ export function getFallbackModelSpec(provider: ProviderFamily): { model: string 
     case 'openrouter':
       return { model: MODELS.free };
     case 'deepseek':
-      return { model: 'deepseek-chat' };
+      return { model: ADVISORS.technical };
     case 'mistral':
       return { model: 'mistral-large-latest' };
     case 'xai':
-      return { model: 'grok-2' };
+      return { model: ADVISORS.creative };
     case 'anthropic':
-      return { model: 'claude-sonnet-4-20250514' };
+      return { model: MODELS.mid };
     case 'groq':
       return { model: 'llama-3.3-70b-versatile' };
     case 'google':

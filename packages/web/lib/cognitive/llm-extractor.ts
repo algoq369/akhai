@@ -36,7 +36,7 @@ export interface ConversationSynthesisResult {
 
 const MODELS = [
   { id: MODEL_IDS.budget, label: 'llm-haiku' },
-  { id: 'claude-sonnet-4-6', label: 'llm-sonnet' },
+  { id: MODEL_IDS.mid, label: 'llm-sonnet' },
 ] as const;
 
 async function callAnthropic(model: string, system: string, user: string): Promise<string> {

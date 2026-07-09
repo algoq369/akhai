@@ -3,6 +3,7 @@ import { COUNCIL_AGENTS } from '@/lib/god-view/agents';
 import { callProvider, isProviderAvailable } from '@/lib/multi-provider-api';
 import type { ProviderFamily } from '@/lib/provider-selector';
 import { GodViewAgentChatSchema } from '@/lib/route-schemas';
+import { MODELS } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     const available = isProviderAvailable(agent.provider as ProviderFamily);
     const provider: ProviderFamily = available ? (agent.provider as ProviderFamily) : 'anthropic';
-    const model = available ? agent.model : 'claude-sonnet-4-6';
+    const model = available ? agent.model : MODELS.mid;
 
     const systemPrompt = `${agent.prompt}\n\nOriginal query: ${originalQuery || ''}\n\nOriginal response: ${(originalResponse || '').slice(0, 3000)}`;
 

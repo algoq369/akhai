@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callProvider } from '@/lib/multi-provider-api';
 import { GodViewScenarioChatSchema } from '@/lib/route-schemas';
+import { MODELS } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +37,7 @@ You are an analyst living inside this predicted future. Answer questions from th
 
     const result = await callProvider('anthropic', {
       messages: conversationMessages,
-      model: 'claude-sonnet-4-6',
+      model: MODELS.mid,
       maxTokens: 400,
       temperature: 0.7,
     });

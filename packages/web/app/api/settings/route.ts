@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SettingsSchema } from '@/lib/route-schemas';
+import { MODELS, ADVISORS } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +13,9 @@ let settingsStore = {
     openrouter: process.env.OPENROUTER_API_KEY || '',
   },
   modelConfig: {
-    motherBase: 'claude-sonnet-4-20250514',
-    slot1: 'deepseek-chat',
-    slot2: 'grok-3',
+    motherBase: MODELS.premium as string,
+    slot1: ADVISORS.technical as string,
+    slot2: ADVISORS.creative as string,
   },
   consensus: {
     maxRounds: 3,

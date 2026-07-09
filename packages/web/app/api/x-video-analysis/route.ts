@@ -9,6 +9,7 @@ import { extractTweetId, fetchXThread, extractVideos } from '@/lib/tools/x-threa
 import { XVideoAnalysisSchema } from '@/lib/route-schemas';
 import { getUserFromSession } from '@/lib/auth';
 import Anthropic from '@anthropic-ai/sdk';
+import { MODELS } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
       'Analyze this video thumbnail. What can you see? What is the likely content of this video?';
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: MODELS.mid,
       max_tokens: 2048,
       messages: [
         {

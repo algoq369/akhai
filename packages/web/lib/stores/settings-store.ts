@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { MODELS } from '@/lib/models';
+import { MODELS, ADVISORS } from '@/lib/models';
 import { persist } from 'zustand/middleware';
 
 export interface ApiKeys {
@@ -101,8 +101,8 @@ const defaultSettings: Settings = {
   },
   modelConfig: {
     motherBase: MODELS.premium,
-    slot1: 'deepseek-chat',
-    slot2: 'grok-3',
+    slot1: ADVISORS.technical,
+    slot2: ADVISORS.creative,
   },
   consensus: {
     maxRounds: 3,
