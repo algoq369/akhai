@@ -110,14 +110,14 @@ DONE:
    in your terminal), Node 24, server :3000. DRY RUN 2026-07-09 = PASS 100/100 (floor 2/2, quality
    13/13, 0 ERRORED, independently artifact-verified from /tmp/akhai-eval.json) — 15pt margin, NO
    tuning needed. Official freeze-week rerun still REQUIRED at Aug 13 (dry run only de-risks it).
-2. WEB-HONESTY SWEEP (NEW — user-facing, pre-launch) — core3 closed honesty in packages/core ONLY;
-   web UI still mislabels methodologies with the false names/attributions E4.4 removed: dashboard/
-   page.tsx:81/83/84 (sc="Self-Consistency"/"Multi-path voting", pas="Plan-and-Solve", tot="Tree of
-   Thoughts"), explore/page.tsx:37 (full "Yao et al., NeurIPS 2023, explores...branches, evaluates and
-   prunes" on a USER-FACING page), FunctionIndicators.tsx:55/91, IntelligenceBadge.tsx:39/41; simple-
-   query log msgs :270/310 (internal, lower pri). Fix → sc=Buffer of Thoughts, tot=GTP Flash Consensus,
-   pas=Program of Thought (mirror the registry). Same honesty-first principle, USER-FACING = arguably
-   higher stakes than core. `go web-honesty`.
+2. web-honesty-2 (residual from cf74cf9) — the web-honesty sweep is DONE (cf74cf9, 12 files, verified
+   HERE: false paper CITATIONS Wang/ICLR + Yao/NeurIPS removed from UI, all methodology NAMES mirrored
+   to registry truth BoT/GTP/PoT; genuine N-sample self-consistency D3a + react/ReAct correctly
+   preserved; SHIELD PASS). RESIDUAL: MethodologyExplorer.tsx howItWorks/bestFor/examples ARRAYS still
+   describe LEGACY processes (sc:122 "take majority vote", tot "explore/prune branches") → now
+   CONTRADICTS the fixed names. Needs accurate rewrite (content authoring, not mechanical): sc = buffer
+   facts→distill meta-buffer→retrieve→synthesize; tot = broadcast to advisors→quorum→Mother Base synth;
+   pas = generate code→run sandboxed. `go web-honesty-2`.
 3. FREE CONSENSUS (side-lane, Algoq priority) — make the multi-advisor consensus FREE + actually
    working. Drop paid Grok + DeepSeek from consensus; route advisors through OpenRouter :free models
    (OPENROUTER_API_KEY already SET, $0, no new keys) — rewrite the tot-consensus PROVIDERS block.
