@@ -269,6 +269,20 @@ export async function POST(request: NextRequest) {
     if (selectedMethod.id === 'tot') {
       log('INFO', 'TOT', 'Routing to GTP Flash consensus endpoint');
 
+      // tot proxies to /api/tot-consensus as one blocking request that streams nothing back, so
+      // without this the reasoning panel goes silent for the whole (multi-second) consensus. Emit
+      // an honest 'calling' stage so the live panel shows advisors being reached during the wait.
+      emitAndPersist(queryId, {
+        id: `${queryId}-tot-calling`,
+        queryId,
+        stage: 'calling',
+        timestamp: Date.now() - startTime,
+        data: 'Broadcasting to parallel advisors for consensus...',
+        details: {
+          narrative: 'GTP Flash: broadcasting to parallel advisors, merging into quorum synthesis',
+        },
+      });
+
       try {
         const gtpResponse = await fetch(new URL('/api/tot-consensus', request.url).toString(), {
           method: 'POST',
@@ -295,6 +309,21 @@ export async function POST(request: NextRequest) {
         );
 
         const guardResult = await runGroundingGuard(gtpResult.response, query);
+
+        // Close the live stream cleanly (the tot branch returns its answer as one blob).
+        emitAndPersist(queryId, {
+          id: `${queryId}-complete`,
+          queryId,
+          stage: 'complete',
+          timestamp: Date.now() - startTime,
+          data: 'Consensus complete',
+          details: {
+            tokens: gtpResult.metrics?.tokens
+              ? { input: 0, output: 0, total: gtpResult.metrics.tokens }
+              : undefined,
+            cost: gtpResult.metrics?.cost,
+          },
+        });
 
         return NextResponse.json({
           ...gtpResult,

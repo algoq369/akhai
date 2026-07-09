@@ -139,33 +139,60 @@ export function formatLayerBar(name: string, value: number): string {
 export const connections = new Map<string, Set<ReadableStreamDefaultController>>();
 
 /**
- * Emit a thought event to all connected clients for a given queryId.
- * Called from the query pipeline (simple-query/route.ts).
+ * Per-queryId event backlog. The client opens the SSE subscription (GET /api/thought-stream) and
+ * POSTs the query concurrently, so early events (received/routing/reasoning) are frequently emitted
+ * BEFORE the subscription's controller registers. Without a backlog those events were silently
+ * dropped — the panel then showed only the synthetic 'connected' init event ("RECEIVED connected /
+ * 1 pipeline stage"). We buffer every emitted event and replay it when a subscriber connects, so no
+ * stage is ever lost to the subscribe-vs-emit race.
+ */
+const buffers = new Map<string, ThoughtEvent[]>();
+const MAX_BUFFERED = 300; // pipeline emits ~10-40 events; cap defensively against a runaway loop
+
+/** Replay backlog for a subscriber that connects mid-query (called from the SSE route on connect). */
+export function getBufferedThoughts(queryId: string): ThoughtEvent[] {
+  return buffers.get(queryId) ?? [];
+}
+
+/**
+ * Emit a thought event to all connected clients for a given queryId, and buffer it so a subscriber
+ * that connects after this point still replays it.
+ * Called from the query pipeline (simple-query/route.ts) via emitAndPersist.
  */
 export function emitThought(queryId: string, event: ThoughtEvent) {
+  // Buffer first — a controller may not be registered yet (the query POST races the SSE GET).
+  let buffer = buffers.get(queryId);
+  if (!buffer) {
+    buffer = [];
+    buffers.set(queryId, buffer);
+  }
+  buffer.push(event);
+  if (buffer.length > MAX_BUFFERED) buffer.shift();
+
   const controllers = connections.get(queryId);
-  if (!controllers || controllers.size === 0) return;
+  if (controllers && controllers.size > 0) {
+    const data = `data: ${JSON.stringify(event)}\n\n`;
+    const deadControllers: ReadableStreamDefaultController[] = [];
 
-  const data = `data: ${JSON.stringify(event)}\n\n`;
-  const deadControllers: ReadableStreamDefaultController[] = [];
+    for (const controller of controllers) {
+      try {
+        controller.enqueue(new TextEncoder().encode(data));
+      } catch {
+        deadControllers.push(controller);
+      }
+    }
 
-  for (const controller of controllers) {
-    try {
-      controller.enqueue(new TextEncoder().encode(data));
-    } catch {
-      deadControllers.push(controller);
+    // Clean up dead connections
+    for (const dead of deadControllers) {
+      controllers.delete(dead);
     }
   }
 
-  // Clean up dead connections
-  for (const dead of deadControllers) {
-    controllers.delete(dead);
-  }
-
-  // Auto-close on terminal stages
+  // Auto-close on terminal stages, and free the backlog.
   if (event.stage === 'complete' || event.stage === 'error') {
     setTimeout(() => {
       connections.delete(queryId);
-    }, 2000);
+      buffers.delete(queryId);
+    }, 3000);
   }
 }
