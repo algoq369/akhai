@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-08 · HEAD = RESUME sync atop 8e990f5 (E4.6 sweep) · UNPUSHED (origin at 756d4fc) · SHIELD PASS · clean tree
+> Last updated: 2026-07-09 · HEAD = RESUME sync atop 8e990f5 (E4.6) + E4.7 dry-run PASS 100/100 · UNPUSHED (origin 756d4fc) · SHIELD PASS · clean tree
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -92,8 +92,10 @@ DONE:
   in scripts/ = outside SHIELD console_log ratchet (held 103). Smoke test only — E4.7 is quality.
 
 ## NEXT STEPS (pick up here — recommended order)
-1. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `pnpm eval`, Node 24, server :3000.
-   Recommend a DRY RUN now (weeks of runway to tune) before the official freeze-week gate.
+1. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `node scripts/eval-bar.mjs` (or `pnpm eval`
+   in your terminal), Node 24, server :3000. DRY RUN 2026-07-09 = PASS 100/100 (floor 2/2, quality
+   13/13, 0 ERRORED, independently artifact-verified from /tmp/akhai-eval.json) — 15pt margin, NO
+   tuning needed. Official freeze-week rerun still REQUIRED at Aug 13 (dry run only de-risks it).
 2. E6.1 — fold the 31 hardcoded model strings (measured 2026-07-05) into the MODELS constant. NOW ALSO
    folds core PROVIDER_RATES (sc.ts): hardcoded flat Sonnet pricing applied to ALL anthropic calls.
 3. F4 — ban-story launch copy (with partner).
