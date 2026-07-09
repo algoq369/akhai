@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-09 · HEAD = RESUME sync atop 8e990f5 (E4.6) + E4.7 dry-run PASS 100/100 · UNPUSHED (origin 756d4fc) · SHIELD PASS · clean tree
+> Last updated: 2026-07-09 · HEAD = RESUME sync atop 8e293e0 (E6.1a) · UNPUSHED (origin 756d4fc, 5 ahead) · SHIELD PASS · clean tree
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -90,14 +90,26 @@ DONE:
   (every non-auto cell returned the requested method — no silent swaps), auto routed compute→pas /
   reason→tot. Assertions verified rigorous (ok && answerLen>20 && !error; HTTP≠200 → FAIL). Harness
   in scripts/ = outside SHIELD console_log ratchet (held 103). Smoke test only — E4.7 is quality.
+- E6.1a DONE (8e293e0, UNPUSHED): centralized the 4 exact-MODELS-match strings at 12 model-id sites
+  (haiku→budget ×10, llama:free→free ×3 incl. provider-selector free returns + llm-extractor id:
+  fields). Behavior-preserving (vitest 219 unchanged proves byte-identical). Excluded correctly:
+  rate-table KEYS, models.ts def, ModelSelector UI values, __tests__ (cost-cascade .toBe is the
+  independent guardrail — do NOT fold). llm-extractors import `MODELS as MODEL_IDS` (local const
+  MODELS collision). opus-4-8/opus-4-6 had ZERO fold targets (only def/keys/tests). tsc 0, SHIELD PASS.
 
 ## NEXT STEPS (pick up here — recommended order)
 1. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `node scripts/eval-bar.mjs` (or `pnpm eval`
    in your terminal), Node 24, server :3000. DRY RUN 2026-07-09 = PASS 100/100 (floor 2/2, quality
    13/13, 0 ERRORED, independently artifact-verified from /tmp/akhai-eval.json) — 15pt margin, NO
    tuning needed. Official freeze-week rerun still REQUIRED at Aug 13 (dry run only de-risks it).
-2. E6.1 — fold the 31 hardcoded model strings (measured 2026-07-05) into the MODELS constant. NOW ALSO
-   folds core PROVIDER_RATES (sc.ts): hardcoded flat Sonnet pricing applied to ALL anthropic calls.
+2. E6.1b (BLOCKED on Algoq's decision) — the hard part of E6.1 that reading exposed: MODELS covers
+   only 4 of ~13 hardcoded model strings. NO keys for Sonnet (4 DIFFERENT versions: sonnet-4-6 ×12,
+   sonnet-4-20250514 ×8, 3-5-sonnet-20241022 ×2 [x-video VISION — maybe intentional], sonnet-4-5 ×1),
+   grok (grok-3/grok-2/grok), deepseek (chat/reasoner). Collapsing versions = BEHAVIOR change → needs
+   Algoq to pick target Sonnet per surface (or keep pins as new verbatim keys). ALSO folds the sc.ts
+   PROVIDER_RATES bug: keyed by provider so anthropic=$3/$15 (Sonnet) charged for ALL anthropic calls
+   (Opus under-billed, Haiku over-billed); web provider-selector.ts:255 has the correct per-model
+   table to reconcile to. DECISION PENDING — do not spec until Algoq answers the Sonnet question.
 3. F4 — ban-story launch copy (with partner).
 
 ## PARKED CHIPS (don't lose)
