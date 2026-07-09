@@ -116,10 +116,10 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     description:
       'Buffers key facts and constraints, builds a reasoning chain, and self-validates the answer against them (arXiv:2406.04271).',
     howItWorks: [
-      'Sample multiple independent reasoning paths',
-      'Each path reasons through the problem differently',
-      'Compare answers across all paths',
-      'Take majority vote as final answer',
+      'Buffer the key facts and constraints from the query',
+      'Build a reasoning chain grounded in that buffer',
+      'Distill recurring reasoning patterns into reusable templates',
+      'Validate the answer against the buffered facts',
     ],
     format: '[BUFFER] → [REASONING] → [VALIDATION] → [ANSWER]',
     bestFor: [
@@ -179,13 +179,12 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     description:
       'Chen et al. 2022 — generates executable code, runs it, separating reasoning from computation (arXiv:2211.12588).',
     howItWorks: [
-      'Understand the problem and identify what is being asked',
-      'Devise a step-by-step plan to solve it',
-      'Execute each step of the plan with actual values',
-      'Verify the result against the original problem',
-      'Present final answer with clear explanation',
+      'Translate the problem into executable code',
+      'Express the computation as a program, not prose reasoning',
+      'Run the code in a sandbox',
+      'Return the computed result',
     ],
-    format: '[UNDERSTAND] → [PLAN] → [EXECUTE] → [VERIFY] → [ANSWER]',
+    format: '[PROBLEM] → [CODE] → [RUN] → [RESULT]',
     bestFor: [
       'Mathematical calculations',
       'Computational problems',
