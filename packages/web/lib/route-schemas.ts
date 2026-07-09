@@ -89,6 +89,9 @@ export const TotConsensusSchema = z.object({
   conversationHistory: z
     .array(z.object({ role: z.string(), content: z.string() }))
     .default([]),
+  // live-words: caller's thought-stream queryId, so consensus advisor/synthesis progress can be
+  // emitted to the same live panel as single-pass methods.
+  queryId: z.string().max(100).optional(),
 });
 
 // NOTE: flatten() emits schema messages only — the submitted key value is NEVER echoed

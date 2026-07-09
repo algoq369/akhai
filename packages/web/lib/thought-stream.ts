@@ -147,7 +147,10 @@ export const connections = new Map<string, Set<ReadableStreamDefaultController>>
  * stage is ever lost to the subscribe-vs-emit race.
  */
 const buffers = new Map<string, ThoughtEvent[]>();
-const MAX_BUFFERED = 300; // pipeline emits ~10-40 events; cap defensively against a runaway loop
+// pipeline ~10-40 events + coalesced answer-token 'generating' flushes (~40 chars each → ~100 on a
+// 4000-char answer) + extended-thinking deltas. 600 keeps the full backlog replayable; overflow only
+// drops the OLDEST from the late-subscriber replay (live delivery is unaffected).
+const MAX_BUFFERED = 600;
 
 /** Replay backlog for a subscriber that connects mid-query (called from the SSE route on connect). */
 export function getBufferedThoughts(queryId: string): ThoughtEvent[] {

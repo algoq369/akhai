@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
         const gtpResponse = await fetch(new URL('/api/tot-consensus', request.url).toString(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, conversationHistory }),
+          body: JSON.stringify({ query, conversationHistory, queryId }),
         });
 
         if (!gtpResponse.ok) {
@@ -530,6 +530,35 @@ export async function POST(request: NextRequest) {
           }
         : undefined;
 
+    // live-words: coalesce answer text_delta chunks into ~word-level 'generating' events (flush at
+    // ~40 chars or ~250ms, whichever first) so the live panel streams REAL tokens, not one final
+    // blob, without hundreds of SSE events. anthropic-only (the streaming provider); tail flushed
+    // on stream end. Each event carries ONLY the chunk since the last flush — the client accumulates.
+    let genSeq = 0;
+    let genBuf = '';
+    let genLastFlush = Date.now();
+    const flushGen = (force: boolean) => {
+      if (!genBuf) return;
+      if (!force && genBuf.length < 40 && Date.now() - genLastFlush < 250) return;
+      emitAndPersist(queryId, {
+        id: `${queryId}-gen-${genSeq++}`,
+        queryId,
+        stage: 'generating',
+        timestamp: Date.now() - startTime,
+        data: 'Generating response...',
+        details: { narrative: genBuf },
+      });
+      genBuf = '';
+      genLastFlush = Date.now();
+    };
+    const textCb =
+      selectedProvider === 'anthropic'
+        ? (chunk: string) => {
+            genBuf += chunk;
+            flushGen(false);
+          }
+        : undefined;
+
     try {
       // E5 FLIP (2026-07-05): the live agent is now the DEFAULT for react — proven over 5 weeks:
       // real searches with per-step streaming (D4, user-verified), citations + Sources (E1.3),
@@ -729,6 +758,7 @@ export async function POST(request: NextRequest) {
             extendedThinking:
               extendedThinking && selectedProvider === 'anthropic' ? true : undefined,
             onThinkingDelta: thinkingCb,
+            onTextDelta: textCb,
             purpose: `${selectedMethod.id} answer`,
             queryId,
           });
@@ -759,6 +789,8 @@ export async function POST(request: NextRequest) {
           },
         }
       );
+      // live-words: flush the tail of the streamed answer once the model call completes.
+      flushGen(true);
       }
     } catch (apiError) {
       logger.query.apiError(selectedProvider.toUpperCase(), (apiError as Error).message);

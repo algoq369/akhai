@@ -68,9 +68,17 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
     detail = verdict === 'pass' ? 'all clear' : verdict;
   }
 
-  // Collect narrative entries from completed stages in timeline
+  // live-words: accumulate the real answer text streamed as coalesced 'generating' events (each
+  // carries only the chunk since the last flush) into a single growing preview.
+  const generatingText = messageTimeline
+    .filter((ev) => ev.stage === 'generating' && ev.details?.narrative)
+    .map((ev) => ev.details?.narrative ?? '')
+    .join('');
+
+  // Collect narrative entries from completed stages in timeline (exclude 'generating' — those are
+  // the streamed-answer chunks, rendered as one growing block below, not one line per chunk).
   const narrativeEntries = messageTimeline
-    .filter((ev) => ev.details?.narrative && ev.stage !== stage)
+    .filter((ev) => ev.details?.narrative && ev.stage !== stage && ev.stage !== 'generating')
     .map((ev) => ({
       stage: ev.stage,
       narrative: ev.details?.narrative ?? '',
@@ -134,6 +142,13 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
               <span className="ml-auto text-relic-ghost dark:text-relic-slate/30">+{elapsed}</span>
             )}
           </div>
+
+          {/* live-words: the real answer text streaming in word-by-word (tail shown, bounded) */}
+          {generatingText && (
+            <div className="mt-1 font-mono text-[9px] text-relic-silver/70 dark:text-relic-slate/60 leading-relaxed whitespace-pre-wrap max-h-24 overflow-hidden">
+              {generatingText.slice(-400)}
+            </div>
+          )}
         </div>
       </motion.div>
     </AnimatePresence>

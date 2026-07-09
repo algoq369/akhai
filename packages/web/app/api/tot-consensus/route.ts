@@ -24,6 +24,7 @@ import { log } from '@/lib/logger';
 // TotConsensusSchema encodes the simple-query→tot-consensus INTERNAL contract — see route-schemas.ts
 import { TotConsensusSchema } from '@/lib/route-schemas';
 import { MODELS, ADVISORS } from '@/lib/models';
+import { emitTotAdvisor, emitTotSynthesis } from '@/lib/tot-stream';
 
 export const dynamic = 'force-dynamic';
 
@@ -221,7 +222,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { query, conversationHistory } = parsed.data;
+    const { query, conversationHistory, queryId: streamQueryId } = parsed.data;
 
     // Get API keys
     const apiKeys = {
@@ -274,7 +275,10 @@ Format with clear markdown structure.`;
         apiKeys[provider]!,
         round1SystemPrompt.replace('{ROLE}', config.role),
         query
-      );
+      ).then((r) => {
+        emitTotAdvisor(streamQueryId, r, provider, startTime); // live-words: real excerpt as it lands
+        return r;
+      });
     });
 
     const round1Responses = await Promise.all(round1Promises);
@@ -408,6 +412,9 @@ Guidelines:
       const best = successfulResponses.sort((a, b) => b.confidence - a.confidence)[0];
       finalSynthesis = best?.content || 'No successful responses';
     }
+
+    // live-words: emit the synthesized answer excerpt to the caller's live panel (non-streaming).
+    emitTotSynthesis(streamQueryId, finalSynthesis, startTime);
 
     // ========================
     // Calculate Final Metrics

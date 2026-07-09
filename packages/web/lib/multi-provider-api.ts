@@ -303,7 +303,14 @@ async function callAnthropic(
     delete body.temperature;
     delete body.top_p;
     delete body.top_k;
-    if (request.onThinkingDelta) body.stream = true;
+    if (request.onThinkingDelta || request.onTextDelta) body.stream = true;
+  }
+
+  // live-words: stream real answer tokens when a text-delta consumer is attached — works WITHOUT
+  // extended thinking (direct/cod/sc/pas). Skip the frontier model: it emits no thinking_delta and
+  // its refusal→Opus fallback lives on the non-streamed JSON path below.
+  if (request.onTextDelta && request.model !== MODELS.frontier) {
+    body.stream = true;
   }
 
   // F1: Fable adaptive thinking is controlled by effort, which the Messages API takes INSIDE
@@ -330,8 +337,8 @@ async function callAnthropic(
     throw new Error(`Anthropic API error: ${response.status} - ${error}`);
   }
 
-  // Streaming path: parse SSE events and invoke callbacks live
-  if (request.extendedThinking && request.onThinkingDelta && response.body) {
+  // Streaming path: parse SSE events and invoke callbacks live (thinking and/or text deltas).
+  if (body.stream && response.body && (request.onThinkingDelta || request.onTextDelta)) {
     return parseAnthropicStream(response, request, startTime, body.model as string);
   }
 
