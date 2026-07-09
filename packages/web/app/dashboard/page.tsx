@@ -69,7 +69,7 @@ export default function DashboardPage() {
     {
       key: 'mistral',
       name: 'Mistral AI',
-      model: 'mistral-small-latest',
+      model: ADVISORS.strategic,
       active: stats?.providers?.mistral?.status === 'active',
     },
   ];
