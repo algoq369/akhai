@@ -123,10 +123,8 @@ DONE:
    (OPENROUTER_API_KEY already SET, $0, no new keys) — rewrite the tot-consensus PROVIDERS block.
    NOT a launch blocker (Opus fallback works today). Quick-test first: free Mistral key (EU, no code)
    → verify consensus path runs. Ollama parked (dev-only, needs GPU hardware). `go free-consensus`.
-4. ReAct 404 fix — react → opus-4-8 → "Not Found" → silently falls back to free Llama. Route ReAct's
-   extended-thinking to MODELS.thinking (opus-4-6) so premium ReAct actually uses premium. `go react-fix`.
-5. Live-reasoning-always-visible (UX) — reasoning stream should always show regardless of methodology.
-6. F4 — ban-story launch copy (with partner).
+4. Live-reasoning-always-visible (UX) — reasoning stream should always show regardless of methodology.
+5. F4 — ban-story launch copy (with partner).
 
 ## PARKED CHIPS (don't lose)
 - SESSION FINDINGS 2026-07-09 (from log verification of E6.1b on localhost — dev log /tmp/akhai-dev.log):
@@ -148,9 +146,13 @@ DONE:
     OpenRouter :free models (Llama/Qwen/DeepSeek-R1 free, $0, no new keys, but data via US OpenRouter).
     Mistral free tier (EU) = quickest test (free key, NO code change, 1 advisor + Opus synth). Consensus
     NOT broken for users (Opus fallback returns real answers) → side-lane, NOT a launch blocker.
-  · [BUG, pre-existing] react → claude-opus-4-8 → 404 "Not Found" → falls back to openrouter (free
-    Llama). Premium ReAct silently degraded to free tier. Likely extended-thinking streaming on
-    opus-4-8 (MODELS.thinking=opus-4-6 is the "streamable extended-thinking ONLY" model). Investigate.
+  · [RESOLVED 2026-07-09] react "opus-4-8 404 → free Llama" was a STALE DEV-BUILD artifact, NOT a code
+    bug. Clean rebuild (rm -rf .next .turbo + restart) → react uses premium Opus correctly (verified 2×
+    via curl: model=claude-opus-4-8, ~$0.005/query, ZERO fallback). Current source is fine; PROD builds
+    clean (deploy runs rm .next .turbo) so unaffected. LESSON: dev server accumulates stale turbopack
+    cache — clean-rebuild before trusting any "it's broken in dev" observation. OBSERVABILITY GAP
+    (minor, unfixed): the premium→free fallback is SILENT — a premium failure returns free-tier with
+    no signal, which is what MASKED this. Consider surfacing fallback events to logs/UI (parked).
   · Video/URL in main query box = sc/search/Opus, NOT the x-video-analysis vision endpoint — so the
     Sonnet-5 vision swap is untested; needs the actual vision entry point to verify.
   · [UX] Live reasoning stream not always visible (sat at "ANALYZING… 0 chars") — user wants it ALWAYS
