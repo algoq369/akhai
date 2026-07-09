@@ -284,15 +284,15 @@ function MethodologyTab({ currentMethodology, onMethodologyChange }: Methodology
     },
     { id: 'direct', symbol: '→', name: 'Direct', description: 'Single AI call, instant response' },
     { id: 'cod', symbol: '⋯', name: 'Chain of Draft', description: 'Iterative refinement process' },
-    { id: 'sc', symbol: '◇', name: 'Self-Consistency', description: 'Multi-path majority voting' },
+    { id: 'sc', symbol: '◇', name: 'Buffer of Thoughts', description: 'Buffered-fact validation' },
     { id: 'react', symbol: '⟳', name: 'ReAct', description: 'Tools: search, calculator, etc.' },
     {
       id: 'pas',
       symbol: '△',
-      name: 'Plan-and-Solve',
-      description: 'Decompose then execute step by step',
+      name: 'Program of Thought',
+      description: 'Generate & run code',
     },
-    { id: 'tot', symbol: '◯', name: 'TOT Consensus', description: 'Tree of Thoughts reasoning' },
+    { id: 'tot', symbol: '◯', name: 'GTP Flash Consensus', description: 'Parallel advisors + quorum' },
   ];
 
   return (

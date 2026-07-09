@@ -34,7 +34,7 @@ export default function ExplorePage() {
       id: 'tot',
       title: 'Flash',
       description:
-        'Tree of Thoughts — Yao et al., NeurIPS 2023, explores multiple reasoning branches, evaluates and prunes',
+        'GTP Flash Consensus — parallel multi-advisor broadcast with quorum early-exit and synthesis (original architecture)',
       size: 'large',
       gradient: 'from-gray-800 via-gray-700 to-gray-600',
       badge: '~25s',

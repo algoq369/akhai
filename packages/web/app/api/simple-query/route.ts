@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
 
     // ========== TOT ROUTE ==========
     if (selectedMethod.id === 'tot') {
-      log('INFO', 'TOT', 'Routing to Tree of Thoughts consensus endpoint');
+      log('INFO', 'TOT', 'Routing to GTP Flash consensus endpoint');
 
       try {
         const gtpResponse = await fetch(new URL('/api/tot-consensus', request.url).toString(), {
@@ -307,7 +307,7 @@ export async function POST(request: NextRequest) {
         log(
           'ERROR',
           'TOT',
-          `Tree of Thoughts consensus failed: ${(gtpError as Error).message}, falling back to Claude`
+          `GTP Flash consensus failed: ${(gtpError as Error).message}, falling back to Claude`
         );
         // Fall through to standard Claude processing
       }

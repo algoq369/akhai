@@ -321,14 +321,14 @@ export function handleStreamEvent(
       }
       break;
 
-    // Self-Consistency events
+    // Buffer of Thoughts events
     case 'sc-init':
       s.setIsBoT(true);
       if (data.data?.config) {
         s.setMaxBufferSize(data.data.config.maxBufferSize || 10);
         s.setDistillationStrategy(data.data.config.distillationStrategy || 'hierarchical');
       }
-      s.addReasoningStep('SC Initialize', 'Self-Consistency methodology activated');
+      s.addReasoningStep('SC Initialize', 'Buffer of Thoughts methodology activated');
       break;
 
     case 'sc-thought-added':

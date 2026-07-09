@@ -36,10 +36,10 @@ const LENS_SYMBOLS: Record<string, { symbol: string; color: string; name: string
 const METHODOLOGY_NAMES: Record<string, string> = {
   direct: 'Direct',
   cod: 'Chain of Draft',
-  sc: 'Self-Consistency',
+  sc: 'Buffer of Thoughts',
   react: 'ReAct',
-  pas: 'Plan-and-Solve',
-  tot: 'Tree of Thoughts',
+  pas: 'Program of Thought',
+  tot: 'GTP Flash Consensus',
   auto: 'Auto',
 };
 

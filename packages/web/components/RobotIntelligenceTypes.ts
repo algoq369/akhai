@@ -60,10 +60,10 @@ export const robotParts: RobotPart[] = [
     subComponents: [
       { id: 'direct-path', name: 'Direct Pathway', status: 'active', value: 98, unit: '%' },
       { id: 'cod-path', name: 'Chain of Draft', status: 'active', value: 95, unit: '%' },
-      { id: 'tot-path', name: 'Tree of Thoughts', status: 'active', value: 92, unit: '%' },
+      { id: 'tot-path', name: 'GTP Flash Consensus', status: 'active', value: 92, unit: '%' },
       { id: 'react-path', name: 'ReAct Loop', status: 'active', value: 89, unit: '%' },
-      { id: 'pas-path', name: 'Plan-and-Solve', status: 'developing', value: 78, unit: '%' },
-      { id: 'sc-path', name: 'Self-Consistency', status: 'developing', value: 82, unit: '%' },
+      { id: 'pas-path', name: 'Program of Thought', status: 'developing', value: 78, unit: '%' },
+      { id: 'sc-path', name: 'Buffer of Thoughts', status: 'developing', value: 82, unit: '%' },
       { id: 'auto-router', name: 'Auto Router', status: 'active', value: 96, unit: '%' },
     ],
   },

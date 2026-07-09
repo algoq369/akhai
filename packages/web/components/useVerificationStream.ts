@@ -329,7 +329,7 @@ export function useVerificationStream(queryId: string) {
             }
             break;
 
-          // Self-Consistency events (delegated to parser)
+          // Buffer of Thoughts events (delegated to parser)
           case 'sc-init':
           case 'sc-thought-added':
           case 'sc-distillation-start':

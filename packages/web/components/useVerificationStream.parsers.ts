@@ -123,7 +123,7 @@ export function parseScEvent(
         setMaxBufferSize(data.data.config.maxBufferSize || 10);
         setDistillationStrategy(data.data.config.distillationStrategy || 'hierarchical');
       }
-      addReasoningStep('SC Initialize', 'Self-Consistency methodology activated');
+      addReasoningStep('SC Initialize', 'Buffer of Thoughts methodology activated');
       return true;
 
     case 'sc-thought-added':

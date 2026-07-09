@@ -58,7 +58,7 @@ const METHODOLOGIES: Methodology[] = [
   {
     id: 'sc',
     name: 'SC',
-    fullName: 'Self-Consistency',
+    fullName: 'Buffer of Thoughts',
     symbol: '◇',
     color: '#eab308',
     tokens: '~600',
@@ -78,7 +78,7 @@ const METHODOLOGIES: Methodology[] = [
   {
     id: 'pas',
     name: 'PAS',
-    fullName: 'Plan-and-Solve',
+    fullName: 'Program of Thought',
     symbol: '△',
     color: '#3b82f6',
     tokens: '3k-6k',
@@ -88,7 +88,7 @@ const METHODOLOGIES: Methodology[] = [
   {
     id: 'tot',
     name: 'TOT',
-    fullName: 'Tree of Thoughts',
+    fullName: 'GTP Flash Consensus',
     symbol: '◯',
     color: '#8b5cf6',
     tokens: '8k-15k',

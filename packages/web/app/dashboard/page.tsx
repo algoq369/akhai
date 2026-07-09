@@ -78,10 +78,10 @@ export default function DashboardPage() {
     { key: 'auto', name: 'Auto', desc: 'Smart routing' },
     { key: 'direct', name: 'Direct', desc: 'Single AI instant' },
     { key: 'cod', name: 'Chain of Draft', desc: 'Iterative refinement' },
-    { key: 'sc', name: 'Self-Consistency', desc: 'Multi-path voting' },
+    { key: 'sc', name: 'Buffer of Thoughts', desc: 'Buffered-fact validation' },
     { key: 'react', name: 'ReAct', desc: 'Search & calculate' },
-    { key: 'pas', name: 'Plan-and-Solve', desc: 'Decompose then execute' },
-    { key: 'tot', name: 'TOT Consensus', desc: 'Tree of Thoughts' },
+    { key: 'pas', name: 'Program of Thought', desc: 'Generate & run code' },
+    { key: 'tot', name: 'GTP Flash Consensus', desc: 'Parallel advisors + quorum' },
   ];
 
   const features = [

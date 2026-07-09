@@ -112,9 +112,9 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     id: 'sc',
     symbol: '◇',
     name: 'sc',
-    fullName: 'Self-Consistency',
+    fullName: 'Buffer of Thoughts',
     description:
-      'Wang et al., ICLR 2023. Samples multiple reasoning paths and takes majority vote for more robust answers.',
+      'Buffers key facts and constraints, builds a reasoning chain, and self-validates the answer against them (arXiv:2406.04271).',
     howItWorks: [
       'Sample multiple independent reasoning paths',
       'Each path reasons through the problem differently',
@@ -175,9 +175,9 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     id: 'pas',
     symbol: '△',
     name: 'pas',
-    fullName: 'Plan-and-Solve',
+    fullName: 'Program of Thought',
     description:
-      'Wang et al., ACL 2023. Decomposes problem into a plan then executes each step systematically.',
+      'Chen et al. 2022 — generates executable code, runs it, separating reasoning from computation (arXiv:2211.12588).',
     howItWorks: [
       'Understand the problem and identify what is being asked',
       'Devise a step-by-step plan to solve it',
@@ -207,9 +207,9 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     id: 'tot',
     symbol: '◯',
     name: 'tot',
-    fullName: 'Tree of Thoughts',
+    fullName: 'GTP Flash Consensus',
     description:
-      'Yao et al., NeurIPS 2023, explores multiple reasoning branches, evaluates and prunes for optimal solutions.',
+      'Parallel multi-advisor broadcast with quorum early-exit and Mother Base synthesis (original architecture).',
     howItWorks: [
       'Technical Perspective: Implementation and practical analysis',
       'Strategic Perspective: Broader implications and approaches',
