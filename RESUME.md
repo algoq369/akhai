@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-08 · HEAD = RESUME sync atop 68c376c (E4.5a CSP reconcile) · UNPUSHED (origin at 58e6fa6) · SHIELD PASS · clean tree
+> Last updated: 2026-07-08 · HEAD = RESUME sync atop 8e990f5 (E4.6 sweep) · UNPUSHED (origin at 756d4fc) · SHIELD PASS · clean tree
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -84,13 +84,19 @@ DONE:
   CSP removed (other 6 headers kept), dead 127.0.0.1:7242 dropped. SUPERSET-PROVEN (independent Python
   check: every old origin present, only 127.0.0.1 removed, ZERO additions → can only widen, cannot
   newly block). tsc/SHIELD PASS, live / = exactly 1 CSP header. 'unsafe-inline'/'unsafe-eval' KEPT.
+- E4.6 DONE (8e990f5, UNPUSHED): methodology×route functional sweep harness
+  (packages/web/scripts/methodology-sweep.mjs, reusable via `node scripts/methodology-sweep.mjs`).
+  All 7 methodologies × 2 prompts through /api/simple-query = 14/14 PASS, dispatch fidelity clean
+  (every non-auto cell returned the requested method — no silent swaps), auto routed compute→pas /
+  reason→tot. Assertions verified rigorous (ok && answerLen>20 && !error; HTTP≠200 → FAIL). Harness
+  in scripts/ = outside SHIELD console_log ratchet (held 103). Smoke test only — E4.7 is quality.
 
 ## NEXT STEPS (pick up here — recommended order)
-1. E4.6 methodology × route functional sweep — all 7 methodologies × routes on the fixed eval set.
-2. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `pnpm eval`, Node 24, server :3000.
-3. E6.1 — fold the 31 hardcoded model strings (measured 2026-07-05) into the MODELS constant. NOW ALSO
+1. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `pnpm eval`, Node 24, server :3000.
+   Recommend a DRY RUN now (weeks of runway to tune) before the official freeze-week gate.
+2. E6.1 — fold the 31 hardcoded model strings (measured 2026-07-05) into the MODELS constant. NOW ALSO
    folds core PROVIDER_RATES (sc.ts): hardcoded flat Sonnet pricing applied to ALL anthropic calls.
-4. F4 — ban-story launch copy (with partner).
+3. F4 — ban-story launch copy (with partner).
 
 ## PARKED CHIPS (don't lose)
 - E4.5b (post-launch hardening, was going to be E4.5 nonce): drop 'unsafe-inline' via per-request
