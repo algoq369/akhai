@@ -143,10 +143,21 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
             )}
           </div>
 
-          {/* live-words: the real answer text streaming in word-by-word (tail shown, bounded) */}
+          {/* live-words: the real answer text streaming in word-by-word — full text, readable,
+              auto-scrolling so the newest words are always in view */}
           {generatingText && (
-            <div className="mt-1 font-mono text-[9px] text-relic-silver/70 dark:text-relic-slate/60 leading-relaxed whitespace-pre-wrap max-h-24 overflow-hidden">
-              {generatingText.slice(-400)}
+            <div
+              ref={(el) => {
+                if (el) el.scrollTop = el.scrollHeight;
+              }}
+              className="mt-2 rounded border border-relic-ghost/20 dark:border-relic-slate/15 bg-relic-void/[0.02] dark:bg-white/[0.02] px-3 py-2 font-mono text-[12px] text-relic-void/85 dark:text-relic-slate/85 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto"
+            >
+              {generatingText}
+              <motion.span
+                animate={{ opacity: [1, 0.2, 1] }}
+                transition={{ duration: 0.9, repeat: Infinity }}
+                className="inline-block w-[7px] -mb-[2px] h-[13px] ml-[1px] bg-relic-silver/70 dark:bg-relic-slate/70"
+              />
             </div>
           )}
         </div>
