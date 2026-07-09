@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { MODELS } from '@/lib/models';
 import { log } from '@/lib/logger';
 import Anthropic from '@anthropic-ai/sdk';
 import { calculateRelevance } from './relevance';
@@ -92,7 +93,7 @@ Return ONLY valid JSON:
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: MODELS.budget,
       max_tokens: 800,
       messages: [
         {

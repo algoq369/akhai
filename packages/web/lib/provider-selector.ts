@@ -165,7 +165,7 @@ export function getProviderApiConfig(provider: ProviderFamily): {
 export function getFallbackModelSpec(provider: ProviderFamily): { model: string } {
   switch (provider) {
     case 'openrouter':
-      return { model: 'meta-llama/llama-3.3-70b-instruct:free' };
+      return { model: MODELS.free };
     case 'deepseek':
       return { model: 'deepseek-chat' };
     case 'mistral':
@@ -179,7 +179,7 @@ export function getFallbackModelSpec(provider: ProviderFamily): { model: string 
     case 'google':
       return { model: 'gemini-2.0-flash' };
     default:
-      return { model: 'meta-llama/llama-3.3-70b-instruct:free' };
+      return { model: MODELS.free };
   }
 }
 

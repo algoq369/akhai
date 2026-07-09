@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { MODELS } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,7 +86,7 @@ Respond with ONLY 3 alternative questions, one per line, no numbering, no explan
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: MODELS.budget,
         max_tokens: 300,
         system: systemPrompt,
         messages: [

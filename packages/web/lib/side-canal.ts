@@ -6,6 +6,7 @@
 
 import { db } from './database';
 import { randomBytes } from 'crypto';
+import { MODELS } from '@/lib/models';
 import { extractKeywords } from './side-canal-keywords';
 export { extractKeywords } from './side-canal-keywords';
 export { getKeywordLayersContext } from './side-canal-keywords';
@@ -30,7 +31,7 @@ async function callLLM(prompt: string, maxTokens: number): Promise<string | null
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
+          model: MODELS.budget,
           max_tokens: maxTokens,
           messages: [{ role: 'user', content: prompt }],
         }),
@@ -66,7 +67,7 @@ async function callLLM(prompt: string, maxTokens: number): Promise<string | null
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.3-70b-instruct:free',
+        model: MODELS.free,
         messages: [{ role: 'user', content: prompt }],
         max_tokens: maxTokens,
       }),

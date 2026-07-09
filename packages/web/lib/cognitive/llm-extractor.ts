@@ -6,6 +6,7 @@
 
 import { buildExchangePrompt, buildRestructurePrompt, buildSynthesisPrompt } from './prompts';
 import { VALID_LENS_IDS } from './lenses';
+import { MODELS as MODEL_IDS } from '@/lib/models';
 
 export const COGNITIVE_PROMPT_VERSION = 1;
 export const SYNTHESIS_PROMPT_VERSION = 1;
@@ -34,7 +35,7 @@ export interface ConversationSynthesisResult {
 }
 
 const MODELS = [
-  { id: 'claude-haiku-4-5-20251001', label: 'llm-haiku' },
+  { id: MODEL_IDS.budget, label: 'llm-haiku' },
   { id: 'claude-sonnet-4-6', label: 'llm-sonnet' },
 ] as const;
 

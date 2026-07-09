@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callProvider } from '@/lib/multi-provider-api';
+import { MODELS } from '@/lib/models';
 import { fetchYouTubeVideo, formatYouTubeData } from '@/lib/tools/youtube-fetcher';
 import { WebBrowseSchema } from '@/lib/route-schemas';
 
@@ -176,7 +177,7 @@ async function analyzeGitHub(url: URL, userQuery?: string) {
           content: prompt,
         },
       ],
-      model: 'claude-haiku-4-5-20251001',
+      model: MODELS.budget,
       maxTokens: 2000,
     });
 
@@ -225,7 +226,7 @@ async function analyzeYouTube(url: URL, userQuery?: string) {
         content: prompt,
       },
     ],
-    model: 'claude-haiku-4-5-20251001',
+    model: MODELS.budget,
     maxTokens: 2000,
   });
 
@@ -305,7 +306,7 @@ async function analyzeWebpage(url: URL, userQuery?: string) {
           content: prompt,
         },
       ],
-      model: 'claude-haiku-4-5-20251001',
+      model: MODELS.budget,
       maxTokens: 2000,
     });
 

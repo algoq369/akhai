@@ -4,6 +4,7 @@
  */
 
 import { buildExtractionSystemPrompt } from './prompts';
+import { MODELS as MODEL_IDS } from '@/lib/models';
 
 /** Bump this whenever the extraction prompt changes — invalidates cached annotations. */
 export const ANNOTATION_PROMPT_VERSION = 1;
@@ -15,7 +16,7 @@ export interface LLMAnnotation {
 }
 
 const MODELS = [
-  { id: 'claude-haiku-4-5-20251001', label: 'llm-haiku', provider: 'anthropic' as const },
+  { id: MODEL_IDS.budget, label: 'llm-haiku', provider: 'anthropic' as const },
   { id: 'claude-sonnet-4-6', label: 'llm-sonnet', provider: 'anthropic' as const },
   {
     id: 'meta-llama/llama-3.3-70b-instruct',
