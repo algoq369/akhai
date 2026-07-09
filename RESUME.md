@@ -115,7 +115,13 @@ DONE:
    (OPENROUTER_API_KEY already SET, $0, no new keys) — rewrite the tot-consensus PROVIDERS block.
    NOT a launch blocker (Opus fallback works today). Quick-test first: free Mistral key (EU, no code)
    → verify consensus path runs. Ollama parked (dev-only, needs GPU hardware). `go free-consensus`.
-3. Live-reasoning-always-visible (UX) — reasoning stream should always show regardless of methodology.
+3. Live-reasoning PART 2 (optional, design call) — b6beee5 fixed the DROPPED-EVENTS race (buffer+replay
+   in thought-stream pub/sub, verified live: 2s-late SSE connect replays full backlog; tot now emits
+   honest calling/complete around its blocking consensus). Reasoning panel now always populates. STILL
+   TRUE: the ANSWER itself doesn't stream (useQueryHandlers.ts:401 blocking res.json(), ProcessingIndicator
+   while isStreaming&&!content) — "0 chars" until completion is by-architecture. Streaming the answer
+   text = bigger refactor (SSE/chunked response path), separate decision. Residual: crash-before-terminal
+   leaves its ≤300-event buffer unfreed (no TTL sweep) — tiny, belt-and-braces later.
 4. F4 — ban-story launch copy (with partner).
 
 ## PARKED CHIPS (don't lose)
