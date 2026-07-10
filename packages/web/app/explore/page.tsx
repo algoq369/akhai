@@ -190,17 +190,11 @@ export default function ExplorePage() {
                 <span className="text-xs text-gray-500 dark:text-relic-silver">Powered by</span>
                 <div className="flex items-center gap-1">
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    Anthropic
+                    Anthropic Claude
                   </span>
                   <span className="text-gray-400 dark:text-gray-600">•</span>
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    DeepSeek
-                  </span>
-                  <span className="text-gray-400 dark:text-gray-600">•</span>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Grok</span>
-                  <span className="text-gray-400 dark:text-gray-600">•</span>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    Mistral
+                    OpenRouter free advisors (OpenAI • Meta • Cohere)
                   </span>
                 </div>
               </div>

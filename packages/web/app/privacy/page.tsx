@@ -18,12 +18,12 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-xs uppercase tracking-widest text-relic-silver mb-2">How We Use Your Data</h2>
-            <p>Your queries are sent to AI providers (Anthropic Claude, DeepSeek, Mistral, xAI) for processing. We do not sell, share, or monetize your data. Query history is stored locally in our database to provide history and conversation features. You can delete your data at any time from your profile settings.</p>
+            <p>Your queries are sent to AI providers (Anthropic Claude for core reasoning and synthesis; OpenRouter for advisor queries, which routes them to free open models — currently OpenAI GPT-OSS, Meta Llama, and Cohere North) for processing. We do not sell, share, or monetize your data. Query history is stored locally in our database to provide history and conversation features. You can delete your data at any time from your profile settings.</p>
           </section>
 
           <section>
             <h2 className="text-xs uppercase tracking-widest text-relic-silver mb-2">Third-Party Services</h2>
-            <p>We use: Anthropic (AI processing), PostHog (analytics, EU-hosted), Stripe (payments), Brave Search (web search). Each has their own privacy policy. We send only the minimum data required to each service.</p>
+            <p>We use: Anthropic (AI processing), OpenRouter (advisor model routing), PostHog (analytics, EU-hosted), Stripe (payments), Brave Search (web search). Each has their own privacy policy. We send only the minimum data required to each service.</p>
           </section>
 
           <section>

@@ -23,7 +23,7 @@ COMMANDS:
   /help          Show this help
   /clear         Clear terminal
   /instinct      Toggle Instinct Mode
-  /model [name]  Switch model (claude, deepseek, mistral, grok, tot)
+  /model [name]  Switch model (claude, gpt-oss, llama, north, tot)
   /status        Show system status
   /history       Show command history
   /export        Export conversation
@@ -38,12 +38,12 @@ SHORTCUTS:
   Up/Down        Navigate history
   Tab            Autocomplete
 
-Powered by Claude Opus 4.5 + AkhAI Sovereign Technology
+Powered by Claude Opus 4.8 + AkhAI Sovereign Technology
 `,
   status: `
 AKHAI SYSTEM STATUS
 ───────────────────────────────────────
-  Engine:     Claude Opus 4.5
+  Engine:     Claude Opus 4.8
   Mode:       Standard (Instinct: OFF)
   Model:      claude
   Guard:      ACTIVE
@@ -136,11 +136,11 @@ export default function AkhaiTerminal({ isOpen, onClose }: AkhaiTerminalProps) {
           addLine('system', `Instinct Mode: ${!instinctMode ? 'ACTIVATED' : 'DEACTIVATED'}`);
           break;
         case 'model':
-          if (args[0] && ['claude', 'deepseek', 'mistral', 'grok', 'tot'].includes(args[0])) {
+          if (args[0] && ['claude', 'gpt-oss', 'llama', 'north', 'tot'].includes(args[0])) {
             setCurrentModel(args[0]);
             addLine('system', `Model switched to: ${args[0]}`);
           } else {
-            addLine('error', 'Invalid model. Use: claude, deepseek, mistral, grok, tot');
+            addLine('error', 'Invalid model. Use: claude, gpt-oss, llama, north, tot');
           }
           break;
         case 'history':
@@ -175,7 +175,7 @@ export default function AkhaiTerminal({ isOpen, onClose }: AkhaiTerminalProps) {
       } else {
         addLine(
           'output',
-          `Response to: "${trimmed}"\n\nThis is a simulated terminal response. The AkhAI Terminal will connect to Claude Opus 4.5 with full AkhAI methodology integration.`
+          `Response to: "${trimmed}"\n\nThis is a simulated terminal response. The AkhAI Terminal will connect to Claude Opus 4.8 with full AkhAI methodology integration.`
         );
       }
     } catch (error) {

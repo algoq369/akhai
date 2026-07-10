@@ -12,9 +12,9 @@ export default function DashboardPage() {
   const { stats, loading, error, fetchStats } = useDashboardStore();
   const [enabledProviders, setEnabledProviders] = useState<Record<string, boolean>>({
     anthropic: true,
-    deepseek: true,
-    xai: true,
-    mistral: true,
+    'advisor-technical': true,
+    'advisor-strategic': true,
+    'advisor-creative': true,
   });
   const [enabledMethods, setEnabledMethods] = useState<Record<string, boolean>>({
     auto: true,
@@ -54,23 +54,24 @@ export default function DashboardPage() {
       model: MODELS.premium,
       active: stats?.providers?.anthropic?.status === 'active',
     },
+    // advisors are free OpenRouter models — slugs rotate, names may lag models.ts
     {
-      key: 'deepseek',
-      name: 'DeepSeek',
+      key: 'advisor-technical',
+      name: 'Technical — GPT-OSS (OpenAI)',
       model: ADVISORS.technical,
-      active: stats?.providers?.deepseek?.status === 'active',
+      active: stats?.providers?.openrouter?.status === 'active',
     },
     {
-      key: 'xai',
-      name: 'Grok',
-      model: ADVISORS.creative,
-      active: stats?.providers?.xai?.status === 'active',
-    },
-    {
-      key: 'mistral',
-      name: 'Mistral AI',
+      key: 'advisor-strategic',
+      name: 'Strategic — North (Cohere)',
       model: ADVISORS.strategic,
-      active: stats?.providers?.mistral?.status === 'active',
+      active: stats?.providers?.openrouter?.status === 'active',
+    },
+    {
+      key: 'advisor-creative',
+      name: 'Creative — Llama 3.3 (Meta)',
+      model: ADVISORS.creative,
+      active: stats?.providers?.openrouter?.status === 'active',
     },
   ];
 
