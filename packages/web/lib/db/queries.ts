@@ -68,7 +68,7 @@ export function getRecentQueries(
   // If user is authenticated, show their queries + legacy queries without user_id
   if (userId) {
     const stmt = db.prepare(`
-      SELECT id, query, flow, status, created_at, completed_at, tokens_used, cost
+      SELECT id, query, flow, status, result, created_at, completed_at, tokens_used, cost
       FROM queries
       WHERE user_id = ? OR user_id IS NULL
       ORDER BY created_at DESC
@@ -79,6 +79,7 @@ export function getRecentQueries(
       query: string;
       flow: string;
       status: string;
+      result: string | null;
       created_at: number;
       completed_at: number | null;
       tokens_used: number;
@@ -89,7 +90,7 @@ export function getRecentQueries(
   // If anonymous user with session, show their session queries + legacy queries
   if (sessionId) {
     const stmt = db.prepare(`
-      SELECT id, query, flow, status, created_at, completed_at, tokens_used, cost
+      SELECT id, query, flow, status, result, created_at, completed_at, tokens_used, cost
       FROM queries
       WHERE session_id = ? OR (session_id IS NULL OR session_id = '')
       ORDER BY created_at DESC
@@ -100,6 +101,7 @@ export function getRecentQueries(
       query: string;
       flow: string;
       status: string;
+      result: string | null;
       created_at: number;
       completed_at: number | null;
       tokens_used: number;

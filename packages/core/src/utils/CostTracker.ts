@@ -1,15 +1,5 @@
 import { ModelFamily } from '../models/types.js';
-
-/**
- * Pricing information per 1M tokens (input/output)
- * Pricing as of December 2024
- */
-const PRICING: Record<ModelFamily, { input: number; output: number }> = {
-  anthropic: { input: 3.0, output: 15.0 },      // Claude Sonnet 4
-  deepseek: { input: 0.14, output: 0.28 },      // DeepSeek Chat
-  mistral: { input: 0.2, output: 0.6 },         // Mistral Small
-  xai: { input: 5.0, output: 15.0 },            // Grok Beta
-};
+import { getRate } from './pricing.js';
 
 /**
  * Usage record for a single API call
@@ -51,12 +41,10 @@ export class CostTracker {
     inputTokens: number,
     outputTokens: number
   ): void {
-    const pricing = PRICING[family];
-
-    // Calculate cost: (tokens / 1M) * price_per_1M
-    const inputCost = (inputTokens / 1_000_000) * pricing.input;
-    const outputCost = (outputTokens / 1_000_000) * pricing.output;
-    const totalCost = inputCost + outputCost;
+    // Model-aware rates (per 1K tokens) from the shared pricing table — the old flat family
+    // table here priced every Anthropic model as Sonnet and had stale non-Anthropic rates.
+    const rate = getRate(family, model);
+    const totalCost = (inputTokens * rate.input + outputTokens * rate.output) / 1000;
 
     const record: UsageRecord = {
       family,

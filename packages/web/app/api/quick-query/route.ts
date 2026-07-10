@@ -128,10 +128,16 @@ export async function POST(request: NextRequest) {
 
         if (recentQueries && recentQueries.length > 0) {
           conversationContext = '\n\nRecent Conversation History (last 3 exchanges):\n';
-          // NOTE: getRecentQueries' SELECT does not include a `response` column, so
-          // `q.response` is undefined at runtime — the shape below is what this code reads.
-          recentQueries.reverse().forEach((q: { query: string; flow: string; response?: string }, i: number) => {
-            const responsePreview = q.response ? q.response.substring(0, 300) : 'No response';
+          // `result` holds JSON.stringify({ finalAnswer }) (see updateQuery writers) — parse
+          // defensively; legacy/error rows fall back to 'No response'.
+          recentQueries.reverse().forEach((q: { query: string; flow: string; result?: string | null }, i: number) => {
+            let answer = '';
+            try {
+              answer = q.result ? JSON.parse(q.result).finalAnswer || '' : '';
+            } catch {
+              answer = '';
+            }
+            const responsePreview = answer ? answer.substring(0, 300) : 'No response';
             conversationContext += `\n[${i + 1}] User: ${q.query}\nAkhAI (${q.flow}): ${responsePreview}...\n`;
           });
           systemPrompt += conversationContext;

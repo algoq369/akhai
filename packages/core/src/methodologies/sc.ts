@@ -28,6 +28,7 @@ import type {
   ThoughtBufferSnapshot,
   BoTCallbacks,
 } from './types.js';
+import { getRate } from '../utils/pricing.js';
 
 /**
  * Default BoT configuration
@@ -40,16 +41,6 @@ const DEFAULT_CONFIG: BoTConfig = {
   maxTokens: 800,
   temperature: 0.4,
   useTemplates: true,
-};
-
-/**
- * Provider pricing (per 1K tokens)
- */
-const PROVIDER_RATES: Record<string, { input: number; output: number }> = {
-  deepseek: { input: 0.00055, output: 0.00219 },
-  anthropic: { input: 0.003, output: 0.015 },
-  mistral: { input: 0.0002, output: 0.0006 },
-  xai: { input: 0.002, output: 0.01 },
 };
 
 /**
@@ -347,8 +338,8 @@ export async function executeBufferOfThoughts(
   // Get provider family
   const providerFamily = (provider as any).family as string;
 
-  // Calculate cost
-  const cost = calculateCost(providerFamily, inputTokens, outputTokens);
+  // Calculate cost (model-aware — the flat family rate mispriced non-Sonnet Anthropic models)
+  const cost = calculateCost(providerFamily, inputTokens, outputTokens, synthesisCompletion.model);
 
   // Calculate metadata
   const thoughtCount = buffer.getThoughts().length;
@@ -600,11 +591,15 @@ function estimateTokens(text: string): number {
 }
 
 /**
- * Calculate cost based on provider and token usage
+ * Calculate cost from per-model rates (falls back to the provider-family default)
  */
-function calculateCost(providerName: string, inputTokens: number, outputTokens: number): number {
-  const normalizedName = providerName.toLowerCase();
-  const rate = PROVIDER_RATES[normalizedName] || PROVIDER_RATES.deepseek;
+function calculateCost(
+  providerName: string,
+  inputTokens: number,
+  outputTokens: number,
+  model?: string
+): number {
+  const rate = getRate(providerName, model);
 
   return (inputTokens * rate.input + outputTokens * rate.output) / 1000;
 }
