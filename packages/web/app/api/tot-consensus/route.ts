@@ -114,14 +114,17 @@ async function callProvider(
       () => emitTotAdvisorFallback(streamQueryId, config.name, queryStartTime ?? startTime)
     );
 
-    clearTimeout(timeoutId);
-
     if (!response.ok) {
       const errorText = await response.text();
+      clearTimeout(timeoutId);
       throw new Error(`${config.name} API error (${response.status}): ${errorText.slice(0, 100)}`);
     }
 
+    // Body read stays under the abort budget: congested free upstreams return headers fast then
+    // trickle tokens for minutes — clearing the timeout on headers made json() unbounded (observed
+    // live 2026-07-10: 9+ min advisor calls). Abort mid-body rejects json() → honest 'timeout'.
     const data = await response.json();
+    clearTimeout(timeoutId);
     const content = data.choices?.[0]?.message?.content || '';
     const latency = Date.now() - startTime;
     recordAdvisorCogs(streamQueryId, provider, modelUsed, data.usage, latency, content ? 'ok' : 'empty');
@@ -227,7 +230,7 @@ Format with clear markdown structure.`;
         apiKeys[provider]!,
         round1SystemPrompt.replace('{ROLE}', config.role),
         query,
-        60000,
+        35000, // advisor budget: fail-fast under free-tier congestion (was 60s; 9-min hangs observed)
         streamQueryId,
         startTime
       ).then((r) => {
@@ -300,7 +303,7 @@ Be collaborative, not combative.`;
             apiKeys[provider]!,
             round2SystemPrompt.replace('{ROLE}', config.role),
             `Original query: ${query}\n\nProvide your refined perspective.`,
-            60000,
+            35000, // advisor budget: fail-fast under free-tier congestion (was 60s; 9-min hangs observed)
             streamQueryId,
             startTime
           );

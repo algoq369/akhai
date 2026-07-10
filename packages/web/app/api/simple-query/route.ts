@@ -312,11 +312,14 @@ export async function POST(request: NextRequest) {
 
         // Close the live stream cleanly (the tot branch returns its answer as one blob).
         emitAndPersist(queryId, {
-          id: `${queryId}-complete`,
+          id: `${queryId}-tot-synth`,
           queryId,
-          stage: 'complete',
+          // NOT 'complete': terminal stage closes the client SSE + frees the buffer while guard/
+          // gnostic/save still run (observed live: UI went dead mid-pipeline). Real terminal is
+          // the route-level complete at the end.
+          stage: 'analysis',
           timestamp: Date.now() - startTime,
-          data: 'Consensus complete',
+          data: 'Consensus synthesized — guard + finishing checks',
           details: {
             tokens: gtpResult.metrics?.tokens
               ? { input: 0, output: 0, total: gtpResult.metrics.tokens }
