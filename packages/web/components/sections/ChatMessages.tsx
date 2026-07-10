@@ -13,6 +13,10 @@ import GuardWarning from '@/components/GuardWarning';
 import ProcessingIndicator from '@/components/ProcessingIndicator';
 import { DepthText } from '@/components/DepthAnnotation';
 const ResponseRenderer = dynamic(() => import('@/components/ResponseRenderer'), { ssr: false }); // V6-Block2
+const ReasoningTrace = dynamic(
+  () => import('@/components/ReasoningTrace').then((m) => m.ReasoningTrace),
+  { ssr: false }
+); // reasoning-persist
 const MetadataStrip = dynamic(() => import('@/components/MetadataStrip'), { ssr: false }); // V6-Block2
 import { InlineConsole } from '@/components/ConversationConsole';
 import IntelligenceBadge from '@/components/IntelligenceBadge';
@@ -271,6 +275,11 @@ export default function ChatMessages({
                         rawThinking={messageRawThinking?.[message.id]}
                         isThinkingStreaming={!!message.isStreaming}
                       />
+                    )}
+
+                    {/* reasoning-persist: streamed live reasoning survives completion as a collapsible trace */}
+                    {message.role === 'assistant' && !message.isStreaming && !!message.content && (
+                      <ReasoningTrace messageId={message.id} />
                     )}
 
                     {/* TEXT - Always shown after visualizations (skip if streaming with no content) */}
