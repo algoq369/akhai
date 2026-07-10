@@ -51,6 +51,48 @@ export function emitTotAdvisorFallback(
   });
 }
 
+/** Honest signal when an advisor misses a round (timeout/failure) — the panel otherwise goes silent. */
+export function emitTotAdvisorMiss(
+  streamQueryId: string | undefined,
+  r: { name: string; status: string; latency: number },
+  provider: string,
+  round: number,
+  startTime: number
+): void {
+  if (!streamQueryId || (r.status !== 'timeout' && r.status !== 'failed')) return;
+  const line =
+    r.status === 'timeout'
+      ? `advisor ${r.name} timed out (${Math.round(r.latency / 1000)}s) — proceeding without it`
+      : `advisor ${r.name} failed — proceeding without it`;
+  emitThought(streamQueryId, {
+    id: `${streamQueryId}-tot-miss-r${round}-${provider}`,
+    queryId: streamQueryId,
+    stage: 'reasoning',
+    timestamp: Date.now() - startTime,
+    data: line,
+    details: { narrative: line },
+  });
+}
+
+/** Honest signal when round 2 is skipped because round 1 came back degraded (missing advisors). */
+export function emitTotRound2Skip(
+  streamQueryId: string | undefined,
+  answered: number,
+  total: number,
+  startTime: number
+): void {
+  if (!streamQueryId) return;
+  const line = `round 2 skipped — only ${answered}/${total} advisors answered; synthesizing from round 1`;
+  emitThought(streamQueryId, {
+    id: `${streamQueryId}-tot-round2-skip`,
+    queryId: streamQueryId,
+    stage: 'reasoning',
+    timestamp: Date.now() - startTime,
+    data: line,
+    details: { narrative: line },
+  });
+}
+
 /** Emit the synthesized answer excerpt (one real excerpt — synthesis is not token-streamed). */
 export function emitTotSynthesis(
   streamQueryId: string | undefined,

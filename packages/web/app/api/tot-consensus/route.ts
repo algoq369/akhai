@@ -2,7 +2,7 @@
  * GTP (Generative Thought Process) - Multi-AI Consensus API Route
  *
  * This is ONE of AkhAI's 7 methodologies, specifically for multi-perspective analysis.
- * Uses three FREE OpenRouter models from different labs (OpenAI / NVIDIA / Meta) in
+ * Uses three FREE OpenRouter models from different labs (OpenAI / Cohere / Meta) in
  * parallel rounds to achieve consensus — free-only by decision, no paid advisor APIs.
  *
  * AkhAI School of Thoughts:
@@ -25,7 +25,13 @@ import { log } from '@/lib/logger';
 // TotConsensusSchema encodes the simple-query→tot-consensus INTERNAL contract — see route-schemas.ts
 import { TotConsensusSchema } from '@/lib/route-schemas';
 import { MODELS, ADVISORS } from '@/lib/models';
-import { emitTotAdvisor, emitTotAdvisorFallback, emitTotSynthesis } from '@/lib/tot-stream';
+import {
+  emitTotAdvisor,
+  emitTotAdvisorFallback,
+  emitTotAdvisorMiss,
+  emitTotRound2Skip,
+  emitTotSynthesis,
+} from '@/lib/tot-stream';
 import { OPENROUTER_ENDPOINT, callFreeChatWithFallback, recordAdvisorCogs } from '@/lib/openrouter';
 import { extractKeyPoints, calculateConfidence, calculateConsensus } from '@/lib/consensus-scoring';
 
@@ -44,7 +50,7 @@ const PROVIDERS = {
     color: '#4F46E5',
   },
   strategic: {
-    name: 'Nemotron',
+    name: 'North',
     endpoint: OPENROUTER_ENDPOINT,
     model: ADVISORS.strategic,
     role: 'Strategic Advisor',
@@ -235,6 +241,7 @@ Format with clear markdown structure.`;
         startTime
       ).then((r) => {
         emitTotAdvisor(streamQueryId, r, provider, startTime); // live-words: real excerpt as it lands
+        emitTotAdvisorMiss(streamQueryId, r, provider, 1, startTime); // narrate timeouts/failures honestly
         return r;
       });
     });
@@ -272,7 +279,19 @@ Format with clear markdown structure.`;
       );
     }
 
-    if (successfulRound1.length >= 2 && round1Consensus < 0.85) {
+    // Only cross-pollinate from a FULL round 1: degraded round 1 → round 2 re-times-out on the
+    // congested free tier (observed 2×: 0% consensus, 2 calls + 35s wasted); synthesis from
+    // round 1 is strictly better.
+    if (successfulRound1.length < availableProviders.length) {
+      log(
+        'INFO',
+        'GTP_CONSENSUS',
+        `Round 2 skipped — only ${successfulRound1.length}/${availableProviders.length} advisors answered`
+      );
+      emitTotRound2Skip(streamQueryId, successfulRound1.length, availableProviders.length, startTime);
+    }
+
+    if (successfulRound1.length === availableProviders.length && round1Consensus < 0.85) {
       log('INFO', 'GTP_CONSENSUS', 'Starting Round 2: Cross-Pollination');
 
       const round1Context = successfulRound1
@@ -306,7 +325,10 @@ Be collaborative, not combative.`;
             35000, // advisor budget: fail-fast under free-tier congestion (was 60s; 9-min hangs observed)
             streamQueryId,
             startTime
-          );
+          ).then((r) => {
+            emitTotAdvisorMiss(streamQueryId, r, provider, 2, startTime); // narrate timeouts/failures honestly
+            return r;
+          });
         });
 
       const round2Responses = await Promise.all(round2Promises);
@@ -331,7 +353,13 @@ Be collaborative, not combative.`;
     // ========================
     log('INFO', 'GTP_CONSENSUS', 'Starting Synthesis phase');
 
-    const lastRound = rounds[rounds.length - 1];
+    // Synthesize from the strongest round (later rounds win ties): a round 2 degraded by free-tier
+    // timeouts must not drop a full round 1's answers (observed live: 3/3 round 1 → 1/3 round 2).
+    let lastRound = rounds[0];
+    for (const r of rounds) {
+      const wins = (rr: RoundResult) => rr.responses.filter((x) => x.status === 'complete').length;
+      if (wins(r) >= wins(lastRound)) lastRound = r;
+    }
     const successfulResponses = lastRound.responses.filter((r) => r.status === 'complete');
 
     const synthesisContext = successfulResponses

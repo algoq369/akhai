@@ -15,6 +15,8 @@ export const MODELS = {
 // 2026-07-10). Diversity = 3 different labs, not a capability tier. Free-only by decision.
 export const ADVISORS = {
   technical: 'openai/gpt-oss-120b:free', // OpenAI lab — Technical Analyst
-  strategic: 'nvidia/nemotron-3-super-120b-a12b:free', // NVIDIA — Strategic Advisor
+  strategic: 'cohere/north-mini-code:free', // Cohere — Strategic Advisor (nemotron pin timed out
+  // 3/3 runs 2026-07-10 @35s/0 tok; north live-verified same day — the only third-lab free slug
+  // answering with content; qwen3-next/gemma-4 both upstream-429, retry them off-peak)
   creative: 'meta-llama/llama-3.3-70b-instruct:free', // Meta — Creative Challenger
 } as const;
