@@ -1,6 +1,6 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-09 · HEAD dac5a9b (web-honesty-2) · UNPUSHED (origin ce29b87, 5 ahead) · SHIELD PASS · clean tree · HONESTY LANE FULLY CLOSED (core + UI names/attributions/process descriptions)
+> Last updated: 2026-07-10 · HEAD = FINAL REFINEMENT PLAN atop 6d76a8a · UNPUSHED (5 ahead, push held per Algoq) · SHIELD 14/14 · clean tree · ENGINE CONSTRUCTION DONE
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
@@ -105,7 +105,33 @@ DONE:
   until ~mid-Jul — parked upgrade). Verified: superset of intent, ZERO new literals, tiers correct,
   vitest 219 unchanged, SHIELD PASS. Rates UNTOUCHED (E6.1.1).
 
-## NEXT STEPS (pick up here — recommended order)
+## FINAL REFINEMENT PLAN (verified 2026-07-10, SHIELD 14/14 on 6d76a8a — engine construction DONE; this is the last mile to frozen core)
+A. BUGS (fix first):
+   A1 `go rates` — E6.1.1: core sc.ts PROVIDER_RATES is provider-keyed flat-Sonnet ($3/$15 for ALL
+      anthropic) → Opus under-billed, Haiku over-billed in metrics. Fix to per-model; VERIFY current
+      Anthropic pricing live before writing numbers. Reconcile vs web provider-selector.ts:255 table.
+   A2 `go quickfix` — quick-query getRecentQueries reads `response` column it never SELECTs.
+B. TRUTH POLISH (quick, user-facing):
+   B1 `go labels` — 3 stale-provider spots: dashboard advisor cards (names/active-state vs new free
+      advisors), privacy page (names providers that no longer receive queries), explore "Powered by" footer.
+C. SECURITY PASS (the pre-freeze audit Algoq mandated): `go security`
+   C1 query/[id] + history anon-read-any-by-id (getQuery unscoped when userId null) — DECIDE:
+      public-share-by-design or close. C2 diagnostic routes test-key/test-providers/layer-test exposed
+      in prod — gate behind NODE_ENV or remove. C3 memory: `queries` Map never evicts (+ returns
+      bodies pre-scope); thought-stream crash-orphan buffers lack TTL sweep. C4 (optional cosmetic)
+      dev-login plaintext-404 vs native.
+D. VERIFY UNTESTED:
+   D1 `go vision` — x-video-analysis endpoint with a REAL image (Sonnet-5 vision swap never exercised).
+   D2 off-peak: retry qwen3-next/gemma-4 free slugs for the strategic advisor pin (noted in models.ts).
+E. FINAL TEST → FROZEN CORE (Aug 13):
+   E1 official `node scripts/eval-bar.mjs` ≥85 (dry run 2026-07-09 = 100/100). E2 rerun
+   methodology-sweep.mjs (was 14/14). E3 Algoq manual pass on every surface (all 7 methodologies,
+   god-view, trees, consensus, vision, history). PASS ⇒ freeze; fixes-only after.
+GATES: Aug 8 hosting decision (FlokiNET vs Hetzner, external) · Aug 30 prod freeze · Sep 5 LAUNCH.
+PARKED (not engine): F4 launch copy w/ partner (Fable-ban sovereignty story, launch week) · E4.5b CSP
+nonce (post-launch) · live-reasoning Part 2 answer-streaming refactor (design call).
+
+## PREVIOUS NEXT-STEPS (superseded by the plan above — kept for context)
 1. E4.7 eval-bar rerun ≥85 — FREEZE WEEK (Aug 13 gate). `node scripts/eval-bar.mjs` (or `pnpm eval`
    in your terminal), Node 24, server :3000. DRY RUN 2026-07-09 = PASS 100/100 (floor 2/2, quality
    13/13, 0 ERRORED, independently artifact-verified from /tmp/akhai-eval.json) — 15pt margin, NO
