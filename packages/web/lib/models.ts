@@ -11,10 +11,10 @@ export const MODELS = {
   frontier: 'claude-fable-5',
 } as const;
 
-// GTP consensus advisors — deliberately diverse models for perspective, not a capability tier.
+// FREE OpenRouter advisors — slugs rotate, verify at openrouter.ai/models (last verified
+// 2026-07-10). Diversity = 3 different labs, not a capability tier. Free-only by decision.
 export const ADVISORS = {
-  technical: 'deepseek-chat', // DeepSeek — Technical Analyst (rolling alias, auto-latest)
-  strategic: 'mistral-small-latest', // Mistral — Strategic Advisor (rolling alias)
-  creative: 'grok-4.3', // Grok — Creative Challenger (was grok-3/grok-2; grok-4.3 is
-  // current EU-available flagship; grok-4.5 not EU yet — see E6.1.x)
+  technical: 'openai/gpt-oss-120b:free', // OpenAI lab — Technical Analyst
+  strategic: 'nvidia/nemotron-3-super-120b-a12b:free', // NVIDIA — Strategic Advisor
+  creative: 'meta-llama/llama-3.3-70b-instruct:free', // Meta — Creative Challenger
 } as const;

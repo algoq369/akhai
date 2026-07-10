@@ -2,7 +2,8 @@
  * GTP (Generative Thought Process) - Multi-AI Consensus API Route
  *
  * This is ONE of AkhAI's 7 methodologies, specifically for multi-perspective analysis.
- * Uses DeepSeek, Mistral, and Grok in parallel rounds to achieve consensus.
+ * Uses three FREE OpenRouter models from different labs (OpenAI / NVIDIA / Meta) in
+ * parallel rounds to achieve consensus — free-only by decision, no paid advisor APIs.
  *
  * AkhAI School of Thoughts:
  * - Direct: Fast single-pass
@@ -24,31 +25,35 @@ import { log } from '@/lib/logger';
 // TotConsensusSchema encodes the simple-query→tot-consensus INTERNAL contract — see route-schemas.ts
 import { TotConsensusSchema } from '@/lib/route-schemas';
 import { MODELS, ADVISORS } from '@/lib/models';
-import { emitTotAdvisor, emitTotSynthesis } from '@/lib/tot-stream';
+import { emitTotAdvisor, emitTotAdvisorFallback, emitTotSynthesis } from '@/lib/tot-stream';
+import { OPENROUTER_ENDPOINT, callFreeChatWithFallback, recordAdvisorCogs } from '@/lib/openrouter';
+import { extractKeyPoints, calculateConfidence, calculateConsensus } from '@/lib/consensus-scoring';
 
 export const dynamic = 'force-dynamic';
 
-// Provider configurations
+// Provider configurations — all advisors on FREE OpenRouter models, 3 different labs for
+// perspective diversity. Free tier ≈ 20 req/min shared: one consensus = 3 advisor calls
+// (+3 if round 2 runs, + at most 1 fallback retry each); no throttling code needed yet.
 const PROVIDERS = {
-  deepseek: {
-    name: 'DeepSeek',
-    endpoint: 'https://api.deepseek.com/v1/chat/completions',
+  technical: {
+    name: 'GPT-OSS',
+    endpoint: OPENROUTER_ENDPOINT,
     model: ADVISORS.technical,
     role: 'Technical Analyst',
     icon: '🔬',
     color: '#4F46E5',
   },
-  mistral: {
-    name: 'Mistral',
-    endpoint: 'https://api.mistral.ai/v1/chat/completions',
+  strategic: {
+    name: 'Nemotron',
+    endpoint: OPENROUTER_ENDPOINT,
     model: ADVISORS.strategic,
     role: 'Strategic Advisor',
     icon: '🎯',
     color: '#F97316',
   },
-  xai: {
-    name: 'Grok',
-    endpoint: 'https://api.x.ai/v1/chat/completions',
+  creative: {
+    name: 'Llama',
+    endpoint: OPENROUTER_ENDPOINT,
     model: ADVISORS.creative,
     role: 'Creative Challenger',
     icon: '⚡',
@@ -84,7 +89,9 @@ async function callProvider(
   apiKey: string,
   systemPrompt: string,
   userPrompt: string,
-  timeout: number = 60000
+  timeout: number = 60000,
+  streamQueryId?: string,
+  queryStartTime?: number
 ): Promise<AdvisorResponse> {
   const config = PROVIDERS[provider];
   const startTime = Date.now();
@@ -93,23 +100,19 @@ async function callProvider(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    const response = await fetch(config.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        max_tokens: 2048,
-        temperature: 0.7,
-      }),
-      signal: controller.signal,
-    });
+    // Pinned :free slug first; on 404/400-model/429 retry once via OpenRouter's free auto-router,
+    // announcing the reroute honestly on the live panel.
+    const { response, modelUsed } = await callFreeChatWithFallback(
+      apiKey,
+      config.model,
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      controller.signal,
+      // ThoughtEvent.timestamp is ms since QUERY start — use the route-level base, not this call's
+      () => emitTotAdvisorFallback(streamQueryId, config.name, queryStartTime ?? startTime)
+    );
 
     clearTimeout(timeoutId);
 
@@ -121,6 +124,7 @@ async function callProvider(
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
     const latency = Date.now() - startTime;
+    recordAdvisorCogs(streamQueryId, provider, modelUsed, data.usage, latency, content ? 'ok' : 'empty');
 
     return {
       provider,
@@ -139,6 +143,8 @@ async function callProvider(
   } catch (error: any) {
     const latency = Date.now() - startTime;
     const isTimeout = error.name === 'AbortError';
+    // Failed calls still get a reconciling COGS row (matches multi-provider-api discipline)
+    recordAdvisorCogs(streamQueryId, provider, config.model, undefined, latency, 'error');
 
     return {
       provider,
@@ -153,59 +159,6 @@ async function callProvider(
       error: error.message,
     };
   }
-}
-
-// Extract key points from content
-function extractKeyPoints(content: string): string[] {
-  const points: string[] = [];
-
-  const bulletMatches = content.match(/^[•\-\*]\s+(.+)$/gm);
-  if (bulletMatches) {
-    points.push(...bulletMatches.map((m) => m.replace(/^[•\-\*]\s+/, '').trim()));
-  }
-
-  const numberedMatches = content.match(/^\d+\.\s+(.+)$/gm);
-  if (numberedMatches) {
-    points.push(...numberedMatches.map((m) => m.replace(/^\d+\.\s+/, '').trim()));
-  }
-
-  const boldMatches = content.match(/\*\*([^*]+)\*\*/g);
-  if (boldMatches) {
-    points.push(...boldMatches.map((m) => m.replace(/\*\*/g, '').trim()));
-  }
-
-  return Array.from(new Set(points))
-    .filter((p) => p.length > 10)
-    .slice(0, 5);
-}
-
-// Calculate confidence from content
-function calculateConfidence(content: string): number {
-  const lowerContent = content.toLowerCase();
-  const highMarkers = ['definitely', 'certainly', 'clearly', 'undoubtedly', 'confident'];
-  const lowMarkers = ['might', 'possibly', 'perhaps', 'uncertain', 'unclear', 'may'];
-
-  let score = 0.7;
-  highMarkers.forEach((m) => {
-    if (lowerContent.includes(m)) score += 0.05;
-  });
-  lowMarkers.forEach((m) => {
-    if (lowerContent.includes(m)) score -= 0.05;
-  });
-
-  return Math.min(0.95, Math.max(0.3, score));
-}
-
-// Calculate consensus level between responses
-function calculateConsensus(responses: AdvisorResponse[]): number {
-  const successful = responses.filter((r) => r.status === 'complete');
-  if (successful.length < 2) return 0;
-
-  const allKeyPoints = successful.flatMap((r) => r.keyPoints.map((p) => p.toLowerCase()));
-  const uniquePoints = new Set(allKeyPoints);
-  const overlap = 1 - uniquePoints.size / Math.max(allKeyPoints.length, 1);
-
-  return Math.min(0.95, Math.max(0.3, 0.5 + overlap * 0.5));
 }
 
 export async function POST(request: NextRequest) {
@@ -224,11 +177,11 @@ export async function POST(request: NextRequest) {
     }
     const { query, conversationHistory, queryId: streamQueryId } = parsed.data;
 
-    // Get API keys
+    // Get API keys — all three advisors go through OpenRouter (free models only, by decision)
     const apiKeys = {
-      deepseek: process.env.DEEPSEEK_API_KEY,
-      mistral: process.env.MISTRAL_API_KEY,
-      xai: process.env.XAI_API_KEY,
+      technical: process.env.OPENROUTER_API_KEY,
+      strategic: process.env.OPENROUTER_API_KEY,
+      creative: process.env.OPENROUTER_API_KEY,
       anthropic: process.env.ANTHROPIC_API_KEY,
     };
 
@@ -238,8 +191,7 @@ export async function POST(request: NextRequest) {
     if (availableProviders.length === 0) {
       return NextResponse.json(
         {
-          error:
-            'No AI providers configured. Add DEEPSEEK_API_KEY, MISTRAL_API_KEY, or XAI_API_KEY.',
+          error: 'No AI providers configured. Add OPENROUTER_API_KEY (free-model advisors).',
         },
         { status: 500 }
       );
@@ -274,7 +226,10 @@ Format with clear markdown structure.`;
         provider,
         apiKeys[provider]!,
         round1SystemPrompt.replace('{ROLE}', config.role),
-        query
+        query,
+        60000,
+        streamQueryId,
+        startTime
       ).then((r) => {
         emitTotAdvisor(streamQueryId, r, provider, startTime); // live-words: real excerpt as it lands
         return r;
@@ -301,6 +256,18 @@ Format with clear markdown structure.`;
     // ROUND 2: Cross-Pollination (if needed)
     // ========================
     const successfulRound1 = round1Responses.filter((r) => r.status === 'complete');
+
+    if (successfulRound1.length === 0) {
+      // All advisors failed (free-tier rate limit/outage hits every advisor at once now that they
+      // share one key): error out instead of synthesizing from nothing, so the caller's honest
+      // single-model fallback fires rather than a fake "consensus".
+      const reasons = round1Responses.map((r) => `${r.name}: ${r.error || r.status}`).join('; ');
+      log('ERROR', 'GTP_CONSENSUS', `All advisors failed — ${reasons}`);
+      return NextResponse.json(
+        { error: 'All consensus advisors failed', details: reasons },
+        { status: 502 }
+      );
+    }
 
     if (successfulRound1.length >= 2 && round1Consensus < 0.85) {
       log('INFO', 'GTP_CONSENSUS', 'Starting Round 2: Cross-Pollination');
@@ -332,7 +299,10 @@ Be collaborative, not combative.`;
             provider,
             apiKeys[provider]!,
             round2SystemPrompt.replace('{ROLE}', config.role),
-            `Original query: ${query}\n\nProvide your refined perspective.`
+            `Original query: ${query}\n\nProvide your refined perspective.`,
+            60000,
+            streamQueryId,
+            startTime
           );
         });
 
@@ -432,9 +402,9 @@ Guidelines:
     });
 
     const costs: Record<string, { input: number; output: number }> = {
-      deepseek: { input: 0.00055, output: 0.00219 },
-      mistral: { input: 0.0002, output: 0.0006 },
-      xai: { input: 0.002, output: 0.01 },
+      technical: { input: 0, output: 0 }, // :free OpenRouter models — zero-priced
+      strategic: { input: 0, output: 0 },
+      creative: { input: 0, output: 0 },
       anthropic: { input: 0.003, output: 0.015 },
     };
 

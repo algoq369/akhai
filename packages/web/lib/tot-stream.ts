@@ -32,6 +32,25 @@ export function emitTotAdvisor(
   });
 }
 
+/** Honest signal when an advisor's pinned free model 404s/429s and the free auto-router takes over. */
+export function emitTotAdvisorFallback(
+  streamQueryId: string | undefined,
+  advisorName: string,
+  startTime: number
+): void {
+  if (!streamQueryId) return;
+  emitThought(streamQueryId, {
+    id: `${streamQueryId}-tot-fallback-${advisorName}`,
+    queryId: streamQueryId,
+    stage: 'calling',
+    timestamp: Date.now() - startTime,
+    data: `advisor ${advisorName}: pinned free model unavailable, using free auto-router`,
+    details: {
+      narrative: `advisor ${advisorName}: pinned free model unavailable, using free auto-router`,
+    },
+  });
+}
+
 /** Emit the synthesized answer excerpt (one real excerpt — synthesis is not token-streamed). */
 export function emitTotSynthesis(
   streamQueryId: string | undefined,

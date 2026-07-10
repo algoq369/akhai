@@ -5,7 +5,7 @@
  * cost-efficiency, and accuracy.
  */
 
-import { MODELS, ADVISORS } from '@/lib/models';
+import { MODELS } from '@/lib/models';
 
 export type CoreMethodology = 'direct' | 'cod' | 'sc' | 'react' | 'pas' | 'tot' | 'auto';
 export type ProviderFamily =
@@ -35,7 +35,7 @@ export interface ModelSpec {
  *
  * Strategy:
  * - ALL methodologies (except GTP): Claude Opus 4.8 for maximum quality (4.6 when extended thinking streams)
- * - GTP ONLY: Multi-AI consensus using all 4 providers (Anthropic, DeepSeek, Mistral, xAI)
+ * - GTP ONLY: Multi-AI consensus — 3 free OpenRouter advisors (OpenAI/NVIDIA/Meta labs) + Anthropic synthesis
  *
  * This ensures:
  * - Consistent premium quality across all standard methodologies
@@ -100,7 +100,7 @@ export function getProviderForMethodology(
       provider: defaultProvider.provider,
       model: defaultProvider.model,
       reasoning: process.env.ANTHROPIC_API_KEY
-        ? 'Multi-AI consensus: Anthropic + DeepSeek + Mistral + xAI advisors'
+        ? 'Multi-AI consensus: free OpenRouter advisors (GPT-OSS + Nemotron + Llama) + Anthropic synthesis'
         : 'Free tier: Multi-methodology via Llama 3.3 70B',
     };
   }
@@ -167,11 +167,11 @@ export function getFallbackModelSpec(provider: ProviderFamily): { model: string 
     case 'openrouter':
       return { model: MODELS.free };
     case 'deepseek':
-      return { model: ADVISORS.technical };
+      return { model: 'deepseek-chat' }; // ADVISORS now hold OpenRouter :free slugs — same-provider defaults here
     case 'mistral':
       return { model: 'mistral-large-latest' };
     case 'xai':
-      return { model: ADVISORS.creative };
+      return { model: 'grok-4.3' };
     case 'anthropic':
       return { model: MODELS.mid };
     case 'groq':
