@@ -110,11 +110,23 @@ DONE:
    in your terminal), Node 24, server :3000. DRY RUN 2026-07-09 = PASS 100/100 (floor 2/2, quality
    13/13, 0 ERRORED, independently artifact-verified from /tmp/akhai-eval.json) — 15pt margin, NO
    tuning needed. Official freeze-week rerun still REQUIRED at Aug 13 (dry run only de-risks it).
-2. FREE CONSENSUS (side-lane, Algoq priority) — make the multi-advisor consensus FREE + actually
-   working. Drop paid Grok + DeepSeek from consensus; route advisors through OpenRouter :free models
-   (OPENROUTER_API_KEY already SET, $0, no new keys) — rewrite the tot-consensus PROVIDERS block.
-   NOT a launch blocker (Opus fallback works today). Quick-test first: free Mistral key (EU, no code)
-   → verify consensus path runs. Ollama parked (dev-only, needs GPU hardware). `go free-consensus`.
+2. FREE CONSENSUS DONE (3 commits, UNPUSHED pending Algoq browser check → push together):
+   · 8c2084d — advisors on FREE OpenRouter slugs (3 labs), openrouter/free auto-router fallback
+     (+402 trigger, live-justified), zero-advisor 502 guard, $0 advisor COGS rows, helpers split to
+     lib/openrouter.ts + consensus-scoring.ts. Consensus REAL for the first time (was single-Opus).
+   · 69d6f3d — 9-MIN HANG fixed: clearTimeout moved AFTER json() (congested free upstreams trickle
+     bodies unbounded — observed 9-15min), advisor budget 60s→35s fail-fast, tot's mid-pipeline
+     'complete' emit → non-terminal 'analysis' (was closing client SSE + freeing buffer while
+     guard/save still ran). Same query 9+min → 86s.
+   · cadd6bc — refine: round 2 gated on FULL round 1 (degraded round 2 = 0% twice, pure waste) +
+     honest skip emit; strategic pin nemotron(dead 3/3)→cohere/north-mini-code:free (only third-lab
+     slug answering 2026-07-10; qwen3-next/gemma-4 = off-peak re-pin candidates, noted in models.ts);
+     advisor timeouts/failures NARRATED on panel (emitTotAdvisorMiss); strongest-round synthesis
+     (later rounds win ties — full R1 no longer dropped for degraded R2).
+   VERIFIED HERE worst-case live: 1/3 advisors under congestion → misses narrated, round-2 skip line,
+   synthesis delivered, 131s, saved. FREE-TIER REALITY: quality degrades at peak (auto-router subs,
+   thin answers) — functional+honest+bounded, not premium. Cosmetic chips from cc review: dashboard
+   advisor cards mislabeled/inactive, privacy page names old providers, explore "Powered by" footer.
 3. Live-reasoning PART 2 (optional, design call) — b6beee5 fixed the DROPPED-EVENTS race (buffer+replay
    in thought-stream pub/sub, verified live: 2s-late SSE connect replays full backlog; tot now emits
    honest calling/complete around its blocking consensus). Reasoning panel now always populates. STILL
