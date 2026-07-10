@@ -17,6 +17,7 @@ interface QueryResult {
   cost: number | null;
   created_at: number | null;
   completed_at: number | null;
+  user_id: string | null;
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -28,13 +29,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const user = token ? getUserFromSession(token) : null;
     const userId = user?.id || null;
 
+    // LOCK policy — owner-only; share-by-link is a future feature (add a shareToken column +
+    // explicit opt-in then). An owned row (user_id set) is readable ONLY by its owner — anyone
+    // else (including no-session) gets 404, never 403, so existence isn't leaked. Legacy rows
+    // (user_id NULL) remain readable. Ownership lives in the DB row, so both the in-memory and
+    // DB paths fetch the row unscoped and apply the same check.
+    const isForbidden = (rowUserId: string | null | undefined): boolean =>
+      !!rowUserId && rowUserId !== userId;
+
     // First check in-memory store
     const memoryQuery = queries.get(queryId);
 
     if (memoryQuery) {
+      // Tokens/cost/ownership live in the database row
+      const dbQuery = getQuery(queryId, null) as QueryResult | undefined;
 
-      // Since tokens/cost are only in database, we need to fetch them (scoped to user)
-      const dbQuery = getQuery(queryId, userId) as QueryResult | undefined;
+      if (isForbidden(dbQuery?.user_id)) {
+        log('WARN', 'QUERY_API', `Ownership denied (memory path): ${queryId}`);
+        return NextResponse.json({ error: 'Query not found', id: queryId }, { status: 404 });
+      }
 
       const responseText = memoryQuery.result?.finalAnswer || '';
       const miniCanvas = responseText
@@ -60,8 +73,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       });
     }
 
-    // Fallback to database (scoped to user)
-    const dbQuery = getQuery(queryId, userId) as QueryResult | undefined;
+    // Fallback to database — fetch by id, then apply the same ownership check (LOCK)
+    const dbQuery = getQuery(queryId, null) as QueryResult | undefined;
+
+    if (dbQuery && isForbidden(dbQuery.user_id)) {
+      log('WARN', 'QUERY_API', `Ownership denied (db path): ${queryId}`);
+      return NextResponse.json({ error: 'Query not found', id: queryId }, { status: 404 });
+    }
 
     if (dbQuery) {
 

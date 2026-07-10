@@ -52,8 +52,20 @@ export interface QueryData {
   error?: string;
 }
 
-// In-memory cache for fast access
+// In-memory cache for fast access. FIFO-capped: a Map iterates in insertion order, so on
+// overflow we evict the oldest entry — bounds memory growth (the Map was never evicted) and
+// shrinks the window where completed answers linger in process memory.
+const MAX_CACHED_QUERIES = 500;
 export const queries = new Map<string, QueryData>();
+
+/** Insert with FIFO eviction — keeps the cache at most MAX_CACHED_QUERIES entries. */
+function setCapped(id: string, data: QueryData): void {
+  if (!queries.has(id) && queries.size >= MAX_CACHED_QUERIES) {
+    const oldest = queries.keys().next().value;
+    if (oldest !== undefined) queries.delete(oldest);
+  }
+  queries.set(id, data);
+}
 
 /**
  * Create a new query (persists to database)
@@ -66,7 +78,7 @@ export function createQueryRecord(id: string, query: string, flow: QueryData['fl
     events: [],
   };
 
-  queries.set(id, queryData);
+  setCapped(id, queryData);
 
   // Persist to database (store methodology in flow field for backward compatibility)
   try {
@@ -169,8 +181,8 @@ export function loadQuery(queryId: string): QueryData | null {
       error: undefined,
     };
 
-    // Cache in memory
-    queries.set(queryId, queryData);
+    // Cache in memory (FIFO-capped)
+    setCapped(queryId, queryData);
 
     return queryData;
   } catch (error) {

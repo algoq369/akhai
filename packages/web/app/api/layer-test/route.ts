@@ -34,6 +34,8 @@ FORBIDDEN: "Great question!", "Let me explain", "I'd be happy to help", "It's im
 [NEXT]: Suggest one follow-up question`;
 
 export async function POST(request: Request) {
+  // Diagnostic route — dev-only, invisible in prod (mirrors the E4.3 dev-login 404 guard)
+  if (process.env.NODE_ENV === 'production') return new NextResponse(null, { status: 404 });
   try {
     const parsed = LayerTestSchema.safeParse(await request.json());
     if (!parsed.success) {

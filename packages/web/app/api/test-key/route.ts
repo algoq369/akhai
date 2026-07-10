@@ -4,6 +4,8 @@ import { TestKeySchema } from '@/lib/route-schemas';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  // Diagnostic route — dev-only, invisible in prod (mirrors the E4.3 dev-login 404 guard)
+  if (process.env.NODE_ENV === 'production') return new NextResponse(null, { status: 404 });
   try {
     const parsed = TestKeySchema.safeParse(await request.json());
     if (!parsed.success) {

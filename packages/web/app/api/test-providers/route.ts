@@ -39,6 +39,8 @@ async function testProvider(
 }
 
 export async function GET() {
+  // Diagnostic route — dev-only, invisible in prod (mirrors the E4.3 dev-login 404 guard)
+  if (process.env.NODE_ENV === 'production') return new NextResponse(null, { status: 404 });
   const results: Record<string, any> = {};
 
   // Test Anthropic

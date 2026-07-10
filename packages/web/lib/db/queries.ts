@@ -58,13 +58,11 @@ export function getQuery(id: string, userId?: string | null) {
 }
 
 /**
- * Get recent queries (scoped to user or session)
+ * Get recent queries (scoped to user; LOCK policy — anonymous callers get nothing).
+ * A former sessionId parameter/branch was removed: no caller ever passed one and its
+ * WHERE referenced a session_id column absent from the canonical schema.
  */
-export function getRecentQueries(
-  limit: number = 10,
-  userId?: string | null,
-  sessionId?: string | null
-) {
+export function getRecentQueries(limit: number = 10, userId?: string | null) {
   // If user is authenticated, show their queries + legacy queries without user_id
   if (userId) {
     const stmt = db.prepare(`
@@ -87,28 +85,6 @@ export function getRecentQueries(
     }>;
   }
 
-  // If anonymous user with session, show their session queries + legacy queries
-  if (sessionId) {
-    const stmt = db.prepare(`
-      SELECT id, query, flow, status, result, created_at, completed_at, tokens_used, cost
-      FROM queries
-      WHERE session_id = ? OR (session_id IS NULL OR session_id = '')
-      ORDER BY created_at DESC
-      LIMIT ?
-    `);
-    return stmt.all(sessionId, limit) as Array<{
-      id: string;
-      query: string;
-      flow: string;
-      status: string;
-      result: string | null;
-      created_at: number;
-      completed_at: number | null;
-      tokens_used: number;
-      cost: number;
-    }>;
-  }
-
-  // No user, no session = no data
+  // No user = no data
   return [];
 }

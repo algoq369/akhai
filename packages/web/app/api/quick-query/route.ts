@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     if (sessionUserId) {
       try {
         // Get last 3 conversations from history
-        const recentQueries = getRecentQueries(3, sessionUserId, null);
+        const recentQueries = getRecentQueries(3, sessionUserId);
 
         if (recentQueries && recentQueries.length > 0) {
           conversationContext = '\n\nRecent Conversation History (last 3 exchanges):\n';
