@@ -31,7 +31,7 @@ import { getProviderPricing } from '@/lib/provider-selector';
 import { MODELS } from '@/lib/models';
 import { runReactAgent } from '@/lib/react-agent';
 import { runScMultipath, extractConsensus, SC_SAMPLES } from '@/lib/sc-multipath';
-import { formatDuration } from '@/lib/thought-stream';
+import { formatDuration, INTENT_PLAIN } from '@/lib/thought-stream';
 
 // Extracted pipeline stages
 import { visitURLs } from '@/lib/query-url-visitor';
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       queryId,
       stage: 'received',
       timestamp: Date.now() - startTime,
-      data: `Analyzing your question about ${query.split(/\s+/).slice(0, 5).join(' ')}...`,
+      data: `Reading your question about ${query.split(/\s+/).slice(0, 5).join(' ')}...`,
       details: {},
     });
 
@@ -277,9 +277,9 @@ export async function POST(request: NextRequest) {
         queryId,
         stage: 'calling',
         timestamp: Date.now() - startTime,
-        data: 'Broadcasting to parallel advisors for consensus...',
+        data: 'Asking 3 AI advisors for independent views...',
         details: {
-          narrative: 'GTP Flash: broadcasting to parallel advisors, merging into quorum synthesis',
+          narrative: 'Asking 3 AI advisors for independent views...',
         },
       });
 
@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
           // the route-level complete at the end.
           stage: 'analysis',
           timestamp: Date.now() - startTime,
-          data: 'Consensus synthesized — guard + finishing checks',
+          data: 'Answer combined — running final checks...',
           details: {
             tokens: gtpResult.metrics?.tokens
               ? { input: 0, output: 0, total: gtpResult.metrics.tokens }
@@ -382,15 +382,17 @@ export async function POST(request: NextRequest) {
     );
     log('INFO', 'PROVIDER', `Reasoning: ${providerSpec.reasoning}`);
 
-    // Emit: AI reasoning
+    // Emit: AI reasoning — simple-terms: the raw intent/provider reasoning strings stay in
+    // details.reasoning (metrics view); the user-facing line is plain language.
+    const intentPlain = metaCoreState
+      ? (INTENT_PLAIN[metaCoreState.humanIntention.split(' - ')[0]] ?? "Thinking it through")
+      : "Thinking it through";
     emitAndPersist(queryId, {
       id: `${queryId}-reasoning`,
       queryId,
       stage: 'reasoning',
       timestamp: Date.now() - startTime,
-      data: metaCoreState
-        ? `${metaCoreState.humanIntention}. Approach: ${selectedMethod.reason || selectedMethod.id}`
-        : `${selectedMethod.reason || 'Processing query'}. Approach: ${selectedMethod.id}`,
+      data: `${intentPlain}...`,
       details: {
         reasoning: {
           intent: metaCoreState?.humanIntention || 'Analyzing query',
@@ -400,7 +402,7 @@ export async function POST(request: NextRequest) {
           providerReason:
             providerSpec.reasoning || `${selectedProvider} selected for ${selectedMethod.id}`,
         },
-        narrative: `${metaCoreState?.humanIntention || 'Analyzing query intent'}. Approaching via ${selectedMethod.id} — ${providerSpec.reasoning || selectedProvider + ' selected for optimal response quality'}.`,
+        narrative: `${intentPlain}...`,
       },
     });
 
@@ -498,7 +500,7 @@ export async function POST(request: NextRequest) {
       queryId,
       stage: 'calling',
       timestamp: Date.now() - startTime,
-      data: `Connecting to AI provider...`,
+      data: `Contacting the AI...`,
       details: {
         methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
       },
@@ -548,7 +550,7 @@ export async function POST(request: NextRequest) {
         queryId,
         stage: 'generating',
         timestamp: Date.now() - startTime,
-        data: 'Generating response...',
+        data: 'Writing the answer...',
         details: { narrative: genBuf },
       });
       genBuf = '';
@@ -575,7 +577,7 @@ export async function POST(request: NextRequest) {
           queryId,
           stage: 'reasoning',
           timestamp: Date.now() - startTime,
-          data: 'Running live web-search agent…',
+          data: 'Searching the web...',
           details: {
             methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
           },
@@ -592,7 +594,7 @@ export async function POST(request: NextRequest) {
                     ? `Step ${e.step} — search unavailable`
                     : `Step ${e.step} — no results, refining…`
                   : `Step ${e.step} — found ${e.count} result${e.count === 1 ? '' : 's'}${titles ? `: ${titles}` : ''}`
-                : `Step ${e.step} — composing grounded answer…`;
+                : `Step ${e.step} — writing the answer from what was found…`;
           emitAndPersist(queryId, {
             // random suffix like the thinking emitter — parallel same-kind events share a millisecond
             id: `${queryId}-react-step-${e.step}-${e.kind}-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 5)}`,
@@ -616,7 +618,7 @@ export async function POST(request: NextRequest) {
           queryId,
           stage: 'reasoning',
           timestamp: Date.now() - startTime,
-          data: `Citations: ${coverage.referenced}/${coverage.total} sources reflected`,
+          data: `Sources: ${coverage.referenced} of ${coverage.total} used in the answer`,
           details: {
             methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
           },
@@ -664,7 +666,7 @@ export async function POST(request: NextRequest) {
           queryId,
           stage: 'reasoning',
           timestamp: Date.now() - startTime,
-          data: `Sampling ${SC_SAMPLES} independent reasoning paths…`,
+          data: `Trying ${SC_SAMPLES} independent drafts…`,
           details: {
             methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
           },
@@ -721,7 +723,7 @@ export async function POST(request: NextRequest) {
               queryId,
               stage: 'reasoning',
               timestamp: Date.now() - startTime,
-              data: `Path ${i}/${n}…`,
+              data: `Draft ${i} of ${n}…`,
               details: {
                 methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
               },
@@ -734,8 +736,8 @@ export async function POST(request: NextRequest) {
           timestamp: Date.now() - startTime,
           data:
             mp.consistency === null
-              ? 'Self-consistency: single path (consistency unavailable)'
-              : `Self-consistency: ${(mp.consistency * 100).toFixed(0)}% agreement across ${mp.samplesUsed} independent paths`,
+              ? 'Only one draft finished — agreement check unavailable'
+              : `Drafts agree ${(mp.consistency * 100).toFixed(0)}% across ${mp.samplesUsed} independent tries`,
           details: {
             methodology: { selected: selectedMethod.id, reason: selectedMethod.reason || '' },
           },
@@ -866,7 +868,7 @@ export async function POST(request: NextRequest) {
       queryId,
       stage: 'generating',
       timestamp: Date.now() - startTime,
-      data: `Generating with ${usedModel} via ${selectedProvider}...`,
+      data: `Writing the answer...`,
       details: {
         model: usedModel,
         provider: selectedProvider,
@@ -917,8 +919,8 @@ export async function POST(request: NextRequest) {
       timestamp: Date.now() - startTime,
       data:
         guardResult && !guardResult.passed
-          ? `Guard: warning. ${guardResult.issues?.length ? guardResult.issues.join(', ') : 'Issues detected'}`
-          : `Guard: passed. No issues detected`,
+          ? `Accuracy check flagged: ${guardResult.issues?.length ? guardResult.issues.join(', ') : 'issues detected'}`
+          : `Accuracy check passed`,
       details: {
         guard: {
           verdict: guardResult && !guardResult.passed ? 'warn' : 'pass',
@@ -929,8 +931,8 @@ export async function POST(request: NextRequest) {
         },
         narrative:
           guardResult && !guardResult.passed
-            ? `Sovereign Guard flagged concerns: ${guardResult.issues?.join(', ') || 'minor issues detected'}. Proceeding with caution.`
-            : `Sovereign Guard verified response integrity. All checks passed — response is grounded.`,
+            ? `Accuracy check flagged: ${guardResult.issues?.join(', ') || 'minor issues'} — take this part with care`
+            : `Accuracy check passed`,
       },
     });
 

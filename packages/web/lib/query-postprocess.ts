@@ -196,10 +196,10 @@ export function runGnosticPostProcessing(
       timestamp: Date.now() - startTime,
       data:
         antipatternRisk.risk !== 'none' && antipatternRisk.severity >= 0.4
-          ? `purified: ${antipatternRisk.risk} antipatterns`
+          ? `Quality review: cleaned up ${antipatternRisk.risk} in the wording`
           : antipatternRisk.risk !== 'none'
-            ? `low ${antipatternRisk.risk} (${(antipatternRisk.severity * 100).toFixed(0)}%) · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.aiName || 'balanced' : 'standard'} dominant`
-            : `clean · ${layerAnalysis ? LAYER_METADATA[layerAnalysis.dominantLayer]?.aiName || 'balanced' : 'standard'} dominant`,
+            ? `Quality review passed — minor wording flags noted (${antipatternRisk.risk})`
+            : `Quality review passed`,
       details: {
         analysis: {
           antipatternRisk: antipatternRisk.risk,

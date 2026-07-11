@@ -36,7 +36,7 @@ export function scoreGroundingAsync(
       if (!context.length) {
         emit(queryId, {
           ...base,
-          data: 'parametric · not fact-checked',
+          data: 'Answered from general knowledge — no sources to check against',
           details: { grounding: { mode: 'parametric', score: null } },
         });
         return;
@@ -46,7 +46,7 @@ export function scoreGroundingAsync(
         const { score, spans } = scoreLexicalSupport(answer, context);
         emit(queryId, {
           ...base,
-          data: `heuristic · ${Math.round(score * 100)}% lexical support`,
+          data: `Quick source check: ${Math.round(score * 100)}% of the answer matches the sources`,
           details: { grounding: { mode: 'heuristic', score, spans } },
         });
         return;
@@ -69,13 +69,13 @@ export function scoreGroundingAsync(
       const pct = d.score == null ? '—' : `${Math.round(d.score * 100)}%`;
       emit(queryId, {
         ...base,
-        data: `grounded · ${pct} supported`,
+        data: `Checked against sources: ${pct} supported`,
         details: { grounding: { mode: 'grounded', score: d.score, spans: d.spans, ms: d.ms } },
       });
     } catch {
       emit(queryId, {
         ...base,
-        data: 'grounding unavailable',
+        data: 'Source check unavailable right now',
         details: { grounding: { mode: 'grounded', score: null, error: true } },
       });
     }

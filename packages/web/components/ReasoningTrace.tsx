@@ -54,10 +54,26 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
   // still collapse. Capped to the last 12 rows so re-fired stages can't build a wall.
   const rowOrder: string[] = [];
   const latestByKey = new Map<string, ThoughtEvent>();
+  // simple-terms: tot's per-advisor response excerpts collapse into ONE roster row ("Advisors: X
+  // answered · …") so tot's silhouette matches direct's. Display-only — events unchanged. Busy-
+  // switch, timeout/fail and round-skip narrations keep their own rows.
+  const ADVISORS_KEY = 'reasoning|__advisors__';
+  const advisorStatus = new Map<string, string>();
   for (const ev of messageTimeline) {
     if (ev.stage === 'generating' || ev.stage === 'complete' || ev.stage === 'error') continue;
     const intent = ev.details?.reasoning?.intent;
     if (intent === 'extended_thinking' || intent === 'thinking_complete') continue;
+    if (ev.id.includes('-tot-advisor-')) {
+      const name = (ev.details?.narrative ?? '').split(':')[0].trim();
+      if (name) advisorStatus.set(name, 'answered');
+      if (!latestByKey.has(ADVISORS_KEY)) rowOrder.push(ADVISORS_KEY);
+      latestByKey.set(ADVISORS_KEY, ev);
+      continue;
+    }
+    if (ev.id.includes('-tot-miss-')) {
+      const m = (ev.details?.narrative ?? '').match(/^(.+?) (didn't respond|couldn't answer)/);
+      if (m && advisorStatus.get(m[1]) !== 'answered') advisorStatus.set(m[1], m[2]);
+    }
     const key = `${ev.stage}|${ev.details?.narrative ?? ''}`;
     if (!latestByKey.has(key)) rowOrder.push(key);
     latestByKey.set(key, ev);
@@ -68,7 +84,10 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
     const s = ev.stage;
     return {
       stage: s,
-      narrative: cleanRowText(ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s),
+      narrative:
+        k === ADVISORS_KEY
+          ? `Advisors: ${[...advisorStatus.entries()].map(([n, st]) => `${n} ${st}`).join(' · ')}`
+          : cleanRowText(ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s),
       // Unknown stages (e.g. 'grounding' has no STAGE_META entry) show their own name
       meta: STAGE_META[s] || { symbol: '⊹', label: s, color: '#64748b' },
     };

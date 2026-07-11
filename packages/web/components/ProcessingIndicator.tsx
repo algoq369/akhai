@@ -9,7 +9,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSideCanalStore } from '@/lib/stores/side-canal-store';
-import { STAGE_META, formatDuration } from '@/lib/thought-stream';
+import { STAGE_META, LAYER_PLAIN, formatDuration } from '@/lib/thought-stream';
 import type { ThoughtEvent } from '@/lib/thought-stream';
 
 interface ProcessingIndicatorProps {
@@ -32,17 +32,17 @@ function cleanRowText(t: string): string {
 }
 
 export const STAGE_DESCRIPTIONS: Record<string, string> = {
-  received: 'Analyzing query...',
-  routing: 'Selecting methodology...',
-  layers: 'Activating neural layers...',
-  reasoning: 'Decomposing problem...',
-  calling: 'Connecting to AI provider...',
-  generating: 'Generating response...',
-  guard: 'Guard checking response...',
-  analysis: 'Analyzing output quality...',
-  grounding: 'Grounding response in sources...',
-  complete: 'Complete',
-  error: 'Error occurred',
+  received: 'Reading your question...',
+  routing: 'Choosing how to think about it...',
+  layers: 'Setting up thinking layers...',
+  reasoning: 'Thinking it through...',
+  calling: 'Contacting the AI...',
+  generating: 'Writing the answer...',
+  guard: 'Checking the answer for accuracy...',
+  analysis: 'Reviewing quality...',
+  grounding: 'Verifying against sources...',
+  complete: 'Done',
+  error: 'Something went wrong',
 };
 
 export default function ProcessingIndicator({ messageId, isVisible }: ProcessingIndicatorProps) {
@@ -73,7 +73,8 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
       detail += ` — ${currentMetadata.details.methodology.reason}`;
     }
   } else if (stage === 'layers' && currentMetadata.details?.dominantLayer) {
-    detail = `${currentMetadata.details.dominantLayer} dominant`;
+    const dl = currentMetadata.details.dominantLayer;
+    detail = `focusing on ${LAYER_PLAIN[dl] ?? dl}`;
   } else if (stage === 'generating') {
     detail = '';
   } else if (stage === 'guard' && currentMetadata.details?.guard) {
@@ -103,6 +104,11 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
   // still collapse. Capped to the last 12 rows so re-fired stages can't build a wall.
   const rowOrder: string[] = [];
   const latestByKey = new Map<string, ThoughtEvent>();
+  // simple-terms: tot's per-advisor response excerpts collapse into ONE roster row ("Advisors: X
+  // answered · …") so tot's silhouette matches direct's. Display-only — events unchanged. Busy-
+  // switch, timeout/fail and round-skip narrations keep their own rows.
+  const ADVISORS_KEY = 'reasoning|__advisors__';
+  const advisorStatus = new Map<string, string>();
   for (const ev of messageTimeline) {
     if (ev.stage === 'generating' || ev.stage === 'complete' || ev.stage === 'error') continue;
     // Exclude only the exact CURRENT event (it's the pulsing status line below) — NOT the whole
@@ -111,6 +117,17 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
     if (ev.id === currentMetadata.id) continue;
     const intent = ev.details?.reasoning?.intent;
     if (intent === 'extended_thinking' || intent === 'thinking_complete') continue;
+    if (ev.id.includes('-tot-advisor-')) {
+      const name = (ev.details?.narrative ?? '').split(':')[0].trim();
+      if (name) advisorStatus.set(name, 'answered');
+      if (!latestByKey.has(ADVISORS_KEY)) rowOrder.push(ADVISORS_KEY);
+      latestByKey.set(ADVISORS_KEY, ev);
+      continue;
+    }
+    if (ev.id.includes('-tot-miss-')) {
+      const m = (ev.details?.narrative ?? '').match(/^(.+?) (didn't respond|couldn't answer)/);
+      if (m && advisorStatus.get(m[1]) !== 'answered') advisorStatus.set(m[1], m[2]);
+    }
     const key = `${ev.stage}|${ev.details?.narrative ?? ''}`;
     if (!latestByKey.has(key)) rowOrder.push(key);
     latestByKey.set(key, ev);
@@ -121,7 +138,10 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
     const s = ev.stage;
     return {
       stage: s,
-      narrative: cleanRowText(ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s),
+      narrative:
+        k === ADVISORS_KEY
+          ? `Advisors: ${[...advisorStatus.entries()].map(([n, st]) => `${n} ${st}`).join(' · ')}`
+          : cleanRowText(ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s),
       // Unknown stages (e.g. 'grounding' has no STAGE_META entry) show their own name, not a wrong sigil label
       meta: STAGE_META[s] || { symbol: '⊹', label: s, color: '#64748b' },
     };

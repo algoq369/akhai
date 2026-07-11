@@ -99,7 +99,7 @@ export async function streamSynthesis(args: {
         queryId: streamQueryId,
         stage: 'generating',
         timestamp: Date.now() - startTime,
-        data: 'Mother Base synthesis',
+        data: 'Combining the advisors into one answer...',
         details: { narrative: genBuf },
       });
       genBuf = '';

@@ -108,20 +108,62 @@ export interface ThoughtEvent {
   details?: ThoughtDetails;
 }
 
+// simple-terms: labels a non-technical person understands (rendered uppercase by the components).
 export const STAGE_META: Record<string, { symbol: string; label: string; color: string }> = {
-  received: { symbol: '\u22b9', label: 'received', color: '#64748b' },
-  routing: { symbol: '\u25ce', label: 'routing', color: '#6366f1' },
+  received: { symbol: '\u22b9', label: 'reading', color: '#64748b' },
+  routing: { symbol: '\u25ce', label: 'method', color: '#6366f1' },
   layers: { symbol: '\u2b21', label: 'layers', color: '#a855f7' },
-  guard: { symbol: '\u2298', label: 'guard', color: '#10b981' },
-  'side-canal': { symbol: '\u27f3', label: 'side canal', color: '#06b6d4' },
+  guard: { symbol: '\u2298', label: 'checking', color: '#10b981' },
+  'side-canal': { symbol: '\u27f3', label: 'context', color: '#06b6d4' },
   refinements: { symbol: '\u21bb', label: 'refinements', color: '#6366f1' },
-  reasoning: { symbol: '\u2235', label: 'reasoning', color: '#818cf8' },
-  analysis: { symbol: '\u2234', label: 'analysis', color: '#c084fc' },
-  calling: { symbol: '\u2299', label: 'calling', color: '#94a3b8' },
-  generating: { symbol: '\u25b3', label: 'fusion', color: '#f59e0b' },
+  reasoning: { symbol: '\u2235', label: 'thinking', color: '#818cf8' },
+  analysis: { symbol: '\u2234', label: 'review', color: '#c084fc' },
+  calling: { symbol: '\u2299', label: 'contacting', color: '#94a3b8' },
+  generating: { symbol: '\u25b3', label: 'writing', color: '#f59e0b' },
+  grounding: { symbol: '\u2295', label: 'sources', color: '#94a3b8' },
   streaming: { symbol: '\u2726', label: 'streaming', color: '#e2e8f0' },
   complete: { symbol: '\u25c7', label: 'complete', color: '#10b981' },
   error: { symbol: '\u2715', label: 'error', color: '#ef4444' },
+};
+
+// simple-terms: plain-language names for internal layer names (Embedding/Encoder/\u2026) \u2014
+// used wherever a layer name reaches a user-facing live string. Display vocabulary only.
+export const LAYER_PLAIN: Record<string, string> = {
+  Embedding: 'recalling facts',
+  Encoder: 'pattern recognition',
+  Reasoning: 'deep reasoning',
+  Attention: 'focus',
+  Generative: 'creative writing',
+  Classifier: 'comparing options',
+  Discriminator: 'critical review',
+  Expansion: 'exploring possibilities',
+  Executor: 'practical steps',
+  'Meta-Core': 'self-reflection',
+  Synthesis: 'integration',
+};
+
+// simple-terms: plain phrasing for meta-core intent categories (matched on the text before ' - ').
+// The raw intent strings stay untouched in state — logic elsewhere matches on them.
+export const INTENT_PLAIN: Record<string, string> = {
+  'Seeking wisdom/guidance': 'Weighing guidance for your decision',
+  'Seeking validation': 'Considering your take on it',
+  'Seeking understanding': "Understanding what you're asking",
+  'Seeking comparison': 'Comparing the options',
+  'Seeking implementation knowledge': 'Working out how to do it',
+  'Seeking meta-cognitive insight': 'Thinking through the deeper question',
+  'Information request': 'Looking up what you asked',
+};
+
+// simple-terms: plain names for methodology ids in user-facing live strings.
+export const METHOD_PLAIN: Record<string, string> = {
+  direct: 'Direct answer',
+  cod: 'Draft and refine',
+  bot: 'Structured analysis',
+  react: 'Web search',
+  pot: 'Calculation',
+  tot: 'Multi-AI consensus',
+  sc: 'Multiple drafts',
+  auto: 'Auto',
 };
 
 export function formatDuration(ms: number): string {

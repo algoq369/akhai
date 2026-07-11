@@ -27,7 +27,7 @@ export function emitTotAdvisor(
     queryId: streamQueryId,
     stage: 'reasoning',
     timestamp: Date.now() - startTime,
-    data: `${r.name} advisor responded`,
+    data: `${r.name} answered`,
     details: { narrative: `${r.name}: ${r.content.slice(0, 200).replace(/\s+/g, ' ').trim()}` },
   });
 }
@@ -44,9 +44,9 @@ export function emitTotAdvisorFallback(
     queryId: streamQueryId,
     stage: 'calling',
     timestamp: Date.now() - startTime,
-    data: `advisor ${advisorName}: pinned free model unavailable, using free auto-router`,
+    data: `${advisorName} is busy — switched to a backup`,
     details: {
-      narrative: `advisor ${advisorName}: pinned free model unavailable, using free auto-router`,
+      narrative: `${advisorName} is busy — switched to a backup`,
     },
   });
 }
@@ -62,8 +62,8 @@ export function emitTotAdvisorMiss(
   if (!streamQueryId || (r.status !== 'timeout' && r.status !== 'failed')) return;
   const line =
     r.status === 'timeout'
-      ? `advisor ${r.name} timed out (${Math.round(r.latency / 1000)}s) — proceeding without it`
-      : `advisor ${r.name} failed — proceeding without it`;
+      ? `${r.name} didn't respond in time — continuing without it`
+      : `${r.name} couldn't answer — continuing without it`;
   emitThought(streamQueryId, {
     id: `${streamQueryId}-tot-miss-r${round}-${provider}`,
     queryId: streamQueryId,
@@ -82,7 +82,7 @@ export function emitTotRound2Skip(
   startTime: number
 ): void {
   if (!streamQueryId) return;
-  const line = `round 2 skipped — only ${answered}/${total} advisors answered; synthesizing from round 1`;
+  const line = `Skipping the debate round — only ${answered} of ${total} advisors answered`;
   emitThought(streamQueryId, {
     id: `${streamQueryId}-tot-round2-skip`,
     queryId: streamQueryId,
@@ -105,7 +105,7 @@ export function emitTotSynthesis(
     queryId: streamQueryId,
     stage: 'generating',
     timestamp: Date.now() - startTime,
-    data: 'Mother Base synthesis',
+    data: 'Combining the advisors into one answer...',
     details: { narrative: text.slice(0, 400).replace(/\s+/g, ' ').trim() },
   });
 }

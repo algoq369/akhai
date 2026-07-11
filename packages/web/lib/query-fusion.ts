@@ -15,6 +15,7 @@ import { createAutoInstinctConfig, type InstinctConfig } from '@/lib/instinct-mo
 import { selectMethodologyFallback } from '@/lib/query-pipeline';
 import { LAYER_METADATA, Layer } from '@/lib/layer-registry';
 import type { ThoughtEvent } from '@/lib/thought-stream';
+import { LAYER_PLAIN, METHOD_PLAIN } from '@/lib/thought-stream';
 
 // Re-export for route.ts convenience
 export type { IntelligenceFusionResult };
@@ -97,7 +98,7 @@ export async function runFusionPipeline(
       queryId,
       stage: 'side-canal',
       timestamp: Date.now() - startTime,
-      data: `context injected (${sideCanalContext.length} chars)`,
+      data: `Bringing in context from earlier conversations...`,
       details: {
         sideCanal: { topics: [], contextChars: sideCanalContext.length },
       },
@@ -119,7 +120,7 @@ export async function runFusionPipeline(
       queryId,
       stage: 'refinements',
       timestamp: Date.now() - startTime,
-      data: `${liveRefinements.length} active`,
+      data: `Applying ${liveRefinements.length} refinement${liveRefinements.length === 1 ? '' : 's'} you asked for...`,
       details: {
         refinementCount: liveRefinements.length,
       },
@@ -213,7 +214,7 @@ export function emitFusionEvents(
     queryId,
     stage: 'routing',
     timestamp: Date.now() - startTime,
-    data: `Using ${selectedMethod.id}${selectedMethod.reason ? ` — ${selectedMethod.reason}` : ''}${fusionResult ? `. Confidence: ${Math.round(fusionResult.confidence * 100)}%` : ''}`,
+    data: `Thinking method: ${METHOD_PLAIN[selectedMethod.id] ?? selectedMethod.id}`,
     details: {
       methodology: {
         selected: selectedMethod.id,
@@ -244,7 +245,10 @@ export function emitFusionEvents(
       guardReasons: fusionResult?.guardReasons || [],
       processingMode: fusionResult?.processingMode,
       activeLenses: fusionResult?.activeLenses || [],
-      narrative: `Selected ${selectedMethod.id} methodology${fusionResult ? ` with ${Math.round(fusionResult.confidence * 100)}% confidence` : ''}. ${selectedMethod.reason || 'This approach gives the clearest signal-to-noise ratio.'}`,
+      narrative:
+        methodology !== 'auto'
+          ? `Thinking method: ${METHOD_PLAIN[selectedMethod.id] ?? selectedMethod.id} — your selection`
+          : `Thinking method: ${METHOD_PLAIN[selectedMethod.id] ?? selectedMethod.id} — chosen automatically${fusionResult ? ` (${Math.round(fusionResult.confidence * 100)}% match)` : ''}`,
     },
   });
 
@@ -284,14 +288,14 @@ export function emitFusionEvents(
       queryId,
       stage: 'layers',
       timestamp: Date.now() - startTime,
-      data: `Activating ${dominantName} · ${fusionResult.dominantLayers.length} layers engaged`,
+      data: `${fusionResult.dominantLayers.length} thinking layer${fusionResult.dominantLayers.length === 1 ? '' : 's'} active — focusing on ${LAYER_PLAIN[dominantName] ?? dominantName}`,
       details: {
         layers: layerDetails,
         dominantLayer: dominantName,
         pathActivations: pathActs,
         narrative: dominant
-          ? `${fusionResult.dominantLayers.length} computational layers activated. ${dominantName} is dominant at ${layerDetails[dominant]?.weight || 0}% — prioritizing deep analysis.`
-          : `Computational layers analyzed — no dominant layer detected, using balanced processing.`,
+          ? `${fusionResult.dominantLayers.length} thinking layer${fusionResult.dominantLayers.length === 1 ? '' : 's'} active — focusing on ${LAYER_PLAIN[dominantName] ?? dominantName}`
+          : `Thinking layers balanced — no single focus needed`,
       },
     });
   }
