@@ -28,6 +28,7 @@ export const STAGE_DESCRIPTIONS: Record<string, string> = {
   generating: 'Generating response...',
   guard: 'Guard checking response...',
   analysis: 'Analyzing output quality...',
+  grounding: 'Grounding response in sources...',
   complete: 'Complete',
   error: 'Error occurred',
 };
