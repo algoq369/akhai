@@ -93,7 +93,10 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
   const latestByKey = new Map<string, ThoughtEvent>();
   for (const ev of messageTimeline) {
     if (ev.stage === 'generating' || ev.stage === 'complete' || ev.stage === 'error') continue;
-    if (ev.stage === stage) continue;
+    // Exclude only the exact CURRENT event (it's the pulsing status line below) — NOT the whole
+    // current stage: tot re-fires stages (advisor responses/misses on 'reasoning'), and excluding
+    // by stage made every prior advisor row vanish whenever a new same-stage event became current.
+    if (ev.id === currentMetadata.id) continue;
     const intent = ev.details?.reasoning?.intent;
     if (intent === 'extended_thinking' || intent === 'thinking_complete') continue;
     const key = `${ev.stage}|${ev.details?.narrative ?? ''}`;
