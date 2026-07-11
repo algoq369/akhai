@@ -19,7 +19,7 @@ interface ProcessingIndicatorProps {
 
 const EMPTY_TIMELINE: ThoughtEvent[] = [];
 
-const STAGE_DESCRIPTIONS: Record<string, string> = {
+export const STAGE_DESCRIPTIONS: Record<string, string> = {
   received: 'Analyzing query...',
   routing: 'Selecting methodology...',
   layers: 'Activating neural layers...',
@@ -75,15 +75,30 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
     .map((ev) => ev.details?.narrative ?? '')
     .join('');
 
-  // Collect narrative entries from completed stages in timeline (exclude 'generating' — those are
-  // the streamed-answer chunks, rendered as one growing block below, not one line per chunk).
-  const narrativeEntries = messageTimeline
-    .filter((ev) => ev.details?.narrative && ev.stage !== stage && ev.stage !== 'generating')
-    .map((ev) => ({
-      stage: ev.stage,
-      narrative: ev.details?.narrative ?? '',
-      meta: STAGE_META[ev.stage] || STAGE_META.received,
-    }));
+  // Collect one line per completed pipeline stage (exclude 'generating' — those are the streamed-
+  // answer chunks rendered as one growing block below — plus terminal markers and the pulsing
+  // current stage). Silent stages (calling/guard/analysis/grounding/…) carry no narrative field:
+  // they show their human description/label instead of vanishing — labels only, nothing invented.
+  // Dedupe: the latest event per stage wins, ordered by first occurrence (= pipeline order).
+  const stageOrder: string[] = [];
+  const latestByStage = new Map<string, ThoughtEvent>();
+  for (const ev of messageTimeline) {
+    if (ev.stage === 'generating' || ev.stage === 'complete' || ev.stage === 'error') continue;
+    if (ev.stage === stage) continue;
+    const intent = ev.details?.reasoning?.intent;
+    if (intent === 'extended_thinking' || intent === 'thinking_complete') continue;
+    if (!latestByStage.has(ev.stage)) stageOrder.push(ev.stage);
+    latestByStage.set(ev.stage, ev);
+  }
+  const narrativeEntries = stageOrder.map((s) => {
+    const ev = latestByStage.get(s)!;
+    return {
+      stage: s,
+      narrative: ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s,
+      // Unknown stages (e.g. 'grounding' has no STAGE_META entry) show their own name, not a wrong sigil label
+      meta: STAGE_META[s] || { symbol: '⊹', label: s, color: '#64748b' },
+    };
+  });
 
   return (
     <AnimatePresence mode="wait">

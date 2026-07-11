@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSideCanalStore } from '@/lib/stores/side-canal-store';
 import { STAGE_META } from '@/lib/thought-stream';
 import type { ThoughtEvent } from '@/lib/thought-stream';
+import { STAGE_DESCRIPTIONS } from '@/components/ProcessingIndicator';
 
 interface ReasoningTraceProps {
   messageId: string;
@@ -36,21 +37,30 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
     .map((ev) => ev.details?.narrative ?? '')
     .join('');
 
-  // Exclude extended-thinking chunk events: the live SSE handler (useQueryHandlers) intercepts
-  // them before pushMetadata (they belong to the raw-thinking view), but history-loaded timelines
-  // (useHomePageEffects loadConversation) contain them — one event per thinking delta.
-  const narrativeEntries = messageTimeline
-    .filter((ev) => ev.details?.narrative && ev.stage !== 'generating')
-    .filter(
-      (ev) =>
-        ev.details?.reasoning?.intent !== 'extended_thinking' &&
-        ev.details?.reasoning?.intent !== 'thinking_complete'
-    )
-    .map((ev) => ({
-      stage: ev.stage,
-      narrative: ev.details?.narrative ?? '',
-      meta: STAGE_META[ev.stage] || STAGE_META.received,
-    }));
+  // One line per pipeline stage (not just narrative-bearing ones — silent stages like
+  // calling/guard/analysis/grounding show their description/label instead of vanishing; labels
+  // only, nothing invented). Excluded: 'generating' (streamed-answer chunks, shown as one block
+  // below), 'complete'/'error' (pure terminal markers), and extended-thinking chunk events (the
+  // live SSE handler intercepts those before pushMetadata, but history-loaded timelines contain
+  // them — one per thinking delta). Dedupe: latest event per stage wins, first-occurrence order.
+  const stageOrder: string[] = [];
+  const latestByStage = new Map<string, ThoughtEvent>();
+  for (const ev of messageTimeline) {
+    if (ev.stage === 'generating' || ev.stage === 'complete' || ev.stage === 'error') continue;
+    const intent = ev.details?.reasoning?.intent;
+    if (intent === 'extended_thinking' || intent === 'thinking_complete') continue;
+    if (!latestByStage.has(ev.stage)) stageOrder.push(ev.stage);
+    latestByStage.set(ev.stage, ev);
+  }
+  const narrativeEntries = stageOrder.map((s) => {
+    const ev = latestByStage.get(s)!;
+    return {
+      stage: s,
+      narrative: ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s,
+      // Unknown stages (e.g. 'grounding' has no STAGE_META entry) show their own name
+      meta: STAGE_META[s] || { symbol: '⊹', label: s, color: '#64748b' },
+    };
+  });
 
   if (narrativeEntries.length === 0 && !generatingText) return null;
 
