@@ -3,7 +3,8 @@
 /**
  * InlineDialogue — orchestrates 3 views of AI reasoning:
  *
- * ◊ classic  — pipeline metadata timeline (received → routing → guard → complete)
+ * ◊ classic  — run metrics summary (method · guard · model · tokens · cost); the stage
+ *              timeline itself lives in ReasoningTrace, not here
  * ✦ esoteric — cognitive signature lenses (MIRROR, USER GNOSIS, etc.)
  * ⊕ raw      — extended thinking stream (only when available)
  *
@@ -17,7 +18,6 @@ import type { CognitiveSignature } from '@/lib/cognitive/llm-extractor';
 import { useSideCanalStore } from '@/lib/stores/side-canal-store';
 import { STAGE_META, formatDuration } from '@/lib/thought-stream';
 import type { ThoughtEvent } from '@/lib/thought-stream';
-import PipelineTimeline from '@/components/PipelineTimeline';
 import RawThinkingView from './RawThinkingView';
 import LensView from './LensView';
 
@@ -80,7 +80,7 @@ export default function InlineDialogue({
   const showTabs = availableViews.length >= 2;
 
   const TAB_CONFIG: Record<ViewMode, { sigil: string; label: string }> = {
-    classic: { sigil: '◊', label: 'classic' },
+    classic: { sigil: '◊', label: 'metrics' },
     esoteric: { sigil: '✦', label: 'esoteric' },
     raw: { sigil: '⊕', label: 'raw' },
   };
@@ -151,7 +151,8 @@ export default function InlineDialogue({
 const EMPTY_TIMELINE: ThoughtEvent[] = [];
 
 /**
- * ClassicView — renders pipeline metadata summary + expandable timeline.
+ * ClassicView — compact run-metrics summary + expandable detail breakdown.
+ * The redundant embedded stage timeline was removed (ReasoningTrace owns it now).
  * Extracted from MetadataStrip summary phase logic.
  */
 function ClassicView({ events }: { events: ThoughtEvent[] }) {
@@ -212,7 +213,7 @@ function ClassicView({ events }: { events: ThoughtEvent[] }) {
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1 flex-wrap font-mono text-[9px] text-relic-silver/70 dark:text-relic-slate/60 hover:text-relic-slate dark:hover:text-relic-silver transition-colors"
+        className="flex items-center gap-1 flex-wrap font-mono text-[9px] text-relic-silver/70 dark:text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost transition-colors"
       >
         <span className={`transition-transform duration-150 ${expanded ? '' : '-rotate-90'}`}>
           &#9662;
@@ -318,7 +319,6 @@ function ClassicView({ events }: { events: ThoughtEvent[] }) {
                 </div>
               )}
             </div>
-            <PipelineTimeline events={events} />
           </motion.div>
         )}
       </AnimatePresence>

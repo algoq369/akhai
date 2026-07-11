@@ -111,7 +111,7 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
         transition={{ duration: 0.2 }}
         className="max-w-3xl mx-auto px-10 py-1"
       >
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           {/* Accumulated narrative from completed stages */}
           {narrativeEntries.map((entry, i) => (
             <motion.div
@@ -119,14 +119,17 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.15 }}
-              className="flex items-start gap-2 font-mono text-[8px] text-relic-silver/35 dark:text-relic-slate/30"
+              className="flex items-baseline gap-2 font-mono text-[9px] leading-relaxed text-relic-slate/60 dark:text-relic-silver/55"
             >
-              <span className="flex-shrink-0" style={{ color: entry.meta.color, opacity: 0.4 }}>
+              <span
+                className="flex-shrink-0 w-[10px] text-center"
+                style={{ color: entry.meta.color, opacity: 0.75 }}
+              >
                 {entry.meta.symbol}
               </span>
               <span
                 className="uppercase tracking-wider flex-shrink-0 w-[70px]"
-                style={{ color: entry.meta.color, opacity: 0.4 }}
+                style={{ color: entry.meta.color, opacity: 0.6 }}
               >
                 {entry.meta.label}
               </span>
@@ -135,7 +138,7 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
           ))}
 
           {/* Current active stage (pulsing) */}
-          <div className="flex items-center gap-2 font-mono text-[9px] text-relic-silver/60 dark:text-relic-slate/50">
+          <div className="flex items-center gap-2 font-mono text-[9px] text-relic-silver/60 dark:text-relic-silver/70">
             <motion.span
               style={{ color: meta.color }}
               animate={{ opacity: [0.5, 1, 0.5] }}
@@ -148,8 +151,8 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
             </span>
             {detail && (
               <>
-                <span className="text-relic-ghost dark:text-relic-slate/20">·</span>
-                <span className="text-relic-silver/40 dark:text-relic-slate/40 truncate max-w-[300px]">
+                <span className="text-relic-ghost dark:text-relic-slate/40">·</span>
+                <span className="text-relic-silver/40 dark:text-relic-silver/50 truncate max-w-[300px]">
                   {detail}
                 </span>
               </>
@@ -166,13 +169,13 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
               ref={(el) => {
                 if (el) el.scrollTop = el.scrollHeight;
               }}
-              className="mt-2 rounded border border-relic-ghost/20 dark:border-relic-slate/15 bg-relic-void/[0.02] dark:bg-white/[0.02] px-3 py-2 font-mono text-[12px] text-relic-void/85 dark:text-relic-slate/85 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto"
+              className="mt-2 rounded border border-relic-mist/40 dark:border-relic-slate/25 bg-relic-void/[0.02] dark:bg-relic-slate/10 px-3 py-2 font-mono text-[12px] text-relic-void/85 dark:text-relic-silver/75 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto"
             >
               {generatingText}
               <motion.span
                 animate={{ opacity: [1, 0.2, 1] }}
                 transition={{ duration: 0.9, repeat: Infinity }}
-                className="inline-block w-[7px] -mb-[2px] h-[13px] ml-[1px] bg-relic-silver/70 dark:bg-relic-slate/70"
+                className="inline-block w-[7px] -mb-[2px] h-[13px] ml-[1px] bg-relic-silver/70 dark:bg-relic-silver/70"
               />
             </div>
           )}

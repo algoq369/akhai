@@ -144,7 +144,7 @@ function HomePage() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-colors duration-300 ${s.darkMode ? 'bg-relic-void' : 'bg-white'}`}
+      className="min-h-screen flex flex-col transition-colors duration-300 bg-white dark:bg-relic-void"
       style={{ paddingTop: 22 }}
     >
       {/* Global File Drop Zone */}

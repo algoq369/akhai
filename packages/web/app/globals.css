@@ -29,6 +29,11 @@
     @apply selection:bg-relic-void selection:text-relic-white;
   }
 
+  /* Dark mode: native scrollbars + form controls render dark, not white */
+  html.dark {
+    color-scheme: dark;
+  }
+
   /* Dark mode base styles */
   html.dark body {
     @apply bg-slate-950 text-slate-200;

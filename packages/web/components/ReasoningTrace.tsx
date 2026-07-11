@@ -70,20 +70,27 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1 font-mono text-[9px] text-relic-silver/70 dark:text-relic-slate/60 hover:text-relic-slate dark:hover:text-relic-silver transition-colors"
+        className="flex items-center gap-1 font-mono text-[9px] text-relic-silver/70 dark:text-relic-silver/60 hover:text-relic-slate dark:hover:text-relic-ghost transition-colors"
       >
         <span className={`transition-transform duration-150 ${expanded ? '' : '-rotate-90'}`}>
           &#9662;
         </span>
         <span className="text-relic-silver/40">&#9671;</span>
         <span>live reasoning</span>
-        <span className="text-relic-ghost dark:text-relic-slate/30">·</span>
+        <span className="text-relic-ghost dark:text-relic-slate/40">·</span>
         <span>
           {narrativeEntries.length} stage{narrativeEntries.length === 1 ? '' : 's'}
         </span>
+        <span className="flex items-center gap-[3px] ml-0.5">
+          {narrativeEntries.map((entry, i) => (
+            <span key={i} style={{ color: entry.meta.color }}>
+              {entry.meta.symbol}
+            </span>
+          ))}
+        </span>
         {generatingText && (
           <>
-            <span className="text-relic-ghost dark:text-relic-slate/30">·</span>
+            <span className="text-relic-ghost dark:text-relic-slate/40">·</span>
             <span>{generatingText.length.toLocaleString()} chars</span>
           </>
         )}
@@ -99,18 +106,21 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
             transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
-            <div className="pt-1.5 space-y-0.5">
+            <div className="pt-2 space-y-1">
               {narrativeEntries.map((entry, i) => (
                 <div
                   key={`${entry.stage}-${i}`}
-                  className="flex items-start gap-2 font-mono text-[8px] text-relic-silver/35 dark:text-relic-slate/30"
+                  className="flex items-baseline gap-2 font-mono text-[9px] leading-relaxed text-relic-slate/60 dark:text-relic-silver/55"
                 >
-                  <span className="flex-shrink-0" style={{ color: entry.meta.color, opacity: 0.4 }}>
+                  <span
+                    className="flex-shrink-0 w-[10px] text-center"
+                    style={{ color: entry.meta.color, opacity: 0.75 }}
+                  >
                     {entry.meta.symbol}
                   </span>
                   <span
                     className="uppercase tracking-wider flex-shrink-0 w-[70px]"
-                    style={{ color: entry.meta.color, opacity: 0.4 }}
+                    style={{ color: entry.meta.color, opacity: 0.6 }}
                   >
                     {entry.meta.label}
                   </span>
@@ -119,9 +129,14 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
               ))}
 
               {generatingText && (
-                <div className="mt-2 rounded border border-relic-ghost/20 dark:border-relic-slate/15 bg-relic-void/[0.02] dark:bg-white/[0.02] px-3 py-2 font-mono text-[12px] text-relic-void/85 dark:text-relic-slate/85 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto">
-                  {generatingText}
-                </div>
+                <>
+                  <div className="mt-2 font-mono text-[8px] uppercase tracking-wider text-relic-slate/50 dark:text-relic-silver/45">
+                    streamed output
+                  </div>
+                  <div className="mt-1 rounded border border-relic-mist/40 dark:border-relic-slate/25 bg-relic-void/[0.02] dark:bg-relic-slate/10 px-3 py-2 font-mono text-[12px] text-relic-void/85 dark:text-relic-silver/75 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto">
+                    {generatingText}
+                  </div>
+                </>
               )}
             </div>
           </motion.div>
