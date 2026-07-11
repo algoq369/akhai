@@ -33,6 +33,7 @@ import {
   emitTotSynthesis,
 } from '@/lib/tot-stream';
 import { OPENROUTER_ENDPOINT, callFreeChatWithFallback, recordAdvisorCogs } from '@/lib/openrouter';
+import { buildSynthesisPrompt, streamSynthesis } from '@/lib/synthesis-stream';
 import { extractKeyPoints, calculateConfidence, calculateConsensus } from '@/lib/consensus-scoring';
 
 export const dynamic = 'force-dynamic';
@@ -369,7 +370,18 @@ Be collaborative, not combative.`;
     let finalSynthesis: string;
     let synthesisTokens = { input: 0, output: 0 };
 
-    if (apiKeys.anthropic) {
+    // tot-live-words: when a live panel is attached, stream the Mother Base synthesis so the
+    // answer flows word-by-word (real token chunks); null → the non-streamed fetch below runs.
+    const synthesisPrompt = buildSynthesisPrompt(query, synthesisContext, successfulResponses.length);
+    const streamed =
+      apiKeys.anthropic && streamQueryId
+        ? await streamSynthesis({ apiKey: apiKeys.anthropic, model: MODELS.premium, ...synthesisPrompt, maxTokens: 4096, streamQueryId, startTime })
+        : null;
+
+    if (streamed) {
+      finalSynthesis = streamed.text;
+      synthesisTokens = streamed.usage;
+    } else if (apiKeys.anthropic) {
       const synthesisResponse = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -380,22 +392,8 @@ Be collaborative, not combative.`;
         body: JSON.stringify({
           model: MODELS.premium,
           max_tokens: 4096,
-          system: `You are Mother Base, the synthesizer in AkhAI's multi-AI consensus system.
-
-Synthesize insights from ${successfulResponses.length} AI advisors into a unified response.
-
-Guidelines:
-- Integrate all perspectives coherently
-- Highlight strong agreements
-- Note important disagreements
-- Provide clear, actionable conclusions
-- Be concise but complete`,
-          messages: [
-            {
-              role: 'user',
-              content: `# Query\n${query}\n\n# Advisor Insights\n\n${synthesisContext}\n\n# Task\nSynthesize into a comprehensive response.`,
-            },
-          ],
+          system: synthesisPrompt.system,
+          messages: [{ role: 'user', content: synthesisPrompt.userContent }],
         }),
       });
 
@@ -414,8 +412,8 @@ Guidelines:
       finalSynthesis = best?.content || 'No successful responses';
     }
 
-    // live-words: emit the synthesized answer excerpt to the caller's live panel (non-streaming).
-    emitTotSynthesis(streamQueryId, finalSynthesis, startTime);
+    // live-words excerpt ONLY when not token-streamed (the chunks already carried the content).
+    if (!streamed) emitTotSynthesis(streamQueryId, finalSynthesis, startTime);
 
     // ========================
     // Calculate Final Metrics
