@@ -1,6 +1,9 @@
 # AkhAI — RESUME.md
 > Session continuity file. Read this FIRST when resuming work.
-> Last updated: 2026-07-10 · HEAD = FINAL REFINEMENT PLAN atop 6d76a8a · UNPUSHED (5 ahead, push held per Algoq) · SHIELD 14/14 · clean tree · ENGINE CONSTRUCTION DONE
+> Last updated: 2026-07-11 · PUSHED through f5cf4f0 (origin synced, 23-commit day) · SHIELD green · ENGINE DONE + FULL UI-REFINEMENT ARC SHIPPED
+> 2026-07-11 session: config-submit fix (a84ae0f) · config PROVEN to affect output (0.179 word-similarity) · reasoning-richer+grounding (025cd13/376b699) · dark-root fix (ac218ee) · reasoning-dedupe (c55f8fa/4660bf5) · smooth words (a8b34cc/fdce6d1) · words→blue block (50da2f3) · tot rows visible (2cc6b4c/372c5ba) · tot synthesis STREAMS (ebd5c63, any_types ratchet ↓131) · rows like direct (00c5680) · SIMPLE-TERMS: all live reasoning in plain language + tot roster row (f5cf4f0)
+> OPEN CHIPS: failed queries stay status=pending (mark failed) · client crash if it recurs (need browser console) · canvas/history stale-darkMode · session_id fresh-install schema · eval-bar Node-24 vitest · off-peak advisor re-pin · E6.1 single-source rates
+> CALENDAR: Aug 8 hosting decision · Aug 13 freeze rerun (formality, dry 100/100) · F4 launch copy (launch week) · Aug 30 prod freeze · Sep 5 LAUNCH
 
 ## HOW TO WORK (the loop that produced everything below)
 1. Read real code before designing (no guessing — this has caught a spec flaw nearly every session).
