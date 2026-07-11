@@ -69,6 +69,7 @@ function StatusIndicator({
 
   return (
     <button
+      type="button"
       onClick={() => onChange(!enabled)}
       className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 transition-colors rounded"
     >
@@ -99,6 +100,7 @@ function ToggleSwitch({
 }) {
   return (
     <button
+      type="button"
       onClick={() => onChange(!enabled)}
       className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 transition-colors w-full rounded"
     >

@@ -66,6 +66,7 @@ export default function ConversationConsole({
   if (!expanded) {
     return (
       <button
+        type="button"
         onClick={() => setExpanded(true)}
         className="flex items-center gap-1.5 text-[9px] font-mono text-relic-slate hover:text-relic-void transition-colors"
       >
@@ -83,6 +84,7 @@ export default function ConversationConsole({
       {/* Features */}
       {features.map(({ key, on, set }) => (
         <button
+          type="button"
           key={key}
           onClick={() => set(!on)}
           className={`transition-colors ${on ? (key === 'instinct' ? 'text-purple-500 font-medium' : 'text-emerald-500 font-medium') : 'hover:text-relic-void'}`}
@@ -93,6 +95,7 @@ export default function ConversationConsole({
 
       {/* File Attachment Button */}
       <button
+        type="button"
         onClick={onFilesClick}
         className={`transition-colors ${attachedFilesCount > 0 ? 'text-blue-500 font-medium' : 'hover:text-relic-void'}`}
         title="Attach files"
@@ -105,6 +108,7 @@ export default function ConversationConsole({
       {/* Models */}
       {MODELS.map((m) => (
         <button
+          type="button"
           key={m}
           onClick={() => onModelChange(m)}
           className={`transition-colors ${selectedModel === m ? 'text-blue-500 font-medium' : 'hover:text-relic-void'}`}
@@ -114,6 +118,7 @@ export default function ConversationConsole({
       ))}
 
       <button
+        type="button"
         onClick={() => setExpanded(false)}
         className="text-relic-silver hover:text-relic-slate ml-1"
       >
@@ -126,6 +131,7 @@ export default function ConversationConsole({
 export function InlineConsole({ onVisualize, count }: { onVisualize: () => void; count?: number }) {
   return (
     <button
+      type="button"
       onClick={onVisualize}
       className="inline-flex items-center gap-1 text-[9px] font-mono text-relic-slate hover:text-purple-500 transition-colors"
     >

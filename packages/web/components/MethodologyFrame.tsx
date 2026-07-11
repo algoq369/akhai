@@ -126,6 +126,7 @@ export default function MethodologyFrame({
             >
               {/* Dot */}
               <motion.button
+                type="button"
                 onClick={() => onMethodologyChange(method.id)}
                 className="w-2 h-2 rounded-full transition-all duration-200"
                 style={{
@@ -179,6 +180,7 @@ export default function MethodologyFrame({
           onMouseLeave={() => setHoveredConsole(false)}
         >
           <motion.button
+            type="button"
             onClick={onConsoleToggle}
             className="text-[14px] transition-all duration-200"
             style={{

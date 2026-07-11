@@ -22,6 +22,7 @@ export default function ExtendedThinkingOrb() {
       onMouseLeave={() => setHovered(false)}
     >
       <motion.button
+        type="button"
         onClick={() => setExtendedThinking(!extendedThinking)}
         className="w-2 h-2 rounded-full transition-all duration-200"
         style={{

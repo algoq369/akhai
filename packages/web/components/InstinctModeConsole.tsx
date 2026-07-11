@@ -58,6 +58,7 @@ export function InstinctModeConsole() {
       {/* Sigils Row - Always visible */}
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-400 transition-colors"
         >
@@ -81,6 +82,7 @@ export function InstinctModeConsole() {
 
         {/* Super Saiyan Icon - Toggle all 7 lenses */}
         <button
+          type="button"
           onClick={toggleAllLenses}
           className="transition-opacity hover:opacity-80"
           title={allLensesActive ? "Deactivate all 7 hermetic lenses" : "Activate all 7 hermetic lenses"}
@@ -97,6 +99,7 @@ export function InstinctModeConsole() {
             <div className="flex items-center gap-1.5">
               <span className="text-zinc-500 uppercase tracking-[0.15em] text-[8px]">hermetic lenses</span>
               <button
+                type="button"
                 onClick={toggleAllLenses}
                 className="transition-opacity hover:opacity-80"
                 title={allLensesActive ? "Deactivate all 7 hermetic lenses" : "Activate all 7 hermetic lenses"}
@@ -105,6 +108,7 @@ export function InstinctModeConsole() {
               </button>
             </div>
             <button
+              type="button"
               onClick={() => setIsExpanded(false)}
               className="text-zinc-400 hover:text-zinc-500 transition-colors text-[8px]"
             >
@@ -119,6 +123,7 @@ export function InstinctModeConsole() {
 
             return (
               <button
+                type="button"
                 key={lens.id}
                 onClick={() => toggleLens(lens.id)}
                 className="w-full text-left py-0.5 hover:opacity-80 transition-opacity"
