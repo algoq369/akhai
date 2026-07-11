@@ -36,17 +36,24 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
   // shows the final answer), 'complete'/'error' (pure terminal markers), and extended-thinking chunk events (the
   // live SSE handler intercepts those before pushMetadata, but history-loaded timelines contain
   // them — one per thinking delta). Dedupe: latest event per stage wins, first-occurrence order.
-  const stageOrder: string[] = [];
-  const latestByStage = new Map<string, ThoughtEvent>();
+  // Key by stage+narrative (NOT stage alone): methodologies like tot emit MANY distinct events on
+  // the same stage (each advisor's fallback/response/miss) — latest-per-stage made them overwrite
+  // each other into a single mutating row. Distinct narratives each keep a row; identical re-emits
+  // still collapse. Capped to the last 12 rows so re-fired stages can't build a wall.
+  const rowOrder: string[] = [];
+  const latestByKey = new Map<string, ThoughtEvent>();
   for (const ev of messageTimeline) {
     if (ev.stage === 'generating' || ev.stage === 'complete' || ev.stage === 'error') continue;
     const intent = ev.details?.reasoning?.intent;
     if (intent === 'extended_thinking' || intent === 'thinking_complete') continue;
-    if (!latestByStage.has(ev.stage)) stageOrder.push(ev.stage);
-    latestByStage.set(ev.stage, ev);
+    const key = `${ev.stage}|${ev.details?.narrative ?? ''}`;
+    if (!latestByKey.has(key)) rowOrder.push(key);
+    latestByKey.set(key, ev);
   }
-  const narrativeEntries = stageOrder.map((s) => {
-    const ev = latestByStage.get(s)!;
+  const cappedOrder = rowOrder.slice(-12);
+  const narrativeEntries = cappedOrder.map((k) => {
+    const ev = latestByKey.get(k)!;
+    const s = ev.stage;
     return {
       stage: s,
       narrative: ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s,
@@ -96,7 +103,7 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
             <div className="pt-2 space-y-1">
               {narrativeEntries.map((entry, i) => (
                 <div
-                  key={`${entry.stage}-${i}`}
+                  key={`${entry.stage}|${entry.narrative}`}
                   className="flex items-baseline gap-2 font-mono text-[9px] leading-relaxed text-relic-slate/60 dark:text-relic-silver/55"
                 >
                   <span

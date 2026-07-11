@@ -160,14 +160,9 @@ export default function MetadataStrip({ messageId, isStreaming = false }: Metada
                   )}
               </div>
             )}
-            {/* Live reasoning narrative — generating chunks are NOT shown here: the answer words
-                stream in ONE place, ProcessingIndicator's blue metadata block. Other stages keep
-                their full narrative line. */}
-            {currentMetadata.stage !== 'generating' && currentMetadata.details?.narrative && (
-              <div className="pl-4 text-[9px] text-relic-silver/50 dark:text-relic-slate/40 leading-relaxed italic">
-                {currentMetadata.details.narrative}
-              </div>
-            )}
+            {/* Live narratives are NOT rendered here — all metadata (stage rows, advisor lines,
+                streaming words) lives in ONE place: ProcessingIndicator's blue block. This strip
+                keeps only the compact stage header. */}
             {/* Rich detail line for complete stage */}
             {currentMetadata.details?.tokens && (
               <div className="pl-4 text-[8px] text-relic-silver/60 dark:text-relic-slate/50">
