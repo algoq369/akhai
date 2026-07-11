@@ -106,9 +106,9 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
       >
         <div className="space-y-1">
           {/* Accumulated narrative from completed stages */}
-          {narrativeEntries.map((entry, i) => (
+          {narrativeEntries.map((entry) => (
             <motion.div
-              key={`${entry.stage}-${i}`}
+              key={entry.stage}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.15 }}
