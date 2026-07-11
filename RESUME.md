@@ -105,7 +105,18 @@ DONE:
   until ~mid-Jul — parked upgrade). Verified: superset of intent, ZERO new literals, tiers correct,
   vitest 219 unchanged, SHIELD PASS. Rates UNTOUCHED (E6.1.1).
 
-## FINAL REFINEMENT PLAN (verified 2026-07-10, SHIELD 14/14 on 6d76a8a — engine construction DONE; this is the last mile to frozen core)
+## FINAL REFINEMENT PLAN — ✅ COMPLETE 2026-07-10 (A✅ B✅ C✅ D✅ E✅ — engine DONE, frozen-core-ready)
+RESULTS: A=9cb2bb3 (per-model pricing, 5 copies of flat-Sonnet bug killed; quick-query result col).
+B=eaf9129 (4 surfaces truthful lineup incl. privacy disclosure). C=36451da (LOCK proven live:
+anon/cross-user 404, owner 200; prod-gated diag routes; dead session_id branch removed; Map capped).
+D=vision PROVEN (Sonnet 5 saw a real image, "Blue", HTTP 200 — no code needed). E=eval goldens
+15/15 = quality 100/100 + honesty 2/2 (2026-07-10 official run); vitest 219 pass on Node 24;
+sweep 14/14 (DB-reconstructed). NOTE: eval-bar prints FAIL because ITS vitest runs under the
+Node-22/undici toolchain conflict — false negative, chip filed (run floor vitest on Node 24).
+REMAINING (not engine): E3 Algoq manual pass · end-of-day 8-commit push · Aug 8 hosting decision ·
+Aug 13 official freeze rerun (formality) · F4 launch copy (launch week) · Aug 30 prod freeze · Sep 5 LAUNCH.
+
+## the original plan text (executed):
 A. BUGS (fix first):
    A1 `go rates` — E6.1.1: core sc.ts PROVIDER_RATES is provider-keyed flat-Sonnet ($3/$15 for ALL
       anthropic) → Opus under-billed, Haiku over-billed in metrics. Fix to per-model; VERIFY current
