@@ -69,13 +69,6 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
     detail = verdict === 'pass' ? 'all clear' : verdict;
   }
 
-  // live-words: accumulate the real answer text streamed as coalesced 'generating' events (each
-  // carries only the chunk since the last flush) into a single growing preview.
-  const generatingText = messageTimeline
-    .filter((ev) => ev.stage === 'generating' && ev.details?.narrative)
-    .map((ev) => ev.details?.narrative ?? '')
-    .join('');
-
   // Collect one line per completed pipeline stage (exclude 'generating' — those are the streamed-
   // answer chunks rendered as one growing block below — plus terminal markers and the pulsing
   // current stage). Silent stages (calling/guard/analysis/grounding/…) carry no narrative field:
@@ -162,23 +155,6 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
             )}
           </div>
 
-          {/* live-words: the real answer text streaming in word-by-word — full text, readable,
-              auto-scrolling so the newest words are always in view */}
-          {generatingText && (
-            <div
-              ref={(el) => {
-                if (el) el.scrollTop = el.scrollHeight;
-              }}
-              className="mt-2 border-l-2 border-relic-mist dark:border-relic-slate/30 pl-3 pr-3 font-mono text-[12px] text-relic-void/85 dark:text-relic-silver/75 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto"
-            >
-              {generatingText}
-              <motion.span
-                animate={{ opacity: [1, 0.2, 1] }}
-                transition={{ duration: 0.9, repeat: Infinity }}
-                className="inline-block w-[7px] -mb-[2px] h-[13px] ml-[1px] bg-relic-silver/70 dark:bg-relic-silver/70"
-              />
-            </div>
-          )}
         </div>
       </motion.div>
     </AnimatePresence>
