@@ -169,7 +169,7 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
               ref={(el) => {
                 if (el) el.scrollTop = el.scrollHeight;
               }}
-              className="mt-2 rounded border border-relic-mist/40 dark:border-relic-slate/25 bg-relic-void/[0.02] dark:bg-relic-slate/10 px-3 py-2 font-mono text-[12px] text-relic-void/85 dark:text-relic-silver/75 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto"
+              className="mt-2 border-l-2 border-relic-mist dark:border-relic-slate/30 pl-3 pr-3 font-mono text-[12px] text-relic-void/85 dark:text-relic-silver/75 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto"
             >
               {generatingText}
               <motion.span

@@ -1,11 +1,11 @@
 'use client';
 
 /**
- * ReasoningTrace — reasoning-persist: the live word-by-word reasoning survives query completion
+ * ReasoningTrace — reasoning-persist: the live pipeline reasoning survives query completion
  * as a collapsible block on the message. Reads the SAME persisted side-canal-store timeline the
  * live ProcessingIndicator streamed into (messageMetadata[messageId]) — no new state, no
- * duplication of the answer. Collapsed by default; expands to the pipeline stage narrative lines
- * plus the full streamed answer text. Renders only what the timeline actually holds.
+ * duplication of the answer (the streamed answer text itself is ResponseRenderer's job).
+ * Collapsed by default; expands to the pipeline stage narrative lines only.
  */
 
 import { useState } from 'react';
@@ -30,17 +30,10 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
 
   if (messageTimeline.length === 0) return null;
 
-  // Same derivation as ProcessingIndicator: 'generating' events carry the real streamed answer
-  // chunks (concatenated into one block); every other narrative-bearing event is a stage line.
-  const generatingText = messageTimeline
-    .filter((ev) => ev.stage === 'generating' && ev.details?.narrative)
-    .map((ev) => ev.details?.narrative ?? '')
-    .join('');
-
   // One line per pipeline stage (not just narrative-bearing ones — silent stages like
   // calling/guard/analysis/grounding show their description/label instead of vanishing; labels
-  // only, nothing invented). Excluded: 'generating' (streamed-answer chunks, shown as one block
-  // below), 'complete'/'error' (pure terminal markers), and extended-thinking chunk events (the
+  // only, nothing invented). Excluded: 'generating' (streamed-answer chunks — ResponseRenderer
+  // shows the final answer), 'complete'/'error' (pure terminal markers), and extended-thinking chunk events (the
   // live SSE handler intercepts those before pushMetadata, but history-loaded timelines contain
   // them — one per thinking delta). Dedupe: latest event per stage wins, first-occurrence order.
   const stageOrder: string[] = [];
@@ -62,7 +55,7 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
     };
   });
 
-  if (narrativeEntries.length === 0 && !generatingText) return null;
+  if (narrativeEntries.length === 0) return null;
 
   return (
     <div className="mb-2">
@@ -88,15 +81,9 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
             </span>
           ))}
         </span>
-        {generatingText && (
-          <>
-            <span className="text-relic-ghost dark:text-relic-slate/40">·</span>
-            <span>{generatingText.length.toLocaleString()} chars</span>
-          </>
-        )}
       </button>
 
-      {/* Expanded: stage narrative lines + the full streamed answer text */}
+      {/* Expanded: stage narrative lines */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -128,16 +115,6 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
                 </div>
               ))}
 
-              {generatingText && (
-                <>
-                  <div className="mt-2 font-mono text-[8px] uppercase tracking-wider text-relic-slate/50 dark:text-relic-silver/45">
-                    streamed output
-                  </div>
-                  <div className="mt-1 rounded border border-relic-mist/40 dark:border-relic-slate/25 bg-relic-void/[0.02] dark:bg-relic-slate/10 px-3 py-2 font-mono text-[12px] text-relic-void/85 dark:text-relic-silver/75 leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto">
-                    {generatingText}
-                  </div>
-                </>
-              )}
             </div>
           </motion.div>
         )}
