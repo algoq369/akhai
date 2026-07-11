@@ -69,6 +69,17 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
     detail = verdict === 'pass' ? 'all clear' : verdict;
   }
 
+  // live words — the answer streaming, accumulated from chunk events into flowing text.
+  // This BLUE metadata block is the ONE place the words appear (moved from MetadataStrip's FUSION).
+  const liveWords =
+    stage === 'generating'
+      ? messageTimeline
+          .filter((ev) => ev.stage === 'generating' && ev.details?.narrative)
+          .map((ev) => ev.details?.narrative ?? '')
+          .join('')
+          .slice(-400)
+      : '';
+
   // Collect one line per completed pipeline stage (exclude 'generating' — those are the streamed-
   // answer chunks rendered as one growing block below — plus terminal markers and the pulsing
   // current stage). Silent stages (calling/guard/analysis/grounding/…) carry no narrative field:
@@ -155,6 +166,12 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
             )}
           </div>
 
+          {/* the answer words flowing live, inside the metadata block */}
+          {liveWords && (
+            <div className="pl-[18px] font-mono text-[9px] italic leading-relaxed text-relic-silver/60 dark:text-relic-silver/55 whitespace-pre-wrap">
+              {liveWords}
+            </div>
+          )}
         </div>
       </motion.div>
     </AnimatePresence>

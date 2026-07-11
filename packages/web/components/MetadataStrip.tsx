@@ -160,24 +160,14 @@ export default function MetadataStrip({ messageId, isStreaming = false }: Metada
                   )}
               </div>
             )}
-            {/* Live reasoning narrative — for 'generating' each event carries only the chunk since
-                the last flush, so accumulate them into flowing text (tail-bounded) instead of showing
-                a single delta that jumps between fragments; other stages carry a full narrative. */}
-            {(() => {
-              const liveNarrative =
-                currentMetadata.stage === 'generating'
-                  ? messageTimeline
-                      .filter((e) => e.stage === 'generating' && e.details?.narrative)
-                      .map((e) => e.details?.narrative ?? '')
-                      .join('')
-                      .slice(-260)
-                  : currentMetadata.details?.narrative;
-              return liveNarrative ? (
-                <div className="pl-4 text-[9px] text-relic-silver/50 dark:text-relic-slate/40 leading-relaxed italic">
-                  {liveNarrative}
-                </div>
-              ) : null;
-            })()}
+            {/* Live reasoning narrative — generating chunks are NOT shown here: the answer words
+                stream in ONE place, ProcessingIndicator's blue metadata block. Other stages keep
+                their full narrative line. */}
+            {currentMetadata.stage !== 'generating' && currentMetadata.details?.narrative && (
+              <div className="pl-4 text-[9px] text-relic-silver/50 dark:text-relic-slate/40 leading-relaxed italic">
+                {currentMetadata.details.narrative}
+              </div>
+            )}
             {/* Rich detail line for complete stage */}
             {currentMetadata.details?.tokens && (
               <div className="pl-4 text-[8px] text-relic-silver/60 dark:text-relic-slate/50">
