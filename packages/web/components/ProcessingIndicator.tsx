@@ -19,6 +19,18 @@ interface ProcessingIndicatorProps {
 
 const EMPTY_TIMELINE: ThoughtEvent[] = [];
 
+
+// Row text sanitizer: advisor excerpts arrive as raw markdown (headings, bold, table pipes) which
+// breaks the clean one-line metadata look; rows show plain prose. Display-only — no data changes.
+function cleanRowText(t: string): string {
+  return t
+    .replace(/[#*_`>]+/g, '')
+    .replace(/\|/g, ' ')
+    .replace(/-{3,}/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export const STAGE_DESCRIPTIONS: Record<string, string> = {
   received: 'Analyzing query...',
   routing: 'Selecting methodology...',
@@ -109,7 +121,7 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
     const s = ev.stage;
     return {
       stage: s,
-      narrative: ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s,
+      narrative: cleanRowText(ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s),
       // Unknown stages (e.g. 'grounding' has no STAGE_META entry) show their own name, not a wrong sigil label
       meta: STAGE_META[s] || { symbol: '⊹', label: s, color: '#64748b' },
     };

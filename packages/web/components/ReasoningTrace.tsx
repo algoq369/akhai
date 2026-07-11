@@ -20,6 +20,18 @@ interface ReasoningTraceProps {
 }
 
 // Stable empty array to prevent Zustand re-render loop
+
+// Row text sanitizer: advisor excerpts arrive as raw markdown (headings, bold, table pipes) which
+// breaks the clean one-line metadata look; rows show plain prose. Display-only — no data changes.
+function cleanRowText(t: string): string {
+  return t
+    .replace(/[#*_`>]+/g, '')
+    .replace(/\|/g, ' ')
+    .replace(/-{3,}/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 const EMPTY_TIMELINE: ThoughtEvent[] = [];
 
 export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactElement | null {
@@ -56,7 +68,7 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
     const s = ev.stage;
     return {
       stage: s,
-      narrative: ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s,
+      narrative: cleanRowText(ev.details?.narrative ?? STAGE_DESCRIPTIONS[s] ?? s),
       // Unknown stages (e.g. 'grounding' has no STAGE_META entry) show their own name
       meta: STAGE_META[s] || { symbol: '⊹', label: s, color: '#64748b' },
     };
@@ -118,7 +130,7 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
                   >
                     {entry.meta.label}
                   </span>
-                  <span className="italic">{entry.narrative}</span>
+                  <span className="italic truncate">{entry.narrative}</span>
                 </div>
               ))}
 
