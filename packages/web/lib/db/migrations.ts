@@ -223,6 +223,24 @@ export function migrateAddRawThinkingColumn() {
 }
 
 /**
+ * Migration: Add tier column to users table (monetization: free/pro/legend daily budgets)
+ */
+export function migrateAddUserTier() {
+  try {
+    const tableInfo = db.prepare('PRAGMA table_info(users)').all() as Array<{ name: string }>;
+    const hasTier = tableInfo.some((col) => col.name === 'tier');
+
+    if (!hasTier) {
+      db.exec("ALTER TABLE users ADD COLUMN tier TEXT NOT NULL DEFAULT 'free'");
+      log('INFO', 'DB_MIGRATIONS', 'Added tier column to users table');
+    }
+  } catch (error) {
+    console.error('[Migration Error] Failed to add tier column:', error);
+    throw error; // budgets depend on this column — fail loudly, not silently
+  }
+}
+
+/**
  * Run all migrations. Called from database.ts on module load.
  */
 export function runMigrations() {
@@ -236,6 +254,7 @@ export function runMigrations() {
     migrateAddRawThinkingColumn();
     migrateCreateArborealThreads();
     migrateDropArborealQueryFk();
+    migrateAddUserTier();
   } catch (error) {
     console.error('[Migration Failed]', error);
   }

@@ -12,6 +12,7 @@ export interface User {
   avatar_url: string | null;
   auth_provider: 'github' | 'wallet';
   auth_id: string;
+  tier: 'free' | 'pro' | 'legend';
   created_at: number;
   updated_at: number;
 }
@@ -176,7 +177,7 @@ export function validateSession(token: string): User | null {
         .prepare(
           `
         SELECT s.id as session_id, s.user_id, s.token, s.expires_at, s.created_at as session_created_at,
-               u.id, u.username, u.email, u.avatar_url, u.auth_provider, u.auth_id, u.created_at, u.updated_at
+               u.id, u.username, u.email, u.avatar_url, u.auth_provider, u.auth_id, u.tier, u.created_at, u.updated_at
         FROM sessions s
         JOIN users u ON s.user_id = u.id
         WHERE s.token = ? AND s.expires_at > strftime('%s', 'now')
@@ -195,6 +196,7 @@ export function validateSession(token: string): User | null {
             avatar_url: string | null;
             auth_provider: 'github' | 'wallet';
             auth_id: string;
+            tier: 'free' | 'pro' | 'legend';
             created_at: number;
             updated_at: number;
           }
@@ -217,6 +219,7 @@ export function validateSession(token: string): User | null {
       avatar_url: session.avatar_url,
       auth_provider: session.auth_provider,
       auth_id: session.auth_id,
+      tier: session.tier,
       created_at: session.created_at,
       updated_at: session.updated_at,
     };

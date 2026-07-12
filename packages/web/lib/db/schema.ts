@@ -12,6 +12,7 @@ export const SCHEMA_SQL = `
     avatar_url TEXT,
     auth_provider TEXT NOT NULL,
     auth_id TEXT NOT NULL,
+    tier TEXT NOT NULL DEFAULT 'free',
     created_at INTEGER DEFAULT (strftime('%s', 'now')),
     updated_at INTEGER DEFAULT (strftime('%s', 'now')),
     UNIQUE(auth_provider, auth_id)

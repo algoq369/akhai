@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, log } from '@/lib/logger';
 import { withRetry } from '@/lib/retry';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { checkBudget, usageSnapshot } from '@/lib/token-budget';
 import {
   checkCryptoQuery,
   getMethodologyPrompt,
@@ -265,8 +266,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ...cryptoResult, queryId });
     }
 
+    // ========== DAILY TOKEN BUDGET (limits) ==========
+    // Sits AFTER the cache checks + $0 crypto path (those never consume budget) and BEFORE every
+    // paid call: the tot branch, the react agent, sc multipath, and the standard provider call all
+    // run below this line. Anonymous users pass through — they are routed to the free model only.
+    const budget = checkBudget(user);
+    if (!budget.allowed) {
+      return NextResponse.json(
+        {
+          error: 'daily_budget_exceeded',
+          message: `You've used your daily ${(budget.budget ?? 0).toLocaleString()} tokens on the ${budget.tier} plan — resets at midnight UTC. Upgrade for more.`,
+          used: budget.used,
+          budget: budget.budget,
+          tier: budget.tier,
+        },
+        { status: 402 }
+      );
+    }
+
     // ========== TOT ROUTE ==========
-    if (selectedMethod.id === 'tot') {
+    // Anonymous policy: tot's synthesis runs on Anthropic — signed-out users skip the consensus
+    // branch and fall through to standard processing on the free model instead.
+    if (selectedMethod.id === 'tot' && userId) {
       log('INFO', 'TOT', 'Routing to GTP Flash consensus endpoint');
 
       // tot proxies to /api/tot-consensus as one blocking request that streams nothing back, so
@@ -334,6 +355,8 @@ export async function POST(request: NextRequest) {
           queryId,
           guardResult,
           sideCanal: { contextInjected: false, suggestions: [] },
+          // limits: fresh post-query numbers so the UI can show a meter later
+          usage: usageSnapshot(user),
         });
       } catch (gtpError) {
         log(
@@ -352,6 +375,13 @@ export async function POST(request: NextRequest) {
     );
     let selectedProvider = providerSpec.provider;
     let usedModel = providerSpec.model;
+
+    // Anonymous policy (limits): signed-out queries run on the free OpenRouter model only —
+    // $0 COGS, Anthropic never consumed. Signed-in users keep the methodology's provider.
+    if (!userId) {
+      selectedProvider = 'openrouter';
+      usedModel = MODELS.free;
+    }
     const originalProvider = selectedProvider;
 
     if (!validateProviderApiKey(selectedProvider)) {
@@ -570,7 +600,9 @@ export async function POST(request: NextRequest) {
       // honest outage degradation (real Brave-429 test), full cost recording (COGS). Escape hatch:
       // REACT_AGENT_LIVE=0 restores the knowledge-recall prompt instantly (PM2 env + restart).
       // Search quota (Brave 2k/mo free) rides the Aug-8 hosting/SearXNG decision.
-      if (selectedMethod.id === 'react' && process.env.REACT_AGENT_LIVE !== '0') {
+      // Anonymous policy (limits): the live agent runs on Anthropic — signed-out users skip it
+      // and take the standard path on the free model instead.
+      if (selectedMethod.id === 'react' && process.env.REACT_AGENT_LIVE !== '0' && userId) {
         // Live ReAct agent (S2.2) — feature-gated, default OFF. Flag-off keeps prod byte-identical.
         emitAndPersist(queryId, {
           id: `${queryId}-react-agent`,
@@ -801,16 +833,11 @@ export async function POST(request: NextRequest) {
       logger.query.apiError(selectedProvider.toUpperCase(), (apiError as Error).message);
       log('ERROR', 'API', `Provider ${selectedProvider} failed: ${(apiError as Error).message}`);
 
-      // Try ALL remaining providers in fallback chain
-      const allProviders: ProviderFamily[] = [
-        'anthropic',
-        'openrouter',
-        'groq',
-        'google',
-        'deepseek',
-        'mistral',
-        'xai',
-      ];
+      // Try ALL remaining providers in fallback chain (anonymous stays on the free lane only —
+      // a signed-out query must never fall back onto a paid provider)
+      const allProviders: ProviderFamily[] = userId
+        ? ['anthropic', 'openrouter', 'groq', 'google', 'deepseek', 'mistral', 'xai']
+        : ['openrouter'];
       const triedProviders = new Set([selectedProvider]);
       let fallbackSucceeded = false;
 
@@ -1054,7 +1081,8 @@ export async function POST(request: NextRequest) {
           : responseData.gnostic,
       });
 
-    return NextResponse.json(responseData);
+    // limits: fresh post-query numbers so the UI can show a meter later (additive field)
+    return NextResponse.json({ ...responseData, usage: usageSnapshot(user) });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : 'no stack';
