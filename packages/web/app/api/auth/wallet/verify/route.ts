@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateWallet, generateWalletMessage } from '@/lib/auth';
+import { authenticateWallet } from '@/lib/auth';
 import { AuthWalletVerifySchema } from '@/lib/route-schemas';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/auth/wallet/verify
- * Verify wallet signature and create session
+ * Verify the EIP-191 wallet signature + single-use nonce and mint a session. All verification
+ * lives in authenticateWallet (real signature recovery + nonce anti-replay, wallet-verify B1);
+ * any failure throws and is returned as 401.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -18,20 +20,15 @@ export async function POST(request: NextRequest) {
       );
     }
     const { address, signature, message } = parsed.data;
-    // Extract timestamp from received message to regenerate expected message
-    const timestampMatch = message.match(/Timestamp: (\d+)/);
-    const timestamp = timestampMatch ? parseInt(timestampMatch[1]) : Date.now();
 
-    // Regenerate expected message with the same timestamp
-    const expectedMessage = `Sign this message to authenticate with AkhAI.\n\nAddress: ${address}\nTimestamp: ${timestamp}`;
-    if (message !== expectedMessage) {
-      return NextResponse.json(
-        { error: 'Invalid message format', details: 'Message does not match expected format' },
-        { status: 400 }
-      );
+    let user, session;
+    try {
+      ({ user, session } = authenticateWallet(address, signature, message));
+    } catch {
+      // Signature/nonce failure — do not leak which check failed.
+      return NextResponse.json({ error: 'Wallet authentication failed' }, { status: 401 });
     }
 
-    const { user, session } = authenticateWallet(address, signature, message);
     // Set session cookie
     const response = NextResponse.json({
       success: true,

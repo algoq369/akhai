@@ -241,6 +241,23 @@ export function migrateAddUserTier() {
 }
 
 /**
+ * Migration: Create wallet_nonces table for single-use anti-replay wallet-login challenges
+ */
+export function migrateCreateWalletNonces() {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS wallet_nonces (
+        nonce TEXT PRIMARY KEY,
+        address TEXT NOT NULL,
+        created_at INTEGER DEFAULT (strftime('%s', 'now'))
+      )
+    `);
+  } catch (error) {
+    console.error('[Migration Error] Failed to create wallet_nonces table:', error);
+  }
+}
+
+/**
  * Run all migrations. Called from database.ts on module load.
  */
 export function runMigrations() {
@@ -255,6 +272,7 @@ export function runMigrations() {
     migrateCreateArborealThreads();
     migrateDropArborealQueryFk();
     migrateAddUserTier();
+    migrateCreateWalletNonces();
   } catch (error) {
     console.error('[Migration Failed]', error);
   }

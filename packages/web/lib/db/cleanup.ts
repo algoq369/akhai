@@ -3,6 +3,7 @@ import { log } from '@/lib/logger';
 import {
   cleanExpiredSessions as _cleanExpiredSessions,
   cleanupExpiredPKCEVerifiers as _cleanupExpiredPKCEVerifiers,
+  cleanupExpiredWalletNonces as _cleanupExpiredWalletNonces,
 } from '@/lib/db/auth';
 
 // ============================================
@@ -129,6 +130,9 @@ function runCleanupTasks(): void {
 
     // 3. Clean expired PKCE verifiers
     const expiredPKCE = _cleanupExpiredPKCEVerifiers();
+
+    // 4. Clean expired wallet-login nonces (unredeemed challenges)
+    _cleanupExpiredWalletNonces();
 
     log('INFO', 'DB_CLEANUP', `Completed: ${staleQueries} stale queries, ${expiredPKCE} expired PKCE verifiers`);
   } catch (error) {

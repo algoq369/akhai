@@ -428,3 +428,39 @@ export function cleanupExpiredPKCEVerifiers(): number {
   const result = stmt.run(tenMinutesAgo);
   return result.changes;
 }
+
+// ============================================
+// WALLET NONCES — single-use anti-replay challenges for EIP-191 login (wallet-verify B1)
+// ============================================
+
+/** Store a freshly issued wallet-login nonce bound to an address. */
+export function saveWalletNonce(nonce: string, address: string): void {
+  db.prepare(
+    `INSERT OR REPLACE INTO wallet_nonces (nonce, address, created_at)
+     VALUES (?, ?, strftime('%s', 'now'))`
+  ).run(nonce, address.toLowerCase());
+}
+
+/**
+ * Atomically fetch AND delete a nonce (single-use). Returns its record or null if unknown.
+ * Deletion inside the read transaction guarantees a nonce can be consumed at most once, even
+ * under concurrent verify requests.
+ */
+export function consumeWalletNonce(
+  nonce: string
+): { address: string; createdAt: number } | null {
+  const tx = db.transaction((n: string) => {
+    const row = db
+      .prepare(`SELECT address, created_at AS createdAt FROM wallet_nonces WHERE nonce = ?`)
+      .get(n) as { address: string; createdAt: number } | undefined;
+    if (row) db.prepare(`DELETE FROM wallet_nonces WHERE nonce = ?`).run(n);
+    return row ?? null;
+  });
+  return tx(nonce);
+}
+
+/** Clean up expired wallet nonces (older than 10 minutes). */
+export function cleanupExpiredWalletNonces(): number {
+  const tenMinutesAgo = Math.floor(Date.now() / 1000) - 10 * 60;
+  return db.prepare(`DELETE FROM wallet_nonces WHERE created_at < ?`).run(tenMinutesAgo).changes;
+}

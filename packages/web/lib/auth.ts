@@ -17,7 +17,12 @@ import {
   deletePKCEVerifier,
   cleanupExpiredPKCEVerifiers,
 } from './database';
+import { saveWalletNonce, consumeWalletNonce } from '@/lib/db/auth';
 import { randomBytes } from 'crypto';
+import { verifyMessage } from 'ethers';
+
+// Wallet-login challenge lifetime — a nonce must be redeemed within this window (wallet-verify B1).
+const WALLET_NONCE_TTL_SECONDS = 5 * 60;
 
 const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
@@ -107,47 +112,75 @@ export async function handleGitHubCallback(
  * Wallet Authentication
  */
 
-/**
- * Generate message for wallet signature
- */
-export function generateWalletMessage(address: string): string {
-  const timestamp = Date.now();
-  return `Sign this message to authenticate with AkhAI.\n\nAddress: ${address}\nTimestamp: ${timestamp}`;
+/** Exact challenge template — the signed message must equal this for the issued nonce. */
+function walletChallengeMessage(address: string, nonce: string): string {
+  return `Sign this message to authenticate with AkhAI.\n\nAddress: ${address}\nNonce: ${nonce}`;
 }
 
 /**
- * Verify wallet signature (simplified - in production, use proper EIP-191 verification)
+ * Issue a wallet-login challenge: mint a single-use server nonce, persist it bound to the
+ * address, and return the message for the wallet to sign. The nonce (not a client timestamp)
+ * is the anti-replay primitive — it is deleted on use and expires in 5 minutes.
+ */
+export function issueWalletChallenge(address: string): string {
+  const nonce = randomBytes(16).toString('hex');
+  saveWalletNonce(nonce, address);
+  return walletChallengeMessage(address, nonce);
+}
+
+/**
+ * Real EIP-191 verification: recover the signer from (message, signature) and confirm it
+ * matches the claimed address. Case-insensitive (checksum vs lowercase). Returns false on any
+ * malformed input rather than throwing. (Was a stub returning true — B1 full auth bypass.)
  */
 export function verifyWalletSignature(
   address: string,
   signature: string,
   message: string
 ): boolean {
-  // In production, use ethers.js or web3.js to properly verify EIP-191 signatures
-  // For now, this is a placeholder that accepts any signature
-  // TODO: Implement proper signature verification
-  return true;
+  try {
+    const recovered = verifyMessage(message, signature);
+    return recovered.toLowerCase() === address.toLowerCase();
+  } catch {
+    return false;
+  }
 }
 
 /**
- * Authenticate with wallet
+ * Authenticate with wallet: signature must recover to the claimed address AND the message must
+ * carry a valid, unexpired, single-use nonce bound to that address. Throws on any failure —
+ * the login route maps a throw to 401.
  */
 export function authenticateWallet(
   address: string,
   signature: string,
   message: string
 ): { user: User; session: { token: string } } {
-  // Verify signature
+  // 1. EIP-191: the signature must actually be from this address.
   if (!verifyWalletSignature(address, signature, message)) {
     throw new Error('Invalid wallet signature');
   }
 
-  // Create or get user
+  // 2. Anti-replay: the message must contain a server nonce we issued, unused and unexpired,
+  //    for this exact address — and the full message must match the challenge template so a
+  //    valid signature over arbitrary content can't be repurposed.
+  const nonce = message.match(/Nonce: ([a-f0-9]+)/)?.[1];
+  if (!nonce) throw new Error('Invalid wallet signature');
+  if (message !== walletChallengeMessage(address, nonce)) {
+    throw new Error('Invalid wallet signature');
+  }
+  const record = consumeWalletNonce(nonce); // single-use: fetched and deleted atomically
+  if (!record || record.address.toLowerCase() !== address.toLowerCase()) {
+    throw new Error('Invalid wallet signature');
+  }
+  if (Math.floor(Date.now() / 1000) - record.createdAt > WALLET_NONCE_TTL_SECONDS) {
+    throw new Error('Wallet challenge expired');
+  }
+
+  // 3. Mint the session.
   const user = createOrGetUser('wallet', address.toLowerCase(), {
     username: `${address.slice(0, 6)}...${address.slice(-4)}`,
   });
-
-  // Create session
   const session = createSession(user.id, SESSION_DURATION_SECONDS);
 
   return {

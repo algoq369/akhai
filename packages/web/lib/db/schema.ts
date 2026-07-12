@@ -171,6 +171,13 @@ export const SCHEMA_SQL = `
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
+  -- Wallet nonces: single-use anti-replay challenges for EIP-191 wallet login (wallet-verify B1)
+  CREATE TABLE IF NOT EXISTS wallet_nonces (
+    nonce TEXT PRIMARY KEY,
+    address TEXT NOT NULL,
+    created_at INTEGER DEFAULT (strftime('%s', 'now'))
+  );
+
   -- Grimoires: Persistent workspaces with memory
   CREATE TABLE IF NOT EXISTS grimoires (
     id TEXT PRIMARY KEY,

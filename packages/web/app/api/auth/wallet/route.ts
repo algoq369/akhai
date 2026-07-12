@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthWalletSchema } from '@/lib/route-schemas';
+import { issueWalletChallenge } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/auth/wallet
- * Initiate wallet authentication - returns message to sign
- * NOTE: generateWalletMessage inlined here to avoid loading database.ts at module init
+ * Initiate wallet authentication — issues a single-use server nonce and returns the message to
+ * sign. The nonce is persisted server-side (wallet-verify B1 anti-replay); the client relays the
+ * returned message verbatim to /api/auth/wallet/verify.
  */
-function generateWalletMessage(address: string): string {
-  const timestamp = Date.now();
-  return `Sign this message to authenticate with AkhAI.\n\nAddress: ${address}\nTimestamp: ${timestamp}`;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const parsed = AuthWalletSchema.safeParse(await request.json());
@@ -24,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
     const { address } = parsed.data;
 
-    const message = generateWalletMessage(address);
+    const message = issueWalletChallenge(address);
 
     return NextResponse.json({
       message,
