@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { logger, log } from '@/lib/logger';
 import { withRetry } from '@/lib/retry';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -54,6 +55,8 @@ import { buildSourcesSection, citationCoverage } from '@/lib/citation-check';
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   let queryId: string = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+  // observability: methodology tag for error capture (never the query text)
+  let methodologyTag = 'auto';
 
   try {
     // Rate limiting
@@ -94,6 +97,7 @@ export async function POST(request: NextRequest) {
     const instinctConfig = rawInstinctConfig
       ? { ...rawInstinctConfig, enabled: instinctMode === true }
       : undefined;
+    methodologyTag = methodology || 'auto';
 
     // Use client-provided queryId if available (enables live SSE), otherwise generate
     queryId = clientQueryId || crypto.randomUUID().replace(/-/g, '').slice(0, 8);
@@ -394,6 +398,15 @@ export async function POST(request: NextRequest) {
 
       if (!validateProviderApiKey(selectedProvider)) {
         logger.query.apiError('MULTI-PROVIDER', 'No provider API keys configured');
+        // failed-status: this error RESPONSE returns inside the try — without this marker the
+        // row sits 'pending' until the hourly stale-scavenger finds it (the 22:14 bug class)
+        try {
+          updateQuery(
+            queryId,
+            { status: 'failed', result: JSON.stringify({ error: 'No provider API keys configured' }) },
+            userId
+          );
+        } catch {}
         return NextResponse.json(
           {
             error: 'No AI provider API keys configured. Please add provider API keys to .env.local',
@@ -878,6 +891,22 @@ export async function POST(request: NextRequest) {
         const isCredit = creditKeywords.some((k) =>
           (apiError as Error).message?.toLowerCase().includes(k)
         );
+        // failed-status: THE 22:14 bug — this error RESPONSE returns inside the try, so the
+        // outer catch's status update never ran and the row sat 'pending' until the hourly
+        // stale-scavenger flipped it. Mark the terminal failure at failure time instead.
+        try {
+          updateQuery(
+            queryId,
+            {
+              status: 'failed',
+              result: JSON.stringify({ error: (apiError as Error).message?.slice(0, 500) || 'All providers failed' }),
+            },
+            userId
+          );
+        } catch {}
+        Sentry.captureException(apiError, {
+          tags: { queryId, methodology: methodologyTag, path: 'all-providers-failed' },
+        });
         return NextResponse.json(
           {
             error: isCredit
@@ -1090,6 +1119,8 @@ export async function POST(request: NextRequest) {
 
     logger.system.error(errorMessage);
     log('ERROR', 'API', `Error details`, { errorName, errorMessage, errorStack, queryId });
+    // observability: capture with identifiers only — queryId + methodology, never the query text
+    Sentry.captureException(error, { tags: { queryId, methodology: methodologyTag } });
 
     // Emit: error
     try {
@@ -1105,7 +1136,8 @@ export async function POST(request: NextRequest) {
       /* don't fail on emit error */
     }
 
-    // Update query status to error
+    // Update query status to failed (terminal — matches the stale-scavenger's vocabulary;
+    // 'error' vs 'failed' was a split status taxonomy for the same condition)
     try {
       const token = request.cookies.get('session_token')?.value;
       const user = token ? getUserFromSession(token) : null;
@@ -1113,7 +1145,7 @@ export async function POST(request: NextRequest) {
       updateQuery(
         queryId,
         {
-          status: 'error',
+          status: 'failed',
           result: JSON.stringify({ error: errorMessage }),
         },
         userId

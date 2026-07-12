@@ -195,7 +195,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
           return;
         }
 
-        if (data.status === 'error') {
+        if (data.status === 'error' || data.status === 'failed') {
           const errorMessage: Message = {
             id: generateId(),
             role: 'assistant',
