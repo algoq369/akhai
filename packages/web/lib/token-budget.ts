@@ -1,6 +1,7 @@
 import 'server-only';
 import { db } from '@/lib/database';
 import type { User } from '@/lib/db/auth';
+import { getCreditBalance } from '@/lib/subscription';
 
 /**
  * limits: daily token budgets per tier (monetization v3).
@@ -55,6 +56,11 @@ export interface BudgetCheck {
   used: number;
   budget: number | null; // null = unlimited
   tier: Tier | 'anonymous';
+  // payment-chain B3: which pool this request draws from. 'credits' means the daily tier budget
+  // is already exhausted and the request is covered by the purchased overflow pool — the caller
+  // must debit creditsRemaining by the query's tokens_used once it completes.
+  source: 'tier' | 'credits';
+  creditsRemaining?: number;
 }
 
 /** usage{} field for successful query responses (no `allowed` flag — it succeeded). */
@@ -62,21 +68,32 @@ export function usageSnapshot(user: User | null): {
   used: number;
   budget: number | null;
   tier: Tier | 'anonymous';
+  source: 'tier' | 'credits';
+  creditsRemaining?: number;
 } {
-  const { used, budget, tier } = checkBudget(user);
-  return { used, budget, tier };
+  const { used, budget, tier, source, creditsRemaining } = checkBudget(user);
+  return { used, budget, tier, source, creditsRemaining };
 }
 
-/** Pure read — no side effects. Anonymous users are allowed (they only ever hit $0 paths). */
+/**
+ * Pure read — no side effects. Anonymous users are allowed (they only ever hit $0 paths).
+ * Enforcement order: daily tier budget first; when that is exhausted, fall back to the purchased
+ * credit pool (payment-chain B3). A 402 (allowed:false) fires only when BOTH are empty.
+ */
 export function checkBudget(user: User | null): BudgetCheck {
   const tier = getTierFor(user);
   if (tier === 'anonymous') {
-    return { allowed: true, used: 0, budget: null, tier };
+    return { allowed: true, used: 0, budget: null, tier, source: 'tier' };
   }
   const budget = TIER_BUDGETS[tier];
   const used = getDailyUsage(user!.id);
-  if (budget === null) {
-    return { allowed: true, used, budget, tier };
+  if (budget === null || used < budget) {
+    return { allowed: true, used, budget, tier, source: 'tier' };
   }
-  return { allowed: used < budget, used, budget, tier };
+  // Over the daily tier budget — spend from purchased credits if any remain.
+  const creditsRemaining = getCreditBalance(user!.id);
+  if (creditsRemaining > 0) {
+    return { allowed: true, used, budget, tier, source: 'credits', creditsRemaining };
+  }
+  return { allowed: false, used, budget, tier, source: 'tier', creditsRemaining: 0 };
 }

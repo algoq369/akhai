@@ -14,9 +14,12 @@ import {
   getSubscriptionByStripeCustomer,
   updateSubscriptionStatus,
   recordPayment,
+  planIdToTier,
+  markWebhookEventProcessed,
   TOKEN_CREDIT_TIERS,
   type Tier,
 } from '@/lib/subscription';
+import { setUserTier } from '@/lib/db/auth';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -56,8 +59,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Handle the event
+  // Idempotency (payment-chain): Stripe retries webhooks — process each event.id at most once so
+  // a retry can't double-grant tier/credits. First-seen proceeds; duplicates ack without effect.
+  if (!markWebhookEventProcessed(event.id)) {
+    log('INFO', 'STRIPE_WEBHOOK', `Duplicate event ignored: ${event.id} (${event.type})`);
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   try {
+    await handleStripeEvent(event);
+    return NextResponse.json({ received: true });
+  } catch (error: any) {
+    console.error(`[Webhook] Error processing ${event.type}:`, error);
+    return NextResponse.json({ error: `Webhook handler failed: ${error.message}` }, { status: 500 });
+  }
+}
+
+/**
+ * Process a verified Stripe event (entitlement side-effects). Extracted so it can be driven by a
+ * test harness with a crafted event object without a real signature (payment-chain proofs).
+ */
+export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
+  {
     switch (event.type) {
       // ============================================
       // SUBSCRIPTION EVENTS
@@ -86,6 +109,10 @@ export async function POST(request: NextRequest) {
             currentPeriodStart: subscription.current_period_start,
             currentPeriodEnd: subscription.current_period_end,
           });
+
+          // payment-chain B4: raise the ENFORCED tier (users.tier) — this is what checkBudget reads.
+          // Without it the subscriptions row updated but the daily budget stayed at free 50K.
+          setUserTier(userId, planIdToTier(planId));
 
           // Record payment
           await recordPayment({
@@ -184,6 +211,9 @@ export async function POST(request: NextRequest) {
             currentPeriodEnd: subscription.current_period_end,
           });
 
+          // payment-chain B4: keep the enforced tier in sync with the (possibly changed) plan.
+          setUserTier(existingSub.userId, planIdToTier(planId));
+
           log('INFO', 'STRIPE_WEBHOOK', `Subscription updated in DB: ${subscription.id} | Plan: ${planId}`);
         } else {
           console.warn(`[Webhook] Subscription updated but not found in DB: ${subscription.id}`);
@@ -195,12 +225,15 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
+        // Resolve the user BEFORE downgrading the subscription row (cancel doesn't clear user_id).
+        const existingSub = await getSubscriptionByStripeCustomer(customerId);
+
         // Downgrade to free plan, remove subscription_id, set limits to 3
         await cancelSubscriptionByStripeCustomer(customerId);
 
-        // Track subscription canceled
-        const existingSub = await getSubscriptionByStripeCustomer(customerId);
+        // payment-chain B4: revert the ENFORCED tier to free so the daily budget drops back to 50K.
         if (existingSub) {
+          setUserTier(existingSub.userId, 'free');
           trackServerEvent('subscription_canceled', existingSub.userId, {
             subscription_id: subscription.id,
             customer_id: customerId,
@@ -307,13 +340,5 @@ export async function POST(request: NextRequest) {
       default:
         log('INFO', 'STRIPE_WEBHOOK', `Unhandled event type: ${event.type}`);
     }
-
-    return NextResponse.json({ received: true });
-  } catch (error: any) {
-    console.error(`[Webhook] Error processing ${event.type}:`, error);
-    return NextResponse.json(
-      { error: `Webhook handler failed: ${error.message}` },
-      { status: 500 }
-    );
   }
 }

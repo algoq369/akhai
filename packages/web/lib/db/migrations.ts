@@ -258,6 +258,22 @@ export function migrateCreateWalletNonces() {
 }
 
 /**
+ * Migration: Create processed_webhook_events table for Stripe webhook idempotency
+ */
+export function migrateCreateWebhookEvents() {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS processed_webhook_events (
+        event_id TEXT PRIMARY KEY,
+        processed_at INTEGER DEFAULT (strftime('%s', 'now'))
+      )
+    `);
+  } catch (error) {
+    console.error('[Migration Error] Failed to create processed_webhook_events table:', error);
+  }
+}
+
+/**
  * Run all migrations. Called from database.ts on module load.
  */
 export function runMigrations() {
@@ -273,6 +289,7 @@ export function runMigrations() {
     migrateDropArborealQueryFk();
     migrateAddUserTier();
     migrateCreateWalletNonces();
+    migrateCreateWebhookEvents();
   } catch (error) {
     console.error('[Migration Failed]', error);
   }

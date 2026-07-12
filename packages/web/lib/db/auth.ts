@@ -430,6 +430,21 @@ export function cleanupExpiredPKCEVerifiers(): number {
 }
 
 // ============================================
+// TIER — the enforced entitlement column checkBudget reads (payment-chain B4)
+// ============================================
+
+/**
+ * Set a user's enforced tier. Written by the Stripe subscription webhook so paid plans actually
+ * raise the daily budget (was: nothing wrote users.tier, so paid users stayed capped at free).
+ */
+export function setUserTier(userId: string, tier: 'free' | 'pro' | 'legend'): void {
+  db.prepare(`UPDATE users SET tier = ?, updated_at = strftime('%s', 'now') WHERE id = ?`).run(
+    tier,
+    userId
+  );
+}
+
+// ============================================
 // WALLET NONCES — single-use anti-replay challenges for EIP-191 login (wallet-verify B1)
 // ============================================
 

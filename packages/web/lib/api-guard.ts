@@ -23,10 +23,12 @@ function budgetExceeded(budget: ReturnType<typeof checkBudget>): NextResponse {
   return NextResponse.json(
     {
       error: 'daily_budget_exceeded',
-      message: `You've used your daily ${(budget.budget ?? 0).toLocaleString()} tokens on the ${budget.tier} plan — resets at midnight UTC. Upgrade for more.`,
+      // payment-chain: fires only when BOTH the daily tier budget AND any purchased credits are gone.
+      message: `Daily ${(budget.budget ?? 0).toLocaleString()} tokens used on the ${budget.tier} plan and no credits remaining — resets at midnight UTC, or add credits.`,
       used: budget.used,
       budget: budget.budget,
       tier: budget.tier,
+      creditsRemaining: budget.creditsRemaining ?? 0,
     },
     { status: 402 }
   );

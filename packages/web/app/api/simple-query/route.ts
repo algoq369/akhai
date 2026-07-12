@@ -9,6 +9,7 @@ import { logger, log } from '@/lib/logger';
 import { withRetry } from '@/lib/retry';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { checkBudget, usageSnapshot } from '@/lib/token-budget';
+import { debitCredits } from '@/lib/subscription';
 import {
   checkCryptoQuery,
   getMethodologyPrompt,
@@ -279,10 +280,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'daily_budget_exceeded',
-          message: `You've used your daily ${(budget.budget ?? 0).toLocaleString()} tokens on the ${budget.tier} plan — resets at midnight UTC. Upgrade for more.`,
+          // payment-chain: only when BOTH the daily tier budget AND purchased credits are exhausted.
+          message: `Daily ${(budget.budget ?? 0).toLocaleString()} tokens used on the ${budget.tier} plan and no credits remaining — resets at midnight UTC, or add credits.`,
           used: budget.used,
           budget: budget.budget,
           tier: budget.tier,
+          creditsRemaining: budget.creditsRemaining ?? 0,
         },
         { status: 402 }
       );
@@ -1018,6 +1021,12 @@ export async function POST(request: NextRequest) {
       userId
     );
     trackUsage(selectedProvider, usedModel, inputTokens, outputTokens, cost);
+    // payment-chain B3: this request was admitted against the purchased credit pool (daily tier
+    // budget was already exhausted at check time) — debit the real token count spent. Last-write-
+    // wins under concurrency is acceptable at launch (a race can under/over-count by one query).
+    if (budget.source === 'credits' && userId) {
+      debitCredits(userId, tokens);
+    }
     logger.query.complete(queryId, latency, cost);
 
     // ========== EMIT COMPLETE STAGE (enables MetadataStrip summary phase) ==========

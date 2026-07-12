@@ -178,6 +178,12 @@ export const SCHEMA_SQL = `
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
 
+  -- Processed webhook events: idempotency guard so Stripe retries don't double-grant (payment-chain)
+  CREATE TABLE IF NOT EXISTS processed_webhook_events (
+    event_id TEXT PRIMARY KEY,
+    processed_at INTEGER DEFAULT (strftime('%s', 'now'))
+  );
+
   -- Grimoires: Persistent workspaces with memory
   CREATE TABLE IF NOT EXISTS grimoires (
     id TEXT PRIMARY KEY,

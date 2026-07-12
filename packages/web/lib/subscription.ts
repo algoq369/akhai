@@ -37,12 +37,69 @@ export interface TokenCreditTiers {
   [key: string]: number
 }
 
-// Token credit mapping (from pricing page)
+// Token credit mapping. Keys MUST match the credit planIds the pricing page/checkout actually
+// send (lib/pricing-config TOKEN_CREDITS: starter/builder/scale/bulk). The old credit-10/50/…
+// keys never matched a real planId, so every credit purchase granted 0 tokens (payment-chain B3
+// grant side). Legacy keys kept for any in-flight sessions.
 export const TOKEN_CREDIT_TIERS: TokenCreditTiers = {
-  'credit-10': 100000,    // $10 = 100K tokens
-  'credit-50': 750000,    // $50 = 750K tokens (50% bonus)
-  'credit-100': 2000000,  // $100 = 2M tokens (100% bonus)
-  'credit-500': 12500000, // $500 = 12.5M tokens (150% bonus)
+  starter: 100_000, // $5   = 100K tokens
+  builder: 500_000, // $20  = 500K tokens
+  scale: 3_000_000, // $100 = 3M tokens
+  bulk: 20_000_000, // $500 = 20M tokens
+  // legacy keys (pre-pricing-config) — harmless fallbacks
+  'credit-10': 100000,
+  'credit-50': 750000,
+  'credit-100': 2000000,
+  'credit-500': 12500000,
+}
+
+/**
+ * Map a subscription planId (pricing-config: free/pro/instinct/team) to the enforced tier
+ * (token-budget: free/pro/legend). instinct/team are the premium unlimited plans → legend.
+ * Unknown paid plans default to 'pro' (they paid something — never silently downgrade to free).
+ */
+export function planIdToTier(planId: string | undefined | null): 'free' | 'pro' | 'legend' {
+  switch ((planId || '').toLowerCase()) {
+    case 'free':
+      return 'free'
+    case 'pro':
+      return 'pro'
+    case 'instinct':
+    case 'team':
+    case 'legend':
+      return 'legend'
+    default:
+      return 'pro'
+  }
+}
+
+/** Credit balance (overflow pool) for a user — 0 if no subscription row. */
+export function getCreditBalance(userId: string): number {
+  const row = db
+    .prepare(`SELECT token_balance FROM subscriptions WHERE user_id = ?`)
+    .get(userId) as { token_balance: number } | undefined
+  return row?.token_balance ?? 0
+}
+
+/** Debit the credit pool by `tokens` (floored at 0). No-op if the user has no subscription row. */
+export function debitCredits(userId: string, tokens: number): void {
+  db.prepare(
+    `UPDATE subscriptions
+       SET token_balance = MAX(0, token_balance - ?), updated_at = strftime('%s', 'now')
+     WHERE user_id = ?`
+  ).run(Math.max(0, Math.round(tokens)), userId)
+}
+
+/**
+ * Idempotency guard for Stripe webhooks (they retry). Returns true if this event_id is being
+ * processed for the FIRST time (proceed); false if already handled (skip — avoids double-granting
+ * credits/tier on a retry). Atomic via INSERT OR IGNORE.
+ */
+export function markWebhookEventProcessed(eventId: string): boolean {
+  const res = db
+    .prepare(`INSERT OR IGNORE INTO processed_webhook_events (event_id) VALUES (?)`)
+    .run(eventId)
+  return res.changes === 1
 }
 
 // Query limits per plan
