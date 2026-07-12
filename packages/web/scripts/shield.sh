@@ -34,6 +34,8 @@ AS=$(grep -c "AbortSignal.timeout" lib/multi-provider-api.ts 2>/dev/null || echo
 ENV_TRACKED=$(git ls-files | grep -E "\.env($|\.local|\.production)" | grep -v example | wc -l | tr -d ' ')
 [ "$ENV_TRACKED" -eq 0 ]; gate $? "no env files tracked (found: $ENV_TRACKED)"
 
+node scripts/check-rate-drift.mjs >/dev/null 2>&1; gate $? "anthropic rate tables in sync (core pricing vs provider-selector)"
+
 # ---------- 4. Ratchets (counts may shrink, never grow) ----------
 BASE=scripts/.shield-baselines
 touch "$BASE"
