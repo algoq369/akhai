@@ -4,11 +4,14 @@ import { callProvider, isProviderAvailable } from '@/lib/multi-provider-api';
 import type { ProviderFamily } from '@/lib/provider-selector';
 import { GodViewAgentChatSchema } from '@/lib/route-schemas';
 import { MODELS } from '@/lib/models';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
 /** POST /api/god-view/agent-chat — Follow-up conversation with a specific council agent. */
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = GodViewAgentChatSchema.safeParse(await request.json());
     if (!parsed.success) {

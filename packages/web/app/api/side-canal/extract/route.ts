@@ -8,6 +8,7 @@ import {
   linkQueryToTopics,
   updateTopicRelationships,
 } from '@/lib/side-canal';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,8 @@ const ExtractSchema = z.object({
  * Trigger topic extraction for a query
  */
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const token = request.cookies.get('session_token')?.value;
     const user = token ? getUserFromSession(token) : null;

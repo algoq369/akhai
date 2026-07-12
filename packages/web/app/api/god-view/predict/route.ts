@@ -11,6 +11,7 @@ import {
   type ScenarioBranch,
   type BranchLens,
 } from '@/lib/god-view/scenario-engine';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,8 @@ const CREDIT_ERROR_MSG =
   'API credits exhausted. Please check your Anthropic billing at console.anthropic.com.';
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = GodViewPredictSchema.safeParse(await request.json());
     if (!parsed.success) {

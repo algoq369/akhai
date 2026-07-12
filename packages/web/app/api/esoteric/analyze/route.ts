@@ -11,8 +11,11 @@ import {
 import { getPatterns } from '@/lib/esoteric/cross-civilizational';
 import { callProvider } from '@/lib/multi-provider-api';
 import { EsotericAnalyzeSchema } from '@/lib/route-schemas';
+import { requireAuth } from '@/lib/api-guard';
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = EsotericAnalyzeSchema.safeParse(await request.json());
     if (!parsed.success) {

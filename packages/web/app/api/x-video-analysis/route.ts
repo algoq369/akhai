@@ -10,6 +10,7 @@ import { XVideoAnalysisSchema } from '@/lib/route-schemas';
 import { getUserFromSession } from '@/lib/auth';
 import Anthropic from '@anthropic-ai/sdk';
 import { MODELS } from '@/lib/models';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,8 @@ async function fetchVideoPreview(url: string): Promise<string | null> {
 }
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = XVideoAnalysisSchema.safeParse(await request.json());
     if (!parsed.success) {

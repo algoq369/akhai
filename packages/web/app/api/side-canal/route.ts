@@ -10,6 +10,7 @@ import {
   updateTopicRelationships,
 } from '@/lib/side-canal';
 import { db } from '@/lib/database';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +55,8 @@ export async function GET(request: NextRequest) {
  * Trigger topic extraction for a query
  */
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const token = request.cookies.get('session_token')?.value;
     const user = token ? getUserFromSession(token) : null;

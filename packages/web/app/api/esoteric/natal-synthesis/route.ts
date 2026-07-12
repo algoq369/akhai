@@ -3,8 +3,11 @@ import { MODELS } from '@/lib/models';
 import { getCurrentPositions, getConvergence } from '@/lib/esoteric/cycle-engine';
 import { callProvider } from '@/lib/multi-provider-api';
 import { NatalSynthesisSchema } from '@/lib/route-schemas';
+import { requireAuth } from '@/lib/api-guard';
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     // ⚠ PII (birth-data chart): the 400 below emits flatten() messages only — never echoes values
     const parsed = NatalSynthesisSchema.safeParse(await request.json());

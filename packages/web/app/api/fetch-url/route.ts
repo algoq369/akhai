@@ -12,10 +12,13 @@ import {
 } from '@/lib/url-content-fetcher';
 import { detectURLs, hasURLs } from '@/lib/url-detector';
 import { FetchUrlSchema } from '@/lib/route-schemas';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = FetchUrlSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -90,6 +93,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   const url = request.nextUrl.searchParams.get('url');
 
   if (!url) {

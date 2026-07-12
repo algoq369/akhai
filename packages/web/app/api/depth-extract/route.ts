@@ -15,6 +15,7 @@ import {
   DEFAULT_DEPTH_CONFIG,
   type DepthAnnotation,
 } from '@/lib/depth-annotations';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -40,6 +41,8 @@ function llmToDepthAnnotation(a: LLMAnnotation, idx: number): DepthAnnotation {
 }
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const body: ExtractRequest = await request.json();
     const { queryId, response, query } = body;

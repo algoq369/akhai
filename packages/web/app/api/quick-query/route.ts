@@ -11,6 +11,7 @@ import { callProvider, type CompletionRequest } from '@/lib/multi-provider-api';
 import { recordCall } from '@/lib/cogs-scorecard';
 import { getRecentQueries } from '@/lib/database';
 import { getUserFromSession } from '@/lib/auth';
+import { requireAuth } from '@/lib/api-guard';
 
 const QuickQuerySchema = z.object({
   query: z.string().min(1).max(10000),
@@ -93,6 +94,8 @@ async function callOpenRouterAlt(request: CompletionRequest) {
 }
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = QuickQuerySchema.safeParse(await request.json());
     if (!parsed.success) {

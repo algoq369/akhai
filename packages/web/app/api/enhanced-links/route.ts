@@ -9,6 +9,7 @@ import { log } from '@/lib/logger';
 import Anthropic from '@anthropic-ai/sdk';
 import { calculateRelevance } from './relevance';
 import { isCaptchaResponse, parseDDGResults } from '../../../lib/enhanced-links-parser';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -323,6 +324,8 @@ function ddgDelay(ms: number = 1500): Promise<void> {
  * Main API handler
  */
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const { query, conversationContext = '', topics = [] } = await request.json();
 

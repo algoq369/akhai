@@ -6,6 +6,7 @@ import { appendMessage, getThread, listThreadsForQuery } from '@/lib/db/arboreal
 import { buildBlockChatContext } from '@/lib/arboreal/build-context';
 import { MODELS } from '@/lib/models';
 import type { Layer } from '@/lib/layer-metadata';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,8 @@ function resolveUserId(request: NextRequest): string {
 }
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const userId = resolveUserId(request);
     const parsed = parseBody(await request.json());

@@ -4,6 +4,7 @@ import { GodViewCouncilSchema } from '@/lib/route-schemas';
 import { callProvider } from '@/lib/multi-provider-api';
 import type { ProviderFamily } from '@/lib/provider-selector';
 import { MODELS } from '@/lib/models';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,8 @@ async function callAgent(agent: CouncilAgent, context: string) {
 
 /** POST /api/god-view/council — Fan out to 4 perspective agents + synthesizer. */
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = GodViewCouncilSchema.safeParse(await request.json());
     if (!parsed.success) {

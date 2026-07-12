@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MODELS } from '@/lib/models';
 import { callProvider } from '@/lib/multi-provider-api';
 import { NatalChatSchema } from '@/lib/route-schemas';
+import { requireAuth } from '@/lib/api-guard';
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     // ⚠ PII (birth-data chart): the 400 below emits flatten() messages only — never echoes values
     const parsed = NatalChatSchema.safeParse(await request.json());

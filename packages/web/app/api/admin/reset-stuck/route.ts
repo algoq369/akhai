@@ -1,7 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
+
+// budget-guard (audit B6): this admin maintenance endpoint was unauthenticated and callable in
+// prod — a bulk queries mutation exposed to anyone. No admin-role concept exists yet, so it is
+// hard-gated to 404 in production (the cleanup scheduler already handles stale rows automatically)
+// AND requires a session in dev. A real admin-auth mechanism is a tracked follow-up.
+function adminGate(request: NextRequest): NextResponse | null {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+  const { error } = requireAuth(request);
+  return error ?? null;
+}
 
 /**
  * POST /api/admin/reset-stuck
@@ -9,7 +22,9 @@ export const dynamic = 'force-dynamic';
  * Reset queries that are stuck in 'processing' status for more than 5 minutes.
  * This is useful for cleaning up queries that timed out or failed silently.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const gate = adminGate(request);
+  if (gate) return gate;
   try {
     // Calculate timestamp for 5 minutes ago
     const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 300;
@@ -57,7 +72,9 @@ export async function POST() {
  *
  * Get count of currently stuck queries without resetting them
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const gate = adminGate(request);
+  if (gate) return gate;
   try {
     const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 300;
 

@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import crypto from 'crypto';
 import { generateSynthesis, SYNTHESIS_PROMPT_VERSION } from '@/lib/cognitive/llm-extractor';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -26,6 +27,8 @@ function computeHash(queryIds: string[]): string {
 }
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const body: SynthesisRequest = await request.json();
     const { chatId, exchanges } = body;

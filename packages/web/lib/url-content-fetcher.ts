@@ -5,6 +5,7 @@
  */
 
 import { detectURLs, type DetectedURL, type URLType } from './url-detector';
+import { safeFetch } from './url-guard';
 import {
   fetchYouTubeContent,
   fetchTwitterContent,
@@ -182,7 +183,10 @@ export async function fetchWebpageContent(url: string): Promise<FetchedContent> 
   };
 
   try {
-    const res = await fetch(url, {
+    // budget-guard SSRF (audit B8/B9): safeFetch validates the URL is public and re-checks every
+    // redirect hop, so a user-supplied URL can't reach localhost / 169.254.169.254 / internal IPs
+    // directly or via a 302. This is the shared sink every webpage fetch funnels through.
+    const res = await safeFetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; AkhAI/1.0; +https://akhai.app)',
         Accept: 'text/html,application/xhtml+xml',

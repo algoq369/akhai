@@ -311,7 +311,10 @@ export async function POST(request: NextRequest) {
       try {
         const gtpResponse = await fetch(new URL('/api/tot-consensus', request.url).toString(), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          // budget-guard: tot-consensus now requireAuth's — forward the caller's session cookie so
+          // the internal proxy authenticates as the same signed-in user (this branch only runs when
+          // userId is present; the direct route stays gated against anonymous callers).
+          headers: { 'Content-Type': 'application/json', Cookie: request.headers.get('cookie') ?? '' },
           body: JSON.stringify({ query, conversationHistory, queryId }),
         });
 

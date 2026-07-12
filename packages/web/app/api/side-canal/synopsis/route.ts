@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromSession } from '@/lib/auth';
 import { generateSynopsis } from '@/lib/side-canal';
 import { SideCanalSynopsisSchema } from '@/lib/route-schemas';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,8 @@ export const dynamic = 'force-dynamic';
  * Generate synopsis for a specific topic
  */
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const token = request.cookies.get('session_token')?.value;
     const user = token ? getUserFromSession(token) : null;

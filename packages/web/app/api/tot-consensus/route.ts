@@ -35,6 +35,7 @@ import {
 import { OPENROUTER_ENDPOINT, callFreeChatWithFallback, recordAdvisorCogs } from '@/lib/openrouter';
 import { buildSynthesisPrompt, streamSynthesis } from '@/lib/synthesis-stream';
 import { extractKeyPoints, calculateConfidence, calculateConsensus } from '@/lib/consensus-scoring';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -172,6 +173,8 @@ async function callProvider(
 }
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   const startTime = Date.now();
   const queryId = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
 

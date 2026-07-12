@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MODELS } from '@/lib/models';
 import { z } from 'zod';
 import { callProvider } from '@/lib/multi-provider-api';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,8 @@ const CanvasVizSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = CanvasVizSchema.safeParse(await request.json());
     if (!parsed.success) {

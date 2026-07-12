@@ -11,6 +11,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getActiveTreeConfiguration } from '@/lib/tree-configuration';
 import { validateSession } from '@/lib/database';
 import { MODELS } from '@/lib/models';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,8 @@ const TreeChatSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = TreeChatSchema.safeParse(await request.json());
     if (!parsed.success) {

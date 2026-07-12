@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callProvider } from '@/lib/multi-provider-api';
 import { GodViewScenarioChatSchema } from '@/lib/route-schemas';
 import { MODELS } from '@/lib/models';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = GodViewScenarioChatSchema.safeParse(await request.json());
     if (!parsed.success) {

@@ -10,6 +10,7 @@ import {
   restructureThinkingIntoLenses,
   COGNITIVE_PROMPT_VERSION,
 } from '@/lib/cognitive/llm-extractor';
+import { requireAuth } from '@/lib/api-guard';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -23,6 +24,8 @@ interface SignatureRequest {
 }
 
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const body: SignatureRequest = await request.json();
     const { queryId, query, response, sessionHistory = [], rawThinking } = body;

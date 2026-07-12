@@ -3,6 +3,8 @@ import { callProvider } from '@/lib/multi-provider-api';
 import { MODELS } from '@/lib/models';
 import { fetchYouTubeVideo, formatYouTubeData } from '@/lib/tools/youtube-fetcher';
 import { WebBrowseSchema } from '@/lib/route-schemas';
+import { requireAuth } from '@/lib/api-guard';
+import { safeFetch } from '@/lib/url-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +15,8 @@ export const dynamic = 'force-dynamic';
  * Uses Anthropic's vision capabilities for images/videos.
  */
 export async function POST(request: NextRequest) {
+    const guard = requireAuth(request);
+    if (guard.error) return guard.error;
   try {
     const parsed = WebBrowseSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -121,7 +125,7 @@ async function analyzeGitHub(url: URL, userQuery?: string) {
         .replace('github.com', 'raw.githubusercontent.com')
         .replace('/blob/', '/');
 
-      const fileResponse = await fetch(rawUrl);
+      const fileResponse = await safeFetch(rawUrl); // budget-guard SSRF
       content = await fileResponse.text();
 
       metadata = {
@@ -251,7 +255,7 @@ async function analyzeImage(url: URL, userQuery?: string) {
   try {
     // Note: Vision API requires special handling
     // For now, return basic info about the image
-    const fetchResponse = await fetch(url.href, { method: 'HEAD' });
+    const fetchResponse = await safeFetch(url.href, { method: 'HEAD' }); // budget-guard SSRF
     const contentType = fetchResponse.headers.get('content-type') || 'image/jpeg';
     const contentLength = fetchResponse.headers.get('content-length') || 'unknown';
 
@@ -276,8 +280,8 @@ async function analyzeImage(url: URL, userQuery?: string) {
  */
 async function analyzeWebpage(url: URL, userQuery?: string) {
   try {
-    // Fetch webpage
-    const fetchResponse = await fetch(url.href, {
+    // Fetch webpage (budget-guard SSRF: safeFetch blocks internal IPs + re-checks redirects)
+    const fetchResponse = await safeFetch(url.href, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; AkhAI-Browser/1.0)',
       },
