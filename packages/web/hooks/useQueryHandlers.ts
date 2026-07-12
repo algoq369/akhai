@@ -160,7 +160,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
                 if (m.id !== assistantMessage.id) return m;
                 // answer-stream reconcile: authoritative response replaces the early streamed text
                 if (m.content && m.content !== assistantMessage.content) {
-                  console.info(
+                  if (process.env.NODE_ENV !== 'production') console.info(
                     `[answer-stream] reconciled: streamed ${m.content.length} chars → authoritative ${assistantMessage.content.length} chars`
                   );
                 }
@@ -363,7 +363,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
                   .map((e) => e.details?.narrative ?? '')
                   .join('');
                 if (earlyText) {
-                  console.info(
+                  if (process.env.NODE_ENV !== 'production') console.info(
                     `[answer-stream] early content at complete: ${earlyText.length} chars, t=${Date.now() - startTime}ms`
                   );
                   setMessages((prev) =>
@@ -498,7 +498,7 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
             if (m.id !== assistantMsgId) return m;
             // answer-stream reconcile: authoritative response replaces the early streamed text
             if (m.content && m.content !== assistantMessage.content) {
-              console.info(
+              if (process.env.NODE_ENV !== 'production') console.info(
                 `[answer-stream] reconciled: streamed ${m.content.length} chars → authoritative ${assistantMessage.content.length} chars`
               );
             }
