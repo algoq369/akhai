@@ -156,9 +156,16 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
           setMessages((prev) => {
             const hasPlaceholder = prev.some((m) => m.id === assistantMessage.id);
             if (hasPlaceholder) {
-              return prev.map((m) =>
-                m.id === assistantMessage.id ? { ...assistantMessage, isStreaming: false } : m
-              );
+              return prev.map((m) => {
+                if (m.id !== assistantMessage.id) return m;
+                // answer-stream reconcile: authoritative response replaces the early streamed text
+                if (m.content && m.content !== assistantMessage.content) {
+                  console.info(
+                    `[answer-stream] reconciled: streamed ${m.content.length} chars → authoritative ${assistantMessage.content.length} chars`
+                  );
+                }
+                return { ...assistantMessage, isStreaming: false };
+              });
             }
             return [...prev, assistantMessage];
           });
@@ -344,6 +351,28 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
             }
             useSideCanalStore.getState().pushMetadata(thought);
             if (thought.stage === 'complete' || thought.stage === 'error') {
+              // answer-stream: at 'complete' the client already holds the full answer (the
+              // coalesced 'generating' chunks in the store) — render it NOW instead of waiting
+              // for guard+save+network+res.json(). The authoritative response reconciles on
+              // arrival; if no chunks streamed (non-streaming provider), behavior is unchanged.
+              if (thought.stage === 'complete') {
+                const earlyText = (
+                  useSideCanalStore.getState().messageMetadata[assistantMsgId] || []
+                )
+                  .filter((e) => e.stage === 'generating' && e.details?.narrative)
+                  .map((e) => e.details?.narrative ?? '')
+                  .join('');
+                if (earlyText) {
+                  console.info(
+                    `[answer-stream] early content at complete: ${earlyText.length} chars, t=${Date.now() - startTime}ms`
+                  );
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantMsgId && !m.content ? { ...m, content: earlyText } : m
+                    )
+                  );
+                }
+              }
               evtSource?.close();
             }
           } catch (e) {
@@ -465,9 +494,16 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
         });
 
         setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId ? { ...assistantMessage, isStreaming: false } : m
-          )
+          prev.map((m) => {
+            if (m.id !== assistantMsgId) return m;
+            // answer-stream reconcile: authoritative response replaces the early streamed text
+            if (m.content && m.content !== assistantMessage.content) {
+              console.info(
+                `[answer-stream] reconciled: streamed ${m.content.length} chars → authoritative ${assistantMessage.content.length} chars`
+              );
+            }
+            return { ...assistantMessage, isStreaming: false };
+          })
         );
 
         extractTopicsForMessage(assistantMessage.id, userMessage.content, assistantMessage.content);
@@ -487,17 +523,34 @@ export function useQueryHandlers(state: UseQueryHandlersState) {
       }
     } catch (error) {
       console.error('Query error:', error);
-      setMessages((prev) =>
-        prev.map((m) =>
+      setMessages((prev) => {
+        // answer-stream resilience: a message that already holds streamed text KEEPS it —
+        // the error appends as its own message instead of clobbering the answer.
+        const keptStreamedText = prev.some((m) => m.isStreaming && m.content);
+        const mapped = prev.map((m) =>
           m.isStreaming
-            ? {
-                ...m,
-                content: 'Sorry, there was an error processing your query. Please try again.',
-                isStreaming: false,
-              }
+            ? m.content
+              ? { ...m, isStreaming: false }
+              : {
+                  ...m,
+                  content: 'Sorry, there was an error processing your query. Please try again.',
+                  isStreaming: false,
+                }
             : m
-        )
-      );
+        );
+        return keptStreamedText
+          ? [
+              ...mapped,
+              {
+                id: generateId(),
+                role: 'assistant' as const,
+                content:
+                  'Sorry, there was an error finishing this query — the answer above is the streamed text as received.',
+                timestamp: new Date(),
+              },
+            ]
+          : mapped;
+      });
 
       const responseTime = Date.now() - startTime;
       trackQuery({
