@@ -4,6 +4,8 @@ import type { RefObject } from 'react';
 import type { Node } from './MindMap';
 import type { ClusterData, LayoutNode, TopicLink } from './MindMapUtils';
 import { getClusterColor } from './MindMapUtils';
+import TunnelOverlay, { type TunnelTarget } from './akhai-mindmap/TunnelOverlay';
+import type { HoverRankState } from './MindMapHoverRank';
 
 interface MindMapSVGProps {
   svgRef: RefObject<SVGSVGElement | null>;
@@ -17,6 +19,7 @@ interface MindMapSVGProps {
   connectedTopicIds: Set<string>;
   connectionCounts: Record<string, number>;
   hoveredNode: string | null;
+  hoverRank: HoverRankState | null;
   analyseOpen: boolean;
   pulsingClusters: Set<string>;
   getPos: (id: string) => { x: number; y: number } | null;
@@ -38,6 +41,7 @@ export default function MindMapSVG({
   connectedTopicIds,
   connectionCounts,
   hoveredNode,
+  hoverRank,
   analyseOpen,
   pulsingClusters,
   getPos,
@@ -46,6 +50,31 @@ export default function MindMapSVG({
   handleNodeClick,
   handleNodeMouseDown,
 }: MindMapSVGProps) {
+  // M4b tunnel — M4a's top-3 for the hovered node, resolved to layout coordinates. Targets
+  // without a position (filtered out of the layout) are skipped; the tunnel needs >= 1.
+  const tunnelTargets: TunnelTarget[] =
+    hoveredNode && hoverRank && hoverRank.topicId === hoveredNode
+      ? hoverRank.ranked
+          .map((r) => {
+            const pos = getPos(r.topicId);
+            return pos ? { ...r, x: pos.x, y: pos.y } : null;
+          })
+          .filter((t): t is TunnelTarget => t !== null)
+      : [];
+  const mouthPos = hoveredNode ? getPos(hoveredNode) : null;
+  const tunnelActive = tunnelTargets.length > 0 && !!mouthPos && !analyseOpen;
+  const mouthNode = tunnelActive ? displayNodes.find((n) => n.id === hoveredNode) : null;
+  // mirror the drawn dot's radius formula so the mouth ring hugs the real dot
+  const mouthImportance = tunnelActive
+    ? (connectionCounts[hoveredNode!] || 0) + Math.min(mouthNode?.queryCount || 1, 10)
+    : 0;
+  const mouthRadius = Math.max(4, Math.min(20, 4 + mouthImportance * 1.5));
+  const mouthCatIdx = clusters.findIndex((c) => c.category === (mouthNode?.category || 'other'));
+  const mouthColor = getClusterColor(
+    mouthNode?.category || 'other',
+    mouthCatIdx >= 0 ? mouthCatIdx : 0
+  ).text;
+
   return (
     <svg ref={svgRef} className="absolute inset-0 w-full h-full" style={{ overflow: 'visible' }}>
       <defs>
@@ -85,6 +114,16 @@ export default function MindMapSVG({
       </defs>
 
       <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+        {/* M4b — while the tunnel is active the whole graph dims as ONE group (opacity +
+            grayscale on the group, no per-node re-render). Pointer events stay ON so the
+            hovered dot underneath keeps the hover alive — the tunnel re-draws it bright. */}
+        <g
+          style={{
+            opacity: tunnelActive ? 0.16 : 1,
+            filter: tunnelActive ? 'grayscale(0.7)' : 'none',
+            transition: 'opacity 0.35s ease, filter 0.35s ease',
+          }}
+        >
         {/* Cluster ellipses */}
         {clusters.map((cluster, idx) => {
           const color = getClusterColor(cluster.category, idx);
@@ -242,6 +281,23 @@ export default function MindMapSVG({
             );
           });
         })}
+        </g>
+
+        {/* M4b — 2.5D tunnel: mouth + 3 subject-colored light-strands, in layout coords so
+            pan/zoom keeps everything attached. Only these 4 nodes + 3 strands animate. */}
+        {tunnelActive && mouthPos && (
+          <TunnelOverlay
+            mouth={{
+              x: mouthPos.x,
+              y: mouthPos.y,
+              radius: mouthRadius,
+              color: mouthColor,
+              name: mouthNode?.name || '',
+            }}
+            targets={tunnelTargets}
+            zoom={zoom}
+          />
+        )}
 
         {/* Hover card */}
         {hoveredNode &&

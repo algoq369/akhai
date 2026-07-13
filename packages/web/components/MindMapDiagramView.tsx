@@ -430,6 +430,7 @@ export default function MindMapDiagramView({
           connectedTopicIds={connectedTopicIds}
           connectionCounts={connectionCounts}
           hoveredNode={hoveredNode}
+          hoverRank={hoverRank}
           analyseOpen={analyseOpen}
           pulsingClusters={pulsingClusters}
           getPos={getPos}
