@@ -23,15 +23,15 @@ export const RICHNESS_WEIGHTS = {
   // Does this neighbor connect otherwise-distant CATEGORIES? Counts how many categories DIFFERENT
   // from the neighbor's own its neighbors span — i.e. FOREIGN subjects bridged (2 hops from the
   // hovered topic). A high-degree node whose neighbors are all one category bridges nothing.
-  bridgeCentrality: 0.3,
+  bridgeCentrality: 0.5,
   // Backed by real, deep discussions: sum of query_topics.relevance for the neighbor, bumped by the
   // token-depth of the complete queries behind it. A topic with many deep discussions is rich.
-  substance: 0.25,
+  substance: 0.1,
   // Weighted degree = SUM(strength) over the neighbor's edges. Raw graph pull.
-  connectivity: 0.2,
+  connectivity: 0.1,
   // Breadth of subject exposure: total distinct categories among the neighbor's direct neighbors
   // (includes its own category, unlike bridgeCentrality which counts only foreign ones).
-  crossSubject: 0.15,
+  crossSubject: 0.3,
   // RESERVED — transformative potential. Requires an Opus judgment; computed on click-to-deepen /
   // the M4c curator pass, never on hover. Kept here so the tuning surface is complete.
   transformative: 0.1,

@@ -11,7 +11,7 @@ const USER = process.env.RANK_USER || '23nb8w2ytj9';
 const HUBS = (process.env.RANK_HUBS || '8090e19793bdd36d,5434c8a5cef488f8,7e9c35163ae16b2f').split(
   ','
 );
-const W = { bridgeCentrality: 0.3, substance: 0.25, connectivity: 0.2, crossSubject: 0.15 };
+const W = { bridgeCentrality: 0.5, substance: 0.1, connectivity: 0.1, crossSubject: 0.3 };
 const K = 3200;
 const activeSum = W.bridgeCentrality + W.substance + W.connectivity + W.crossSubject;
 const minMax = (v, mn, mx) => (mx <= mn ? (mx === 0 ? 0 : 0.5) : (v - mn) / (mx - mn));
