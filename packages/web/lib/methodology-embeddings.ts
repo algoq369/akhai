@@ -72,6 +72,24 @@ const EXEMPLARS: Record<RoutableMethodology, string[]> = {
     'Any thoughts?',
     'Is it any good?',
     'Worth a try?',
+    'How many bones are in the human body?',
+    'How many continents are there?',
+    'How many planets are in the solar system?',
+    'Explain.',
+    'Continue.',
+    'Tell me more.',
+    'What is the difference between draft and draught?',
+    'Is two plus two really four, philosophically speaking?',
+    'What does the phrase apples to apples mean?',
+    'What is the speed of light?',
+    'What is the chemical symbol for gold?',
+    'What is the atomic number of carbon?',
+    'What now?',
+    'Go on.',
+    'What is the latest wisdom of the ages?',
+    'Compute the value of a sunset.',
+    'Calculate how happy I am.',
+    'How many roads must a man walk down?'
   ],
   // How-to / step-by-step / process explanation
   cod: [
@@ -83,6 +101,10 @@ const EXEMPLARS: Record<RoutableMethodology, string[]> = {
     'Show me step by step how to brew pour-over coffee.',
     'Explain step by step how a bill becomes a law.',
     'What are the steps to publish an npm package?',
+    'Show me how to tie a tie.',
+    'Guide me through setting up a budget spreadsheet.',
+    'Break down how encryption keeps data safe.',
+    'Walk me through making pasta from scratch.'
   ],
   // Multi-constraint tracking — every stated requirement must be honored
   sc: [
@@ -104,6 +126,10 @@ const EXEMPLARS: Record<RoutableMethodology, string[]> = {
     'What is the current state of the electric vehicle market this year?',
     'Look up recent developments in fusion energy.',
     'What happened in the news today?',
+    'What is the temperature in Dubai right now?',
+    'Are there any recent earthquakes in the pacific?',
+    'How is the weather in Miami at the moment?',
+    'What is happening in the economy lately?'
   ],
   // Math / calculation / quantitative planning
   pas: [
@@ -115,6 +141,11 @@ const EXEMPLARS: Record<RoutableMethodology, string[]> = {
     'A recipe serves 4 people using 250 grams of flour — how much flour do I need for 10 people?',
     'How many tables of 8 do I need to seat 127 wedding guests, and how many seats are left over?',
     'Convert 98.6 degrees Fahrenheit to Celsius.',
+    'How many days are there between March 3rd and December 25th?',
+    'How many weeks are between January 1 and June 30?',
+    'What is the number of hours from 9am Monday to 5pm Wednesday?',
+    'What is the sum of the first 50 integers?',
+    'What is the total of all numbers from 1 to 100?'
   ],
   // Deep comparison / tradeoffs / multi-perspective weighing
   tot: [
