@@ -48,7 +48,7 @@ const METHODOLOGIES: Methodology[] = [
   {
     id: 'cod',
     name: 'COD',
-    fullName: 'Chain of Draft',
+    fullName: 'Draft & Refine',
     symbol: '⋯',
     color: '#f97316',
     tokens: '~600',
@@ -78,7 +78,7 @@ const METHODOLOGIES: Methodology[] = [
   {
     id: 'pas',
     name: 'PAS',
-    fullName: 'Program of Thought',
+    fullName: 'Plan-and-Solve',
     symbol: '△',
     color: '#3b82f6',
     tokens: '3k-6k',

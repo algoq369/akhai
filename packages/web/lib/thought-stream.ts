@@ -158,11 +158,9 @@ export const INTENT_PLAIN: Record<string, string> = {
 export const METHOD_PLAIN: Record<string, string> = {
   direct: 'Direct answer',
   cod: 'Draft and refine',
-  bot: 'Structured analysis',
   react: 'Web search',
-  pot: 'Calculation',
   tot: 'Multi-AI consensus',
-  sc: 'Multiple drafts',
+  sc: 'Structured analysis',
   auto: 'Auto',
 };
 

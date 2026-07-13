@@ -81,7 +81,7 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     id: 'cod',
     symbol: '⋯',
     name: 'cod',
-    fullName: 'Chain of Draft',
+    fullName: 'Draft & Refine',
     description:
       'Iterative refinement process with multiple drafts, reflections, and continuous improvement until reaching the polished final answer.',
     howItWorks: [
@@ -114,11 +114,11 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     name: 'sc',
     fullName: 'Buffer of Thoughts',
     description:
-      'Buffers key facts and constraints, builds a reasoning chain, and self-validates the answer against them (arXiv:2406.04271).',
+      'Buffers key facts and constraints, builds a reasoning chain, and self-validates the answer against them (inspired by Buffer of Thoughts, arXiv:2406.04271).',
     howItWorks: [
       'Buffer the key facts and constraints from the query',
       'Build a reasoning chain grounded in that buffer',
-      'Distill recurring reasoning patterns into reusable templates',
+      'Keep the reasoning anchored to those buffered facts',
       'Validate the answer against the buffered facts',
     ],
     format: '[BUFFER] → [REASONING] → [VALIDATION] → [ANSWER]',
@@ -175,16 +175,16 @@ const METHODOLOGY_DETAILS: MethodologyDetail[] = [
     id: 'pas',
     symbol: '△',
     name: 'pas',
-    fullName: 'Program of Thought',
+    fullName: 'Plan-and-Solve',
     description:
-      'Chen et al. 2022 — generates executable code, runs it, separating reasoning from computation (arXiv:2211.12588).',
+      'Plan-and-Solve prompting: decomposes the problem into an explicit plan, then works each step in structured prose. (Prompt-only; does not execute code.)',
     howItWorks: [
-      'Translate the problem into executable code',
-      'Express the computation as a program, not prose reasoning',
-      'Run the code in a sandbox',
-      'Return the computed result',
+      'Break the problem into an explicit ordered plan',
+      'Solve each step in clear structured reasoning',
+      'Track intermediate results through the steps',
+      'Deliver the worked final answer',
     ],
-    format: '[PROBLEM] → [CODE] → [RUN] → [RESULT]',
+    format: '[PLAN] → [STEP-BY-STEP] → [RESULT]',
     bestFor: [
       'Mathematical calculations',
       'Computational problems',
