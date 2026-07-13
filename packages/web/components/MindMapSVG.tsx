@@ -115,12 +115,15 @@ export default function MindMapSVG({
 
       <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
         {/* M4b — while the tunnel is active the whole graph dims as ONE group (opacity +
-            grayscale on the group, no per-node re-render). Pointer events stay ON so the
-            hovered dot underneath keeps the hover alive — the tunnel re-draws it bright. */}
+            grayscale + soft blur on the group, no per-node re-render). Pointer events stay ON
+            so the hovered dot underneath keeps the hover alive — the tunnel re-draws it bright.
+            v2: blur(1.5px) pushes the far graph out of focus (depth of field). The layer is
+            static while dimmed so it rasterizes once; if it ever janks on weak GPUs, drop the
+            blur first and keep the vignette. */}
         <g
           style={{
-            opacity: tunnelActive ? 0.16 : 1,
-            filter: tunnelActive ? 'grayscale(0.7)' : 'none',
+            opacity: tunnelActive ? 0.14 : 1,
+            filter: tunnelActive ? 'grayscale(0.7) blur(1.5px)' : 'none',
             transition: 'opacity 0.35s ease, filter 0.35s ease',
           }}
         >

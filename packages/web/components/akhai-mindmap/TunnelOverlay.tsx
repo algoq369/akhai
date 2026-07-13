@@ -1,20 +1,26 @@
 'use client';
 
 /**
- * M4b — 2.5D tunnel-vision overlay.
+ * mindmap-tunnel-v2 — 2.5D tunnel-vision overlay, redesigned for drama.
  *
- * On node hover, renders M4a's top-3 ranked connections as a tunnel FROM the hovered node
- * (the mouth, foreground) TO the three targets: animated subject-colored light-strands, glow
- * halos, depth layering (#1 closest/brightest → #3 furthest/dimmer+blurred) and a subtle
- * mouse parallax. Pure SVG + framer-motion — no WebGL (full 3D is a future upgrade).
+ * On node hover, M4a's top-3 ranked connections render as a tunnel of light FROM the hovered
+ * node (the mouth) INTO the three targets:
+ *   [1] receding concentric rings along each strand — the shaft geometry (TunnelEffects)
+ *   [2] 3-layer bloomed strands — light, not lines (white-hot core bleeding into subject color)
+ *   [3] radial vignette centered on the mouth — a pool of clarity, dark at the edges
+ *   [4] cinematic entrance — shockwave, strands growing mouth→target, halos igniting in
+ *       sequence, a subtle dolly-in
+ *   [5] steep depth ladder — #1 close and blazing, #3 small, dim, blurred
+ *   [6] particle energy-motes streaming down each strand (TunnelEffects)
  *
- * Renders INSIDE MindMapSVG's `translate(pan) scale(zoom)` group, in layout coordinates, so
- * strands stay attached to the actual node centers under pan/zoom. pointerEvents: none
- * throughout — the ORIGINAL (dimmed) hovered dot keeps catching the mouse, so re-drawing the
- * bright mouth on top cannot break the hover state.
+ * Same architecture as v1: pure SVG + framer-motion (no WebGL), rendered INSIDE MindMapSVG's
+ * `translate(pan) scale(zoom)` group in layout coordinates (pan/zoom keeps everything attached),
+ * pointerEvents: none throughout (the original dimmed dot keeps the hover alive), and only the
+ * mouth + 3 targets + their strands/rings/motes animate — the other ~1,800 elements just dim.
  *
- * Honesty: the 3 targets are exactly M4a's ranking (score included) — no decorative edges.
- * Only 4 nodes + 3 strands animate; the other ~1,800 rendered elements just dim (one <g>).
+ * Honesty: the 3 targets are exactly M4a's ranking (score shown) — no decorative edges.
+ * prefers-reduced-motion: no growth/shockwave/dolly/ring-drift/motes/parallax/pulses — a clean
+ * static bloomed tunnel + vignette remains.
  */
 
 import React, { useEffect } from 'react';
@@ -25,40 +31,41 @@ import {
   useReducedMotion,
   AnimatePresence,
 } from 'framer-motion';
+import { TunnelRings, Shockwave, Motes } from './TunnelEffects';
 
 /**
  * Subject → strand/halo color. Stable per category (unlike getClusterColor, which assigns by
- * cluster index). Covers every category present in the real DB plus the roadmap subjects
- * (crypto, esoteric-occult, holistic-medicine). Unknown categories hash into ACCENT_POOL.
+ * cluster index). v2: saturated a step for vivid strands — still harmonious with the relic
+ * palette; the white-hot cores carry the brightness. Unknown categories hash into ACCENT_POOL.
  */
 export const SUBJECT_COLORS: Record<string, string> = {
-  technology: '#6366f1', // indigo
-  science: '#0ea5e9', // sky
-  finance: '#f59e0b', // amber
-  crypto: '#f97316', // orange
-  business: '#10b981', // emerald
-  education: '#8b5cf6', // violet
-  health: '#ec4899', // pink
-  'holistic-medicine': '#f43f5e', // rose
-  psychology: '#a855f7', // purple
-  philosophy: '#c084fc', // light purple
-  'esoteric-occult': '#d946ef', // fuchsia
-  society: '#e879f9', // light fuchsia
-  social: '#e879f9',
-  politics: '#ef4444', // red
-  policy: '#ef4444',
-  regulation: '#fb7185', // light rose
-  history: '#eab308', // yellow
-  geography: '#22c55e', // green
-  environment: '#059669', // deep emerald
-  mathematics: '#14b8a6', // teal
-  engineering: '#d97706', // dark amber
-  infrastructure: '#06b6d4', // cyan
-  sports: '#84cc16', // lime
-  other: '#94a3b8', // slate
+  technology: '#818cf8', // indigo
+  science: '#38bdf8', // sky
+  finance: '#fbbf24', // amber
+  crypto: '#fb923c', // orange
+  business: '#34d399', // emerald
+  education: '#a78bfa', // violet
+  health: '#f472b6', // pink
+  'holistic-medicine': '#fb7185', // rose
+  psychology: '#c084fc', // purple
+  philosophy: '#d8b4fe', // light purple
+  'esoteric-occult': '#e879f9', // fuchsia
+  society: '#f0abfc', // light fuchsia
+  social: '#f0abfc',
+  politics: '#f87171', // red
+  policy: '#f87171',
+  regulation: '#fda4af', // light rose
+  history: '#facc15', // yellow
+  geography: '#4ade80', // green
+  environment: '#2dd4bf', // teal-emerald
+  mathematics: '#5eead4', // light teal
+  engineering: '#fbbf24', // amber
+  infrastructure: '#22d3ee', // cyan
+  sports: '#a3e635', // lime
+  other: '#a5b4c9', // luminous slate
 };
 
-const ACCENT_POOL = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#d946ef', '#14b8a6'];
+const ACCENT_POOL = ['#818cf8', '#38bdf8', '#34d399', '#fbbf24', '#e879f9', '#5eead4'];
 
 export function subjectColor(category: string | null | undefined): string {
   const cat = (category || 'other').toLowerCase();
@@ -83,11 +90,11 @@ interface TunnelOverlayProps {
   zoom: number;
 }
 
-// Depth styling per rank: #1 closest (bright, crisp, big) → #3 furthest (dim, blurred, small).
+// [5] Aggressive depth ladder: #1 closest (blazing, crisp, big) → #3 deep in the shaft.
 const DEPTH = [
-  { scale: 1.0, opacity: 1.0, blur: 0, halo: 16, dot: 8, parallax: 2.5, flowDur: 1.1 },
-  { scale: 0.85, opacity: 0.8, blur: 0.4, halo: 12, dot: 6.5, parallax: 5, flowDur: 1.4 },
-  { scale: 0.72, opacity: 0.62, blur: 0.8, halo: 9, dot: 5.5, parallax: 8, flowDur: 1.8 },
+  { scale: 1.0, opacity: 1.0, blur: 0, halo: 20, dot: 9, parallax: 2.5 },
+  { scale: 0.78, opacity: 0.82, blur: 1.2, halo: 13, dot: 6.5, parallax: 5 },
+  { scale: 0.58, opacity: 0.62, blur: 2.6, halo: 9, dot: 5, parallax: 8 },
 ];
 
 /** One layer of the parallax: deeper layers drift more, smoothed with a spring. */
@@ -103,7 +110,6 @@ function useParallax(factor: number, enabled: boolean) {
       return;
     }
     const onMove = (e: MouseEvent) => {
-      // normalized viewport offset from center, [-1, 1]
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
       // deep layers drift opposite the viewer — looking around inside the tunnel
@@ -134,21 +140,26 @@ function Strand({
   const d = DEPTH[rank];
   const par = useParallax(d.parallax / Math.max(zoom, 0.3), !reduced);
 
-  // gentle arc: control point offset perpendicular to the chord
+  // [2] a real swoop: control point offset perpendicular to the chord
   const mx = (mouth.x + target.x) / 2;
   const my = (mouth.y + target.y) / 2;
   const dx = target.x - mouth.x;
   const dy = target.y - mouth.y;
   const len = Math.max(Math.hypot(dx, dy), 1);
-  const arc = Math.min(len * 0.12, 26);
-  const cx = mx - (dy / len) * arc;
-  const cy = my + (dx / len) * arc;
-  const path = `M ${mouth.x} ${mouth.y} Q ${cx} ${cy} ${target.x} ${target.y}`;
+  const arc = Math.min(len * 0.22, 48);
+  const control = { x: mx - (dy / len) * arc, y: my + (dx / len) * arc };
+  const path = `M ${mouth.x} ${mouth.y} Q ${control.x} ${control.y} ${target.x} ${target.y}`;
 
   const gradId = `tunnel-strand-${rank}`;
   const coreW = 1.4 + target.score * 2.2;
-  const strandOpacity = (0.5 + target.score * 0.45) * d.opacity;
   const label = target.name.length > 26 ? target.name.slice(0, 23) + '…' : target.name;
+  const grow = reduced
+    ? undefined
+    : {
+        initial: { pathLength: 0 },
+        animate: { pathLength: 1 },
+        transition: { duration: 0.42, ease: [0.16, 1, 0.3, 1] as const, delay: rank * 0.08 },
+      };
 
   return (
     <motion.g
@@ -156,10 +167,10 @@ function Strand({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.22, delay: rank * 0.06 }}
+      transition={{ duration: 0.25, delay: rank * 0.08 }}
     >
       <defs>
-        {/* userSpaceOnUse so the gradient follows the actual strand geometry */}
+        {/* [2] white-hot entrance bleeding into subject color (userSpaceOnUse follows geometry) */}
         <linearGradient
           id={gradId}
           gradientUnits="userSpaceOnUse"
@@ -168,86 +179,124 @@ function Strand({
           x2={target.x}
           y2={target.y}
         >
-          <stop offset="0%" stopColor="#ffffff" stopOpacity={0.9} />
-          <stop offset="25%" stopColor={color} stopOpacity={0.55} />
+          <stop offset="0%" stopColor="#ffffff" stopOpacity={1} />
+          <stop offset="20%" stopColor="#ffffff" stopOpacity={0.85} />
+          <stop offset="55%" stopColor={color} stopOpacity={0.85} />
           <stop offset="100%" stopColor={color} stopOpacity={1} />
         </linearGradient>
       </defs>
 
-      {/* glow underlay */}
+      {/* [1] the shaft — receding rings under the light */}
+      <TunnelRings
+        mouth={mouth}
+        control={control}
+        target={target}
+        color={color}
+        depthScale={d.scale}
+        depthOpacity={d.opacity}
+        reduced={reduced}
+      />
+
+      {/* [2] 3-layer bloom: outer haze / mid glow / white-hot core */}
       <path
         d={path}
         fill="none"
         stroke={color}
-        strokeWidth={coreW * 3.2}
-        opacity={strandOpacity * 0.35}
+        strokeWidth={coreW * 5}
+        opacity={0.18 * d.opacity}
         strokeLinecap="round"
-        filter="url(#tunnel-glow)"
-        style={{ filter: d.blur ? `blur(${d.blur}px)` : undefined }}
+        style={{ filter: 'blur(3px)' }}
       />
-      {/* crisp core */}
-      <path
+      <motion.path
+        d={path}
+        fill="none"
+        stroke={color}
+        strokeWidth={coreW * 2.4}
+        opacity={0.5 * d.opacity}
+        strokeLinecap="round"
+        style={{ filter: 'blur(1.2px)' }}
+        {...grow}
+      />
+      <motion.path
         d={path}
         fill="none"
         stroke={`url(#${gradId})`}
         strokeWidth={coreW}
-        opacity={strandOpacity}
+        opacity={0.95 * d.opacity}
         strokeLinecap="round"
+        {...grow}
       />
-      {/* energy flow — dashes travel mouth → target */}
-      {!reduced && (
-        <motion.path
-          d={path}
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth={Math.max(coreW * 0.5, 0.8)}
-          strokeLinecap="round"
-          strokeDasharray="4 22"
-          opacity={strandOpacity * 0.85}
-          animate={{ strokeDashoffset: [0, -26] }}
-          transition={{ duration: d.flowDur, repeat: Infinity, ease: 'linear' }}
-        />
-      )}
 
-      {/* target node: halo (pulsing) + dot + label — depth-scaled */}
+      {/* [6] energy motes streaming into the connection */}
+      <Motes
+        mouth={mouth}
+        control={control}
+        target={target}
+        color={color}
+        rank={rank}
+        reduced={reduced}
+      />
+
+      {/* target node: ignites on entry, then breathes — depth-scaled and blurred by rank */}
       <g
         transform={`translate(${target.x}, ${target.y}) scale(${d.scale})`}
         style={{ filter: d.blur ? `blur(${d.blur}px)` : undefined }}
       >
-        <motion.circle
-          r={d.halo}
-          fill={color}
-          opacity={0.22 * d.opacity}
-          filter="url(#tunnel-glow)"
-          animate={reduced ? undefined : { scale: [1, 1.35, 1], opacity: [0.22, 0.4, 0.22] }}
+        <motion.g
+          style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+          initial={reduced ? { opacity: 0 } : { scale: 0, opacity: 0 }}
+          animate={reduced ? { opacity: 1 } : { scale: 1, opacity: 1 }}
           transition={
-            reduced ? undefined : { duration: 2.2 - rank * 0.3, repeat: Infinity, ease: 'easeInOut' }
+            reduced
+              ? { duration: 0.3 }
+              : { type: 'spring', bounce: 0.45, duration: 0.55, delay: 0.15 + rank * 0.08 }
           }
-        />
-        <circle r={d.dot} fill={color} opacity={d.opacity} stroke="#ffffff" strokeWidth={1.2} />
-        <text
-          y={-d.dot - 7}
-          textAnchor="middle"
-          fontSize={10}
-          fontWeight={600}
-          fill={color}
-          opacity={Math.min(d.opacity + 0.15, 1)}
-          fontFamily="'JetBrains Mono', ui-monospace, monospace"
-          className="select-none"
         >
-          {label}
-        </text>
-        <text
-          y={-d.dot + 5 - 7 + 11}
-          textAnchor="middle"
-          fontSize={7.5}
-          fill={color}
-          opacity={0.75 * d.opacity}
-          fontFamily="'JetBrains Mono', ui-monospace, monospace"
-          className="select-none"
-        >
-          #{rank + 1} · {target.category} · {Math.round(target.score * 100)}
-        </text>
+          <motion.circle
+            r={d.halo}
+            fill={color}
+            opacity={0.3}
+            filter="url(#tunnel-glow)"
+            animate={reduced ? undefined : { scale: [1, 1.4, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={
+              reduced
+                ? undefined
+                : { duration: 2.2 - rank * 0.3, repeat: Infinity, ease: 'easeInOut', delay: 0.7 }
+            }
+            style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+          />
+          <circle r={d.dot} fill={color} stroke="#ffffff" strokeWidth={1.4} />
+          <text
+            y={-d.dot - 8}
+            textAnchor="middle"
+            fontSize={10.5}
+            fontWeight={700}
+            fill={color}
+            stroke="#0b0d16"
+            strokeWidth={3}
+            strokeLinejoin="round"
+            style={{ paintOrder: 'stroke' }}
+            fontFamily="'JetBrains Mono', ui-monospace, monospace"
+            className="select-none"
+          >
+            {label}
+          </text>
+          <text
+            y={-d.dot + 4}
+            textAnchor="middle"
+            fontSize={7.5}
+            fill={color}
+            stroke="#0b0d16"
+            strokeWidth={2.5}
+            strokeLinejoin="round"
+            style={{ paintOrder: 'stroke' }}
+            opacity={0.9}
+            fontFamily="'JetBrains Mono', ui-monospace, monospace"
+            className="select-none"
+          >
+            #{rank + 1} · {target.category} · {Math.round(target.score * 100)}
+          </text>
+        </motion.g>
       </g>
     </motion.g>
   );
@@ -255,22 +304,51 @@ function Strand({
 
 export default function TunnelOverlay({ mouth, targets, zoom }: TunnelOverlayProps) {
   const reduced = useReducedMotion() ?? false;
+  // [3] vignette sized in layout units but screen-constant: divide by zoom
+  const vigR = 760 / Math.max(zoom, 0.3);
+  const vigSpan = 4200 / Math.max(zoom, 0.3);
 
   return (
     <AnimatePresence>
       <motion.g
         key="tunnel"
-        style={{ pointerEvents: 'none' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.18 }}
+        style={{
+          pointerEvents: 'none',
+          transformBox: 'view-box',
+          transformOrigin: `${mouth.x}px ${mouth.y}px`,
+        }}
+        initial={{ opacity: 0, scale: 1 }}
+        // [4] dolly-in: the whole tunnel eases toward the viewer on entry
+        animate={{ opacity: 1, scale: reduced ? 1 : 1.035 }}
+        exit={{ opacity: 0, scale: 1 }}
+        transition={{ opacity: { duration: 0.18 }, scale: { duration: 0.6, ease: 'easeOut' } }}
       >
         <defs>
           <filter id="tunnel-glow" x="-120%" y="-120%" width="340%" height="340%">
             <feGaussianBlur stdDeviation="4" />
           </filter>
+          {/* [3] pool of clarity at the mouth, darkness at the edges */}
+          <radialGradient
+            id="tunnel-vignette"
+            gradientUnits="userSpaceOnUse"
+            cx={mouth.x}
+            cy={mouth.y}
+            r={vigR}
+          >
+            <stop offset="0%" stopColor="#05060e" stopOpacity={0} />
+            <stop offset="32%" stopColor="#05060e" stopOpacity={0.05} />
+            <stop offset="66%" stopColor="#05060e" stopOpacity={0.32} />
+            <stop offset="100%" stopColor="#05060e" stopOpacity={0.55} />
+          </radialGradient>
         </defs>
+
+        <rect
+          x={mouth.x - vigSpan}
+          y={mouth.y - vigSpan}
+          width={vigSpan * 2}
+          height={vigSpan * 2}
+          fill="url(#tunnel-vignette)"
+        />
 
         {/* strands + targets, furthest first so #1 paints on top */}
         {[...targets.entries()]
@@ -287,19 +365,26 @@ export default function TunnelOverlay({ mouth, targets, zoom }: TunnelOverlayPro
             />
           ))}
 
-        {/* tunnel mouth — the hovered node re-drawn bright in the foreground (anchored, no
+        {/* tunnel mouth — the hovered node re-drawn blazing in the foreground (anchored, no
             parallax: the original dot below keeps the pointer events) */}
         <g transform={`translate(${mouth.x}, ${mouth.y})`}>
+          {/* [4] entry burst */}
+          <Shockwave radius={mouth.radius + 8} color={mouth.color} reduced={reduced} />
           <motion.circle
             r={mouth.radius + 7}
             fill="none"
             stroke={mouth.color}
             strokeWidth={1.4}
             opacity={0.7}
+            style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
             animate={
               reduced
                 ? undefined
-                : { scale: [1, 1.5], opacity: [0.7, 0], transition: { duration: 1.6, repeat: Infinity, ease: 'easeOut' } }
+                : {
+                    scale: [1, 1.5],
+                    opacity: [0.7, 0],
+                    transition: { duration: 1.6, repeat: Infinity, ease: 'easeOut' },
+                  }
             }
           />
           <circle
@@ -309,7 +394,13 @@ export default function TunnelOverlay({ mouth, targets, zoom }: TunnelOverlayPro
             strokeWidth={0.8}
             opacity={0.5}
           />
-          <circle r={mouth.radius} fill={mouth.color} stroke="#ffffff" strokeWidth={1.6} filter="url(#tunnel-glow)" />
+          <circle
+            r={mouth.radius}
+            fill={mouth.color}
+            stroke="#ffffff"
+            strokeWidth={1.6}
+            filter="url(#tunnel-glow)"
+          />
         </g>
       </motion.g>
     </AnimatePresence>
