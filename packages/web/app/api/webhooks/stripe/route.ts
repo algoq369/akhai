@@ -78,8 +78,10 @@ export async function POST(request: NextRequest) {
 /**
  * Process a verified Stripe event (entitlement side-effects). Extracted so it can be driven by a
  * test harness with a crafted event object without a real signature (payment-chain proofs).
+ * NOT exported: Next 15 route-type validation rejects non-route exports from route files
+ * (this export broke `next build` from commit 7071151 onward).
  */
-export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
+async function handleStripeEvent(event: Stripe.Event): Promise<void> {
   {
     switch (event.type) {
       // ============================================
