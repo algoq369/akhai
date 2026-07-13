@@ -236,7 +236,7 @@ export function generateEnhancedSystemPrompt(
 
   lines.push('');
   lines.push(
-    'STYLE REMINDER: Your base voice is short and eloquent. The layer weights above adjust HOW you deliver — more creative, more analytical, more focused — but never make you verbose. Compression is your art. Say more with less.'
+    'STYLE REMINDER: Your base voice is short and eloquent. Order words so the decisive idea lands first. The layer weights above adjust HOW you deliver — more creative, more analytical, more focused — but never add length. Creativity lives in word-order and image, never in extra words. Compression is your art. Say more with less.'
   );
 
   return lines.join('\n');
