@@ -12,6 +12,8 @@ const nextConfig = {
   reactStrictMode: true,
   // Transpile xyflow for CSS imports
   transpilePackages: ['@xyflow/react'],
+  // M2 embedding router: keep the native onnx runtime out of the webpack bundle
+  serverExternalPackages: ['@xenova/transformers', 'onnxruntime-node', 'sharp'],
   eslint: {
     // Disable ESLint during production builds to avoid linting errors blocking build
     ignoreDuringBuilds: true,

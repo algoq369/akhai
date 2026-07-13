@@ -50,6 +50,7 @@ import {
   calculateThinkingBudget,
   calculatePathActivations,
 } from './intelligence-fusion-scoring';
+import { selectMethodologyHybrid } from './methodology-embeddings';
 import type { IntelligenceFusionResult } from './intelligence-fusion-types';
 
 // ============================================================
@@ -60,7 +61,8 @@ export async function fuseIntelligence(
   query: string,
   layersWeights: Record<number, number>,
   instinctConfig: InstinctConfig,
-  sideCanal?: { contextInjection: string | null; relatedTopics: string[] }
+  sideCanal?: { contextInjection: string | null; relatedTopics: string[] },
+  requestedMethodology?: string
 ): Promise<IntelligenceFusionResult> {
   const startTime = Date.now();
 
@@ -85,8 +87,14 @@ export async function fuseIntelligence(
   // 3. Calculate path activations
   const pathActivations = calculatePathActivations(layerActivations);
 
-  // 4. Select methodology
-  const { methodology, scores, confidence } = selectMethodology(analysis, layerActivations);
+  // 4. Select methodology (M2: deterministic overrides → local embedding router →
+  // keyword selector only if the on-device model is unavailable). When the user picked
+  // a methodology explicitly, the selection below is discarded by the caller — use the
+  // cheap keyword scorer instead of spinning up the embedding model.
+  const { methodology, scores, confidence } =
+    requestedMethodology && requestedMethodology !== 'auto'
+      ? selectMethodology(analysis, layerActivations)
+      : await selectMethodologyHybrid(query, analysis, layerActivations);
 
   // 5. Assess Guard status
   const { recommendation, reasons } = assessGuardStatus(query, analysis);

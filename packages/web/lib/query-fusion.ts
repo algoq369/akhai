@@ -158,10 +158,16 @@ export async function runFusionPipeline(
     };
 
     // Run Intelligence Fusion
-    fusionResult = await fuseIntelligence(query, weights, effectiveInstinctConfig, {
-      contextInjection: sideCanalContext,
-      relatedTopics: [],
-    });
+    fusionResult = await fuseIntelligence(
+      query,
+      weights,
+      effectiveInstinctConfig,
+      {
+        contextInjection: sideCanalContext,
+        relatedTopics: [],
+      },
+      methodology
+    );
 
     log(
       'INFO',

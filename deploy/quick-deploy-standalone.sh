@@ -29,6 +29,26 @@ ln -sfn "$APP/packages/web/data" "$NEW/packages/web/data"
 BIND=$(find "$APP/node_modules/.pnpm" -path "*better-sqlite3*/build/Release/better_sqlite3.node" 2>/dev/null | head -1)
 DEST=$(find "$NEW" -path "*better-sqlite3*/build/Release" -type d 2>/dev/null | head -1)
 if [ -n "$BIND" ] && [ -n "$DEST" ]; then cp "$BIND" "$DEST/better_sqlite3.node"; echo "  sqlite binding: linux OK"; else echo "  sqlite binding: NOT FOUND — verify manually"; fi
+# M2 embedding router: the standalone tree was traced on macOS, so sharp/onnxruntime-node
+# carry darwin binaries. Overwrite each package with the linux copy from the legacy tree
+# ($APP gets linux binaries from its on-VPS pnpm install). If missing (legacy tree not yet
+# installed with @xenova/transformers), the router logs once and falls back to the keyword
+# selector — routing keeps working, the semantic upgrade just stays off until the next
+# legacy-tree install.
+for PKG in sharp onnxruntime-node; do
+  SRC=$(find "$APP/node_modules/.pnpm" -path "*/node_modules/$PKG/package.json" -not -path "*/$PKG/node_modules/*" 2>/dev/null | head -1)
+  DST=$(find "$NEW" -path "*/node_modules/$PKG/package.json" -not -path "*/$PKG/node_modules/*" 2>/dev/null | head -1)
+  if [ -n "$SRC" ] && [ -n "$DST" ]; then
+    rsync -a --delete "$(dirname "$SRC")/" "$(dirname "$DST")/"
+    echo "  $PKG: linux OK"
+  else
+    echo "  $PKG: NOT FOUND — embedding router will fall back to keyword selector"
+  fi
+done
+# Persist the ~23MB MiniLM model cache across --delete deploys (cwd-relative .cache)
+mkdir -p "$APP/packages/web/.cache"
+rm -rf "$NEW/packages/web/.cache"
+ln -sfn "$APP/packages/web/.cache" "$NEW/packages/web/.cache"
 EOS
 
 echo "→ boot verify on :3001"
