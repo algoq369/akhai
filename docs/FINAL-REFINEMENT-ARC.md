@@ -44,3 +44,34 @@ intelligence -> visual -> curation; philosophy last (needs voice + stance).
 
 ## OPEN DECISIONS (Algoq)
 M3 anchor, M4a metric, M4b 3D-vs-2.5D, M4c produces/schedule/cost, M5 authorship + stance
+
+
+---
+
+## DECISIONS LOCKED 2026-07-13 (Algoq)
+- M2: embedding routing. LOCKED.
+- M3 VOICE ANCHOR (verbatim): "Precision in words, manifestation, and alignment for fluid mind
+  expression. Mathematically the order of words matters, and with our words we create; so it shall
+  always be with wisdom, high consciousness, and compassion." OPERATIONAL: economy (every word earns
+  place), deliberate ordering (sequence as structure), grounded-wisdom register, never verbose/hollow/
+  cold. "Mathematical depth" = structured delivery, strongest idea placed with intent, rhythm that
+  builds, nothing decorative. GUARDRAIL: eloquence stays GROUNDED — luminous + precise, never vague
+  mysticism (precision IS the spirituality; protects brand credibility). Applies to ALL engine output.
+- M4a METRIC: ranked by AkhAI intelligence (Opus+Sonnet), NOT raw counts. Signals: cross-subject
+  connectivity, holistic resonance, pertinence/substance + PROPOSED: (1) generative fertility (spawned
+  follow-ups), (2) bridge centrality (connects distant clusters), (3) depth-of-engagement (returned to
+  across sessions), (4) contrarian tension (holds opposing views productively), (5) transformative
+  potential (Opus judgment: "does this change how you think"). Claude's lean: bridge-centrality +
+  transformative-potential weighted highest. FINAL WEIGHTS: pending Algoq tune.
+- M4b: 2.5D FIRST (Claude high-confidence call — depth+glow+animated subject-colored strands+parallax
+  on existing SVG, renders only the 3 paths). Full WebGL 3D = future upgrade on the proven base. LOCKED.
+- M4c CADENCE: auto-run 3 days -> wait -> 6 days -> wait -> 9 days -> repeat (3/6/9 rhythm). LOCKED.
+- M4c TIER: Claude rec = owner-only at launch (validate + measure true daily dual-model cost) -> expose
+  as LEGEND-tier perk post-launch. Algoq confirms on cost numbers. PENDING cost.
+- M5 STANCE: FACTUAL/OBSERVABLE correlations across civilizations, time, space — what we can OBSERVE
+  across cultures, NOT unfalsifiable assertion. Grounded, sourced, mystery honored without claims.
+  LOCKED. Authorship: TBD (Algoq-written+edited vs AkhAI-generated+approved).
+- ENGINE SIGNATURE WRITING = the M3 voice, everywhere: eloquent, precise, mathematical depth in word
+  order and delivery.
+
+## STILL PENDING: M4a final weights - M4c tier cost-confirm - M5 authorship
