@@ -13,6 +13,7 @@ import {
 import MindMapClusterDetail from './MindMapClusterDetail';
 import MindMapAnalysePanel from './MindMapAnalysePanel';
 import MindMapSVG from './MindMapSVG';
+import MindMapHoverRank, { useHoverRank } from './MindMapHoverRank';
 import { MindMapDiagramHeader, MindMapDiagramBottomBar } from './MindMapDiagramSVG';
 
 export default function MindMapDiagramView({
@@ -212,6 +213,9 @@ export default function MindMapDiagramView({
     },
     [nodePositions, layoutNodes]
   );
+
+  // M4a — top-3 richest connected topics for the hovered node ($0 graph rank, no provider call).
+  const hoverRank = useHoverRank(hoveredNode);
 
   // Visible cross-cluster links — only between visible top-5 nodes
   const visibleNodeIds = useMemo(() => {
@@ -433,6 +437,16 @@ export default function MindMapDiagramView({
           setExpandedCluster={setExpandedCluster}
           handleNodeClick={handleNodeClick}
           handleNodeMouseDown={handleNodeMouseDown}
+        />
+
+        {/* M4a — top-3 richest connected topics overlay (near the hovered node). $0 graph rank. */}
+        <MindMapHoverRank
+          hoverRank={hoverRank}
+          hoveredNode={hoveredNode}
+          getPos={getPos}
+          zoom={zoom}
+          pan={pan}
+          allNodes={allNodes}
         />
       </div>
 

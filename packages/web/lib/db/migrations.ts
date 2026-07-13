@@ -274,6 +274,24 @@ export function migrateCreateWebhookEvents() {
 }
 
 /**
+ * M4a mindmap-rank: neighborhood-scan indices so hover ranking is a bounded seek, not a table
+ * scan. Before this, topic_relationships had only the autoindex on (topic_from, topic_to,
+ * relationship_type, user_id) — so the reverse-direction neighbor lookup (WHERE topic_to=? ) and
+ * query_topics substance lookup (WHERE topic_id=?) both fell back to full scans (EXPLAIN: SCAN).
+ */
+export function migrateAddMindmapRankIndices() {
+  try {
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_rel_from_user ON topic_relationships(topic_from, user_id)'
+    );
+    db.exec('CREATE INDEX IF NOT EXISTS idx_rel_to_user ON topic_relationships(topic_to, user_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_query_topics_topic ON query_topics(topic_id)');
+  } catch (error) {
+    console.error('[Migration Error] Failed to create mindmap-rank indices:', error);
+  }
+}
+
+/**
  * Run all migrations. Called from database.ts on module load.
  */
 export function runMigrations() {
@@ -290,6 +308,7 @@ export function runMigrations() {
     migrateAddUserTier();
     migrateCreateWalletNonces();
     migrateCreateWebhookEvents();
+    migrateAddMindmapRankIndices();
   } catch (error) {
     console.error('[Migration Failed]', error);
   }
