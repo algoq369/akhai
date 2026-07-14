@@ -256,8 +256,6 @@ interface MainContentSectionProps {
   selectedTopic: string | null;
   setSelectedTopic: (v: string | null) => void;
   setClickedQuery: (v: { query: QueryHistoryItem; x: number; y: number } | null) => void;
-  handleClusterHover: (e: React.MouseEvent, cluster: TopicCluster) => void;
-  handleClusterHoverLeave: () => void;
   handleQueryClick: (e: React.MouseEvent, query: QueryHistoryItem) => void;
   handleQueryContextMenu: (e: React.MouseEvent, query: QueryHistoryItem) => void;
   handleQueryMouseEnter: (e: React.MouseEvent, query: QueryHistoryItem) => void;
@@ -275,8 +273,6 @@ export function MainContentSection({
   selectedTopic,
   setSelectedTopic,
   setClickedQuery,
-  handleClusterHover,
-  handleClusterHoverLeave,
   handleQueryClick,
   handleQueryContextMenu,
   handleQueryMouseEnter,
@@ -366,8 +362,6 @@ export function MainContentSection({
                 cluster={cluster}
                 onExpand={setExpandedCluster}
                 onContextMenu={(e, query) => setClickedQuery({ query, x: e.clientX, y: e.clientY })}
-                onClusterHover={handleClusterHover}
-                onClusterHoverLeave={handleClusterHoverLeave}
               />
             ))}
           </div>
@@ -381,8 +375,6 @@ export function MainContentSection({
               cluster={cluster}
               isExpanded={selectedTopic === cluster.topic}
               onToggle={(topic) => setSelectedTopic(selectedTopic === topic ? null : topic)}
-              onClusterHover={handleClusterHover}
-              onClusterHoverLeave={handleClusterHoverLeave}
               onQueryClick={handleQueryClick}
               onQueryContextMenu={handleQueryContextMenu}
               onQueryMouseEnter={handleQueryMouseEnter}

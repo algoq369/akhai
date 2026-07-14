@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type { Node } from './MindMap';
-import type { MindMapDiagramViewProps, Discussion, TopicLink } from './MindMapUtils';
+import type { MindMapDiagramViewProps, TopicLink } from './MindMapUtils';
 import {
   buildConnectionCounts,
   buildSharedNodeInfo,
@@ -49,17 +49,10 @@ export default function MindMapDiagramView({
   const [aiLoading, setAiLoading] = useState(false);
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null);
 
-  // Discussion panel
-  const [discussions, setDiscussions] = useState<Discussion[]>([]);
-  const [loadingDiscussions, setLoadingDiscussions] = useState(false);
-  const [discussionError, setDiscussionError] = useState<string | null>(null);
-  const [discussionTotal, setDiscussionTotal] = useState(0);
-
   // Topic-to-topic correlation links
   const [topicLinks, setTopicLinks] = useState<TopicLink[]>([]);
 
   // Living graph
-  const [isLive, setIsLive] = useState(false);
   const [pulsingClusters, setPulsingClusters] = useState<Set<string>>(new Set());
   const prevNodeCountRef = useRef(0);
 
@@ -126,9 +119,8 @@ export default function MindMapDiagramView({
           setAllNodes(newNodes);
         }
         prevNodeCountRef.current = newNodes.length;
-        setIsLive(true);
       } catch {
-        setIsLive(false);
+        /* poll failed; keep the last known graph */
       }
     };
 
@@ -252,26 +244,6 @@ export default function MindMapDiagramView({
     [expandedCluster, clusters, topicLinks]
   );
 
-  // Fetch discussions
-  const fetchDiscussions = useCallback(
-    async (topicId: string, offset = 0) => {
-      setLoadingDiscussions(true);
-      setDiscussionError(null);
-      try {
-        const res = await fetch(`/api/mindmap/topics/${topicId}/queries?limit=10&offset=${offset}`);
-        if (!res.ok) throw new Error('Failed to load');
-        const data = await res.json();
-        setDiscussions(offset > 0 ? [...discussions, ...data.discussions] : data.discussions || []);
-        setDiscussionTotal(data.total || 0);
-      } catch {
-        setDiscussionError('Failed to load discussions');
-      } finally {
-        setLoadingDiscussions(false);
-      }
-    },
-    [discussions]
-  );
-
   // Event handlers — pan/zoom/drag
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     if (
@@ -319,7 +291,9 @@ export default function MindMapDiagramView({
 
     setSelectedTopic(node);
     setAnalyseOpen(true);
-    fetchDiscussions(node.id);
+    // TODO(post-launch): surface the topic's prior discussions in the analyse panel via
+    // GET /api/mindmap/topics/{id}/queries (route kept as the seam). Removed the fetch that
+    // discarded its result — no wasted request ships.
     onNodeSelect?.({ id: node.id, name: node.name, category: node.category || undefined });
   };
 
@@ -328,8 +302,6 @@ export default function MindMapDiagramView({
     setAnalyseOpen(false);
     setAiInsight(null);
     setAiLoading(false);
-    setDiscussions([]);
-    setDiscussionError(null);
     onNodeSelect?.(null);
   };
 
@@ -376,12 +348,6 @@ export default function MindMapDiagramView({
     [selectedTopic, layoutNodes, visibleLinks, filteredNodes]
   );
 
-  // Suppress unused vars from state kept for future use
-  void loadingDiscussions;
-  void discussionError;
-  void discussionTotal;
-  void discussions;
-
   return (
     <div className="w-full h-full flex flex-col overflow-hidden bg-[#fafbfc] dark:bg-[#0a0a0a]">
       {/* Header toolbar */}
@@ -389,7 +355,6 @@ export default function MindMapDiagramView({
         totalTopics={totalTopics}
         totalClusters={totalClusters}
         sharedCount={sharedCount}
-        isLive={isLive}
         localSearch={localSearch}
         setLocalSearch={setLocalSearch}
         zoom={zoom}

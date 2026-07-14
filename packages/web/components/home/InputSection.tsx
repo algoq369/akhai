@@ -1,6 +1,6 @@
 'use client'
 
-import { RefObject } from 'react'
+import { RefObject, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { InstinctModeConsole } from '@/components/InstinctModeConsole'
 import MethodologyFrame from '@/components/MethodologyFrame'
@@ -21,7 +21,7 @@ interface InputSectionProps {
   query: string
   onQueryChange: (v: string) => void
   onSubmit: (e: React.FormEvent) => void
-  inputRef: RefObject<HTMLInputElement | null>
+  inputRef: RefObject<HTMLTextAreaElement | null>
   // File attachment
   fileInputRef: RefObject<HTMLInputElement | null>
   attachedFiles: File[]
@@ -76,6 +76,17 @@ export default function InputSection(props: InputSectionProps) {
     toggleDarkMode, messages,
   } = props
 
+  // Auto-grow the query textarea with wrapped/multiline text (caps ~5-6 rows, then scrolls).
+  // Runs on every query change so programmatic sets (suggestion click, mind-map query) and the
+  // post-submit reset to '' resize too — not just direct typing.
+  const QUERY_MAX_HEIGHT = 140
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, QUERY_MAX_HEIGHT) + 'px'
+  }, [query, inputRef, isExpanded])
+
   return (
     <div
       className={`transition-all duration-500 ease-out ${isExpanded ? 'pb-2 pt-1 border-t border-relic-mist/20 dark:border-relic-slate/20 bg-white dark:bg-relic-void sticky bottom-0' : 'pb-8'}`}
@@ -88,19 +99,27 @@ export default function InputSection(props: InputSectionProps) {
       <form onSubmit={onSubmit} className="max-w-3xl mx-auto px-3 sm:px-6">
         {/* Input Box */}
         <div className="relative transition-all duration-300">
-          <input
+          <textarea
             ref={inputRef}
             id="query-input"
             name="query"
-            type="text"
+            rows={1}
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter submits (transmit stays the sole submit path); Shift+Enter = newline.
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                if (!isLoading && !isTransitioning) e.currentTarget.form?.requestSubmit()
+              }
+            }}
             placeholder={isExpanded ? 'continue conversation...' : ''}
             autoComplete="off"
             className={`
-              relic-input text-sm transition-all duration-300 text-center
+              relic-input text-sm transition-all duration-300 text-center resize-none overflow-y-auto
               ${isExpanded ? 'py-2 px-4' : 'py-3'}
             `}
+            style={{ maxHeight: QUERY_MAX_HEIGHT }}
             autoFocus
             disabled={isLoading}
           />

@@ -9,8 +9,7 @@ import {
   TimeFilter,
 } from './MindMapHistoryView.types';
 import { extractTopic, normalizeTopic } from './MindMapHistoryView.utils';
-import { HoverTooltip, ClusterInsightTooltip, ClickPopup } from './MindMapHistoryView.portals';
-import { createClusterHoverHandlers } from './MindMapHistoryView.handlers';
+import { HoverTooltip, ClickPopup } from './MindMapHistoryView.portals';
 import { ToolbarSection, MainContentSection } from './MindMapHistoryView.sections';
 
 interface MindMapHistoryViewProps {
@@ -47,14 +46,6 @@ export default function MindMapHistoryView({
     y: number;
   } | null>(null);
   const [expandedCluster, setExpandedCluster] = useState<string | null>(null);
-  const [clusterInsight, setClusterInsight] = useState<{
-    topic: string;
-    text: string;
-    x: number;
-    y: number;
-  } | null>(null);
-  const clusterInsightCache = useRef<Record<string, string>>({});
-  const clusterHoverTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Suppress unused-var lint for onTopicExpand (kept for future use)
   void onTopicExpand;
@@ -187,7 +178,6 @@ export default function MindMapHistoryView({
     e.stopPropagation();
     const x = e.clientX,
       y = e.clientY;
-    setClusterInsight(null);
     hoverTimeout.current = setTimeout(() => setHoveredQuery({ query, x, y }), 150);
   };
   const hoverHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -208,23 +198,10 @@ export default function MindMapHistoryView({
     e.preventDefault();
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
     setHoveredQuery(null);
-    setClusterInsight(null);
     setClickedQuery(
       clickedQuery?.query.id === query.id ? null : { query, x: e.clientX, y: e.clientY }
     );
   };
-
-  const rawClusterHover = createClusterHoverHandlers(
-    clusterInsightCache,
-    clusterHoverTimeout,
-    setClusterInsight
-  );
-  const handleClusterHover = (e: React.MouseEvent, cluster: TopicCluster) => {
-    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-    setHoveredQuery(null);
-    rawClusterHover.handleClusterHover(e, cluster);
-  };
-  const handleClusterHoverLeave = rawClusterHover.handleClusterHoverLeave;
 
   return (
     <div
@@ -268,8 +245,6 @@ export default function MindMapHistoryView({
         selectedTopic={selectedTopic}
         setSelectedTopic={setSelectedTopic}
         setClickedQuery={setClickedQuery}
-        handleClusterHover={handleClusterHover}
-        handleClusterHoverLeave={handleClusterHoverLeave}
         handleQueryClick={handleQueryClick}
         handleQueryContextMenu={handleQueryContextMenu}
         handleQueryMouseEnter={handleQueryMouseEnter}

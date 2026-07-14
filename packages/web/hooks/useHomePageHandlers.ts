@@ -50,7 +50,7 @@ export interface HomePageStateForHandlers {
   setHoveredMethod: React.Dispatch<React.SetStateAction<string | null>>;
   setTooltipPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   containerRef: React.RefObject<HTMLDivElement | null>;
   pendingRefinementCount: React.MutableRefObject<number>;
   sessionId: string;

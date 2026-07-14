@@ -45,7 +45,7 @@ export interface UseQueryHandlersState {
   extractAndStoreTopics: (query: string, response: string, messageId: string) => Promise<any>;
   getPageContext: () => string | undefined;
   resetDepthAnnotations: () => void;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
   setMessageRawThinking?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }
 

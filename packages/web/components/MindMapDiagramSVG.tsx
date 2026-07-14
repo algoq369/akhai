@@ -6,7 +6,6 @@ interface MindMapDiagramHeaderProps {
   totalTopics: number;
   totalClusters: number;
   sharedCount: number;
-  isLive: boolean;
   localSearch: string;
   setLocalSearch: (v: string) => void;
   zoom: number;
@@ -19,7 +18,6 @@ export function MindMapDiagramHeader({
   totalTopics,
   totalClusters,
   sharedCount,
-  isLive,
   localSearch,
   setLocalSearch,
   zoom,
@@ -40,12 +38,6 @@ export function MindMapDiagramHeader({
           {totalTopics} topics · {totalClusters} clusters
           {sharedCount > 0 && ` · ${sharedCount} shared`}
         </span>
-        {isLive && (
-          <span className="flex items-center gap-1 text-[10px] text-emerald-500 font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            live
-          </span>
-        )}
       </div>
 
       <div className="flex items-center gap-2">

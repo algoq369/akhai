@@ -176,16 +176,12 @@ interface ClusterGridCardProps {
   cluster: TopicCluster;
   onExpand: (topic: string) => void;
   onContextMenu: (e: React.MouseEvent, query: QueryHistoryItem) => void;
-  onClusterHover: (e: React.MouseEvent, cluster: TopicCluster) => void;
-  onClusterHoverLeave: () => void;
 }
 
 export function ClusterGridCard({
   cluster,
   onExpand,
   onContextMenu,
-  onClusterHover,
-  onClusterHoverLeave,
 }: ClusterGridCardProps) {
   return (
     <div
@@ -198,8 +194,6 @@ export function ClusterGridCard({
         if (firstQ) onContextMenu(e, firstQ);
       }}
       onKeyDown={(e) => e.key === 'Enter' && onExpand(cluster.topic)}
-      onMouseEnter={(e) => onClusterHover(e, cluster)}
-      onMouseLeave={onClusterHoverLeave}
       className={
         'group relative bg-white dark:bg-[#18181b]/50 rounded-lg border transition-all duration-200 text-left overflow-hidden cursor-pointer border-slate-200 dark:border-[#334155] hover:border-slate-300 dark:hover:border-[#64748b] hover:shadow-sm'
       }
@@ -257,8 +251,6 @@ interface ClusterListItemProps {
   cluster: TopicCluster;
   isExpanded: boolean;
   onToggle: (topic: string) => void;
-  onClusterHover: (e: React.MouseEvent, cluster: TopicCluster) => void;
-  onClusterHoverLeave: () => void;
   onQueryClick: (e: React.MouseEvent, query: QueryHistoryItem) => void;
   onQueryContextMenu: (e: React.MouseEvent, query: QueryHistoryItem) => void;
   onQueryMouseEnter: (e: React.MouseEvent, query: QueryHistoryItem) => void;
@@ -269,8 +261,6 @@ export function ClusterListItem({
   cluster,
   isExpanded,
   onToggle,
-  onClusterHover,
-  onClusterHoverLeave,
   onQueryClick,
   onQueryContextMenu,
   onQueryMouseEnter,
@@ -280,8 +270,6 @@ export function ClusterListItem({
     <div className="bg-white dark:bg-[#18181b]/50 rounded-lg border border-slate-200 dark:border-[#334155] overflow-hidden hover:border-slate-300 dark:hover:border-[#64748b] transition-all">
       <button
         onClick={() => onToggle(cluster.topic)}
-        onMouseEnter={(e) => onClusterHover(e, cluster)}
-        onMouseLeave={onClusterHoverLeave}
         className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-[#334155]/20 transition-colors"
       >
         <div

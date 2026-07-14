@@ -1,7 +1,7 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import { QueryHistoryItem, TopicCluster, METHODOLOGY_COLORS } from './MindMapHistoryView.types';
+import { QueryHistoryItem, METHODOLOGY_COLORS } from './MindMapHistoryView.types';
 
 interface HoverTooltipProps {
   hoveredQuery: { query: QueryHistoryItem; x: number; y: number };
@@ -84,86 +84,6 @@ export function HoverTooltip({
           border: 'none',
           cursor: 'pointer',
           padding: 0,
-          fontFamily: 'inherit',
-        }}
-      >
-        ◇ analyse in mini-chat
-      </button>
-    </div>,
-    document.body
-  );
-}
-
-interface ClusterInsightTooltipProps {
-  clusterInsight: { topic: string; text: string; x: number; y: number };
-  clusterHoverTimeout: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
-  setClusterInsight: (val: null) => void;
-  filteredClusters: TopicCluster[];
-  onContinueToChat?: (query: string) => void;
-}
-
-export function ClusterInsightTooltip({
-  clusterInsight,
-  clusterHoverTimeout,
-  setClusterInsight,
-  filteredClusters,
-  onContinueToChat,
-}: ClusterInsightTooltipProps) {
-  if (typeof document === 'undefined') return null;
-
-  return createPortal(
-    <div
-      onMouseEnter={() => {
-        if (clusterHoverTimeout.current) clearTimeout(clusterHoverTimeout.current);
-      }}
-      onMouseLeave={() => setClusterInsight(null)}
-      style={{
-        position: 'fixed',
-        left: Math.min(clusterInsight.x + 12, window.innerWidth - 320),
-        top: Math.max(clusterInsight.y - 100, 10),
-        zIndex: 9999,
-        background: 'white',
-        border: '1px solid #e2e8f0',
-        borderRadius: 8,
-        padding: '10px 14px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-        maxWidth: 320,
-        fontFamily: "'JetBrains Mono', monospace",
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 6,
-        }}
-      >
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#1e293b' }}>
-          {clusterInsight.topic}
-        </span>
-        <span style={{ fontSize: 8, color: '#94a3b8' }}>
-          {filteredClusters.find((c) => c.topic === clusterInsight.topic)?.queries.length || 0}{' '}
-          conversations
-        </span>
-      </div>
-      <p style={{ fontSize: 9, color: '#64748b', lineHeight: 1.5, margin: 0, marginBottom: 8 }}>
-        {clusterInsight.text}
-      </p>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onContinueToChat?.(clusterInsight.topic);
-          setClusterInsight(null);
-        }}
-        style={{
-          fontSize: 8,
-          padding: '3px 8px',
-          border: '1px solid #e2e8f0',
-          borderRadius: 4,
-          background: 'white',
-          cursor: 'pointer',
-          color: '#64748b',
           fontFamily: 'inherit',
         }}
       >

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import MindMapHistoryView from '@/components/MindMapHistoryView';
@@ -84,12 +84,6 @@ export default function MindMapPage() {
           t.category?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : topics;
-
-  // Handle topic expand
-  const handleTopicExpand = useCallback((topicId: string) => {
-    console.log('Expand topic:', topicId);
-    // TODO: Open topic expansion panel
-  }, []);
 
   const viewModes = [
     { id: 'graph' as ViewMode, icon: MapIcon, label: 'Graph' },
@@ -175,7 +169,11 @@ export default function MindMapPage() {
               propTopicLinks={topicLinks}
             />
           ))}
+        {/* TODO(post-launch): pass onContinueToChat so the history "◇ analyse" action works on
+            the /mindmap route (it is a no-op here without the prop; the overlay host wires it). */}
         {viewMode === 'history' && <MindMapHistoryView />}
+        {/* TODO(post-launch): pass the active selected topics so grimoire relevance scores are real
+            (selectedTopics={[]} makes every relevanceScore 0 on this surface). */}
         {viewMode === 'report' && (
           <MindMapReportView userId={user?.id || null} selectedTopics={[]} />
         )}

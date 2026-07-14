@@ -114,7 +114,7 @@ export function useHomePageState() {
   // ─── Refs ────────────────────────────────────────────────
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const diamondRef = useRef<HTMLDivElement>(null);
 
