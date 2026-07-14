@@ -21,6 +21,10 @@
  * Honesty: the 3 targets are exactly M4a's ranking (score shown) — no decorative edges.
  * prefers-reduced-motion: no growth/shockwave/dolly/ring-drift/motes/parallax/pulses — a clean
  * static bloomed tunnel + vignette remains.
+ *
+ * tunnel-adaptive: every structural white/black + dark-tuned opacity comes from
+ * getTunnelTheme(isDark) (see tunnel-theme.ts) so the tunnel is cinematic on BOTH the light
+ * (#fafbfc) and dark (#0a0a0a) map backgrounds, and recolors live on theme toggle.
  */
 
 import React, { useEffect } from 'react';
@@ -32,6 +36,7 @@ import {
   AnimatePresence,
 } from 'framer-motion';
 import { TunnelRings, Shockwave, Motes } from './TunnelEffects';
+import { getTunnelTheme, useIsDarkTheme, type TunnelTheme } from './tunnel-theme';
 
 /**
  * Subject → strand/halo color. Stable per category (unlike getClusterColor, which assigns by
@@ -129,6 +134,7 @@ function Strand({
   color,
   reduced,
   zoom,
+  theme,
 }: {
   mouth: { x: number; y: number };
   target: TunnelTarget;
@@ -136,6 +142,7 @@ function Strand({
   color: string;
   reduced: boolean;
   zoom: number;
+  theme: TunnelTheme;
 }) {
   const d = DEPTH[rank];
   const par = useParallax(d.parallax / Math.max(zoom, 0.3), !reduced);
@@ -170,7 +177,8 @@ function Strand({
       transition={{ duration: 0.25, delay: rank * 0.08 }}
     >
       <defs>
-        {/* [2] white-hot entrance bleeding into subject color (userSpaceOnUse follows geometry) */}
+        {/* [2] hot entrance bleeding into subject color (userSpaceOnUse follows geometry) —
+            dark: white-hot mouth; light: deep-saturated mouth (theme.coreStops) */}
         <linearGradient
           id={gradId}
           gradientUnits="userSpaceOnUse"
@@ -179,10 +187,9 @@ function Strand({
           x2={target.x}
           y2={target.y}
         >
-          <stop offset="0%" stopColor="#ffffff" stopOpacity={1} />
-          <stop offset="20%" stopColor="#ffffff" stopOpacity={0.85} />
-          <stop offset="55%" stopColor={color} stopOpacity={0.85} />
-          <stop offset="100%" stopColor={color} stopOpacity={1} />
+          {theme.coreStops(color).map((s) => (
+            <stop key={s.offset} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity} />
+          ))}
         </linearGradient>
       </defs>
 
@@ -195,15 +202,16 @@ function Strand({
         depthScale={d.scale}
         depthOpacity={d.opacity}
         reduced={reduced}
+        theme={theme}
       />
 
-      {/* [2] 3-layer bloom: outer haze / mid glow / white-hot core */}
+      {/* [2] 3-layer bloom: outer haze / mid glow / hot core (+ light-mode white filament) */}
       <path
         d={path}
         fill="none"
         stroke={color}
         strokeWidth={coreW * 5}
-        opacity={0.18 * d.opacity}
+        opacity={theme.bloomOuterOpacity * d.opacity}
         strokeLinecap="round"
         style={{ filter: 'blur(3px)' }}
       />
@@ -212,7 +220,7 @@ function Strand({
         fill="none"
         stroke={color}
         strokeWidth={coreW * 2.4}
-        opacity={0.5 * d.opacity}
+        opacity={theme.bloomMidOpacity * d.opacity}
         strokeLinecap="round"
         style={{ filter: 'blur(1.2px)' }}
         {...grow}
@@ -226,6 +234,17 @@ function Strand({
         strokeLinecap="round"
         {...grow}
       />
+      {theme.highlight && (
+        <motion.path
+          d={path}
+          fill="none"
+          stroke={theme.highlight.color}
+          strokeWidth={coreW * theme.highlight.widthFactor}
+          opacity={theme.highlight.opacity * d.opacity}
+          strokeLinecap="round"
+          {...grow}
+        />
+      )}
 
       {/* [6] energy motes streaming into the connection */}
       <Motes
@@ -235,6 +254,7 @@ function Strand({
         color={color}
         rank={rank}
         reduced={reduced}
+        theme={theme}
       />
 
       {/* target node: ignites on entry, then breathes — depth-scaled and blurred by rank */}
@@ -255,9 +275,16 @@ function Strand({
           <motion.circle
             r={d.halo}
             fill={color}
-            opacity={0.3}
+            opacity={theme.haloOpacity}
             filter="url(#tunnel-glow)"
-            animate={reduced ? undefined : { scale: [1, 1.4, 1], opacity: [0.3, 0.5, 0.3] }}
+            animate={
+              reduced
+                ? undefined
+                : {
+                    scale: [1, 1.4, 1],
+                    opacity: [theme.haloOpacity, theme.haloOpacity + 0.2, theme.haloOpacity],
+                  }
+            }
             transition={
               reduced
                 ? undefined
@@ -265,14 +292,14 @@ function Strand({
             }
             style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
           />
-          <circle r={d.dot} fill={color} stroke="#ffffff" strokeWidth={1.4} />
+          <circle r={d.dot} fill={color} stroke={theme.dotStroke(color)} strokeWidth={1.4} />
           <text
             y={-d.dot - 8}
             textAnchor="middle"
             fontSize={10.5}
             fontWeight={700}
-            fill={color}
-            stroke="#0b0d16"
+            fill={theme.labelFill(color)}
+            stroke={theme.labelHalo}
             strokeWidth={3}
             strokeLinejoin="round"
             style={{ paintOrder: 'stroke' }}
@@ -285,8 +312,8 @@ function Strand({
             y={-d.dot + 4}
             textAnchor="middle"
             fontSize={7.5}
-            fill={color}
-            stroke="#0b0d16"
+            fill={theme.labelFill(color)}
+            stroke={theme.labelHalo}
             strokeWidth={2.5}
             strokeLinejoin="round"
             style={{ paintOrder: 'stroke' }}
@@ -304,6 +331,7 @@ function Strand({
 
 export default function TunnelOverlay({ mouth, targets, zoom }: TunnelOverlayProps) {
   const reduced = useReducedMotion() ?? false;
+  const theme = getTunnelTheme(useIsDarkTheme());
   // [3] vignette sized in layout units but screen-constant: divide by zoom
   const vigR = 760 / Math.max(zoom, 0.3);
   const vigSpan = 4200 / Math.max(zoom, 0.3);
@@ -327,7 +355,8 @@ export default function TunnelOverlay({ mouth, targets, zoom }: TunnelOverlayPro
           <filter id="tunnel-glow" x="-120%" y="-120%" width="340%" height="340%">
             <feGaussianBlur stdDeviation="4" />
           </filter>
-          {/* [3] pool of clarity at the mouth, darkness at the edges */}
+          {/* [3] pool of clarity at the mouth — dark theme fades the edges to darkness, light
+              theme washes them toward the page background (recession TO light) */}
           <radialGradient
             id="tunnel-vignette"
             gradientUnits="userSpaceOnUse"
@@ -335,10 +364,10 @@ export default function TunnelOverlay({ mouth, targets, zoom }: TunnelOverlayPro
             cy={mouth.y}
             r={vigR}
           >
-            <stop offset="0%" stopColor="#05060e" stopOpacity={0} />
-            <stop offset="32%" stopColor="#05060e" stopOpacity={0.05} />
-            <stop offset="66%" stopColor="#05060e" stopOpacity={0.32} />
-            <stop offset="100%" stopColor="#05060e" stopOpacity={0.55} />
+            <stop offset="0%" stopColor={theme.vignetteColor} stopOpacity={theme.vignetteStops[0]} />
+            <stop offset="32%" stopColor={theme.vignetteColor} stopOpacity={theme.vignetteStops[1]} />
+            <stop offset="66%" stopColor={theme.vignetteColor} stopOpacity={theme.vignetteStops[2]} />
+            <stop offset="100%" stopColor={theme.vignetteColor} stopOpacity={theme.vignetteStops[3]} />
           </radialGradient>
         </defs>
 
@@ -362,6 +391,7 @@ export default function TunnelOverlay({ mouth, targets, zoom }: TunnelOverlayPro
               color={subjectColor(t.category)}
               reduced={reduced}
               zoom={zoom}
+              theme={theme}
             />
           ))}
 
@@ -369,7 +399,7 @@ export default function TunnelOverlay({ mouth, targets, zoom }: TunnelOverlayPro
             parallax: the original dot below keeps the pointer events) */}
         <g transform={`translate(${mouth.x}, ${mouth.y})`}>
           {/* [4] entry burst */}
-          <Shockwave radius={mouth.radius + 8} color={mouth.color} reduced={reduced} />
+          <Shockwave radius={mouth.radius + 8} color={mouth.color} reduced={reduced} theme={theme} />
           <motion.circle
             r={mouth.radius + 7}
             fill="none"
@@ -397,7 +427,7 @@ export default function TunnelOverlay({ mouth, targets, zoom }: TunnelOverlayPro
           <circle
             r={mouth.radius}
             fill={mouth.color}
-            stroke="#ffffff"
+            stroke={theme.dotStroke(mouth.color)}
             strokeWidth={1.6}
             filter="url(#tunnel-glow)"
           />

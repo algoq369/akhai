@@ -4,10 +4,13 @@
  * mindmap-tunnel-v2 — the depth machinery: receding shaft rings, entrance shockwave, and
  * particle energy-motes. Split from TunnelOverlay.tsx to keep both files under the 500-line
  * ceiling. All pure SVG + framer-motion; every looping animation is gated by `reduced`.
+ * tunnel-adaptive: structural colors + contrast weights come from the TunnelTheme so rings,
+ * shockwave and motes read on both the light and dark map backgrounds.
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import type { TunnelTheme } from './tunnel-theme';
 
 export interface Pt {
   x: number;
@@ -45,6 +48,7 @@ export function TunnelRings({
   depthScale,
   depthOpacity,
   reduced,
+  theme,
 }: {
   mouth: Pt;
   control: Pt;
@@ -53,21 +57,22 @@ export function TunnelRings({
   depthScale: number;
   depthOpacity: number;
   reduced: boolean;
+  theme: TunnelTheme;
 }) {
   const angle = (Math.atan2(target.y - mouth.y, target.x - mouth.x) * 180) / Math.PI;
   return (
     <g>
       {RING_STEPS.map((ring, i) => {
         const p = quadPoint(ring.f, mouth, control, target);
-        const o = ring.o * depthOpacity;
+        const o = ring.o * depthOpacity * theme.ringOpacityFactor;
         return (
           <g key={i} transform={`translate(${p.x}, ${p.y}) rotate(${angle})`}>
             <motion.ellipse
               rx={ring.r * 0.34 * depthScale}
               ry={ring.r * depthScale}
               fill="none"
-              stroke={color}
-              strokeWidth={1.1}
+              stroke={theme.ringStroke(color)}
+              strokeWidth={theme.ringWidth}
               style={{
                 transformBox: 'fill-box',
                 transformOrigin: 'center',
@@ -99,20 +104,22 @@ export function Shockwave({
   radius,
   color,
   reduced,
+  theme,
 }: {
   radius: number;
   color: string;
   reduced: boolean;
+  theme: TunnelTheme;
 }) {
   if (reduced) return null;
   return (
     <motion.circle
       r={radius}
       fill="none"
-      stroke={color}
+      stroke={theme.shockStroke(color)}
       strokeWidth={2.2}
       style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-      initial={{ scale: 0.25, opacity: 0.65 }}
+      initial={{ scale: 0.25, opacity: theme.shockOpacity }}
       animate={{ scale: 2.6, opacity: 0 }}
       transition={{ duration: 0.55, ease: 'easeOut' }}
     />
@@ -133,6 +140,7 @@ export function Motes({
   color,
   rank,
   reduced,
+  theme,
 }: {
   mouth: Pt;
   control: Pt;
@@ -140,6 +148,7 @@ export function Motes({
   color: string;
   rank: number;
   reduced: boolean;
+  theme: TunnelTheme;
 }) {
   if (reduced) return null;
   const count = rank === 0 ? 3 : 2;
@@ -168,7 +177,7 @@ export function Motes({
             />
             <motion.circle
               r={1.7}
-              fill="#ffffff"
+              fill={theme.moteCore(color)}
               initial={{ cx: xs[0], cy: ys[0], opacity: 0 }}
               animate={{ cx: xs, cy: ys, opacity: fade }}
               transition={t}
