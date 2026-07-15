@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
     return new Response('Missing queryId parameter', { status: 400 });
   }
 
+  const heartbeats = new Map<string, ReturnType<typeof setInterval>>();
+
   const stream = new ReadableStream({
     start(controller) {
       // Register this controller
@@ -51,6 +53,8 @@ export async function GET(request: NextRequest) {
     },
     cancel() {
       // Clean up when client disconnects
+      const hb = heartbeats.get(queryId);
+      if (hb) { clearInterval(hb); heartbeats.delete(queryId); }
       const controllers = connections.get(queryId);
       if (controllers) {
         if (controllers.size <= 1) {
@@ -60,11 +64,29 @@ export async function GET(request: NextRequest) {
     },
   });
 
+  // Heartbeat: flush a comment every 2s so the stream never sits idle during long model calls
+  // (idle SSE gets buffered/looks frozen). EventSource ignores ':' comment lines.
+  {
+    const enc = new TextEncoder();
+    const hb = setInterval(() => {
+      const controllers = connections.get(queryId);
+      if (!controllers || controllers.size === 0) return;
+      for (const c of controllers) {
+        try { c.enqueue(enc.encode(`: hb\n\n`)); } catch { /* controller closed */ }
+      }
+    }, 2000);
+    heartbeats.set(queryId, hb);
+  }
+
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
+      // Stop proxy/dev-server buffering that batches SSE events into start/end clumps (the reported
+      // "no live reasoning during the middle" gap — events were flushed all at once, not streamed).
+      'X-Accel-Buffering': 'no',
+      'Content-Encoding': 'none',
     },
   });
 }
