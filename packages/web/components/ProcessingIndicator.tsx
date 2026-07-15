@@ -128,7 +128,7 @@ export default function ProcessingIndicator({ messageId, isVisible }: Processing
       const m = (ev.details?.narrative ?? '').match(/^(.+?) (didn't respond|couldn't answer)/);
       if (m && advisorStatus.get(m[1]) !== 'answered') advisorStatus.set(m[1], m[2]);
     }
-    const key = `${ev.stage}|${ev.details?.narrative ?? ''}`;
+    const key = ev.stage; // one row per stage (match ReasoningTrace — stable count)
     if (!latestByKey.has(key)) rowOrder.push(key);
     latestByKey.set(key, ev);
   }

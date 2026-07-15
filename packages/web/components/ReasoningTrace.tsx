@@ -74,7 +74,11 @@ export function ReasoningTrace({ messageId }: ReasoningTraceProps): React.ReactE
       const m = (ev.details?.narrative ?? '').match(/^(.+?) (didn't respond|couldn't answer)/);
       if (m && advisorStatus.get(m[1]) !== 'answered') advisorStatus.set(m[1], m[2]);
     }
-    const key = `${ev.stage}|${ev.details?.narrative ?? ''}`;
+    // Key by STAGE alone (not stage|narrative): each pipeline stage = exactly ONE row, always,
+    // showing its latest narrative. Keying by narrative made a stage that emits twice (e.g. reasoning
+    // fires an early + a late line) create duplicate rows, so the trace rendered a different count
+    // run-to-run — the inconsistency. tot advisors keep their own ADVISORS_KEY aggregation above.
+    const key = ev.stage;
     if (!latestByKey.has(key)) rowOrder.push(key);
     latestByKey.set(key, ev);
   }
