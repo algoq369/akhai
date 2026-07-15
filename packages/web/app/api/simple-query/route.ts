@@ -586,8 +586,11 @@ export async function POST(request: NextRequest) {
 
     // live-words: coalesce answer text_delta chunks into ~word-level 'generating' events (flush at
     // ~40 chars or ~250ms, whichever first) so the live panel streams REAL tokens, not one final
-    // blob, without hundreds of SSE events. anthropic-only (the streaming provider); tail flushed
-    // on stream end. Each event carries ONLY the chunk since the last flush — the client accumulates.
+    // blob, without hundreds of SSE events. Streams on anthropic (non-frontier) AND openrouter —
+    // the free-model path anonymous users run on (anon-live-reasoning); providers without SSE
+    // support simply ignore onTextDelta, and the frontier model stays on the non-streamed JSON
+    // path (multi-provider-api guard). Tail flushed on stream end. Each event carries ONLY the
+    // chunk since the last flush — the client accumulates.
     let genSeq = 0;
     let genBuf = '';
     let genLastFlush = Date.now();
@@ -605,13 +608,10 @@ export async function POST(request: NextRequest) {
       genBuf = '';
       genLastFlush = Date.now();
     };
-    const textCb =
-      selectedProvider === 'anthropic'
-        ? (chunk: string) => {
-            genBuf += chunk;
-            flushGen(false);
-          }
-        : undefined;
+    const textCb = (chunk: string) => {
+      genBuf += chunk;
+      flushGen(false);
+    };
 
     try {
       // E5 FLIP (2026-07-05): the live agent is now the DEFAULT for react — proven over 5 weeks:

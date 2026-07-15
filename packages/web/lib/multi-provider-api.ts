@@ -591,6 +591,10 @@ async function callXAI(request: CompletionRequest, startTime: number): Promise<C
 
 /**
  * Call OpenRouter API (OpenAI-compatible, free models)
+ *
+ * anon-live-reasoning: when request.onTextDelta is attached the call streams (SSE) and fires the
+ * callback per content chunk — this is how ANONYMOUS (free-model) queries get live 'generating'
+ * events. Without a callback the original single-json path runs unchanged.
  */
 async function callOpenRouter(
   request: CompletionRequest,
@@ -607,6 +611,8 @@ async function callOpenRouter(
     content: m.content,
   }));
 
+  const wantStream = !!request.onTextDelta;
+
   const response = await fetch(config.baseUrl, {
     method: 'POST',
     signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
@@ -621,12 +627,17 @@ async function callOpenRouter(
       messages,
       max_tokens: request.maxTokens || 500,
       temperature: request.temperature ?? 0.7,
+      ...(wantStream ? { stream: true } : {}),
     }),
   });
 
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
+  }
+
+  if (wantStream && response.body) {
+    return parseOpenRouterStream(response, request, startTime);
   }
 
   const data = await response.json();
@@ -648,6 +659,78 @@ async function callOpenRouter(
     provider: 'openrouter',
     cost: 0,
     latencyMs,
+  };
+}
+
+/**
+ * Parse OpenRouter (OpenAI-compatible) SSE: `data: {choices:[{delta:{content}}]}` lines terminated
+ * by `data: [DONE]`; OpenRouter's `: OPENROUTER PROCESSING` keep-alive comments are skipped by the
+ * data-prefix check. Usage arrives on the final chunk when present — captured, else 0 (as the
+ * json path). Mirrors parseAnthropicStream's buffering (decoder stream:true + partial-line carry).
+ */
+async function parseOpenRouterStream(
+  response: Response,
+  request: CompletionRequest,
+  startTime: number
+): Promise<CompletionResponse> {
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let content = '';
+  let inputTokens = 0;
+  let outputTokens = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const json = line.slice(6).trim();
+        if (!json || json === '[DONE]') continue;
+        let ev: {
+          choices?: Array<{ delta?: { content?: string } }>;
+          usage?: { prompt_tokens?: number; completion_tokens?: number };
+        };
+        try {
+          ev = JSON.parse(json);
+        } catch {
+          continue;
+        }
+        const delta = ev.choices?.[0]?.delta?.content;
+        if (delta) {
+          content += delta;
+          request.onTextDelta?.(delta);
+        }
+        if (ev.usage) {
+          inputTokens = ev.usage.prompt_tokens || inputTokens;
+          outputTokens = ev.usage.completion_tokens || outputTokens;
+        }
+      }
+    }
+  } catch (err) {
+    // Stream interrupted — return whatever accumulated so far
+    console.warn('[OpenRouter] Stream interrupted:', (err as Error).message?.slice(0, 100));
+  }
+
+  if (!content) throw new Error('OpenRouter stream produced no content');
+
+  return {
+    content,
+    usage: {
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      cacheRead: 0,
+      cacheCreation: 0,
+    },
+    model: 'nvidia/nemotron-3-super-120b-a12b:free',
+    provider: 'openrouter',
+    cost: 0, // free model — COGS stays $0
+    latencyMs: Date.now() - startTime,
   };
 }
 
