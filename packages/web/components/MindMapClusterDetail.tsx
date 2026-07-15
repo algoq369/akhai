@@ -4,6 +4,16 @@ import { useMemo, useState } from 'react';
 import type { Node } from './MindMap';
 import type { ClusterData, TopicLink } from './MindMapUtils';
 import { getClusterColor } from './MindMapUtils';
+import {
+  flowerOfLifeLayout,
+  flowerOfLifeCircles,
+  flowerLayoutRadius,
+} from '@/lib/flower-of-life-layout';
+import { useIsDarkTheme } from './akhai-mindmap/tunnel-theme';
+
+// Vogel spacing for the drill flower: max dot radius is 35 (diameter 70), spacing 100 keeps every
+// pair ≥ ~80 apart (see lib/__tests__/flower-of-life-layout.test.ts) — no collisions at 124+ nodes.
+const FLOWER_SPACING = 100;
 
 interface ClusterDetailProps {
   expandedCluster: string;
@@ -32,20 +42,29 @@ export default function MindMapClusterDetail({
   const [drillZoom, setDrillZoom] = useState(1);
   const [drillPan, setDrillPan] = useState({ x: 0, y: 0 });
   const [isDrillPanning, setIsDrillPanning] = useState(false);
+  const isDark = useIsDarkTheme();
   const drillPanStartRef = { x: 0, y: 0, panX: 0, panY: 0 };
 
   const cl = clusters.find((c) => c.category === expandedCluster);
   if (!cl) return null;
   const cc = getClusterColor(cl.category, clusters.indexOf(cl));
-  const {
-    positions: fPos,
-    links: fLinks,
-    sortedNodes: fNodes,
-    vw: svgW,
-    vh: svgH,
-  } = forceLayoutNodes;
+  const { positions: fPos, links: fLinks, sortedNodes: fNodes } = forceLayoutNodes;
   if (fPos.length === 0) return null;
-  const posMap = new Map(fPos.map((p) => [p.id, p]));
+  // mindmap-flower: the drill view positions nodes on a pertinence-ranked Flower-of-Life layout —
+  // most-important topic at the exact center, less-important radiating outward on a golden-angle
+  // spiral (deterministic). The OUTER graph's force layout is untouched; fPos only gates emptiness.
+  const importanceOf = (n: Node) =>
+    (connectionCounts[n.id] || 0) + Math.min(n.queryCount || 1, 8);
+  const maxR = flowerLayoutRadius(fNodes.length, FLOWER_SPACING);
+  const svgW = Math.max(900, Math.ceil(2 * (maxR + 160)));
+  const svgH = Math.max(700, Math.ceil(2 * (maxR + 160)));
+  const flowerCenter = { x: svgW / 2, y: svgH / 2 };
+  const posMap = flowerOfLifeLayout(fNodes, importanceOf, flowerCenter, FLOWER_SPACING);
+  const centerId = fNodes.find((n) => {
+    const p = posMap.get(n.id);
+    return !!p && p.x === flowerCenter.x && p.y === flowerCenter.y;
+  })?.id;
+  const backdropCircles = flowerOfLifeCircles(flowerCenter, Math.max(150, (maxR + 80) / 3));
   const hubIds = new Set(
     fNodes.slice(0, Math.min(Math.max(3, Math.ceil(fNodes.length / 15)), 8)).map((n) => n.id)
   );
@@ -194,6 +213,23 @@ export default function MindMapClusterDetail({
         >
           <svg width="100%" height="100%" viewBox={`0 0 ${svgW} ${svgH}`}>
             <g transform={`translate(${drillPan.x}, ${drillPan.y}) scale(${drillZoom})`}>
+              {/* Flower-of-Life backdrop — the sacred substrate, faint + theme-aware.
+                  non-scaling-stroke keeps the guide lines a crisp 1px at any zoom (the drill
+                  viewBox spans thousands of units, so a scaled stroke would vanish). */}
+              <g pointerEvents="none" opacity={0.08}>
+                {backdropCircles.map((c, i) => (
+                  <circle
+                    key={`fol-${i}`}
+                    cx={c.cx}
+                    cy={c.cy}
+                    r={c.r}
+                    fill="none"
+                    stroke={isDark ? '#e2e8f0' : '#334155'}
+                    strokeWidth={1}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+              </g>
               {fLinks.map((link, li) => {
                 const ps = posMap.get(link.source),
                   pt = posMap.get(link.target);
@@ -222,6 +258,7 @@ export default function MindMapClusterDetail({
                 const importance = conns + Math.min(qc || 1, 8);
                 const nodeRadius = Math.max(10, Math.min(35, 10 + importance * 2.5));
                 const isImportant = importance >= 2 || hubIds.has(node.id);
+                const isCenter = node.id === centerId;
                 const isHov = hoveredNode === node.id;
                 const isConnected = connectedIds ? connectedIds.has(node.id) : false;
                 const nodeOpacity = connectedIds ? (isHov ? 1 : isConnected ? 0.6 : 0.15) : 1;
@@ -242,6 +279,26 @@ export default function MindMapClusterDetail({
                     style={{ cursor: 'pointer' }}
                   >
                     <circle r={Math.max(nodeRadius + 8, 16)} fill="transparent" />
+                    {/* center emphasis — the cluster's heart gets a soft glow + double ring */}
+                    {isCenter && (
+                      <>
+                        <circle r={nodeRadius + 18} fill={cc.text} opacity={0.07} />
+                        <circle
+                          r={nodeRadius + 14}
+                          fill="none"
+                          stroke={cc.text}
+                          strokeWidth={0.6}
+                          opacity={0.2}
+                        />
+                        <circle
+                          r={nodeRadius + 6}
+                          fill="none"
+                          stroke={cc.text}
+                          strokeWidth={1}
+                          opacity={0.45}
+                        />
+                      </>
+                    )}
                     <circle
                       r={nodeRadius}
                       fill={isHov ? cc.text : isImportant ? cc.text + 'CC' : cc.text + '80'}
@@ -261,7 +318,7 @@ export default function MindMapClusterDetail({
                       <text
                         y={nodeRadius + 16}
                         textAnchor="middle"
-                        fill={isHov ? cc.text : '#f1f5f9'}
+                        fill={isHov ? cc.text : isDark ? '#f1f5f9' : '#475569'}
                         fontSize={isImportant ? 16 : 13}
                         fontWeight={isImportant ? 600 : 400}
                         opacity={1}
