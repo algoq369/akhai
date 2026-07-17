@@ -144,7 +144,8 @@ export function getProviderApiConfig(provider: ProviderFamily): {
     case 'openrouter':
       return {
         apiKey: process.env.OPENROUTER_API_KEY,
-        baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
+        // Test seam: OPENROUTER_BASE_URL lets a local harness capture/redirect calls (unset in prod)
+        baseUrl: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1/chat/completions',
       };
     case 'groq':
       return {
