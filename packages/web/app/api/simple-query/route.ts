@@ -484,7 +484,7 @@ export async function POST(request: NextRequest) {
     // pageContext is volatile per-message content (last-5 messages / DOM scrape incl. live ticker):
     // baked into the prefix it defeats the prompt cache for ALL browser traffic — it rides the
     // dynamic block instead (step 6 below), same wording, position preserved at the prompt's end.
-    let systemPrompt = getMethodologyPrompt(selectedMethod.id, undefined, legendMode);
+    let systemPrompt = getMethodologyPrompt(selectedMethod.id, undefined, legendMode, query);
 
     const dynamicParts: string[] = [];
 
