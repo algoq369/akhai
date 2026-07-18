@@ -79,7 +79,7 @@ const MOVEMENT_VI: Movement = {
     'A philosophy that cannot survive contact with engineering is a mood. Here the vision pays in facts.',
     'Sovereignty, literally: the engine is built to live in your hands — self-hostable, your history in a database you can own, your keys your own. Honesty, literally: a grounding guard scores every answer for hype, echo, and drift, and what is not grounded is flagged, not smoothed over; the method named on the label is the method that ran, and a meta-core check rides every query. Vision-first, literally: the interface draws before it argues — trees, maps, constellations — because the mind sees pattern before it reads prose. And the ladder, literally: the engine’s layers are built as an ascent, data at the base, synthesis at the crown. The architecture repeats the oldest figure in this paper.',
     'An old legend tells of a guardian of clay animated by the word truth written on its brow; erase one letter, and it rests. We build with the legend in mind: the human hand stays on the word.',
-    'The figures that follow are blueprint, not decoration.',
+    'The figure that follows is blueprint, not decoration.',
   ],
 };
 
@@ -155,7 +155,7 @@ export default function PhilosophyPage() {
           <MovementBlock key={m.numeral} movement={m} />
         ))}
 
-        {/* Movement VI — prose, then the blueprint figures */}
+        {/* Movement VI — prose, then the single blueprint figure (the trees) */}
         <MovementBlock movement={MOVEMENT_VI} />
         <DualTreesSection />
 
