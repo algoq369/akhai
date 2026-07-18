@@ -167,3 +167,6 @@ packages/web/STDLIB_MIGRATION.md
 packages/web/lib/methodology-runner.ts
 packages/web/lib/resilient-provider.ts
 .claude/
+
+# B7 deploy-harden: per-host deploy config (real values live here, never tracked)
+deploy/deploy.env

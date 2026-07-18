@@ -1,57 +1,60 @@
 #!/bin/bash
 # ============================================================
-# AkhAI — Quick Deploy (build local, push to Iceland)
-# Usage: ./deploy/quick-deploy.sh
+# AkhAI — Quick Deploy (build local, push to VPS)  [legacy pnpm tree]
+# Usage: ./deploy/quick-deploy.sh [--host=IP] [--user=U] [--app-dir=D] [--dry-run]
+# Config: deploy/lib.sh defaults ← deploy/deploy.env ← env ← flags
 # Takes ~1-2 minutes instead of 10+
 # ============================================================
 set -e
 
-VPS_IP="82.221.101.3"
-VPS_USER="akhai"
-LOCAL_WEB="/Users/sheirraza/akhai/packages/web"
-REMOTE_WEB="/home/akhai/app/packages/web"
+# shellcheck source=deploy/lib.sh
+. "$(cd "$(dirname "$0")" && pwd)/lib.sh"
+parse_deploy_flags "$@"
 
-echo "━━━ AkhAI Quick Deploy ━━━"
+LOCAL_WEB="$REPO_ROOT/packages/web"
+REMOTE_WEB="$APP_DIR/packages/web"
+
+echo "━━━ AkhAI Quick Deploy → $(SSH_TARGET) ━━━"
+print_config
 echo ""
 
 # Step 0: Rebuild better-sqlite3 for current Node.js version
 echo "🔧 Rebuilding better-sqlite3..."
-cd "$LOCAL_WEB/../.."
-rm -rf node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3/build 2>/dev/null
-npm rebuild better-sqlite3 2>/dev/null || true
+cd "$REPO_ROOT"
+run rm -rf node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3/build
+run npm rebuild better-sqlite3
 
 # Step 1: Clean stale cache + build locally (fast on M3)
 echo "⚡ Building locally..."
 cd "$LOCAL_WEB"
-rm -rf .next
-npx next build
+run rm -rf .next
+run npx next build
 
 echo ""
 echo "💾 Backing up current build on VPS..."
-ssh "$VPS_USER@$VPS_IP" "cp -r $REMOTE_WEB/.next $REMOTE_WEB/.next.backup 2>/dev/null || true"
+run_ssh "cp -r $REMOTE_WEB/.next $REMOTE_WEB/.next.backup 2>/dev/null || true"
 
 echo ""
-echo "📦 Syncing to Reykjavik..."
+echo "📦 Syncing to $DEPLOY_HOST..."
 
 # Step 2: Sync .next build output
-rsync -avz --delete \
-  "$LOCAL_WEB/.next/" \
-  "$VPS_USER@$VPS_IP:$REMOTE_WEB/.next/"
+run rsync -avz --delete "$LOCAL_WEB/.next/" "$(SSH_TARGET):$REMOTE_WEB/.next/"
 
-# Step 3: Sync changed source files
-rsync -avz \
+# Step 3: Sync changed source files (never the host's env, data, or caches)
+run rsync -avz \
   --exclude 'node_modules' \
   --exclude '.next' \
   --exclude 'data/*.db' \
   --exclude 'data/*.db-*' \
   --exclude '.turbo' \
+  --exclude '.cache' \
   --exclude '.env.local' \
   "$LOCAL_WEB/" \
-  "$VPS_USER@$VPS_IP:$REMOTE_WEB/"
+  "$(SSH_TARGET):$REMOTE_WEB/"
 
 echo ""
 echo "🔄 Restarting PM2..."
-ssh "$VPS_USER@$VPS_IP" "pm2 restart akhai"
+run_ssh "pm2 restart $PM2_NAME"
 
 echo ""
-echo "✅ Deployed! http://$VPS_IP"
+echo "✅ Deployed! http://$DEPLOY_HOST"
