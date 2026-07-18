@@ -3,13 +3,9 @@
 import { motion } from 'framer-motion';
 
 export function MethodologiesSection() {
+  // Static figure: the paper's blueprint must render without animation (M5).
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.2 }}
-      className="mb-16"
-    >
+    <div className="mb-16">
       <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
         The Seven Methodologies as Paths
       </h2>
@@ -66,18 +62,14 @@ export function MethodologiesSection() {
           </div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 export function SovereignCovenantSection() {
+  // Static figure: the paper's blueprint must render without animation (M5).
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.25 }}
-      className="mb-16"
-    >
+    <div className="mb-16">
       <h2 className="text-2xl font-light text-center mb-12 text-relic-slate dark:text-white uppercase tracking-[0.2em]">
         The Sovereign Covenant
       </h2>
@@ -139,7 +131,7 @@ export function SovereignCovenantSection() {
           These principles are enforced by the Meta-Cognitive Protocol at every query
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
