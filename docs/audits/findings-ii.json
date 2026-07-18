@@ -1,0 +1,47 @@
+{
+  "audit": "ULTIMATE-AUDIT-II",
+  "date": "2026-07-18",
+  "hash": "e7dada0",
+  "baseline": "97c25c1",
+  "verdict": "GO-WITH-CONDITIONS",
+  "provider_calls": 0,
+  "cost_usd": 0.0,
+  "blocker_reverification": [
+    { "id": "B1", "title": "wallet signature no-op", "result": "CLOSED", "proof": "forge/wrong-addr/garbage/replay/fabricated-nonce all 401; valid self-sign 200" },
+    { "id": "B2", "title": "26/27 paid routes ungated", "result": "CLOSED", "proof": "13 named routes 401 anon; anon simple-query $0; 0 anon-reachable paid routes" },
+    { "id": "B3", "title": "stripe credits grant 0", "result": "CLOSED", "proof": "addTokens+getCreditBalance same column subscriptions.token_balance; debit on completion; idempotent" },
+    { "id": "B4", "title": "subscription never raises tier", "result": "CLOSED", "proof": "setUserTier on checkout/updated/cancel; checkBudget reads users.tier" },
+    { "id": "B5", "title": "keys in git history", "result": "OPEN-BY-DESIGN", "proof": "2 anthropic key-shaped lines still at a050fe3; rotate at deploy" },
+    { "id": "B6", "title": "admin/reset-stuck open mutation", "result": "CLOSED", "proof": "401 unauth; processing rows unchanged; 404 in prod" },
+    { "id": "B7", "title": "deploy can't bootstrap fresh host", "result": "CLOSED", "proof": "dry-run defaults=FlokiNET, overrides re-resolve, no tracked secret" },
+    { "id": "B8B9", "title": "SSRF no guard", "result": "CLOSED", "proof": "assertPublicUrl blocks metadata/loopback/private/encoded-IP + redirect hop; anon 401; sink-level" }
+  ],
+  "refinement_scorecard": {
+    "M1_honesty": "DEGRADED-BLOCKER",
+    "M2_selector": "VERIFIED (97/100 x2 measured)",
+    "M3_voice": "VERIFIED (anon free-model garbage caveat)",
+    "M4_mindmap": "VERIFIED-IN-CODE",
+    "M5_philosophy": "VERIFIED",
+    "live_reasoning": "VERIFIED-IN-CODE"
+  },
+  "findings": [
+    { "id": "N1", "severity": "BLOCKER", "title": "Live /dashboard labels pas 'Program of Thought'/'Generate & run code' (executes nothing); cod/sc mislabeled", "file": "app/dashboard/page.tsx", "line": 84, "impact": "brand-existential false methodology label on the primary methodology surface" },
+    { "id": "N2", "severity": "HIGH", "title": "Anon users shown 'Llama 3.3 70B' while code hard-calls NVIDIA Nemotron", "file": "lib/multi-provider-api.ts", "line": 626, "impact": "false model provenance on every anonymous answer" },
+    { "id": "N3", "severity": "HIGH", "title": "Free model leaks system prompt as the answer on ~20% of anon queries", "file": "lib/multi-provider-api.ts", "line": 626, "impact": "first-touch experience intermittently broken; self-doxxes the prompt" },
+    { "id": "N4", "severity": "HIGH", "title": "Data-deletion promised, no deletion code path", "file": "app/privacy/page.tsx", "line": 21, "impact": "brand/legal exposure" },
+    { "id": "N5", "severity": "MED", "title": "callOpenRouter ignores request.model (hardcoded nemotron)", "file": "lib/multi-provider-api.ts", "line": 626, "impact": "COGS + display wrong model" },
+    { "id": "N6", "severity": "MED", "title": "pageContext re-sends last-5 messages already in conversationHistory", "file": "hooks/useHomePageDerived.ts", "line": 107, "impact": "~1-2K wasted tokens/turn" },
+    { "id": "N7", "severity": "MED", "title": "thought-stream buffers/connections leak on early-return paths", "file": "lib/thought-stream.ts", "line": 189, "impact": "memory growth on long-lived process" },
+    { "id": "N8", "severity": "MED", "title": "Auto web-search injected on every query regardless of need", "file": "app/api/simple-query/route.ts", "line": 496, "impact": "latency + token cost" },
+    { "id": "N9", "severity": "MED", "title": "'No tracking cookies' contradicted by PostHog cookie persistence", "file": "app/privacy/page.tsx", "line": 16, "impact": "honesty/consent gap" },
+    { "id": "N10", "severity": "MED", "title": "Dashboard control toggles (incl. Grounding Guard) wired to nothing", "file": "app/dashboard/page.tsx", "line": 132, "impact": "dead UI implies non-existent configurability" },
+    { "id": "N11", "severity": "MED", "title": "'Zero hallucinations' absolute claim on paid pricing success page", "file": "app/pricing/success/page.tsx", "line": 95, "impact": "overstated guarantee on paid surface" },
+    { "id": "N12", "severity": "MED", "title": "'Advisors: 4 Parallel' overstates 3-advisor consensus", "file": "app/explore/page.tsx", "line": 46, "impact": "consensus count inflated" },
+    { "id": "N13", "severity": "MED", "title": "Email OTP + address logged to server console", "file": "app/api/auth/email/route.ts", "line": 79, "impact": "secret-adjacent log leak" },
+    { "id": "N14", "severity": "LOW", "title": "False code-exec labels in DEAD components (no live importers)", "file": "components/FunctionIndicators.tsx", "line": 79, "impact": "not user-visible; fix or delete" },
+    { "id": "N15", "severity": "LOW", "title": "X OAuth state/PKCE cookies omit secure/sameSite", "file": "app/api/auth/x/route.ts", "line": 42, "impact": "CSRF-adjacent hardening gap" },
+    { "id": "N16", "severity": "LOW", "title": "Pricing card advertises 'Claude Opus 4.5'; system calls Sonnet-class", "file": "components/CustomCreditCard.tsx", "line": 107, "impact": "model overstatement on paid card" },
+    { "id": "N17", "severity": "MED", "title": "getRecentQueries 'OR user_id IS NULL' exposes anon rows to signed-in history", "file": "lib/db/queries.ts", "line": 0, "impact": "privacy: anon queries visible in every signed-in user's recent list (pre-existing)" }
+  ],
+  "tally": { "BLOCKER": 1, "HIGH": 3, "MED": 9, "LOW": 3, "INFO": "regression-clean" }
+}
