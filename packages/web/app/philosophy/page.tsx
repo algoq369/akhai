@@ -16,10 +16,6 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { DualTreesSection } from './components/DualTreesSection';
-import {
-  MethodologiesSection,
-  SovereignCovenantSection,
-} from './components/MethodologiesAndCovenantSections';
 
 interface Movement {
   numeral: string;
@@ -162,8 +158,6 @@ export default function PhilosophyPage() {
         {/* Movement VI — prose, then the blueprint figures */}
         <MovementBlock movement={MOVEMENT_VI} />
         <DualTreesSection />
-        <MethodologiesSection />
-        <SovereignCovenantSection />
 
         {/* Movement VII */}
         <MovementBlock movement={MOVEMENT_VII} />
