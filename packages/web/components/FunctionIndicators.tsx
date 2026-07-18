@@ -76,7 +76,7 @@ const METHODOLOGIES: Methodology[] = [
     shortName: 'PAS',
     color: '#3B82F6',
     glowColor: 'rgba(59, 130, 246, 0.5)',
-    description: 'Generate & run code',
+    description: 'Plan, then solve step by step',
     speed: 2,
     depth: 5,
     cost: 3,

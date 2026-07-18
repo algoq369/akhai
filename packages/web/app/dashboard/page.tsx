@@ -78,10 +78,10 @@ export default function DashboardPage() {
   const methodologies = [
     { key: 'auto', name: 'Auto', desc: 'Smart routing' },
     { key: 'direct', name: 'Direct', desc: 'Single AI instant' },
-    { key: 'cod', name: 'Chain of Draft', desc: 'Iterative refinement' },
-    { key: 'sc', name: 'Buffer of Thoughts', desc: 'Buffered-fact validation' },
+    { key: 'cod', name: 'Draft & Refine', desc: 'Draft, reflect, refine' },
+    { key: 'sc', name: 'Structured analysis', desc: 'Buffer facts, reason, self-check' },
     { key: 'react', name: 'ReAct', desc: 'Search & calculate' },
-    { key: 'pas', name: 'Program of Thought', desc: 'Generate & run code' },
+    { key: 'pas', name: 'Plan-and-Solve', desc: 'Plan, then solve step by step' },
     { key: 'tot', name: 'GTP Flash Consensus', desc: 'Parallel advisors + quorum' },
   ];
 

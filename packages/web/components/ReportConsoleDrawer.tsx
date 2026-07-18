@@ -290,7 +290,7 @@ function MethodologyTab({ currentMethodology, onMethodologyChange }: Methodology
       id: 'pas',
       symbol: '△',
       name: 'Plan-and-Solve',
-      description: 'Generate & run code',
+      description: 'Plan, then solve step by step',
     },
     { id: 'tot', symbol: '◯', name: 'GTP Flash Consensus', description: 'Parallel advisors + quorum' },
   ];

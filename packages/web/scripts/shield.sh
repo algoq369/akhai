@@ -31,6 +31,13 @@ done
 AS=$(grep -c "AbortSignal.timeout" lib/multi-provider-api.ts 2>/dev/null || echo 0)
 [ "$AS" -ge 6 ]; gate $? "provider timeouts present (>=6, found: $AS)"
 
+# HONESTY TRIPWIRE — user-visible methodology labels must match runtime. pas is prompt-only
+# (no code execution), sc is single-pass (no N-sample voting). These claims were shipped twice
+# (M1 relabel missed app/dashboard; audit II caught it) — now structurally blocked.
+HON=$(grep -rnE "Program of Thought|Generate & run code|generates executable code|runs? the code in a sandbox|Self-Consistency voting" \
+  app components lib --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v __tests__ | wc -l | tr -d ' ')
+[ "$HON" -eq 0 ]; gate $? "no false methodology claims in user-facing code (found: $HON)"
+
 ENV_TRACKED=$(git ls-files | grep -E "\.env($|\.local|\.production)" | grep -v example | wc -l | tr -d ' ')
 [ "$ENV_TRACKED" -eq 0 ]; gate $? "no env files tracked (found: $ENV_TRACKED)"
 
