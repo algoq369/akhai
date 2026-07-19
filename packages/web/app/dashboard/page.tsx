@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { MODELS, ADVISORS } from '@/lib/models';
 import { useDashboardStore } from '@/lib/stores/dashboard-store';
 import DarkModeToggle from '@/components/DarkModeToggle';
@@ -10,28 +10,6 @@ export const dynamic = 'force-dynamic';
 
 export default function DashboardPage() {
   const { stats, loading, error, fetchStats } = useDashboardStore();
-  const [enabledProviders, setEnabledProviders] = useState<Record<string, boolean>>({
-    anthropic: true,
-    'advisor-technical': true,
-    'advisor-strategic': true,
-    'advisor-creative': true,
-  });
-  const [enabledMethods, setEnabledMethods] = useState<Record<string, boolean>>({
-    auto: true,
-    direct: true,
-    cod: true,
-    sc: true,
-    react: true,
-    pas: true,
-    tot: true,
-  });
-  const [enabledFeatures, setEnabledFeatures] = useState<Record<string, boolean>>({
-    guard: true,
-    suggestions: true,
-    sidecanal: true,
-    realtime: true,
-    warnings: true,
-  });
 
   useEffect(() => {
     fetchStats();
@@ -47,51 +25,6 @@ export default function DashboardPage() {
     );
   }
 
-  const providers = [
-    {
-      key: 'anthropic',
-      name: 'Anthropic Claude',
-      model: MODELS.premium,
-      active: stats?.providers?.anthropic?.status === 'active',
-    },
-    // advisors are free OpenRouter models — slugs rotate, names may lag models.ts
-    {
-      key: 'advisor-technical',
-      name: 'Technical — GPT-OSS (OpenAI)',
-      model: ADVISORS.technical,
-      active: stats?.providers?.openrouter?.status === 'active',
-    },
-    {
-      key: 'advisor-strategic',
-      name: 'Strategic — North (Cohere)',
-      model: ADVISORS.strategic,
-      active: stats?.providers?.openrouter?.status === 'active',
-    },
-    {
-      key: 'advisor-creative',
-      name: 'Creative — Llama 3.3 (Meta)',
-      model: ADVISORS.creative,
-      active: stats?.providers?.openrouter?.status === 'active',
-    },
-  ];
-
-  const methodologies = [
-    { key: 'auto', name: 'Auto', desc: 'Smart routing' },
-    { key: 'direct', name: 'Direct', desc: 'Single AI instant' },
-    { key: 'cod', name: 'Draft & Refine', desc: 'Draft, reflect, refine' },
-    { key: 'sc', name: 'Structured analysis', desc: 'Buffer facts, reason, self-check' },
-    { key: 'react', name: 'ReAct', desc: 'Search & calculate' },
-    { key: 'pas', name: 'Plan-and-Solve', desc: 'Plan, then solve step by step' },
-    { key: 'tot', name: 'GTP Flash Consensus', desc: 'Parallel advisors + quorum' },
-  ];
-
-  const features = [
-    { key: 'guard', name: 'Grounding Guard', desc: 'Anti-hallucination' },
-    { key: 'suggestions', name: 'Smart Suggestions', desc: 'Query recommendations' },
-    { key: 'sidecanal', name: 'Side Canal', desc: 'Topic extraction' },
-    { key: 'realtime', name: 'Real-time Data', desc: 'Live prices & news' },
-    { key: 'warnings', name: 'Interactive Warnings', desc: 'Quality alerts' },
-  ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-relic-void">
@@ -120,47 +53,6 @@ export default function DashboardPage() {
           <Row label="Total cost" value={`$${(stats?.totalCost || 0).toFixed(2)}`} />
         </Section>
 
-        {/* Providers */}
-        <Section title="AI Providers">
-          {providers.map((p) => (
-            <ToggleRow
-              key={p.key}
-              label={p.name}
-              sublabel={p.model}
-              active={p.active}
-              enabled={enabledProviders[p.key]}
-              onToggle={() => setEnabledProviders((prev) => ({ ...prev, [p.key]: !prev[p.key] }))}
-            />
-          ))}
-        </Section>
-
-        {/* Methodologies */}
-        <Section title="Methodologies">
-          {methodologies.map((m) => (
-            <ToggleRow
-              key={m.key}
-              label={m.name}
-              sublabel={m.desc}
-              active={true}
-              enabled={enabledMethods[m.key]}
-              onToggle={() => setEnabledMethods((prev) => ({ ...prev, [m.key]: !prev[m.key] }))}
-            />
-          ))}
-        </Section>
-
-        {/* Features */}
-        <Section title="Features">
-          {features.map((f) => (
-            <ToggleRow
-              key={f.key}
-              label={f.name}
-              sublabel={f.desc}
-              active={true}
-              enabled={enabledFeatures[f.key]}
-              onToggle={() => setEnabledFeatures((prev) => ({ ...prev, [f.key]: !prev[f.key] }))}
-            />
-          ))}
-        </Section>
       </div>
     </div>
   );
@@ -186,42 +78,3 @@ function Row({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function ToggleRow({
-  label,
-  sublabel,
-  active,
-  enabled,
-  onToggle,
-}: {
-  label: string;
-  sublabel: string;
-  active: boolean;
-  enabled: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between py-2.5">
-      <div className="flex items-center gap-2.5">
-        <span
-          className={`w-1.5 h-1.5 rounded-full ${active && enabled ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-relic-slate/50'}`}
-        />
-        <div>
-          <span className="text-sm text-slate-700 dark:text-relic-silver">{label}</span>
-          <span className="text-xs text-slate-400 dark:text-relic-ghost ml-2">{sublabel}</span>
-        </div>
-      </div>
-      <button
-        onClick={onToggle}
-        className={`relative w-8 h-[18px] rounded-full transition-colors ${
-          enabled ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-relic-slate/50'
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 w-[14px] h-[14px] bg-white rounded-full shadow-sm transition-transform ${
-            enabled ? 'translate-x-[14px]' : 'translate-x-0.5'
-          }`}
-        />
-      </button>
-    </div>
-  );
-}

@@ -20,6 +20,20 @@ export function trackUsage(
  * Get dashboard statistics (optionally scoped to user)
  */
 export function getStats(userId?: string | null) {
+  // Anonymous callers get an EMPTY view — never global aggregates. Both /dashboard and the public
+  // /explore page render these numbers, so an unscoped call exposed total spend, query volume and
+  // per-provider costs to any visitor. Signed-in users still see their own scoped stats.
+  if (!userId) {
+    return {
+      queriesToday: 0,
+      queriesThisMonth: 0,
+      totalTokens: 0,
+      totalCost: 0,
+      avgResponseTime: 0,
+      providerStats: [] as { provider: string; queries: number; cost: number }[],
+    };
+  }
+
   const now = Math.floor(Date.now() / 1000);
   const todayStart = now - (now % 86400);
 
