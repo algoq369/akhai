@@ -11,8 +11,13 @@ import { MODELS } from '@/lib/models';
 import type { ProviderFamily } from './provider-selector';
 import { getProviderApiConfig, getProviderPricing } from './provider-selector';
 import { recordCall } from './cogs-scorecard';
-import { FREE_AUTO_ROUTER, shouldFallback } from './openrouter';
-import { looksLikePromptLeak, ANON_FREE_FALLBACK } from './anon-lane';
+import { shouldFallback } from './openrouter';
+import {
+  looksLikePromptLeak,
+  looksUnsuitable,
+  ANON_FREE_FALLBACK,
+  ANON_FREE_MODELS,
+} from './anon-lane';
 
 /** Hard ceiling per provider HTTP call — hung sockets abort instead of hanging forever (WEBNA P1.5). Tunable via env. */
 const PROVIDER_TIMEOUT_MS = Number(process.env.PROVIDER_TIMEOUT_MS) || 180_000;
@@ -655,58 +660,62 @@ async function callOpenRouter(
     };
   };
 
-  // ---- primary attempt (honors request.model); on 429/unavailable, retry once on the free
-  //      auto-router so a pinned-slug daily cap no longer hard-fails the anon lane. ----
-  let model = requested;
-  let response = await send(model, wantStream);
-  if (!response.ok) {
-    const body = await response.text();
-    if (shouldFallback(response.status, body)) {
-      model = FREE_AUTO_ROUTER;
-      response = await send(model, wantStream);
+  // anon-lane-2: try the requested model, then the EXPLICIT allowlist of general-purpose free
+  // instruct models IN ORDER — never the generic 'openrouter/free' auto-router, which was serving a
+  // content-safety CLASSIFIER. Advance on 429/unavailable OR on unusable output (prompt-leak or a
+  // classifier verdict). The FIRST attempt streams (head leak-gate suppresses any leaked/verdict
+  // deltas); later attempts are buffered and emitted whole. If a model responds but its answer is
+  // unusable, we keep an honest message (ANON_FREE_FALLBACK); if NONE responds, we throw so the
+  // route can show the honest capacity message.
+  const chain = [requested, ...ANON_FREE_MODELS.filter((m) => m !== requested)];
+  let lastResult: (CompletionResponse & { leaked?: boolean }) | null = null;
+  let anyResponded = false;
+  let lastError: Error | null = null;
+
+  for (let i = 0; i < chain.length; i++) {
+    const model = chain[i];
+    const streamThis = wantStream && i === 0; // stream only the first attempt; retries are buffered
+    let response: Response;
+    try {
+      response = await send(model, streamThis);
+    } catch (e) {
+      lastError = e as Error;
+      continue;
     }
     if (!response.ok) {
-      const body2 = await response.text().catch(() => body);
-      throw new Error(`OpenRouter API error: ${response.status} - ${body2 || body}`);
+      const body = await response.text().catch(() => '');
+      lastError = new Error(`OpenRouter API error: ${response.status} - ${body}`);
+      if (shouldFallback(response.status, body)) continue; // 429/unavailable → next model
+      throw lastError; // a real error (auth/etc.) is not a capacity problem
     }
+    anyResponded = true;
+    const result =
+      streamThis && response.body
+        ? await parseOpenRouterStream(response, request, startTime, model)
+        : { ...(await jsonResult(response, model)), leaked: undefined as boolean | undefined };
+    lastResult = result;
+    const bad =
+      (result.leaked ?? looksLikePromptLeak(result.content)) || looksUnsuitable(result.content);
+    if (bad) continue; // leak or classifier verdict → try the next allowlist model
+    if (!streamThis) request.onTextDelta?.(result.content); // keep the client's live buffer populated
+    const { leaked: _ok, ...clean } = result;
+    return clean;
   }
 
-  // ---- read the answer: streaming path runs a head leak-gate (no leaked deltas ever reach the
-  //      client); json path checks the whole body. ----
-  const result =
-    wantStream && response.body
-      ? await parseOpenRouterStream(response, request, startTime, model)
-      : { ...(await jsonResult(response, model)), leaked: undefined as boolean | undefined };
-  const leaked = result.leaked ?? looksLikePromptLeak(result.content);
-
-  // ---- garbage guard: a prompt-leak (or empty) answer is never shown. Retry once, clean +
-  //      non-streamed, on the auto-router; if it still leaks, an honest message — never the leak. ----
-  if (leaked) {
-    try {
-      const retry = await send(FREE_AUTO_ROUTER, false);
-      if (retry.ok) {
-        const clean = await jsonResult(retry, FREE_AUTO_ROUTER);
-        if (clean.content && !looksLikePromptLeak(clean.content)) {
-          request.onTextDelta?.(clean.content); // keep the client's live buffer populated
-          return clean;
-        }
-      }
-    } catch {
-      /* fall through to the honest message */
-    }
+  // Some model responded, but every answer was unusable → honest message, never the garbage.
+  if (anyResponded) {
     request.onTextDelta?.(ANON_FREE_FALLBACK);
     return {
       content: ANON_FREE_FALLBACK,
-      usage: result.usage,
-      model: result.model,
+      usage: lastResult?.usage ?? { inputTokens: 0, outputTokens: 0, totalTokens: 0, cacheRead: 0, cacheCreation: 0 },
+      model: lastResult?.model ?? requested,
       provider: 'openrouter',
       cost: 0,
       latencyMs: Date.now() - startTime,
     };
   }
-
-  const { leaked: _drop, ...clean } = result;
-  return clean;
+  // Nothing responded (all 429/unavailable) → surface a rate-limit error for the route's capacity path.
+  throw lastError ?? new Error('OpenRouter API error: 429 - all free models unavailable');
 }
 
 /**
@@ -730,9 +739,12 @@ async function parseOpenRouterStream(
   let outputTokens = 0;
 
   // HEAD LEAK-GATE: reasoning-class free models front-load their tell ("We need to decide which
-  // mode…"). Buffer the first HEAD chars WITHOUT emitting; once we can judge, either open the gate
-  // (flush + stream normally) or, on a leak, emit nothing and let callOpenRouter retry clean — so a
-  // leaked delta never reaches the client. Clean short answers flush whole at stream end.
+  // mode…"); classifier models emit a short bare verdict ("User Safety: safe"). Buffer the first
+  // HEAD chars WITHOUT emitting; once we can judge, either open the gate (flush + stream normally)
+  // or, on a leak, emit nothing and let callOpenRouter retry with the next allowlist model — so a
+  // leaked/verdict delta never reaches the client. Suitability is a whole-response property, so it
+  // is checked only at the final flush (a short verdict is fully buffered by then). Clean short
+  // answers flush whole at stream end.
   const HEAD = 80;
   let gateOpen = false;
   let leaked = false;
@@ -740,7 +752,7 @@ async function parseOpenRouterStream(
   const decideGate = (final: boolean) => {
     if (gateOpen || leaked) return;
     if (content.length < HEAD && !final) return;
-    if (looksLikePromptLeak(content)) {
+    if (looksLikePromptLeak(content) || (final && looksUnsuitable(content))) {
       leaked = true; // suppress: emit nothing
     } else {
       gateOpen = true;
@@ -807,7 +819,7 @@ async function parseOpenRouterStream(
     provider: 'openrouter',
     cost: 0, // free model — COGS stays $0
     latencyMs: Date.now() - startTime,
-    leaked: leaked || looksLikePromptLeak(content),
+    leaked: leaked || looksLikePromptLeak(content) || looksUnsuitable(content),
   };
 }
 
