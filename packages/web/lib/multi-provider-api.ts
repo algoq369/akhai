@@ -11,6 +11,8 @@ import { MODELS } from '@/lib/models';
 import type { ProviderFamily } from './provider-selector';
 import { getProviderApiConfig, getProviderPricing } from './provider-selector';
 import { recordCall } from './cogs-scorecard';
+import { FREE_AUTO_ROUTER, shouldFallback } from './openrouter';
+import { looksLikePromptLeak, ANON_FREE_FALLBACK } from './anon-lane';
 
 /** Hard ceiling per provider HTTP call — hung sockets abort instead of hanging forever (WEBNA P1.5). Tunable via env. */
 const PROVIDER_TIMEOUT_MS = Number(process.env.PROVIDER_TIMEOUT_MS) || 180_000;
@@ -612,54 +614,99 @@ async function callOpenRouter(
   }));
 
   const wantStream = !!request.onTextDelta;
+  // HONESTY (anon-lane): honor the requested model instead of hard-coding one. The model that
+  // actually runs is the model reported back (data.model / stream model), so response + COGS + UI
+  // all show the same truth. MODELS.free is the declared default when a caller omits a model.
+  const requested = request.model || MODELS.free;
 
-  const response = await fetch(config.baseUrl, {
-    method: 'POST',
-    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${config.apiKey}`,
-      'HTTP-Referer': 'https://akhai.app',
-      'X-Title': 'AkhAI',
-    },
-    body: JSON.stringify({
-      model: 'nvidia/nemotron-3-super-120b-a12b:free',
-      messages,
-      max_tokens: request.maxTokens || 500,
-      temperature: request.temperature ?? 0.7,
-      ...(wantStream ? { stream: true } : {}),
-    }),
-  });
+  const send = (model: string, stream: boolean) =>
+    fetch(config.baseUrl, {
+      method: 'POST',
+      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.apiKey}`,
+        'HTTP-Referer': 'https://akhai.app',
+        'X-Title': 'AkhAI',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_tokens: request.maxTokens || 500,
+        temperature: request.temperature ?? 0.7,
+        ...(stream ? { stream: true } : {}),
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
-  }
-
-  if (wantStream && response.body) {
-    return parseOpenRouterStream(response, request, startTime);
-  }
-
-  const data = await response.json();
-  const latencyMs = Date.now() - startTime;
-
-  const inputTokens = data.usage?.prompt_tokens || 0;
-  const outputTokens = data.usage?.completion_tokens || 0;
-
-  return {
-    content: data.choices?.[0]?.message?.content || '',
-    usage: {
-      inputTokens,
-      outputTokens,
-      totalTokens: inputTokens + outputTokens,
-      cacheRead: 0,
-      cacheCreation: 0,
-    },
-    model: 'nvidia/nemotron-3-super-120b-a12b:free',
-    provider: 'openrouter',
-    cost: 0,
-    latencyMs,
+  const jsonResult = async (
+    response: Response,
+    fallbackModel: string
+  ): Promise<CompletionResponse> => {
+    const data = await response.json();
+    const inputTokens = data.usage?.prompt_tokens || 0;
+    const outputTokens = data.usage?.completion_tokens || 0;
+    return {
+      content: data.choices?.[0]?.message?.content || '',
+      usage: { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens, cacheRead: 0, cacheCreation: 0 },
+      model: data.model || fallbackModel, // report what actually served
+      provider: 'openrouter',
+      cost: 0,
+      latencyMs: Date.now() - startTime,
+    };
   };
+
+  // ---- primary attempt (honors request.model); on 429/unavailable, retry once on the free
+  //      auto-router so a pinned-slug daily cap no longer hard-fails the anon lane. ----
+  let model = requested;
+  let response = await send(model, wantStream);
+  if (!response.ok) {
+    const body = await response.text();
+    if (shouldFallback(response.status, body)) {
+      model = FREE_AUTO_ROUTER;
+      response = await send(model, wantStream);
+    }
+    if (!response.ok) {
+      const body2 = await response.text().catch(() => body);
+      throw new Error(`OpenRouter API error: ${response.status} - ${body2 || body}`);
+    }
+  }
+
+  // ---- read the answer: streaming path runs a head leak-gate (no leaked deltas ever reach the
+  //      client); json path checks the whole body. ----
+  const result =
+    wantStream && response.body
+      ? await parseOpenRouterStream(response, request, startTime, model)
+      : { ...(await jsonResult(response, model)), leaked: undefined as boolean | undefined };
+  const leaked = result.leaked ?? looksLikePromptLeak(result.content);
+
+  // ---- garbage guard: a prompt-leak (or empty) answer is never shown. Retry once, clean +
+  //      non-streamed, on the auto-router; if it still leaks, an honest message — never the leak. ----
+  if (leaked) {
+    try {
+      const retry = await send(FREE_AUTO_ROUTER, false);
+      if (retry.ok) {
+        const clean = await jsonResult(retry, FREE_AUTO_ROUTER);
+        if (clean.content && !looksLikePromptLeak(clean.content)) {
+          request.onTextDelta?.(clean.content); // keep the client's live buffer populated
+          return clean;
+        }
+      }
+    } catch {
+      /* fall through to the honest message */
+    }
+    request.onTextDelta?.(ANON_FREE_FALLBACK);
+    return {
+      content: ANON_FREE_FALLBACK,
+      usage: result.usage,
+      model: result.model,
+      provider: 'openrouter',
+      cost: 0,
+      latencyMs: Date.now() - startTime,
+    };
+  }
+
+  const { leaked: _drop, ...clean } = result;
+  return clean;
 }
 
 /**
@@ -671,14 +718,36 @@ async function callOpenRouter(
 async function parseOpenRouterStream(
   response: Response,
   request: CompletionRequest,
-  startTime: number
-): Promise<CompletionResponse> {
+  startTime: number,
+  requestedModel: string
+): Promise<CompletionResponse & { leaked?: boolean }> {
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
   let content = '';
+  let servedModel = requestedModel; // OpenRouter echoes the real model per chunk — report the truth
   let inputTokens = 0;
   let outputTokens = 0;
+
+  // HEAD LEAK-GATE: reasoning-class free models front-load their tell ("We need to decide which
+  // mode…"). Buffer the first HEAD chars WITHOUT emitting; once we can judge, either open the gate
+  // (flush + stream normally) or, on a leak, emit nothing and let callOpenRouter retry clean — so a
+  // leaked delta never reaches the client. Clean short answers flush whole at stream end.
+  const HEAD = 80;
+  let gateOpen = false;
+  let leaked = false;
+  const pending: string[] = [];
+  const decideGate = (final: boolean) => {
+    if (gateOpen || leaked) return;
+    if (content.length < HEAD && !final) return;
+    if (looksLikePromptLeak(content)) {
+      leaked = true; // suppress: emit nothing
+    } else {
+      gateOpen = true;
+      if (pending.length) request.onTextDelta?.(pending.join(''));
+      pending.length = 0;
+    }
+  };
 
   try {
     while (true) {
@@ -692,6 +761,7 @@ async function parseOpenRouterStream(
         const json = line.slice(6).trim();
         if (!json || json === '[DONE]') continue;
         let ev: {
+          model?: string;
           choices?: Array<{ delta?: { content?: string } }>;
           usage?: { prompt_tokens?: number; completion_tokens?: number };
         };
@@ -700,10 +770,15 @@ async function parseOpenRouterStream(
         } catch {
           continue;
         }
+        if (ev.model) servedModel = ev.model;
         const delta = ev.choices?.[0]?.delta?.content;
         if (delta) {
           content += delta;
-          request.onTextDelta?.(delta);
+          if (gateOpen) request.onTextDelta?.(delta);
+          else {
+            pending.push(delta);
+            decideGate(false);
+          }
         }
         if (ev.usage) {
           inputTokens = ev.usage.prompt_tokens || inputTokens;
@@ -715,6 +790,7 @@ async function parseOpenRouterStream(
     // Stream interrupted — return whatever accumulated so far
     console.warn('[OpenRouter] Stream interrupted:', (err as Error).message?.slice(0, 100));
   }
+  decideGate(true); // flush a clean short answer that never reached HEAD chars
 
   if (!content) throw new Error('OpenRouter stream produced no content');
 
@@ -727,10 +803,11 @@ async function parseOpenRouterStream(
       cacheRead: 0,
       cacheCreation: 0,
     },
-    model: 'nvidia/nemotron-3-super-120b-a12b:free',
+    model: servedModel,
     provider: 'openrouter',
     cost: 0, // free model — COGS stays $0
     latencyMs: Date.now() - startTime,
+    leaked: leaked || looksLikePromptLeak(content),
   };
 }
 

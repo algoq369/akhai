@@ -9,6 +9,7 @@ import { logger, log } from '@/lib/logger';
 import { withRetry } from '@/lib/retry';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { checkBudget, usageSnapshot } from '@/lib/token-budget';
+import { ANON_FREE_CAPACITY } from '@/lib/anon-lane';
 import { debitCredits } from '@/lib/subscription';
 import {
   checkCryptoQuery,
@@ -848,6 +849,12 @@ export async function POST(request: NextRequest) {
       // live-words: flush the tail of the streamed answer once the model call completes.
       flushGen(true);
       }
+      // anon-lane HONESTY: report the model that ACTUALLY answered. The free lane may fall back to
+      // the auto-router / a different upstream inside callOpenRouter; adopt its returned model so
+      // the response payload, COGS, and UI all show one truth (was reporting the requested slug).
+      if (apiResponse?.model && apiResponse.model !== usedModel) {
+        usedModel = apiResponse.model;
+      }
     } catch (apiError) {
       logger.query.apiError(selectedProvider.toUpperCase(), (apiError as Error).message);
       log('ERROR', 'API', `Provider ${selectedProvider} failed: ${(apiError as Error).message}`);
@@ -893,9 +900,13 @@ export async function POST(request: NextRequest) {
       }
 
       if (!fallbackSucceeded) {
+        const errMsg = (apiError as Error).message?.toLowerCase() || '';
         const creditKeywords = ['credit', 'balance', 'insufficient', 'billing'];
-        const isCredit = creditKeywords.some((k) =>
-          (apiError as Error).message?.toLowerCase().includes(k)
+        const isCredit = creditKeywords.some((k) => errMsg.includes(k));
+        // anon-lane: the free tier 429s with a body that literally says "Add 5 credits" — do NOT
+        // relay that as "billing exhausted" to a signed-out user who has no billing. It is capacity.
+        const isCapacity = ['429', 'rate limit', 'rate-limit', 'capacity', 'temporarily', 'too many'].some(
+          (k) => errMsg.includes(k)
         );
         // failed-status: THE 22:14 bug — this error RESPONSE returns inside the try, so the
         // outer catch's status update never ran and the row sat 'pending' until the hourly
@@ -913,13 +924,17 @@ export async function POST(request: NextRequest) {
         Sentry.captureException(apiError, {
           tags: { queryId, methodology: methodologyTag, path: 'all-providers-failed' },
         });
+        // Anonymous callers never have billing — a free-lane failure is capacity, not credits.
+        const anonCapacity = !userId && (isCapacity || isCredit);
         return NextResponse.json(
           {
-            error: isCredit
-              ? 'API credits exhausted. Please check your provider billing.'
-              : `All AI providers failed. Last error: ${(apiError as Error).message}`,
+            error: anonCapacity
+              ? ANON_FREE_CAPACITY
+              : isCredit
+                ? 'API credits exhausted. Please check your provider billing.'
+                : `All AI providers failed. Last error: ${(apiError as Error).message}`,
           },
-          { status: 500 }
+          { status: anonCapacity ? 503 : 500 }
         );
       }
     }

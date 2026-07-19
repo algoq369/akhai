@@ -43,7 +43,7 @@ function postChat(
  * 402 too: upstreams serving a :free slug sometimes demand payment ("Provider returned error"
  * code 402) — the auto-router picks a different upstream (observed live 2026-07-10).
  */
-function shouldFallback(status: number, body: string): boolean {
+export function shouldFallback(status: number, body: string): boolean {
   return (
     status === 404 || status === 429 || status === 402 || (status === 400 && /model/i.test(body))
   );
