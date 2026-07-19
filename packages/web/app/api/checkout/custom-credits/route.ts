@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
             unit_amount: Math.round(amount * 100), // Convert to cents
             product_data: {
               name: 'AkhAI Token Credits',
-              description: `${(tokens / 1000).toLocaleString()}K tokens for Claude Opus 4.5`,
+              description: `${(tokens / 1000).toLocaleString()}K tokens for Claude Opus 4.8`,
             },
           },
           quantity: 1,

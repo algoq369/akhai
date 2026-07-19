@@ -23,7 +23,7 @@ This guide walks you through setting up Stripe payments for AkhAI, including cre
 
 **Pro Subscription**
 - Name: `AkhAI Pro`
-- Description: `Unlimited queries with Claude Opus 4.5`
+- Description: `Unlimited queries with Claude Opus 4.8`
 - Pricing: `$20.00 USD / month`
 - Recurring: `Monthly`
 - After creation, copy the **Price ID** (starts with `price_`)
@@ -46,28 +46,28 @@ This guide walks you through setting up Stripe payments for AkhAI, including cre
 
 **Starter Credits**
 - Name: `Token Credits - Starter`
-- Description: `100K tokens for Claude Opus 4.5`
+- Description: `100K tokens for Claude Opus 4.8`
 - Pricing: `$5.00 USD`
 - Type: `One-time`
 - Copy the **Price ID**
 
 **Builder Credits**
 - Name: `Token Credits - Builder`
-- Description: `500K tokens for Claude Opus 4.5`
+- Description: `500K tokens for Claude Opus 4.8`
 - Pricing: `$20.00 USD`
 - Type: `One-time`
 - Copy the **Price ID**
 
 **Scale Credits**
 - Name: `Token Credits - Scale`
-- Description: `3M tokens for Claude Opus 4.5`
+- Description: `3M tokens for Claude Opus 4.8`
 - Pricing: `$100.00 USD`
 - Type: `One-time`
 - Copy the **Price ID**
 
 **Bulk Credits**
 - Name: `Token Credits - Bulk`
-- Description: `20M tokens for Claude Opus 4.5`
+- Description: `20M tokens for Claude Opus 4.8`
 - Pricing: `$500.00 USD`
 - Type: `One-time`
 - Copy the **Price ID**

@@ -92,7 +92,7 @@ function PricingSuccessContent() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-relic-silver">•</span>
-              <span>Grounding Guard enabled for zero hallucinations</span>
+              <span>Grounding Guard scores every answer and flags unsupported claims</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-relic-silver">•</span>

@@ -216,7 +216,7 @@ export const robotParts: RobotPart[] = [
     name: 'Legend Mode Engine',
     category: 'cognitive',
     icon: SparklesIcon,
-    description: 'Premium R&D tier with Claude Opus 4.5',
+    description: 'Premium R&D tier with Claude Opus 4.8',
     status: 'active',
     metrics: { efficiency: 98, development: 95, energyConsumption: 45, reliability: 99 },
     position: { x: 85, y: 68, size: 'sm' },

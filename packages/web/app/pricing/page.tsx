@@ -79,7 +79,7 @@ export default function PricingPage() {
             Pricing
           </h1>
           <p className="text-relic-slate dark:text-relic-ghost text-xs max-w-xl mx-auto">
-            Claude Opus 4.5 • 7 Methodologies • Grounding Guard
+            Claude Opus 4.8 • 7 Methodologies • Grounding Guard
           </p>
         </div>
 
@@ -225,7 +225,7 @@ export default function PricingPage() {
                   price={TOKEN_CREDITS.starter.price}
                   features={[
                     `${(TOKEN_CREDITS.starter.tokens / 1000).toLocaleString()}K tokens`,
-                    'Claude Opus 4.5',
+                    'Claude Opus 4.8',
                     'All methodologies',
                     'No expiration',
                     '$0.05 per 1K tokens',
@@ -259,7 +259,7 @@ export default function PricingPage() {
                   price={TOKEN_CREDITS.builder.price}
                   features={[
                     `${(TOKEN_CREDITS.builder.tokens / 1000).toLocaleString()}K tokens`,
-                    'Claude Opus 4.5',
+                    'Claude Opus 4.8',
                     'All methodologies',
                     'No expiration',
                     '$0.04 per 1K tokens',
@@ -294,7 +294,7 @@ export default function PricingPage() {
                   price={TOKEN_CREDITS.scale.price}
                   features={[
                     `${(TOKEN_CREDITS.scale.tokens / 1_000_000).toFixed(1)}M tokens`,
-                    'Claude Opus 4.5',
+                    'Claude Opus 4.8',
                     'All methodologies',
                     'No expiration',
                     '$0.033 per 1K tokens',
@@ -328,7 +328,7 @@ export default function PricingPage() {
                   price={TOKEN_CREDITS.bulk.price}
                   features={[
                     `${(TOKEN_CREDITS.bulk.tokens / 1_000_000).toFixed(0)}M tokens`,
-                    'Claude Opus 4.5',
+                    'Claude Opus 4.8',
                     'All methodologies',
                     'No expiration',
                     '$0.025 per 1K tokens',

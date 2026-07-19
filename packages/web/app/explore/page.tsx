@@ -43,7 +43,7 @@ export default function ExplorePage() {
         { label: 'Speed', value: 'Fast' },
         { label: 'Accuracy', value: 'High' },
         { label: 'Use Case', value: 'Comparisons' },
-        { label: 'Advisors', value: '4 Parallel' },
+        { label: 'Advisors', value: '3 Parallel' },
       ],
       onClick: () => handleMethodologyClick('tot'),
     },

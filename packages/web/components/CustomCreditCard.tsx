@@ -104,7 +104,7 @@ export function CustomCreditCard() {
       <ul className="space-y-1.5 mb-4">
         <li className="text-[11px] text-relic-slate flex items-start gap-1.5">
           <span className="text-relic-silver text-[8px] mt-0.5">•</span>
-          <span>Claude Opus 4.5</span>
+          <span>Claude Opus 4.8, Sonnet 5 &amp; Haiku</span>
         </li>
         <li className="text-[11px] text-relic-slate flex items-start gap-1.5">
           <span className="text-relic-silver text-[8px] mt-0.5">•</span>
