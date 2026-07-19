@@ -8,7 +8,7 @@ export default function PrivacyPage() {
       <div className="max-w-2xl mx-auto font-mono">
         <Link href="/" className="text-[10px] text-relic-silver hover:text-relic-slate mb-8 block">← back</Link>
         <h1 className="text-2xl font-light text-relic-void dark:text-white mb-2">Privacy Policy</h1>
-        <p className="text-[10px] text-relic-silver mb-8">Last updated: March 2026</p>
+        <p className="text-[10px] text-relic-silver mb-8">Last updated: July 2026</p>
 
         <div className="space-y-6 text-sm text-relic-slate dark:text-relic-ghost leading-relaxed">
           <section>
@@ -18,7 +18,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-xs uppercase tracking-widest text-relic-silver mb-2">How We Use Your Data</h2>
-            <p>Your queries are sent to AI providers (Anthropic Claude for core reasoning and synthesis; OpenRouter for advisor queries, which routes them to free open models — currently OpenAI GPT-OSS, Meta Llama, and Cohere North) for processing. We do not sell, share, or monetize your data. Query history is stored locally in our database to provide history and conversation features. You can delete your data at any time from your profile settings.</p>
+            <p>Your queries are sent to AI providers (Anthropic Claude for core reasoning and synthesis; OpenRouter for advisor queries, which routes them to free open models — currently OpenAI GPT-OSS, Meta Llama, and Cohere North) for processing. We do not sell, share, or monetize your data. Query history is stored locally in our database to provide history and conversation features. You can permanently delete your account and all associated data at any time from Settings — the deletion is immediate and irreversible.</p>
           </section>
 
           <section>

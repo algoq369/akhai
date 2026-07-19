@@ -15,6 +15,35 @@ export default function SettingsPage() {
   } = useSettingsStore();
   const [isDark, setIsDark] = useState(false);
 
+  // data-deletion: irreversible account+data deletion, gated behind a typed "DELETE" confirmation.
+  const [showDelete, setShowDelete] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [deleteStatus, setDeleteStatus] = useState<'idle' | 'deleting' | 'error'>('idle');
+  const [deleteError, setDeleteError] = useState('');
+
+  const handleDeleteAccount = async () => {
+    setDeleteStatus('deleting');
+    setDeleteError('');
+    try {
+      const res = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'DELETE' }),
+      });
+      if (res.ok) {
+        // Signed out server-side (session destroyed + cookie cleared) — leave to the home page.
+        window.location.href = '/?deleted=1';
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      setDeleteError(data.message || data.error || 'Deletion failed. Please try again.');
+      setDeleteStatus('error');
+    } catch {
+      setDeleteError('Network error. Please try again.');
+      setDeleteStatus('error');
+    }
+  };
+
   // Detect dark mode on client-side only
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains('dark'));
@@ -381,6 +410,30 @@ export default function SettingsPage() {
             </div>
           </section>
 
+          {/* Danger zone — irreversible data deletion (makes the privacy-page promise real) */}
+          <section className="mb-8">
+            <div className="text-red-600/80 dark:text-red-400/80 text-[10px] uppercase tracking-[0.2em] mb-3">
+              ▸ DELETE MY DATA
+            </div>
+            <div className="ml-4">
+              <p className="text-relic-silver dark:text-relic-ghost text-[9px] leading-relaxed mb-3 max-w-md">
+                Permanently erase your account and every query, topic, synopsis, session, and payment
+                record tied to it. This is irreversible — nothing can be recovered afterward.
+              </p>
+              <button
+                onClick={() => {
+                  setShowDelete(true);
+                  setConfirmText('');
+                  setDeleteStatus('idle');
+                  setDeleteError('');
+                }}
+                className="text-red-600 dark:text-red-400 text-[9px] uppercase tracking-wider border border-red-500/40 dark:border-red-400/30 px-3 py-1.5 hover:bg-red-500/10 transition-colors"
+              >
+                delete my data
+              </button>
+            </div>
+          </section>
+
           {/* Footer */}
           <div className="mt-12 pt-5 border-t border-relic-mist dark:border-relic-slate/30">
             <div className="text-relic-mist dark:text-relic-slate text-[10px] mb-1.5">
@@ -392,6 +445,53 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
+
+      {/* Delete confirmation modal — requires typing DELETE, states irreversibility + what is removed */}
+      {showDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm px-6">
+          <div className="w-full max-w-md bg-white dark:bg-relic-void border border-red-500/40 dark:border-red-400/30 p-6 font-mono">
+            <div className="text-red-600 dark:text-red-400 text-[10px] uppercase tracking-[0.2em] mb-3">
+              ⚠ delete my data — irreversible
+            </div>
+            <p className="text-relic-slate dark:text-relic-ghost text-[10px] leading-relaxed mb-3">
+              This permanently erases your account and everything tied to it — queries, topics,
+              synopses, tree configurations, sessions, and payment records. It cannot be undone and
+              nothing can be recovered.
+            </p>
+            <label className="block text-relic-silver dark:text-relic-ghost text-[9px] uppercase tracking-wider mb-1.5">
+              type DELETE to confirm
+            </label>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              autoFocus
+              spellCheck={false}
+              className="w-full bg-relic-ghost/40 dark:bg-relic-void border border-relic-mist dark:border-relic-slate/40 px-3 py-2 text-[11px] text-relic-void dark:text-white tracking-widest focus:outline-none focus:border-red-500/50"
+              placeholder="DELETE"
+            />
+            {deleteError && (
+              <p className="text-red-600 dark:text-red-400 text-[9px] mt-2">{deleteError}</p>
+            )}
+            <div className="flex items-center gap-3 mt-5">
+              <button
+                onClick={handleDeleteAccount}
+                disabled={confirmText !== 'DELETE' || deleteStatus === 'deleting'}
+                className="text-[9px] uppercase tracking-wider px-3 py-1.5 border transition-colors text-white bg-red-600 border-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600"
+              >
+                {deleteStatus === 'deleting' ? 'deleting…' : 'delete permanently'}
+              </button>
+              <button
+                onClick={() => setShowDelete(false)}
+                disabled={deleteStatus === 'deleting'}
+                className="text-relic-silver dark:text-relic-ghost text-[9px] uppercase tracking-wider hover:text-relic-void dark:hover:text-white transition-colors"
+              >
+                cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

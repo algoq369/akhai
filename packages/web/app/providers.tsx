@@ -28,8 +28,9 @@ function PostHogPageTracker({ children }: { children: React.ReactNode }) {
         api_host: '/ingest',
         ui_host: 'https://eu.posthog.com',
 
-        // Cookieless tracking
-        persistence: 'localStorage+cookie',
+        // Cookieless tracking — localStorage only, no cookie (upholds the privacy page's
+        // "we do not use tracking cookies" promise; was 'localStorage+cookie', which set one).
+        persistence: 'localStorage',
         autocapture: false,
         capture_pageview: false,
         capture_pageleave: true,
